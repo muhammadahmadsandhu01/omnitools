@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 
-import { categories, tools } from '@/config/toolsData';
+import { categories, tools, getRelatedTools } from '@/config/toolsData';
 import AdUnit from '@/components/ads/AdUnit';
 import { SITE_URL } from '@/config/site';
 
@@ -164,22 +164,25 @@ export async function generateMetadata({
     };
   }
 
+  const metaTitle = tool.seoTitle || tool.name;
+  const metaDescription = tool.seoDescription || tool.description;
+
   return {
-    title: tool.name,
-    description: tool.description,
+    title: metaTitle,
+    description: metaDescription,
     alternates: {
       canonical: `/${resolvedCategory}/${resolvedSlug}`,
     },
     openGraph: {
-      title: `${tool.name} — OmniTools`,
-      description: tool.description,
+      title: `${metaTitle} — OmniTools`,
+      description: metaDescription,
       url: `/${resolvedCategory}/${resolvedSlug}`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${tool.name} — OmniTools`,
-      description: tool.description,
+      title: `${metaTitle} — OmniTools`,
+      description: metaDescription,
     },
   };
 }
@@ -215,6 +218,8 @@ export default async function ToolPage({ params }: PageProps) {
   if (!tool || !categoryData) {
     notFound();
   }
+
+  const relatedTools = getRelatedTools(tool);
 
   const ToolComponent =
     toolComponents[slug as keyof typeof toolComponents] ||
@@ -346,6 +351,57 @@ export default async function ToolPage({ params }: PageProps) {
         {SeoComponent && (
           <section className="mt-10">
             <SeoComponent />
+          </section>
+        )}
+
+        {/* Related Tools */}
+        {relatedTools.length > 0 && (
+          <section
+            aria-labelledby="related-tools-heading"
+            className="mt-12 border-t border-slate-200 pt-10 dark:border-slate-800"
+          >
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2
+                  id="related-tools-heading"
+                  className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+                >
+                  Related Tools
+                </h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Explore other utilities in {categoryData.name} and complementary workflows.
+                </p>
+              </div>
+              <Link
+                href={`/${categoryData.id}`}
+                className="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                View all {categoryData.name} &rarr;
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedTools.map((relTool) => (
+                <Link
+                  key={relTool.id}
+                  href={`/${relTool.categoryId}/${relTool.slug}`}
+                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-700"
+                >
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                      {relTool.name}
+                    </h3>
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                      {relTool.description}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                    <span>Use tool</span>
+                    <span aria-hidden="true">&rarr;</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 

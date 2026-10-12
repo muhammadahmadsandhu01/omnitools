@@ -15,6 +15,8 @@ export type CategoryId =
   | 'seo'
   | 'health';
 
+export type ToolStatus = 'published' | 'coming-soon' | 'draft';
+
 export interface Tool {
   id: string;
   name: string;
@@ -22,6 +24,10 @@ export interface Tool {
   categoryId: CategoryId;
   description: string;
   isPopular?: boolean;
+  status?: ToolStatus;
+  seoTitle?: string;
+  seoDescription?: string;
+  relatedToolSlugs?: string[];
 }
 
 export interface ToolCategory {
@@ -89,6 +95,10 @@ export const tools: Tool[] = [
     description:
       'Gold, silver, platinum and palladium market rates, historical prices, purity-adjusted values and unit conversions.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Precious Metals Market Rates',
+    seoDescription: 'Live market rates for gold, silver, platinum, and palladium. Calculate purity-adjusted melt value, weight conversions, and historical spot prices.',
+    relatedToolSlugs: ['crypto-converter', 'compound-interest', 'invoice-generator', 'sip-calculator'],
   },
 
   {
@@ -99,6 +109,10 @@ export const tools: Tool[] = [
     description:
       'Calculate monthly mortgage payments, total interest, and estimated costs including property tax, insurance, and down payment.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Mortgage Calculator — PITI, PMI & Amortization Schedule',
+    seoDescription: 'Calculate estimated monthly mortgage payments (PITI), property taxes, insurance, PMI drop-off, and complete amortization schedules.',
+    relatedToolSlugs: ['emi-calculator', 'compound-interest', 'salary-calculator', 'invoice-generator'],
   },
 
   {
@@ -109,6 +123,10 @@ export const tools: Tool[] = [
     description:
       'Create professional, print-ready PDF invoices with automatic calculations and browser-based editing.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Pro Invoice Generator (PDF)',
+    seoDescription: 'Create professional, print-ready PDF invoices with automatic tax, discount, and currency calculations directly in your browser. No signup required.',
+    relatedToolSlugs: ['emi-calculator', 'mortgage-calculator', 'salary-calculator', 'crypto-converter'],
   },
 
   {
@@ -119,6 +137,10 @@ export const tools: Tool[] = [
     description:
       'Calculate monthly EMI, total interest, and repayment amounts for personal, car, or education loans.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Personal & Auto Loan EMI Calculator',
+    seoDescription: 'Calculate monthly loan EMI, total interest payable, and amortization schedules for personal, auto, and home loans with prepayment options.',
+    relatedToolSlugs: ['mortgage-calculator', 'compound-interest', 'sip-calculator', 'invoice-generator'],
   },
 
   {
@@ -129,6 +151,10 @@ export const tools: Tool[] = [
     description:
       'Calculate compound growth, estimated returns, and long-term investment value over time.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Compound Interest Calculator',
+    seoDescription: 'Calculate compound interest and investment growth over time with customizable contribution frequencies, inflation adjustment, and timeline breakdowns.',
+    relatedToolSlugs: ['sip-calculator', 'emi-calculator', 'mortgage-calculator', 'precious-metals'],
   },
 
   {
@@ -139,6 +165,10 @@ export const tools: Tool[] = [
     description:
       'Estimate potential SIP and mutual fund growth based on investment amount, duration, and expected return.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'SIP Calculator — Systematic Investment Plan Growth',
+    seoDescription: 'Estimate mutual fund SIP and lump-sum investment returns with annual step-up options, wealth gain breakdowns, and growth charts.',
+    relatedToolSlugs: ['compound-interest', 'crypto-converter', 'emi-calculator', 'precious-metals'],
   },
 
   {
@@ -149,6 +179,10 @@ export const tools: Tool[] = [
     description:
       'Estimate take-home salary after taxes and other deductions using the selected calculation assumptions.',
     isPopular: false,
+    status: 'published',
+    seoTitle: 'Salary & Net Take-Home Pay Calculator',
+    seoDescription: 'Estimate take-home salary after taxes and statutory deductions across 22 countries with customizable tax schedules and payroll assumptions.',
+    relatedToolSlugs: ['mortgage-calculator', 'emi-calculator', 'invoice-generator', 'compound-interest'],
   },
 
   {
@@ -159,6 +193,8 @@ export const tools: Tool[] = [
     description:
       'Estimate monthly car payments, total repayment, and interest over the selected loan term.',
     isPopular: false,
+    status: 'coming-soon',
+    relatedToolSlugs: ['emi-calculator', 'mortgage-calculator'],
   },
 
   {
@@ -169,8 +205,11 @@ export const tools: Tool[] = [
     description:
       'Convert between supported fiat currencies and cryptocurrencies using available exchange-rate data.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Crypto & Fiat Currency Converter',
+    seoDescription: 'Convert between major fiat currencies (USD, EUR, GBP, PKR) and cryptocurrencies (BTC, ETH, SOL) with mid-market rates and fee modeling.',
+    relatedToolSlugs: ['precious-metals', 'compound-interest', 'invoice-generator', 'sip-calculator'],
   },
-
 
   // ============================================================
   // DEVELOPER TOOLS
@@ -184,6 +223,10 @@ export const tools: Tool[] = [
     description:
       'Format, validate, and minify JSON data quickly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'JSON Formatter & Validator',
+    seoDescription: 'Format, validate, beautify, and minify JSON payloads in your browser. Features RFC 8259 syntax validation, tree view, and zero server uploads.',
+    relatedToolSlugs: ['json-converter', 'base64-encoder', 'sql-formatter', 'regex-tester'],
   },
 
   {
@@ -194,6 +237,10 @@ export const tools: Tool[] = [
     description:
       'Optimize SVG markup by cleaning unnecessary data and reducing file size.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'SVG Optimizer & Cleaner',
+    seoDescription: 'Optimize SVG markup by stripping redundant metadata, formatting coordinates, and reducing file size directly in your browser.',
+    relatedToolSlugs: ['image-compressor', 'webp-to-jpg-png', 'json-formatter', 'base64-encoder'],
   },
 
   {
@@ -204,6 +251,10 @@ export const tools: Tool[] = [
     description:
       'Generate strong passwords and create common cryptographic hashes for supported text or file data.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Secure Password & Hash Generator',
+    seoDescription: 'Generate cryptographically secure passwords and compute SHA-256, SHA-512, MD5, and HMAC hashes client-side in your browser.',
+    relatedToolSlugs: ['base64-encoder', 'regex-tester', 'json-formatter', 'sql-formatter'],
   },
 
   {
@@ -214,6 +265,10 @@ export const tools: Tool[] = [
     description:
       'Convert JSON data into CSV or Excel-compatible files directly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'JSON to CSV / Excel Converter',
+    seoDescription: 'Convert structured JSON arrays and objects into downloadable CSV, TSV, or Excel spreadsheets with automatic header extraction.',
+    relatedToolSlugs: ['json-formatter', 'sql-formatter', 'base64-encoder', 'text-analyzer'],
   },
 
   {
@@ -224,6 +279,10 @@ export const tools: Tool[] = [
     description:
       'Encode text to Base64 or decode Base64 strings directly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Base64 Encoder & Decoder',
+    seoDescription: 'Encode plain text or UTF-8 strings to Base64 and decode Base64 data instantly client-side without sending information to any server.',
+    relatedToolSlugs: ['json-formatter', 'password-generator', 'regex-tester', 'text-case-converter'],
   },
 
   {
@@ -234,6 +293,10 @@ export const tools: Tool[] = [
     description:
       'Format and clean SQL queries for improved readability and easier development.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'SQL Query Formatter',
+    seoDescription: 'Beautify and format complex SQL queries with custom indentation, keyword casing, and dialect support for PostgreSQL, MySQL, SQLite, and T-SQL.',
+    relatedToolSlugs: ['json-formatter', 'regex-tester', 'json-converter', 'base64-encoder'],
   },
 
   {
@@ -244,6 +307,10 @@ export const tools: Tool[] = [
     description:
       'Test regular expressions with live matching and generate code examples for supported languages.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Regex Tester & Code Generator',
+    seoDescription: 'Test regular expressions in real time with capture groups, syntax explanations, and export ready code snippets for JavaScript, Python, Go, and PHP.',
+    relatedToolSlugs: ['text-analyzer', 'text-case-converter', 'json-formatter', 'sql-formatter'],
   },
 
   // ============================================================
@@ -258,6 +325,10 @@ export const tools: Tool[] = [
     description:
       'Merge PDF files or extract selected pages directly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'PDF Merge & Split Tool',
+    seoDescription: 'Merge multiple PDF files into one or split pages from existing documents client-side. Fast, free, and private with zero file uploads.',
+    relatedToolSlugs: ['image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
   },
 
   {
@@ -268,6 +339,10 @@ export const tools: Tool[] = [
     description:
       'Convert JPG, PNG, WebP, BMP, and GIF images into a PDF document directly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Image to PDF Converter',
+    seoDescription: 'Convert JPG, PNG, WebP, BMP, and GIF images into clean, standardized PDF documents with adjustable margins, orientation, and reordering.',
+    relatedToolSlugs: ['pdf-merge-split', 'webp-to-jpg-png', 'image-compressor', 'invoice-generator'],
   },
 
   // ============================================================
@@ -282,8 +357,11 @@ export const tools: Tool[] = [
     description:
       'Convert WebP images to JPG or PNG directly in your browser with adjustable quality and transparency background fill.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'WebP to JPG & PNG Converter',
+    seoDescription: 'Convert WebP images to JPG or PNG directly in your browser with adjustable quality and transparency background fill.',
+    relatedToolSlugs: ['image-compressor', 'image-to-pdf', 'pdf-merge-split', 'svg-optimizer'],
   },
-
 
   {
     id: 'image-compressor',
@@ -293,6 +371,10 @@ export const tools: Tool[] = [
     description:
       'Reduce image file size with adjustable compression directly in your browser.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Image Compressor & Optimizer',
+    seoDescription: 'Compress JPG, PNG, and WebP images client-side with visual quality sliders and side-by-side file size comparisons.',
+    relatedToolSlugs: ['webp-to-jpg-png', 'image-to-pdf', 'svg-optimizer', 'pdf-merge-split'],
   },
 
   // ============================================================
@@ -307,6 +389,10 @@ export const tools: Tool[] = [
     description:
       'Create customizable QR codes with options for colors, content, and supported branding elements.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Custom QR Code Generator',
+    seoDescription: 'Generate custom QR codes for URLs, WiFi credentials, plain text, and contact cards with customizable colors, error correction, and PNG/SVG export.',
+    relatedToolSlugs: ['meta-generator', 'text-analyzer', 'text-case-converter', 'base64-encoder'],
   },
 
   {
@@ -317,6 +403,10 @@ export const tools: Tool[] = [
     description:
       'Analyze word count, character count, readability, keyword usage, and other text metrics.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Word Counter & Text Analyzer',
+    seoDescription: 'Analyze character count, word count, sentence metrics, estimated reading time, keyword density, and Flesch reading ease scores client-side.',
+    relatedToolSlugs: ['text-case-converter', 'qr-generator', 'regex-tester', 'json-formatter'],
   },
 
   {
@@ -327,8 +417,11 @@ export const tools: Tool[] = [
     description:
       'Convert text between uppercase, lowercase, title case, camelCase, snake_case, PascalCase, and 14 developer and natural language formats.',
     isPopular: true,
+    status: 'published',
+    seoTitle: 'Text Case Converter',
+    seoDescription: 'Convert text between uppercase, lowercase, title case, camelCase, snake_case, PascalCase, and 14 developer and natural language formats.',
+    relatedToolSlugs: ['text-analyzer', 'json-formatter', 'base64-encoder', 'qr-generator'],
   },
-
 
   {
     id: 'meta-generator',
@@ -338,6 +431,10 @@ export const tools: Tool[] = [
     description:
       'Generate HTML meta tags and Open Graph markup for search and social sharing.',
     isPopular: false,
+    status: 'published',
+    seoTitle: 'Meta Tag & Open Graph Generator',
+    seoDescription: 'Generate standard SEO meta tags, Open Graph cards, and Twitter Cards with real-time Google, Facebook, and Twitter social previews.',
+    relatedToolSlugs: ['qr-generator', 'text-analyzer', 'text-case-converter', 'json-formatter'],
   },
 
   // ============================================================
@@ -352,6 +449,8 @@ export const tools: Tool[] = [
     description:
       'Calculate BMI and estimate daily calorie needs using the selected personal inputs and calculation method.',
     isPopular: true,
+    status: 'coming-soon',
+    relatedToolSlugs: ['emi-calculator', 'compound-interest'],
   },
 ];
 
@@ -387,4 +486,35 @@ export function getToolsByCategory(categoryId: CategoryId) {
  */
 export function getPopularTools() {
   return tools.filter((tool) => tool.isPopular);
+}
+
+/**
+ * Get all published, functional tools.
+ */
+export function getPublishedTools(): Tool[] {
+  return tools.filter((tool) => tool.status !== 'coming-soon');
+}
+
+/**
+ * Get related tools for cross-linking.
+ */
+export function getRelatedTools(tool: Tool, limit = 4): Tool[] {
+  if (tool.relatedToolSlugs && tool.relatedToolSlugs.length > 0) {
+    const specified = tool.relatedToolSlugs
+      .map((slug) => tools.find((t) => t.slug === slug))
+      .filter((t): t is Tool => Boolean(t && t.status !== 'coming-soon'));
+    if (specified.length > 0) {
+      return specified.slice(0, limit);
+    }
+  }
+
+  // Fallback: other published tools in the same category, then others
+  return tools
+    .filter(
+      (t) =>
+        t.slug !== tool.slug &&
+        t.status !== 'coming-soon' &&
+        t.categoryId === tool.categoryId
+    )
+    .slice(0, limit);
 }

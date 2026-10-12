@@ -1,15 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { categories, tools } from '@/config/toolsData';
+import { categories, getPublishedTools } from '@/config/toolsData';
 import { SITE_URL } from '@/config/site';
-
-/**
- * Tools in toolsData that do not yet have an active, implemented UI component.
- * Excluded from the sitemap to prevent indexing thin 'Coming Soon' placeholder pages.
- */
-const UNIMPLEMENTED_TOOL_SLUGS = new Set([
-  'auto-loan-calculator',
-  'bmi-calculator',
-]);
 
 /**
  * 22 statutory country salary calculators registered in the application.
@@ -90,9 +81,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // 4. Implemented and functional Tool Pages (excluding unimplemented tools)
-  const functionalTools = tools.filter(
-    (tool) => !UNIMPLEMENTED_TOOL_SLUGS.has(tool.slug)
-  );
+  const functionalTools = getPublishedTools();
 
   const toolEntries: MetadataRoute.Sitemap = functionalTools.map((tool) => ({
     url: `${siteUrl}/${tool.categoryId}/${tool.slug}`,
