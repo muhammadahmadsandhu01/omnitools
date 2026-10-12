@@ -7,55 +7,7 @@ import { categories, tools, getRelatedTools } from '@/config/toolsData';
 import AdUnit from '@/components/ads/AdUnit';
 import { SITE_URL } from '@/config/site';
 
-// Tool components
-import EmiCalculator from '@/components/tools/EmiCalculator';
-import MortgageCalculator from '@/components/tools/MortgageCalculator';
-import CompoundInterest from '@/components/tools/CompoundInterest';
-import SipCalculator from '@/components/tools/SipCalculator';
-import JsonFormatter from '@/components/tools/JsonFormatter';
-import QrGenerator from '@/components/tools/QrGenerator';
-import Base64Encoder from '@/components/tools/Base64Encoder';
-import CryptoConverter from '@/components/tools/CryptoConverter';
-import PdfMergeSplit from '@/components/tools/PdfMergeSplit';
-import ImageCompressor from '@/components/tools/ImageCompressor';
-import TextAnalyzer from '@/components/tools/TextAnalyzer';
-import PasswordGenerator from '@/components/tools/PasswordGenerator';
-import SvgOptimizer from '@/components/tools/SvgOptimizer';
-import InvoiceGenerator from '@/components/tools/InvoiceGenerator';
-import JsonConverter from '@/components/tools/JsonConverter';
-import SqlFormatter from '@/components/tools/SqlFormatter';
-import RegexTester from '@/components/tools/RegexTester';
-import PreciousMetals from '@/components/tools/PreciousMetals';
-import SalaryCalculator from '@/components/tools/SalaryCalculator';
-import ImageToPdf from '@/components/tools/ImageToPdf';
-import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
-import TextCaseConverter from '@/components/tools/TextCaseConverter';
-import MetaGenerator from '@/components/tools/MetaGenerator';
-
-// SEO content components
-import EmiCalculatorSeo from '@/components/seo/EmiCalculatorSeo';
-import MortgageCalculatorSeo from '@/components/seo/MortgageCalculatorSeo';
-import CompoundInterestSeo from '@/components/seo/CompoundInterestSeo';
-import SipCalculatorSeo from '@/components/seo/SipCalculatorSeo';
-import JsonFormatterSeo from '@/components/seo/JsonFormatterSeo';
-import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
-import Base64EncoderSeo from '@/components/seo/Base64EncoderSeo';
-import CryptoConverterSeo from '@/components/seo/CryptoConverterSeo';
-import PdfMergeSplitSeo from '@/components/seo/PdfMergeSplitSeo';
-import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
-import TextAnalyzerSeo from '@/components/seo/TextAnalyzerSeo';
-import PasswordGeneratorSeo from '@/components/seo/PasswordGeneratorSeo';
-import SvgOptimizerSeo from '@/components/seo/SvgOptimizerSeo';
-import InvoiceGeneratorSeo from '@/components/seo/InvoiceGeneratorSeo';
-import JsonConverterSeo from '@/components/seo/JsonConverterSeo';
-import SqlFormatterSeo from '@/components/seo/SqlFormatterSeo';
-import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
-import PreciousMetalsSeo from '@/components/seo/PreciousMetalsSeo';
-import SalaryCalculatorSeo from '@/components/seo/SalaryCalculatorSeo';
-import ImageToPdfSeo from '@/components/seo/ImageToPdfSeo';
-import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
-import TextCaseConverterSeo from '@/components/seo/TextCaseConverterSeo';
-import MetaGeneratorSeo from '@/components/seo/MetaGeneratorSeo';
+import { toolComponents, seoComponents } from '@/config/toolRegistry';
 
 type PageProps = {
   params: Promise<{
@@ -63,77 +15,6 @@ type PageProps = {
     slug: string;
   }>;
 };
-
-/**
- * Tool component registry.
- *
- * Keeping the mapping here makes the page much easier to maintain
- * as more tools are added to OmniTools.
- */
-const toolComponents = {
-  'precious-metals': PreciousMetals,
-  'emi-calculator': EmiCalculator,
-  'mortgage-calculator': MortgageCalculator,
-  'compound-interest': CompoundInterest,
-  'sip-calculator': SipCalculator,
-  'json-formatter': JsonFormatter,
-  'qr-generator': QrGenerator,
-  'base64-encoder': Base64Encoder,
-  'crypto-converter': CryptoConverter,
-  'currency-converter': CryptoConverter,
-  'pdf-merge-split': PdfMergeSplit,
-  'image-compressor': ImageCompressor,
-  'text-analyzer': TextAnalyzer,
-  'password-generator': PasswordGenerator,
-  'svg-optimizer': SvgOptimizer,
-  'invoice-generator': InvoiceGenerator,
-  'json-converter': JsonConverter,
-  'sql-formatter': SqlFormatter,
-  'regex-tester': RegexTester,
-  'salary-calculator': SalaryCalculator,
-  'image-to-pdf': ImageToPdf,
-  'webp-to-jpg-png': WebpToJpgPng,
-  'webp-converter': WebpToJpgPng,
-  'text-case-converter': TextCaseConverter,
-  'case-converter': TextCaseConverter,
-  'meta-generator': MetaGenerator,
-  'meta-tags-generator': MetaGenerator,
-  'open-graph-generator': MetaGenerator,
-} as const;
-
-/**
- * SEO content registry.
- */
-const seoComponents = {
-  'precious-metals': PreciousMetalsSeo,
-  'emi-calculator': EmiCalculatorSeo,
-  'mortgage-calculator': MortgageCalculatorSeo,
-  'compound-interest': CompoundInterestSeo,
-  'sip-calculator': SipCalculatorSeo,
-  'json-formatter': JsonFormatterSeo,
-  'qr-generator': QrGeneratorSeo,
-  'base64-encoder': Base64EncoderSeo,
-  'crypto-converter': CryptoConverterSeo,
-  'currency-converter': CryptoConverterSeo,
-  'pdf-merge-split': PdfMergeSplitSeo,
-  'image-compressor': ImageCompressorSeo,
-  'text-analyzer': TextAnalyzerSeo,
-  'password-generator': PasswordGeneratorSeo,
-  'svg-optimizer': SvgOptimizerSeo,
-  'invoice-generator': InvoiceGeneratorSeo,
-  'json-converter': JsonConverterSeo,
-  'sql-formatter': SqlFormatterSeo,
-  'regex-tester': RegexTesterSeo,
-  'salary-calculator': SalaryCalculatorSeo,
-  'image-to-pdf': ImageToPdfSeo,
-  'webp-to-jpg-png': WebpToJpgPngSeo,
-  'webp-converter': WebpToJpgPngSeo,
-  'text-case-converter': TextCaseConverterSeo,
-  'case-converter': TextCaseConverterSeo,
-  'meta-generator': MetaGeneratorSeo,
-  'meta-tags-generator': MetaGeneratorSeo,
-  'open-graph-generator': MetaGeneratorSeo,
-} as const;
 
 /**
  * Generate dynamic SEO metadata for each tool page.
@@ -222,14 +103,14 @@ export default async function ToolPage({ params }: PageProps) {
   const relatedTools = getRelatedTools(tool);
 
   const ToolComponent =
-    toolComponents[slug as keyof typeof toolComponents] ||
-    toolComponents[tool.slug as keyof typeof toolComponents] ||
-    toolComponents[resolvedSlug as keyof typeof toolComponents];
+    toolComponents[slug] ||
+    toolComponents[tool.slug] ||
+    toolComponents[resolvedSlug];
 
   const SeoComponent =
-    seoComponents[slug as keyof typeof seoComponents] ||
-    seoComponents[tool.slug as keyof typeof seoComponents] ||
-    seoComponents[resolvedSlug as keyof typeof seoComponents];
+    seoComponents[slug] ||
+    seoComponents[tool.slug] ||
+    seoComponents[resolvedSlug];
 
   /**
    * Structured data for search engines.

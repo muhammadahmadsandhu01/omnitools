@@ -24,7 +24,7 @@ export interface Tool {
   categoryId: CategoryId;
   description: string;
   isPopular?: boolean;
-  status?: ToolStatus;
+  status: ToolStatus;
   seoTitle?: string;
   seoDescription?: string;
   relatedToolSlugs?: string[];
@@ -492,7 +492,7 @@ export function getPopularTools() {
  * Get all published, functional tools.
  */
 export function getPublishedTools(): Tool[] {
-  return tools.filter((tool) => tool.status !== 'coming-soon');
+  return tools.filter((tool) => tool.status === 'published');
 }
 
 /**
@@ -502,7 +502,7 @@ export function getRelatedTools(tool: Tool, limit = 4): Tool[] {
   if (tool.relatedToolSlugs && tool.relatedToolSlugs.length > 0) {
     const specified = tool.relatedToolSlugs
       .map((slug) => tools.find((t) => t.slug === slug))
-      .filter((t): t is Tool => Boolean(t && t.status !== 'coming-soon'));
+      .filter((t): t is Tool => Boolean(t && t.status === 'published'));
     if (specified.length > 0) {
       return specified.slice(0, limit);
     }
@@ -513,7 +513,7 @@ export function getRelatedTools(tool: Tool, limit = 4): Tool[] {
     .filter(
       (t) =>
         t.slug !== tool.slug &&
-        t.status !== 'coming-soon' &&
+        t.status === 'published' &&
         t.categoryId === tool.categoryId
     )
     .slice(0, limit);

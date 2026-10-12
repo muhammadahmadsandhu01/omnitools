@@ -189,13 +189,18 @@ export default function TextCaseConverterSeo() {
       <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions (FAQ)
       </h3>
-      <div className="space-y-4 mb-8 text-slate-600 dark:text-slate-300">
+      <div className="space-y-4 mb-8">
         {TEXT_CASE_FAQS.map((faq, index) => (
-          <div key={index}>
-            <h4 className="font-semibold text-slate-900 dark:text-white">
+          <div
+            key={index}
+            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
+          >
+            <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
               {faq.question}
             </h4>
-            <p className="text-sm mt-1">{faq.answer}</p>
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              {faq.answer}
+            </p>
           </div>
         ))}
       </div>
