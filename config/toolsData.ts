@@ -280,9 +280,9 @@ export const tools: Tool[] = [
       'Encode text to Base64 or decode Base64 strings directly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Base64 Encoder & Decoder',
-    seoDescription: 'Encode plain text or UTF-8 strings to Base64 and decode Base64 data instantly client-side without sending information to any server.',
-    relatedToolSlugs: ['json-formatter', 'password-generator', 'regex-tester', 'text-case-converter'],
+    seoTitle: 'Base64 Encoder & Decoder — UTF-8, URL-Safe & Files',
+    seoDescription: 'Encode and decode Base64 client-side with full UTF-8 Unicode, Base64URL, Data URIs, binary file support, and RFC 4648 strict validation. 100% private in-browser tool.',
+    relatedToolSlugs: ['json-formatter', 'password-generator', 'regex-tester', 'text-case-converter', 'json-converter'],
   },
 
   {

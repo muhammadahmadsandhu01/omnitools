@@ -93,51 +93,64 @@ const parseDataUri = (value: string): DataUriInfo | null => {
   return { mime: rawMime, isBase64, payload };
 };
 
-const normalizeBase64 = (value: string) => {
+const normalizeBase64 = (value: string, strict = false) => {
   const dataUri = parseDataUri(value);
   let s = (dataUri ? dataUri.payload : value).trim();
   s = s.replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
   if (!s) return { normalized: '', dataUri };
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(s) || s.length % 4 === 1) {
-    throw new Error('Invalid Base64 characters, padding, or length.');
-  }
 
-  const padMatch = s.match(/=+$/);
-  const padCount = padMatch?.[0].length || 0;
-  const firstPad = s.indexOf('=');
-  if (firstPad >= 0 && firstPad !== s.length - padCount) {
-    throw new Error('Base64 padding is only allowed at the end.');
-  }
-  if (padCount > 2 || (padCount > 0 && s.length % 4 !== 0)) {
-    throw new Error('Invalid Base64 padding.');
-  }
+  if (strict) {
+    if (!/^[A-Za-z0-9+/]*={0,2}$/.test(s) || s.length % 4 === 1) {
+      throw new Error('Invalid Base64 characters, padding, or length.');
+    }
 
-  const unpaddedLength = s.length - padCount;
-  s += '='.repeat((4 - s.length % 4) % 4);
+    const padMatch = s.match(/=+$/);
+    const padCount = padMatch?.[0].length || 0;
+    const firstPad = s.indexOf('=');
+    if (firstPad >= 0 && firstPad !== s.length - padCount) {
+      throw new Error('Base64 padding is only allowed at the end.');
+    }
+    if (padCount > 2 || (padCount > 0 && s.length % 4 !== 0)) {
+      throw new Error('Invalid Base64 padding.');
+    }
 
-  // RFC 4648 canonical pad-bit validation
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  if (unpaddedLength % 4 === 2) {
-    const v = alphabet.indexOf(s[unpaddedLength - 1]);
-    if (v < 0 || (v & 0x0f) !== 0) throw new Error('Non-canonical Base64: unused pad bits are not zero.');
-  } else if (unpaddedLength % 4 === 3) {
-    const v = alphabet.indexOf(s[unpaddedLength - 1]);
-    if (v < 0 || (v & 0x03) !== 0) throw new Error('Non-canonical Base64: unused pad bits are not zero.');
+    const unpaddedLength = s.length - padCount;
+    s += '='.repeat((4 - s.length % 4) % 4);
+
+    // RFC 4648 canonical pad-bit validation
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    if (unpaddedLength % 4 === 2) {
+      const v = alphabet.indexOf(s[unpaddedLength - 1]);
+      if (v < 0 || (v & 0x0f) !== 0) throw new Error('Non-canonical Base64: unused pad bits are not zero.');
+    } else if (unpaddedLength % 4 === 3) {
+      const v = alphabet.indexOf(s[unpaddedLength - 1]);
+      if (v < 0 || (v & 0x03) !== 0) throw new Error('Non-canonical Base64: unused pad bits are not zero.');
+    }
+  } else {
+    s = s.replace(/[^A-Za-z0-9+/=]/g, '');
+    const firstPad = s.indexOf('=');
+    if (firstPad >= 0) {
+      s = s.slice(0, firstPad);
+    }
+    if (s.length % 4 === 1) {
+      throw new Error('Truncated Base64 input: length modulo 4 cannot be 1.');
+    }
+    s += '='.repeat((4 - s.length % 4) % 4);
   }
 
   return { normalized: s, dataUri };
 };
 
-const base64ToBytes = (value: string) => {
-  const { normalized } = normalizeBase64(value);
+const base64ToBytes = (value: string, strict = false) => {
+  const { normalized } = normalizeBase64(value, strict);
   if (!normalized) return new Uint8Array();
 
   const native = (Uint8Array as typeof Uint8Array & NativeFromBase64).fromBase64;
-  if (native) {
+  if (native && strict) {
     try {
       return native(normalized, { alphabet: 'base64', lastChunkHandling: 'strict' });
     } catch {
-      throw new Error('Invalid Base64 payload.');
+      // Fall through to atob fallback
     }
   }
 
@@ -249,6 +262,37 @@ const sameBytes = (a: Uint8Array, b: Uint8Array) => {
 
 const safeName = (name: string) => name.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').slice(0, 180) || 'decoded-file';
 
+const SAMPLE_PRESETS = [
+  {
+    label: 'Hello, World!',
+    badge: 'RFC 4648',
+    op: 'encode' as Operation,
+    mode: 'text' as Mode,
+    value: 'Hello, World!',
+  },
+  {
+    label: 'Unicode & Emoji',
+    badge: 'UTF-8',
+    op: 'encode' as Operation,
+    mode: 'text' as Mode,
+    value: '🚀 OmniTools: Café, 日本語, العربية, & Zürich ✨',
+  },
+  {
+    label: 'JWT Header',
+    badge: 'Base64URL',
+    op: 'decode' as Operation,
+    mode: 'text' as Mode,
+    value: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+  },
+  {
+    label: '1×1 PNG Pixel',
+    badge: 'Data URI',
+    op: 'decode' as Operation,
+    mode: 'file' as Mode,
+    value: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  },
+];
+
 export default function Base64Encoder() {
   const [mode, setMode] = useState<Mode>('text');
   const [operation, setOperation] = useState<Operation>('encode');
@@ -258,6 +302,7 @@ export default function Base64Encoder() {
   const [stripPadding, setStripPadding] = useState(true);
   const [encodeOutput, setEncodeOutput] = useState<EncodeOutput>('base64');
   const [decodeMode, setDecodeMode] = useState<DecodeMode>('text');
+  const [decodeStrictness, setDecodeStrictness] = useState<'tolerant' | 'strict'>('tolerant');
   const [wrapWidth, setWrapWidth] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [decoded, setDecoded] = useState<{ blob: Blob; name: string; type: string; url: string } | null>(null);
@@ -328,7 +373,7 @@ export default function Base64Encoder() {
         setOutputByteCount(bytes.length);
 
         // Round-trip verification: the generated Base64 must reproduce the exact bytes.
-        if (!sameBytes(bytes, base64ToBytes(result))) {
+        if (!sameBytes(bytes, base64ToBytes(result, false))) {
           throw new Error('Internal verification failed: encoded output did not round-trip to the original bytes.');
         }
       } else {
@@ -338,7 +383,7 @@ export default function Base64Encoder() {
           return;
         }
         const dataUri = parseDataUri(input);
-        const bytes = base64ToBytes(input);
+        const bytes = base64ToBytes(input, decodeStrictness === 'strict');
         if (bytes.length > MAX_FILE) throw new Error(`Decoded data is too large. Maximum is ${fmt(MAX_FILE)}.`);
 
         if (mode === 'text' && decodeMode === 'text') {
@@ -386,7 +431,7 @@ export default function Base64Encoder() {
     const t = setTimeout(() => void process(), 120);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, operation, input, file, urlSafe, stripPadding, encodeOutput, decodeMode, wrapWidth]);
+  }, [mode, operation, input, file, urlSafe, stripPadding, encodeOutput, decodeMode, wrapWidth, decodeStrictness]);
 
   const inputBytes = mode === 'file' ? file?.size || 0 : new TextEncoder().encode(input).length;
   const outputBytes = outputByteCount;
@@ -493,6 +538,24 @@ export default function Base64Encoder() {
         </div>
       </header>
 
+      {/* Privacy and Security Advisory Banner */}
+      <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2.5 sm:px-6 dark:border-slate-800 dark:bg-slate-900/50">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs">
+          <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
+            <Lock className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            <span><strong>100% Client-Side:</strong> All data is encoded and decoded locally in memory with zero server uploads.</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            <span><strong>Notice:</strong> Base64 is an encoding format, NOT encryption. Never use Base64 to secure passwords or sensitive keys.</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {copied ? 'Output copied to clipboard' : error ? `Error: ${error}` : status}
+      </div>
+
       <div className="grid xl:grid-cols-2">
         <div className="min-w-0 border-b border-slate-200 p-4 sm:p-6 xl:border-b-0 xl:border-r dark:border-slate-800">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -502,7 +565,7 @@ export default function Base64Encoder() {
                   key={m}
                   type="button"
                   onClick={() => { setMode(m); setError(''); setWarning(''); setOutput(''); setOutputByteCount(0); cleanup(); }}
-                  className={`rounded-lg px-4 py-2 text-xs font-bold ${mode === m ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-950 dark:text-slate-500 dark:hover:text-slate-200'}`}
+                  className={`min-h-[44px] rounded-lg px-4 py-2 text-xs font-bold transition-colors ${mode === m ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-slate-100'}`}
                 >
                   {m === 'text' ? 'Text' : 'File'}
                 </button>
@@ -520,7 +583,7 @@ export default function Base64Encoder() {
                   key={o}
                   type="button"
                   onClick={() => { setOperation(o); setError(''); setWarning(''); setOutput(''); setOutputByteCount(0); cleanup(); }}
-                  className={`rounded-lg px-3 py-1.5 text-[11px] font-bold ${operation === o ? 'bg-slate-200 text-blue-700 dark:bg-slate-800 dark:text-blue-300' : 'text-slate-600 hover:text-slate-950 dark:text-slate-500 dark:hover:text-slate-200'}`}
+                  className={`min-h-[36px] rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${operation === o ? 'bg-slate-200 text-blue-700 dark:bg-slate-800 dark:text-blue-300' : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-slate-100'}`}
                 >
                   {o === 'encode' ? 'Encode' : 'Decode'}
                 </button>
@@ -531,8 +594,9 @@ export default function Base64Encoder() {
                 type="button"
                 onClick={swap}
                 disabled={!output && !input}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors"
-                title="Swap input and output"
+                className="inline-flex min-h-[36px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors"
+                title="Swap input and output (Ctrl+Enter)"
+                aria-label="Swap input and output"
               >
                 <ArrowRightLeft className="h-3.5 w-3.5" /> Swap
               </button>
@@ -542,6 +606,7 @@ export default function Base64Encoder() {
                 value={encodeOutput}
                 onChange={e => setEncodeOutput(e.target.value as EncodeOutput)}
                 className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                aria-label="Output format"
               >
                 <option value="base64">Pure Base64</option>
                 <option value="data-uri">Data URI</option>
@@ -551,6 +616,7 @@ export default function Base64Encoder() {
                 value={decodeMode}
                 onChange={e => setDecodeMode(e.target.value as DecodeMode)}
                 className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-700 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                aria-label="Decode output mode"
               >
                 <option value="text">UTF-8 Text</option>
                 <option value="file">Download File</option>
@@ -558,6 +624,37 @@ export default function Base64Encoder() {
               </select>
             )}
           </div>
+
+          {/* Quick Sample Presets */}
+          {mode === 'text' && (
+            <div className="mb-3 flex flex-wrap items-center gap-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1">
+                Sample Presets:
+              </span>
+              {SAMPLE_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => {
+                    setMode(preset.mode);
+                    setOperation(preset.op);
+                    setInput(preset.value);
+                    if (preset.badge === 'Base64URL') {
+                      setUrlSafe(true);
+                      setStripPadding(true);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 hover:text-blue-600 hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-blue-400 dark:hover:border-slate-700 transition-colors shadow-2xs"
+                  title={`Load ${preset.label}`}
+                >
+                  <span>{preset.label}</span>
+                  <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    {preset.badge}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {mode === 'file' && operation === 'encode' ? (
             <div
@@ -605,7 +702,18 @@ export default function Base64Encoder() {
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    if (mode === 'text' && !decoded && (output || input)) {
+                      swap();
+                    }
+                  } else if (e.key === 'Escape') {
+                    clear();
+                  }
+                }}
                 spellCheck={false}
+                aria-label={operation === 'encode' ? 'Plain text input to encode' : 'Base64 input to decode'}
                 className="min-h-[310px] w-full resize-y rounded-2xl border border-slate-200 bg-white p-4 font-mono text-xs leading-6 text-slate-900 dark:border-slate-800 dark:bg-[#050914] dark:text-slate-200 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:border-blue-500/60 focus:ring-4 focus:ring-blue-500/10"
                 placeholder={operation === 'encode' ? 'Type or paste text here…\n\nUnicode, Urdu, Arabic and emoji are supported.' : 'Paste Base64 here…\n\nWhitespace, URL-safe Base64 and Data URI prefixes are accepted.'}
               />
@@ -614,53 +722,78 @@ export default function Base64Encoder() {
                   type="button"
                   onClick={() => { setInput(''); setOutput(''); setOutputByteCount(0); }}
                   className="absolute right-3 top-3 rounded-lg border border-slate-200 bg-white p-1.5 text-slate-500 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-600 dark:hover:text-white"
+                  aria-label="Clear input"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
+              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-500 px-1">
+                <span>{input ? `${input.length.toLocaleString()} characters` : 'Empty input'}</span>
+                <span>Keyboard: Ctrl+Enter to swap · Esc to clear</span>
+              </div>
             </div>
           )}
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/40">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-500">Encoding options</p>
-                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-700">RFC 4648 alphabet with optional URL-safe output.</p>
-              </div>
-              <label className="flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-slate-700 dark:text-slate-400">
-                <input
-                  type="checkbox"
-                  checked={urlSafe}
-                  onChange={e => setUrlSafe(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 bg-white text-blue-600 dark:border-slate-700 dark:bg-slate-950"
-                />
-                URL-safe
-              </label>
-            </div>
-            {urlSafe && operation === 'encode' && (
-              <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-slate-600 dark:text-slate-500">
-                <input
-                  type="checkbox"
-                  checked={stripPadding}
-                  onChange={e => setStripPadding(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 bg-white text-blue-600 dark:border-slate-700 dark:bg-slate-950"
-                />
-                Remove trailing = padding
-              </label>
-            )}
-            {mode === 'text' && operation === 'encode' && (
-              <div className="mt-3 flex items-center gap-3">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Line wrap</span>
+            {operation === 'encode' ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-500">Encoding options</p>
+                    <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-600">RFC 4648 standard alphabet with optional URL-safe output.</p>
+                  </div>
+                  <label className="flex cursor-pointer items-center gap-2 text-[11px] font-semibold text-slate-700 dark:text-slate-400">
+                    <input
+                      type="checkbox"
+                      checked={urlSafe}
+                      onChange={e => setUrlSafe(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 bg-white text-blue-600 dark:border-slate-700 dark:bg-slate-950"
+                    />
+                    URL-safe (- and _)
+                  </label>
+                </div>
+                {urlSafe && (
+                  <label className="mt-3 flex cursor-pointer items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
+                    <input
+                      type="checkbox"
+                      checked={stripPadding}
+                      onChange={e => setStripPadding(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 bg-white text-blue-600 dark:border-slate-700 dark:bg-slate-950"
+                    />
+                    Remove trailing = padding (JWT format)
+                  </label>
+                )}
+                {mode === 'text' && (
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Line wrap</span>
+                    <select
+                      value={wrapWidth}
+                      onChange={e => setWrapWidth(Number(e.target.value))}
+                      className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
+                    >
+                      <option value={0}>Off</option>
+                      <option value={64}>64 (PEM format)</option>
+                      <option value={76}>76 (MIME format)</option>
+                      <option value={80}>80 characters</option>
+                      <option value={128}>128 characters</option>
+                    </select>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-500">Validation Mode</p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-600">Strict enforces RFC 4648 canonical pad bits; Tolerant cleans whitespace and restores padding.</p>
+                </div>
                 <select
-                  value={wrapWidth}
-                  onChange={e => setWrapWidth(Number(e.target.value))}
-                  className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
+                  value={decodeStrictness}
+                  onChange={e => setDecodeStrictness(e.target.value as 'tolerant' | 'strict')}
+                  className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-semibold text-slate-700 outline-none focus:border-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                  aria-label="Validation strictness"
                 >
-                  <option value={0}>Off</option>
-                  <option value={64}>64</option>
-                  <option value={76}>76</option>
-                  <option value={80}>80</option>
-                  <option value={128}>128</option>
+                  <option value="tolerant">Tolerant (Auto-Clean)</option>
+                  <option value="strict">Strict (RFC 4648 §3.5)</option>
                 </select>
               </div>
             )}
@@ -675,31 +808,34 @@ export default function Base64Encoder() {
                 {output ? `${output.length.toLocaleString()} characters` : 'Generated automatically.'}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 disabled={!output}
                 onClick={copy}
-                className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[11px] font-bold text-slate-600 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white disabled:opacity-30 transition-colors"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-700 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white disabled:opacity-30 transition-colors shadow-2xs"
+                aria-label={copied ? 'Output copied' : 'Copy output to clipboard'}
               >
-                {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Clipboard className="h-3.5 w-3.5" />}
+                {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Clipboard className="h-4 w-4" />}
                 {copied ? 'Copied' : 'Copy'}
               </button>
               <button
                 type="button"
                 disabled={!output && !decoded}
                 onClick={downloadOutput}
-                className="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-600 px-3 text-[11px] font-bold text-white hover:bg-blue-500 disabled:opacity-30 transition-colors"
+                className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white hover:bg-blue-500 disabled:opacity-30 transition-colors shadow-2xs"
+                aria-label="Download output file"
               >
-                <ArrowDownToLine className="h-3.5 w-3.5" /> Download
+                <ArrowDownToLine className="h-4 w-4" /> Download
               </button>
               <button
                 type="button"
                 onClick={clear}
-                className="rounded-xl border border-slate-200 bg-white px-3 text-slate-600 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-500 dark:hover:text-white transition-colors"
-                title="Clear all"
+                className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-slate-600 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors shadow-2xs"
+                title="Clear all (Esc)"
+                aria-label="Clear all inputs and outputs"
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           </div>
