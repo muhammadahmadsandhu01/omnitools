@@ -1953,7 +1953,11 @@ export default function JsonFormatter() {
         <div className="relative flex-grow min-h-[420px] lg:h-[620px] bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden flex flex-col shadow-inner">
           {/* Syntax Error Box */}
           {error && (
-            <div className="absolute top-0 left-0 right-0 z-20 flex items-start gap-3 bg-red-50 dark:bg-red-950/90 backdrop-blur-sm border-b border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-4 shadow-lg animate-in fade-in">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="absolute top-0 left-0 right-0 z-20 flex items-start gap-3 bg-red-50 dark:bg-red-950/90 backdrop-blur-sm border-b border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 p-4 shadow-lg animate-in fade-in"
+            >
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
               <pre className="font-mono text-xs whitespace-pre-wrap break-all overflow-x-auto max-h-56 leading-relaxed [scrollbar-width:thin]">
                 {error}
@@ -1962,7 +1966,11 @@ export default function JsonFormatter() {
           )}
 
           {isProcessing && !error && (
-            <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 bg-blue-50/95 dark:bg-blue-950/90 backdrop-blur-sm border-b border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-3">
+            <div
+              role="status"
+              aria-live="polite"
+              className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 bg-blue-50/95 dark:bg-blue-950/90 backdrop-blur-sm border-b border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 p-3"
+            >
               <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
               <p className="text-xs font-semibold">Parsing large JSON payload in background...</p>
             </div>
