@@ -429,7 +429,8 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
   let totalWithdrawals = 0;
 
   let nextContributionDay = contributionTiming === "beginning" ? 1 : contribIntervalDays;
-  let nextWithdrawalDay = withdrawIntervalDays;
+  let nextWithdrawalDay =
+    (drawdownEnabled ? accumulationYears * DAYS_PER_YEAR : 0) + withdrawIntervalDays;
 
   let depletedDay: number | null = null;
 

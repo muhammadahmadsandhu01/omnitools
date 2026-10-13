@@ -152,9 +152,9 @@ export const tools: Tool[] = [
       'Calculate compound growth, estimated returns, and long-term investment value over time.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Compound Interest Calculator',
-    seoDescription: 'Calculate compound interest and investment growth over time with customizable contribution frequencies, inflation adjustment, and timeline breakdowns.',
-    relatedToolSlugs: ['sip-calculator', 'emi-calculator', 'mortgage-calculator', 'precious-metals'],
+    seoTitle: 'Compound Interest Calculator — Investment & Savings Growth',
+    seoDescription: 'Calculate compound interest, APY, and long-term investment growth with customizable contribution frequencies, beginning or end timing, and inflation adjustment.',
+    relatedToolSlugs: ['sip-calculator', 'emi-calculator', 'mortgage-calculator', 'precious-metals', 'salary-calculator'],
   },
 
   {
