@@ -331,8 +331,8 @@ export const tools: Tool[] = [
       'Merge PDF files or extract selected pages directly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Merge & Split Tool',
-    seoDescription: 'Merge multiple PDF files into one or split pages from existing documents client-side. Fast, free, and private with zero file uploads.',
+    seoTitle: 'PDF Merge & Split Tool — Combine & Extract Pages Online',
+    seoDescription: 'Merge multiple PDF files into one or split pages into separate documents and ZIP archives directly in your browser. 100% private client-side processing with zero uploads.',
     relatedToolSlugs: ['image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
   },
 

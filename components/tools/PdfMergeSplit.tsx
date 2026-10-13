@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
+import JSZip from 'jszip';
 import {
   UploadCloud,
   FileText,
@@ -20,6 +21,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileCheck,
+  Archive,
+  Sparkles,
 } from 'lucide-react';
 
 export interface PdfFileItem {
@@ -39,9 +42,11 @@ export interface ParsedPageRange {
   count: number;
 }
 
+export type SplitMethod = 'extract' | 'single_pages' | 'ranges';
+
 export interface ProgressState {
   active: boolean;
-  phase: 'idle' | 'validating' | 'loading' | 'copying' | 'saving' | 'verifying' | 'complete';
+  phase: 'idle' | 'validating' | 'loading' | 'copying' | 'saving' | 'verifying' | 'packaging' | 'complete';
   title: string;
   detail: string;
   current: number;
@@ -60,7 +65,7 @@ const WINDOWS_RESERVED_NAMES = new Set([
   'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
 ]);
 
-const makeId = () => {
+const makeId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -75,7 +80,7 @@ const formatSize = (bytes: number): string => {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 };
 
-const yieldToBrowser = () =>
+const yieldToBrowser = (): Promise<void> =>
   new Promise<void>((resolve) => {
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(() => resolve());
@@ -90,8 +95,8 @@ export const sanitizeFilename = (name: string, fallback: string): string => {
   // Unicode normalization (NFC)
   let cleaned = name.normalize('NFC').trim();
 
-  // Strip .pdf extension if already provided
-  cleaned = cleaned.replace(/\.pdf$/i, '');
+  // Strip .pdf or .zip extension if already provided
+  cleaned = cleaned.replace(/\.(pdf|zip)$/i, '');
 
   // Strip trailing spaces and dots early
   cleaned = cleaned.replace(/[. ]+$/, '');
@@ -118,30 +123,43 @@ export const sanitizeFilename = (name: string, fallback: string): string => {
     cleaned = cleaned.slice(0, 100).trim();
   }
 
+  // If only underscores or empty remain, return fallback
+  if (!cleaned || /^_+$/.test(cleaned)) {
+    return fallback;
+  }
+
   return cleaned || fallback;
 };
 
 /**
- * Validates PDF magic-byte sequence (%PDF-) in the initial header slice.
+ * Validates PDF magic-byte sequence (%PDF-) in the initial header slice of a Uint8Array buffer.
+ */
+export const hasPdfMagicBytesBuffer = (bytes: Uint8Array): boolean => {
+  if (!bytes || bytes.length < 5) return false;
+  const magic = [0x25, 0x50, 0x44, 0x46, 0x2d]; // '%PDF-'
+  const limit = Math.min(bytes.length - magic.length, 1024);
+
+  for (let i = 0; i <= limit; i++) {
+    let matched = true;
+    for (let j = 0; j < magic.length; j++) {
+      if (bytes[i + j] !== magic[j]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return true;
+  }
+  return false;
+};
+
+/**
+ * Validates PDF magic-byte sequence (%PDF-) in the initial header slice of a File.
  */
 export const hasPdfMagicBytes = async (file: File): Promise<boolean> => {
   try {
     const slice = file.slice(0, 1024);
     const buffer = await slice.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const magic = [0x25, 0x50, 0x44, 0x46, 0x2d]; // '%PDF-'
-
-    for (let i = 0; i <= bytes.length - magic.length; i++) {
-      let matched = true;
-      for (let j = 0; j < magic.length; j++) {
-        if (bytes[i + j] !== magic[j]) {
-          matched = false;
-          break;
-        }
-      }
-      if (matched) return true;
-    }
-    return false;
+    return hasPdfMagicBytesBuffer(new Uint8Array(buffer));
   } catch {
     return false;
   }
@@ -256,6 +274,79 @@ export const parsePageRange = (
 };
 
 /**
+ * Multi-range parser for splitting a single PDF into multiple separate documents.
+ * Supports semicolon-separated range sets (e.g. "1-5; 6-10; 11-15") or comma-separated hyphenated intervals.
+ */
+export const parseMultiRange = (
+  multiRangeStr: string,
+  maxPages: number
+): ParsedPageRange[] => {
+  const trimmed = multiRangeStr.trim();
+  if (!trimmed) {
+    throw new Error('Please specify at least one page range to split (e.g. 1-5; 6-10).');
+  }
+
+  let rawParts: string[];
+  if (trimmed.includes(';')) {
+    rawParts = trimmed.split(';').map((s) => s.trim()).filter(Boolean);
+  } else if (/^\s*\d+\s*-\s*\d+(\s*,\s*\d+\s*-\s*\d+)+\s*$/.test(trimmed)) {
+    // E.g. "1-4, 5-8"
+    rawParts = trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+  } else {
+    rawParts = [trimmed];
+  }
+
+  if (rawParts.length === 0) {
+    throw new Error('No valid page range parts detected.');
+  }
+
+  const results: ParsedPageRange[] = [];
+  for (const part of rawParts) {
+    const parsed = parsePageRange(part, maxPages);
+    const label =
+      parsed.pagesZeroBased.length > 1 &&
+      parsed.pagesZeroBased[parsed.pagesZeroBased.length - 1] -
+        parsed.pagesZeroBased[0] ===
+        parsed.pagesZeroBased.length - 1
+        ? `${parsed.pagesZeroBased[0] + 1}-${parsed.pagesZeroBased[parsed.pagesZeroBased.length - 1] + 1}`
+        : parsed.normalizedLabel.replace(/, /g, '-');
+    results.push({
+      ...parsed,
+      normalizedLabel: label,
+    });
+  }
+
+  return results;
+};
+
+/**
+ * Preset range generator for common extraction workflows.
+ */
+export const generatePresetRange = (
+  pageCount: number,
+  preset: 'all' | 'odd' | 'even' | 'first_last'
+): string => {
+  if (!Number.isSafeInteger(pageCount) || pageCount < 1) return '';
+  if (preset === 'all') {
+    return pageCount === 1 ? '1' : `1-${pageCount}`;
+  }
+  if (preset === 'first_last') {
+    return pageCount === 1 ? '1' : `1, ${pageCount}`;
+  }
+  if (preset === 'odd') {
+    const odds: number[] = [];
+    for (let p = 1; p <= pageCount; p += 2) odds.push(p);
+    return odds.join(', ');
+  }
+  if (preset === 'even') {
+    const evens: number[] = [];
+    for (let p = 2; p <= pageCount; p += 2) evens.push(p);
+    return evens.length > 0 ? evens.join(', ') : '';
+  }
+  return '';
+};
+
+/**
  * Preflight inspects a single PDF file for validity, page count, and encryption.
  */
 export const inspectPdfFile = async (
@@ -346,23 +437,7 @@ export const verifyOutputPdfIntegrity = async (
     throw new Error('Generated PDF byte stream is truncated.');
   }
 
-  // Header check
-  const magic = [0x25, 0x50, 0x44, 0x46, 0x2d]; // %PDF-
-  let hasMagic = false;
-  for (let i = 0; i < Math.min(1024, bytes.byteLength - 5); i++) {
-    if (
-      bytes[i] === magic[0] &&
-      bytes[i + 1] === magic[1] &&
-      bytes[i + 2] === magic[2] &&
-      bytes[i + 3] === magic[3] &&
-      bytes[i + 4] === magic[4]
-    ) {
-      hasMagic = true;
-      break;
-    }
-  }
-
-  if (!hasMagic) {
+  if (!hasPdfMagicBytesBuffer(bytes)) {
     throw new Error('Generated output is missing valid PDF header bytes.');
   }
 
@@ -386,10 +461,12 @@ export const verifyOutputPdfIntegrity = async (
 
 export default function PdfMergeSplit() {
   const [mode, setMode] = useState<'merge' | 'split'>('merge');
+  const [splitMethod, setSplitMethod] = useState<SplitMethod>('extract');
 
   const [files, setFiles] = useState<PdfFileItem[]>([]);
   const [splitFile, setSplitFile] = useState<PdfFileItem | null>(null);
   const [pageRange, setPageRange] = useState('');
+  const [customFilename, setCustomFilename] = useState('');
 
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -419,7 +496,6 @@ export default function PdfMergeSplit() {
     return () => {
       cancelledRef.current = true;
       operationIdRef.current += 1;
-      // Revoke any active blob URLs
       activeBlobUrls.forEach((url) => {
         try {
           URL.revokeObjectURL(url);
@@ -437,10 +513,14 @@ export default function PdfMergeSplit() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const downloadBlob = (bytes: Uint8Array, filename: string) => {
+  const downloadBlob = (
+    bytes: Uint8Array,
+    filename: string,
+    mimeType = 'application/pdf'
+  ) => {
     const safeBytes = new Uint8Array(bytes.byteLength);
     safeBytes.set(bytes);
-    const blob = new Blob([safeBytes.buffer], { type: 'application/pdf' });
+    const blob = new Blob([safeBytes.buffer], { type: mimeType });
     const url = URL.createObjectURL(blob);
     activeBlobUrlsRef.current.add(url);
 
@@ -458,7 +538,7 @@ export default function PdfMergeSplit() {
           URL.revokeObjectURL(url);
           activeBlobUrlsRef.current.delete(url);
         } catch {}
-      }, 3000);
+      }, 4000);
     }
   };
 
@@ -688,7 +768,7 @@ export default function PdfMergeSplit() {
         if (!isCurrent()) return;
 
         const item = files[i];
-        const progressPct = 10 + Math.round(((i) / files.length) * 75);
+        const progressPct = 10 + Math.round((i / files.length) * 75);
 
         setProgress({
           active: true,
@@ -744,7 +824,6 @@ export default function PdfMergeSplit() {
           mergedPdf.addPage(page);
         }
 
-        // Allow garbage collector to release intermediate ArrayBuffers
         await yieldToBrowser();
       }
 
@@ -789,7 +868,8 @@ export default function PdfMergeSplit() {
 
       if (!isCurrent()) return;
 
-      downloadBlob(pdfBytes, 'OmniTools_Merged.pdf');
+      const baseName = sanitizeFilename(customFilename || 'OmniTools_Merged', 'OmniTools_Merged');
+      downloadBlob(pdfBytes, `${baseName}.pdf`);
 
       setProgress({
         active: false,
@@ -821,7 +901,7 @@ export default function PdfMergeSplit() {
 
   const handleSplit = async () => {
     if (!splitFile) {
-      setError('Please upload a PDF file to extract pages from.');
+      setError('Please upload a PDF file to extract or split pages.');
       setSuccess(null);
       return;
     }
@@ -838,24 +918,9 @@ export default function PdfMergeSplit() {
       return;
     }
 
-    if (!pageRange.trim()) {
-      setError('Please specify the pages to extract (e.g. 1-3, 5).');
-      setSuccess(null);
-      return;
-    }
-
     const totalPages = splitFile.pageCount;
     if (!totalPages || totalPages < 1) {
       setError('Unable to determine the document page count.');
-      setSuccess(null);
-      return;
-    }
-
-    let parsed: ParsedPageRange;
-    try {
-      parsed = parsePageRange(pageRange, totalPages);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid page range format.');
       setSuccess(null);
       return;
     }
@@ -877,7 +942,7 @@ export default function PdfMergeSplit() {
         detail: `Reading "${splitFile.name}"...`,
         current: 1,
         total: 1,
-        percent: 20,
+        percent: 15,
       });
 
       await yieldToBrowser();
@@ -897,93 +962,281 @@ export default function PdfMergeSplit() {
 
       if (!isCurrent()) return;
 
-      setProgress({
-        active: true,
-        phase: 'copying',
-        title: 'Extracting Selected Pages',
-        detail: `Extracting pages: ${parsed.normalizedLabel}...`,
-        current: 1,
-        total: 1,
-        percent: 50,
-      });
+      const defaultBase = `OmniTools_Split_${splitFile.name}`;
+      const safeBase = sanitizeFilename(customFilename || defaultBase, 'OmniTools_Split');
 
-      await yieldToBrowser();
-      if (!isCurrent()) return;
+      // MODE 1: EXTRACT SELECTED PAGES (SINGLE PDF)
+      if (splitMethod === 'extract') {
+        if (!pageRange.trim()) {
+          throw new Error('Please specify the pages to extract (e.g. 1-3, 5).');
+        }
 
-      const newPdf = await PDFDocument.create();
-      newPdf.setProducer('OmniTools PDF Utility (Client-Side)');
-      newPdf.setCreator('OmniTools');
-      newPdf.setModificationDate(new Date());
+        const parsed = parsePageRange(pageRange, totalPages);
 
-      const copiedPages = await newPdf.copyPages(sourcePdf, parsed.pagesZeroBased);
-      for (const page of copiedPages) {
-        newPdf.addPage(page);
+        setProgress({
+          active: true,
+          phase: 'copying',
+          title: 'Extracting Selected Pages',
+          detail: `Extracting pages: ${parsed.normalizedLabel}...`,
+          current: 1,
+          total: 1,
+          percent: 50,
+        });
+
+        await yieldToBrowser();
+        if (!isCurrent()) return;
+
+        const newPdf = await PDFDocument.create();
+        newPdf.setProducer('OmniTools PDF Utility (Client-Side)');
+        newPdf.setCreator('OmniTools');
+        newPdf.setModificationDate(new Date());
+
+        const copiedPages = await newPdf.copyPages(sourcePdf, parsed.pagesZeroBased);
+        for (const page of copiedPages) {
+          newPdf.addPage(page);
+        }
+
+        if (!isCurrent()) return;
+
+        setProgress({
+          active: true,
+          phase: 'saving',
+          title: 'Building Extracted PDF',
+          detail: `Saving ${parsed.count} pages into new document...`,
+          current: 1,
+          total: 1,
+          percent: 80,
+        });
+
+        await yieldToBrowser();
+        if (!isCurrent()) return;
+
+        const pdfBytes = await newPdf.save({
+          addDefaultPage: false,
+          useObjectStreams: false,
+          updateFieldAppearances: false,
+        });
+
+        if (!isCurrent()) return;
+
+        setProgress({
+          active: true,
+          phase: 'verifying',
+          title: 'Verifying Output Integrity',
+          detail: 'Checking PDF invariants and validating page count...',
+          current: 1,
+          total: 1,
+          percent: 95,
+        });
+
+        await yieldToBrowser();
+        if (!isCurrent()) return;
+
+        await verifyOutputPdfIntegrity(pdfBytes, parsed.count, 'split');
+
+        if (!isCurrent()) return;
+
+        downloadBlob(pdfBytes, `${safeBase}.pdf`);
+
+        setSuccess(
+          `Extracted ${parsed.count} page${parsed.count === 1 ? '' : 's'} (${parsed.normalizedLabel}) successfully.`
+        );
+        announce(`Extracted ${parsed.count} pages successfully.`);
       }
 
-      if (!isCurrent()) return;
+      // MODE 2: SPLIT EVERY PAGE INTO SEPARATE PDFS (ZIP ARCHIVE)
+      else if (splitMethod === 'single_pages') {
+        const zip = new JSZip();
+        const padDigits = totalPages >= 100 ? 3 : totalPages >= 10 ? 2 : 1;
 
-      setProgress({
-        active: true,
-        phase: 'saving',
-        title: 'Building Extracted PDF',
-        detail: `Saving ${parsed.count} pages into new document...`,
-        current: 1,
-        total: 1,
-        percent: 80,
-      });
+        for (let i = 0; i < totalPages; i++) {
+          if (!isCurrent()) return;
 
-      await yieldToBrowser();
-      if (!isCurrent()) return;
+          const pct = 20 + Math.round((i / totalPages) * 60);
+          setProgress({
+            active: true,
+            phase: 'copying',
+            title: `Splitting Page ${i + 1} of ${totalPages}`,
+            detail: `Generating individual single-page document...`,
+            current: i + 1,
+            total: totalPages,
+            percent: pct,
+          });
 
-      const pdfBytes = await newPdf.save({
-        addDefaultPage: false,
-        useObjectStreams: false,
-        updateFieldAppearances: false,
-      });
+          await yieldToBrowser();
+          if (!isCurrent()) return;
 
-      if (!isCurrent()) return;
+          const pageDoc = await PDFDocument.create();
+          pageDoc.setProducer('OmniTools PDF Utility (Client-Side)');
+          pageDoc.setCreator('OmniTools');
+          pageDoc.setModificationDate(new Date());
 
-      setProgress({
-        active: true,
-        phase: 'verifying',
-        title: 'Verifying Output Integrity',
-        detail: 'Checking PDF invariants and validating page count...',
-        current: 1,
-        total: 1,
-        percent: 95,
-      });
+          const [copiedPage] = await pageDoc.copyPages(sourcePdf, [i]);
+          pageDoc.addPage(copiedPage);
 
-      await yieldToBrowser();
-      if (!isCurrent()) return;
+          const pageBytes = await pageDoc.save({
+            addDefaultPage: false,
+            useObjectStreams: false,
+            updateFieldAppearances: false,
+          });
 
-      // Invariant validation: verify page count equals unique extracted pages
-      await verifyOutputPdfIntegrity(pdfBytes, parsed.count, 'split');
+          await verifyOutputPdfIntegrity(pageBytes, 1, 'split');
 
-      if (!isCurrent()) return;
+          const padNum = String(i + 1).padStart(padDigits, '0');
+          zip.file(`${safeBase}_page_${padNum}.pdf`, pageBytes);
 
-      const safeBase = sanitizeFilename(splitFile.name, 'document');
-      downloadBlob(pdfBytes, `OmniTools_Split_${safeBase}.pdf`);
+          await yieldToBrowser();
+        }
+
+        if (!isCurrent()) return;
+
+        setProgress({
+          active: true,
+          phase: 'packaging',
+          title: 'Compressing ZIP Archive',
+          detail: `Packaging ${totalPages} individual PDF documents...`,
+          current: totalPages,
+          total: totalPages,
+          percent: 85,
+        });
+
+        await yieldToBrowser();
+        if (!isCurrent()) return;
+
+        const zipBytes = await zip.generateAsync(
+          {
+            type: 'uint8array',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 },
+          },
+          (metadata) => {
+            if (isCurrent()) {
+              setProgress((prev) => ({
+                ...prev,
+                percent: Math.min(98, 85 + Math.round(metadata.percent * 0.13)),
+              }));
+            }
+          }
+        );
+
+        if (!isCurrent()) return;
+
+        downloadBlob(zipBytes, `${safeBase}.zip`, 'application/zip');
+
+        setSuccess(
+          `Successfully split ${totalPages} pages into individual PDF files packaged in "${safeBase}.zip".`
+        );
+        announce(`Successfully split ${totalPages} pages into a ZIP archive.`);
+      }
+
+      // MODE 3: SPLIT BY RANGES INTO MULTIPLE PDFS (ZIP ARCHIVE)
+      else if (splitMethod === 'ranges') {
+        if (!pageRange.trim()) {
+          throw new Error('Please enter semicolon- or comma-separated page ranges (e.g. 1-5; 6-10; 11-15).');
+        }
+
+        const groups = parseMultiRange(pageRange, totalPages);
+        const zip = new JSZip();
+
+        for (let g = 0; g < groups.length; g++) {
+          if (!isCurrent()) return;
+
+          const group = groups[g];
+          const pct = 20 + Math.round((g / groups.length) * 60);
+
+          setProgress({
+            active: true,
+            phase: 'copying',
+            title: `Building Part ${g + 1} of ${groups.length}`,
+            detail: `Extracting pages ${group.normalizedLabel}...`,
+            current: g + 1,
+            total: groups.length,
+            percent: pct,
+          });
+
+          await yieldToBrowser();
+          if (!isCurrent()) return;
+
+          const partDoc = await PDFDocument.create();
+          partDoc.setProducer('OmniTools PDF Utility (Client-Side)');
+          partDoc.setCreator('OmniTools');
+          partDoc.setModificationDate(new Date());
+
+          const copiedPages = await partDoc.copyPages(sourcePdf, group.pagesZeroBased);
+          for (const page of copiedPages) {
+            partDoc.addPage(page);
+          }
+
+          const partBytes = await partDoc.save({
+            addDefaultPage: false,
+            useObjectStreams: false,
+            updateFieldAppearances: false,
+          });
+
+          await verifyOutputPdfIntegrity(partBytes, group.pagesZeroBased.length, 'split');
+
+          const safeLabel = group.normalizedLabel.replace(/, /g, '_');
+          zip.file(`${safeBase}_part_${g + 1}_pages_${safeLabel}.pdf`, partBytes);
+
+          await yieldToBrowser();
+        }
+
+        if (!isCurrent()) return;
+
+        setProgress({
+          active: true,
+          phase: 'packaging',
+          title: 'Packaging ZIP Archive',
+          detail: `Packaging ${groups.length} separate documents...`,
+          current: groups.length,
+          total: groups.length,
+          percent: 85,
+        });
+
+        await yieldToBrowser();
+        if (!isCurrent()) return;
+
+        const zipBytes = await zip.generateAsync(
+          {
+            type: 'uint8array',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 },
+          },
+          (metadata) => {
+            if (isCurrent()) {
+              setProgress((prev) => ({
+                ...prev,
+                percent: Math.min(98, 85 + Math.round(metadata.percent * 0.13)),
+              }));
+            }
+          }
+        );
+
+        if (!isCurrent()) return;
+
+        downloadBlob(zipBytes, `${safeBase}.zip`, 'application/zip');
+
+        setSuccess(
+          `Successfully created ${groups.length} separate documents packaged in "${safeBase}.zip".`
+        );
+        announce(`Successfully split document into ${groups.length} files.`);
+      }
 
       setProgress({
         active: false,
         phase: 'complete',
-        title: 'Extraction Complete',
+        title: 'Operation Complete',
         detail: '',
         current: 1,
         total: 1,
         percent: 100,
       });
-
-      setSuccess(
-        `Extracted ${parsed.count} page${parsed.count === 1 ? '' : 's'} (${parsed.normalizedLabel}) successfully.`
-      );
-      announce(`Extracted ${parsed.count} pages successfully.`);
     } catch (err: unknown) {
       if (!isCurrent()) return;
       setError(
         err instanceof Error
           ? err.message
-          : 'An unexpected error occurred while extracting PDF pages.'
+          : 'An unexpected error occurred while splitting PDF pages.'
       );
     } finally {
       if (isCurrent()) {
@@ -1009,6 +1262,7 @@ export default function PdfMergeSplit() {
     setError(null);
     setSuccess(null);
     setIsDragging(false);
+    setCustomFilename('');
     setInputValueEmpty();
     announce(`Switched to ${nextMode === 'merge' ? 'Merge PDFs' : 'Split / Extract'} mode.`);
   };
@@ -1018,6 +1272,7 @@ export default function PdfMergeSplit() {
     setFiles([]);
     setError(null);
     setSuccess(null);
+    setCustomFilename('');
     setInputValueEmpty();
     announce('Cleared all files from merge list.');
   };
@@ -1026,6 +1281,7 @@ export default function PdfMergeSplit() {
     if (isProcessing) return;
     setSplitFile(null);
     setPageRange('');
+    setCustomFilename('');
     setError(null);
     setSuccess(null);
     setInputValueEmpty();
@@ -1037,6 +1293,38 @@ export default function PdfMergeSplit() {
     0
   );
   const totalMergeBytes = files.reduce((sum, f) => sum + f.file.size, 0);
+
+  // Live range validation status for Split Mode
+  const rangeValidation = useMemo(() => {
+    if (!splitFile || !splitFile.pageCount || !pageRange.trim()) {
+      return null;
+    }
+    try {
+      if (splitMethod === 'ranges') {
+        const groups = parseMultiRange(pageRange, splitFile.pageCount);
+        const totalSelected = groups.reduce((sum, g) => sum + g.count, 0);
+        return {
+          isValid: true,
+          message: `${groups.length} document parts (${totalSelected} total pages)`,
+        };
+      }
+      if (splitMethod === 'extract') {
+        const parsed = parsePageRange(pageRange, splitFile.pageCount);
+        return {
+          isValid: true,
+          message: `${parsed.count} of ${splitFile.pageCount} page${splitFile.pageCount === 1 ? '' : 's'} selected (${parsed.normalizedLabel})`,
+        };
+      }
+      return null;
+    } catch (err) {
+      return {
+        isValid: false,
+        message: err instanceof Error ? err.message : 'Invalid syntax',
+      };
+    }
+  }, [splitFile, pageRange, splitMethod]);
+
+  const outputExtension = mode === 'merge' || splitMethod === 'extract' ? '.pdf' : '.zip';
 
   return (
     <div className="flex flex-col gap-6">
@@ -1051,11 +1339,11 @@ export default function PdfMergeSplit() {
       </div>
 
       {/* 1. TOP TABS & CLIENT PRIVACY BADGE */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div
           role="tablist"
           aria-label="PDF Tool Mode Selection"
-          className="bg-gray-100 dark:bg-slate-800 p-1 rounded-xl flex gap-1 border border-gray-200 dark:border-slate-700 w-full sm:w-auto"
+          className="bg-gray-100 dark:bg-slate-800 p-1 rounded-2xl flex gap-1 border border-gray-200 dark:border-slate-700 w-full sm:w-auto"
         >
           <button
             type="button"
@@ -1064,7 +1352,7 @@ export default function PdfMergeSplit() {
             aria-selected={mode === 'merge'}
             aria-controls="panel-merge-split"
             onClick={() => switchMode('merge')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               mode === 'merge'
                 ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -1079,19 +1367,19 @@ export default function PdfMergeSplit() {
             aria-selected={mode === 'split'}
             aria-controls="panel-merge-split"
             onClick={() => switchMode('split')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               mode === 'split'
                 ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
-            <SplitSquareVertical className="w-4 h-4" /> Split / Extract
+            <SplitSquareVertical className="w-4 h-4" /> Split &amp; Extract
           </button>
         </div>
 
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800/50">
+        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800/50 self-start sm:self-auto">
           <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-600" />
-          <span>Local processing: PDF files are processed locally in your browser.</span>
+          <span>Local processing: 100% private in-browser memory. Zero file uploads.</span>
         </div>
       </div>
 
@@ -1160,13 +1448,13 @@ export default function PdfMergeSplit() {
             <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2 text-center">
               {mode === 'merge'
                 ? 'Drag & Drop PDF files to merge'
-                : 'Drag & Drop a PDF to extract pages'}
+                : 'Drag & Drop a PDF to split or extract'}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
               or click to browse from your device
             </p>
             <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
-              Up to {formatSize(MAX_SINGLE_FILE_BYTES)} per file · Client-side processing
+              Up to {formatSize(MAX_SINGLE_FILE_BYTES)} per file · Pure client-side processing
             </p>
             <input
               type="file"
@@ -1189,13 +1477,13 @@ export default function PdfMergeSplit() {
                   <FileText className="w-5 h-5 text-blue-600" />
                   {mode === 'merge'
                     ? `Documents to Merge (${files.length})`
-                    : 'Document Selected for Extraction'}
+                    : 'Document Selected for Splitting'}
                 </h3>
                 {mode === 'merge' && files.length > 0 && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {formatSize(totalMergeBytes)} total ·{' '}
                     {totalMergePages > 0 ? `${totalMergePages} pages · ` : ''}
-                    Sequence determines final page order
+                    Sequence determines output page order
                   </p>
                 )}
               </div>
@@ -1240,7 +1528,7 @@ export default function PdfMergeSplit() {
 
             {/* MERGE FILE LIST */}
             {mode === 'merge' && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div
                   role="list"
                   aria-label="Ordered list of documents to merge"
@@ -1316,6 +1604,29 @@ export default function PdfMergeSplit() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* CUSTOM FILENAME INPUT */}
+                <div className="pt-2">
+                  <label
+                    htmlFor="input-merge-filename"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
+                  >
+                    Output Filename (Optional)
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      id="input-merge-filename"
+                      type="text"
+                      value={customFilename}
+                      onChange={(e) => setCustomFilename(e.target.value)}
+                      placeholder="OmniTools_Merged"
+                      className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-l-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-xs sm:text-sm"
+                    />
+                    <span className="px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-mono border border-l-0 border-gray-200 dark:border-slate-800 rounded-r-xl select-none">
+                      .pdf
+                    </span>
+                  </div>
                 </div>
 
                 {/* MERGE ACTION BAR */}
@@ -1407,42 +1718,220 @@ export default function PdfMergeSplit() {
                         </span>
                       ) : (
                         <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> {splitFile.pageCount} Total Pages
+                          <FileCheck className="w-3 h-3" /> {splitFile.pageCount} Total Pages
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
 
+                {/* SPLIT METHOD SELECTOR */}
                 <div className="space-y-2">
-                  <label
-                    htmlFor="input-page-range"
-                    className="block text-sm font-semibold text-slate-700 dark:text-slate-300"
-                  >
-                    Pages to Extract
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Splitting Method
                   </label>
-                  <input
-                    id="input-page-range"
-                    type="text"
-                    value={pageRange}
-                    onChange={(e) => {
-                      setPageRange(e.target.value);
-                      setError(null);
-                      setSuccess(null);
-                    }}
-                    placeholder={
-                      splitFile.pageCount
-                        ? `e.g. 1-${Math.min(3, splitFile.pageCount)}, ${splitFile.pageCount}`
-                        : 'e.g. 1-3, 5, 8-10'
-                    }
-                    className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-sm"
-                    aria-label="Pages to extract"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Enter individual page numbers or ranges separated by commas (e.g.{' '}
-                    <code className="font-mono text-blue-600 dark:text-blue-400">1-3, 5, 8-10</code>).
-                    {splitFile.pageCount ? ` Valid range: 1 to ${splitFile.pageCount}.` : ''} Duplicate pages are included once.
-                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs sm:text-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSplitMethod('extract');
+                        setError(null);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                        splitMethod === 'extract'
+                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-blue-500'
+                          : 'border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-950 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="font-bold">Extract Pages</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                        Combines selected pages into a single output PDF.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSplitMethod('single_pages');
+                        setError(null);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                        splitMethod === 'single_pages'
+                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-blue-500'
+                          : 'border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-950 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Archive className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="font-bold">Every Page (ZIP)</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                        Extracts every single page as a standalone 1-page PDF.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSplitMethod('ranges');
+                        setError(null);
+                      }}
+                      className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                        splitMethod === 'ranges'
+                          ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold ring-1 ring-blue-500'
+                          : 'border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-950 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <SplitSquareVertical className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="font-bold">By Ranges (ZIP)</span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+                        Splits into multiple PDF parts (e.g. 1-5; 6-10) in a ZIP.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* RANGE INPUT (For 'extract' or 'ranges') */}
+                {splitMethod !== 'single_pages' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="input-page-range"
+                        className="block text-sm font-semibold text-slate-700 dark:text-slate-300"
+                      >
+                        {splitMethod === 'extract'
+                          ? 'Pages to Extract'
+                          : 'Range Groups (Semicolon-Separated)'}
+                      </label>
+                      {rangeValidation && (
+                        <span
+                          className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                            rangeValidation.isValid
+                              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              : 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300'
+                          }`}
+                        >
+                          {rangeValidation.isValid ? `✓ ${rangeValidation.message}` : `⚠ ${rangeValidation.message}`}
+                        </span>
+                      )}
+                    </div>
+
+                    <input
+                      id="input-page-range"
+                      type="text"
+                      value={pageRange}
+                      onChange={(e) => {
+                        setPageRange(e.target.value);
+                        setError(null);
+                        setSuccess(null);
+                      }}
+                      placeholder={
+                        splitMethod === 'ranges'
+                          ? splitFile.pageCount && splitFile.pageCount > 4
+                            ? `e.g. 1-2; 3-${splitFile.pageCount}`
+                            : 'e.g. 1-3; 4-6; 7-10'
+                          : splitFile.pageCount
+                          ? `e.g. 1-${Math.min(3, splitFile.pageCount)}, ${splitFile.pageCount}`
+                          : 'e.g. 1-3, 5, 8-10'
+                      }
+                      className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-sm"
+                      aria-label={splitMethod === 'extract' ? 'Pages to extract' : 'Page range groups to split'}
+                    />
+
+                    {/* QUICK PRESETS FOR EXTRACT MODE */}
+                    {splitMethod === 'extract' && splitFile.pageCount && splitFile.pageCount > 1 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 mr-1 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-blue-500" /> Presets:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPageRange(generatePresetRange(splitFile.pageCount!, 'all'))}
+                          className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+                        >
+                          All Pages (1–{splitFile.pageCount})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPageRange(generatePresetRange(splitFile.pageCount!, 'odd'))}
+                          className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+                        >
+                          Odd Pages
+                        </button>
+                        {splitFile.pageCount >= 2 && (
+                          <button
+                            type="button"
+                            onClick={() => setPageRange(generatePresetRange(splitFile.pageCount!, 'even'))}
+                            className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+                          >
+                            Even Pages
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setPageRange(generatePresetRange(splitFile.pageCount!, 'first_last'))}
+                          className="text-xs px-2.5 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
+                        >
+                          First &amp; Last
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {splitMethod === 'extract' ? (
+                        <>
+                          Enter individual page numbers or ranges separated by commas (e.g.{' '}
+                          <code className="font-mono text-blue-600 dark:text-blue-400">1-3, 5, 8-10</code>).
+                          {splitFile.pageCount ? ` Valid range: 1 to ${splitFile.pageCount}.` : ''} Duplicate pages are deduplicated automatically.
+                        </>
+                      ) : (
+                        <>
+                          Enter distinct document groups separated by semicolons (e.g.{' '}
+                          <code className="font-mono text-blue-600 dark:text-blue-400">1-5; 6-10; 11-15</code>).
+                          Each range group will be saved as a separate PDF file inside the downloaded ZIP archive.
+                        </>
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {splitMethod === 'single_pages' && (
+                  <div className="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-2xl p-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                    <p className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                      <Archive className="w-4 h-4 text-blue-600" /> All Pages Extraction Mode
+                    </p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      This will convert all {splitFile.pageCount} pages into {splitFile.pageCount} standalone single-page PDF documents (`_page_01.pdf`, `_page_02.pdf`, ...) and bundle them directly into a single ZIP archive.
+                    </p>
+                  </div>
+                )}
+
+                {/* CUSTOM FILENAME INPUT */}
+                <div>
+                  <label
+                    htmlFor="input-split-filename"
+                    className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
+                  >
+                    Output Filename (Optional)
+                  </label>
+                  <div className="flex items-center">
+                    <input
+                      id="input-split-filename"
+                      type="text"
+                      value={customFilename}
+                      onChange={(e) => setCustomFilename(e.target.value)}
+                      placeholder={`OmniTools_Split_${splitFile.name}`}
+                      className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-l-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-xs sm:text-sm"
+                    />
+                    <span className="px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-mono border border-l-0 border-gray-200 dark:border-slate-800 rounded-r-xl select-none">
+                      {outputExtension}
+                    </span>
+                  </div>
                 </div>
 
                 {progress.active && (
@@ -1480,18 +1969,29 @@ export default function PdfMergeSplit() {
                   <button
                     type="button"
                     onClick={handleSplit}
-                    disabled={isProcessing || !pageRange.trim() || Boolean(splitFile.error)}
+                    disabled={
+                      isProcessing ||
+                      Boolean(splitFile.error) ||
+                      (splitMethod !== 'single_pages' && !pageRange.trim()) ||
+                      (rangeValidation !== null && !rangeValidation.isValid)
+                    }
                     className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   >
                     {isProcessing ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Extracting Pages...</span>
+                        <span>Processing Document...</span>
                       </>
                     ) : (
                       <>
                         <Download className="w-5 h-5" />
-                        <span>Extract &amp; Download PDF</span>
+                        <span>
+                          {splitMethod === 'extract'
+                            ? 'Extract & Download PDF'
+                            : splitMethod === 'single_pages'
+                            ? `Split ${splitFile.pageCount} Pages & Download ZIP`
+                            : 'Split Ranges & Download ZIP'}
+                        </span>
                       </>
                     )}
                   </button>
@@ -1548,19 +2048,19 @@ export default function PdfMergeSplit() {
           >
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-300">
-                Local In-Memory Architecture
+                100% In-Memory Client Architecture
               </p>
               <p className="mt-0.5">
-                All document parsing, page extraction, and assembly occur strictly client-side inside your browser via standard Web APIs and PDFDocument. Files and extracted contents are never uploaded to any server or external service.
+                All document parsing, page extraction, ZIP compression, and assembly occur strictly client-side inside your browser via standard Web APIs and PDFDocument. Files and extracted contents are never uploaded to any server or external service.
               </p>
             </div>
 
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-300">
-                Resource Budget &amp; Memory Considerations
+                Resource Budget &amp; Memory Safeguards
               </p>
               <p className="mt-0.5">
-                Individual files are capped at 250 MB, with a total merge limit of 750 MB and up to 50 files. Actual memory usage may exceed file size because PDFs are uncompressed and parsed into browser memory objects. Very large scans or image-heavy PDFs may require additional device memory.
+                Individual files are capped at 250 MB, with a total merge batch limit of 750 MB and up to 50 files. Actual browser RAM usage may exceed disk file size during decompression and parsing. Multi-part splits and individual page operations yield execution frames to maintain a responsive interface.
               </p>
             </div>
 
@@ -1569,13 +2069,13 @@ export default function PdfMergeSplit() {
                 Feature Preservation Scope
               </p>
               <p className="mt-0.5">
-                Page visual appearance, vector artwork, embedded fonts, image fidelity, media boxes, crop boxes, and page rotation are preserved. Note that document-level interactive elements (such as fillable AcroForm input fields, JavaScript actions, and hierarchical document bookmarks) are not preserved across reorganized documents due to document-level catalog constraints.
+                Page visual appearance, vector artwork, embedded fonts, image fidelity, media boxes, crop boxes, and page rotation are preserved. Note that document-level interactive elements (such as fillable AcroForm input fields, JavaScript actions, and complex hierarchical bookmarks) are flattened to prevent cross-document catalog corruption.
               </p>
             </div>
 
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-300">
-                Encrypted &amp; Password-Protected PDFs
+                Encrypted &amp; Password-Protected Documents
               </p>
               <p className="mt-0.5">
                 Encrypted and password-protected PDF files cannot be processed without prior decryption. If an encrypted document is uploaded, it is automatically detected and rejected with a clear notification.
@@ -1587,7 +2087,7 @@ export default function PdfMergeSplit() {
 
       {/* DYNAMIC SEO FOOTER */}
       <div className="text-center text-xs text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-        Secure client-side PDF organizer: merge and extract pages directly in your browser without external file uploads.
+        Secure client-side PDF organizer: merge multiple files or extract pages into PDF and ZIP archives directly in your browser without external file uploads.
       </div>
     </div>
   );
