@@ -1436,8 +1436,8 @@ export default function MortgageCalculator() {
               </div>
 
               <div>
-                <strong className="text-slate-900 dark:text-white block mb-0.5">2. Payment Frequency & Biweekly Convention:</strong>
-                Monthly schedules model 12 scheduled payments per year. Biweekly schedules model 26 payments per year (one payment every two weeks). The average monthly equivalent represents <code className="font-mono">Biweekly Payment × 26 ÷ 12</code> plus escrow.
+                <strong className="text-slate-900 dark:text-white block mb-0.5">2. Payment Frequency & Accelerated Biweekly Convention:</strong>
+                Monthly schedules model 12 scheduled payments per year. Biweekly schedules implement the industry-standard <strong>Accelerated Biweekly</strong> convention, where the biweekly installment is set to exactly half of the 30-year monthly payment (<code className="font-mono">Monthly P&I ÷ 2</code>) paid 26 times per year. Because 26 half-payments equal 13 full monthly payments annually, this produces one extra monthly payment per year, accelerating principal reduction and typically cutting a 30-year term to ~24.15 years. Note: This is an educational comparison; actual lender servicing using calendar day counts (Actual/365, leap years, or bank holidays) may yield slight timing differences.
               </div>
 
               <div>
@@ -1451,8 +1451,8 @@ export default function MortgageCalculator() {
               </div>
 
               <div>
-                <strong className="text-slate-900 dark:text-white block mb-0.5">5. PMI Estimation & Cancellation:</strong>
-                PMI is modeled as a balance-based estimate when original loan-to-value (LTV) exceeds 80%. It automatically terminates once the loan balance drops to or below the configured cancellation threshold (default 80% LTV).
+                <strong className="text-slate-900 dark:text-white block mb-0.5">5. PMI Estimation & Statutory Cancellation (HPA 1998):</strong>
+                PMI is modeled as a balance-based estimate (<code className="font-mono">Beginning Balance × PMI Rate ÷ 12</code>) when original loan-to-value (LTV) exceeds 80%. In this educational model, PMI drops off once the balance reaches the configured threshold (default 80% LTV). Under federal law (the US Homeowners Protection Act of 1998), borrowers have the right to request PMI cancellation in writing at 80% LTV of the original value (subject to good payment history and no subordinate liens), while lenders are legally required to automatically terminate PMI at 78% LTV based on the original amortization schedule.
               </div>
 
               <div>
