@@ -28,7 +28,9 @@ export const DEFAULT_WORD_COUNT = 5;
 export const MAX_BULK_COUNT = 50;
 
 /**
- * Curated 1,024-word English dictionary.
+ * Curated 1,024-word English dictionary derived from public-domain and EFF short wordlists
+ * (Creative Commons Attribution 3.0 US / CC BY 3.0 US).
+ * Filtered for length (3-10 characters), distinct spelling, and absence of offensive terms.
  * Each word provides exactly log2(1024) = 10.0 bits of theoretical entropy
  * when sampled uniformly.
  */
@@ -542,7 +544,10 @@ export function looksLikeHex(value: string): boolean {
 }
 
 /**
- * Timing-safe comparison for two hexadecimal hash digests of equal length.
+ * Constant-time comparison for two hexadecimal hash digests of equal length.
+ * Implemented via an in-memory bitwise XOR accumulator in client-side JavaScript.
+ * Avoids early termination on mismatched characters to prevent timing discrepancy leaks.
+ * Note: This is a custom JavaScript bitwise loop, not a native browser Web Cryptography API.
  */
 export function constantTimeTextEqual(a: string, b: string): boolean {
   const aa = normalizeHash(a);

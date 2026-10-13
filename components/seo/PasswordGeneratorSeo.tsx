@@ -47,9 +47,9 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
       'Encryption is a two-way mathematical process that scrambles plaintext using a cryptographic key so it can later be decrypted back to its original form. Cryptographic hashing (such as SHA-256 or SHA-512) is a one-way deterministic function that maps arbitrary input data into a fixed-length fingerprint that cannot be reversed. Fast cryptographic hashes are intended for data integrity and signatures; for storing passwords, systems must use dedicated, memory-hard key derivation functions like Argon2id or bcrypt.',
   },
   {
-    question: 'How does the Compromised Password Check work without exposing my password?',
+    question: 'How does the local heuristic vulnerability analyzer evaluate password strength without sending data to servers?',
     answer:
-      'The breach verification tool uses the Have I Been Pwned k-anonymity protocol. It computes the SHA-1 digest of the candidate password locally in your browser and transmits strictly the first 5 hexadecimal characters of that hash over the network with padding. The external service returns matching hash suffixes, which your browser evaluates locally. Freshly generated passwords are never checked against this service to ensure zero network exposure.',
+      'The heuristic analyzer evaluates candidate passwords locally in your browser memory using regular expressions, Shannon information entropy formulas, and a curated set of known keyboard walks, sequential characters, and common weak passwords. All checks execute entirely within the client session without transmitting credentials or queries over the network.',
   },
   {
     question: 'Can I generate passwords in bulk or create developer API tokens?',

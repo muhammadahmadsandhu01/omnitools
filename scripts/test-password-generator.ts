@@ -26,6 +26,7 @@ import {
   NUMBERS,
   SYMBOLS,
   PASSPHRASE_WORDS,
+  getCrypto,
 } from '../lib/passwordEngine';
 
 let totalTests = 0;
@@ -407,6 +408,88 @@ console.log('\n--- 10. Testing Timing-Safe Hash Comparison ---');
 
   // Test normalizeHash
   assert(normalizeHash('  A1 B2 C3  ') === 'a1b2c3', 'normalizeHash strips whitespace and converts to lowercase');
+}
+
+// ============================================================================
+// 11. INDEPENDENT MATHEMATICAL INVARIANTS & RFC 4122 VERIFICATION
+// ============================================================================
+console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---');
+
+{
+  // A. Exact pool counts
+  assert(LOWER.length === 26, 'LOWER contains exactly 26 letters');
+  assert(UPPER.length === 26, 'UPPER contains exactly 26 letters');
+  assert(NUMBERS.length === 10, 'NUMBERS contains exactly 10 digits');
+  assert(SYMBOLS.length === 29, 'SYMBOLS contains exactly 29 characters');
+  
+  const fullPoolSize = LOWER.length + UPPER.length + NUMBERS.length + SYMBOLS.length;
+  assert(fullPoolSize === 91, 'Full character pool contains exactly 91 printable characters');
+  
+  const filteredLower = [...LOWER].filter(c => !AMBIGUOUS.has(c));
+  const filteredUpper = [...UPPER].filter(c => !AMBIGUOUS.has(c));
+  const filteredNum = [...NUMBERS].filter(c => !AMBIGUOUS.has(c));
+  const filteredSym = [...SYMBOLS].filter(c => !AMBIGUOUS.has(c));
+  const filteredTotal = filteredLower.length + filteredUpper.length + filteredNum.length + filteredSym.length;
+  assert(filteredTotal === 83, 'Ambiguous-filtered character pool contains exactly 83 characters');
+
+  // B. Mathematical rejection sampling limits
+  const maxUint = 0x100000000; // 2^32
+  const limit10 = maxUint - (maxUint % 10);
+  const limit26 = maxUint - (maxUint % 26);
+  const limit29 = maxUint - (maxUint % 29);
+  const limit91 = maxUint - (maxUint % 91);
+  const limit1024 = maxUint - (maxUint % 1024);
+  assert(limit10 === 4294967290, 'Rejection threshold for N=10 is exactly 4,294,967,290 (mod 6)');
+  assert(limit26 === 4294967274, 'Rejection threshold for N=26 is exactly 4,294,967,274 (mod 22)');
+  assert(limit29 === 4294967280, 'Rejection threshold for N=29 is exactly 4,294,967,280 (mod 16)');
+  assert(limit91 === 4294967222, 'Rejection threshold for N=91 is exactly 4,294,967,222 (mod 74)');
+  assert(limit1024 === 4294967296, 'Rejection threshold for N=1024 is exactly 2^32 (zero modulo discard)');
+
+  // C. RFC 4122 UUID v4 bits verification across 100 trials
+  let uuidCompliance = true;
+  for (let i = 0; i < 100; i++) {
+    const uuid = makeSecret('uuid');
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(uuid)) {
+      uuidCompliance = false;
+      break;
+    }
+  }
+  assert(uuidCompliance, '100 generated UUID v4 tokens strictly comply with RFC 4122 (version 4 and variant 1 bits)');
+
+  // D. Fisher-Yates positional spread (guaranteed classes not locked to prefixes)
+  const firstCharClasses = new Set<string>();
+  const lastCharClasses = new Set<string>();
+  for (let i = 0; i < 100; i++) {
+    const res = generatePassword({ length: 20, requireEach: true });
+    const first = res.password[0];
+    const last = res.password[19];
+    if (/[a-z]/.test(first)) firstCharClasses.add('lower');
+    if (/[A-Z]/.test(first)) firstCharClasses.add('upper');
+    if (/\d/.test(first)) firstCharClasses.add('number');
+    if (/[^A-Za-z0-9]/.test(first)) firstCharClasses.add('symbol');
+    if (/[a-z]/.test(last)) lastCharClasses.add('lower');
+    if (/[A-Z]/.test(last)) lastCharClasses.add('upper');
+    if (/\d/.test(last)) lastCharClasses.add('number');
+    if (/[^A-Za-z0-9]/.test(last)) lastCharClasses.add('symbol');
+  }
+  assert(firstCharClasses.size >= 3, 'Fisher-Yates shuffle distributes diverse character classes to index 0');
+  assert(lastCharClasses.size >= 3, 'Fisher-Yates shuffle distributes diverse character classes to final index');
+
+  // E. Web Crypto missing behavior simulation
+  const originalGetRandomValues = globalThis.crypto.getRandomValues;
+  try {
+    // @ts-expect-error simulating missing API
+    globalThis.crypto.getRandomValues = undefined;
+    let threw = false;
+    try {
+      getCrypto();
+    } catch {
+      threw = true;
+    }
+    assert(threw, 'getCrypto() throws explicit error when Web Crypto getRandomValues is missing');
+  } finally {
+    globalThis.crypto.getRandomValues = originalGetRandomValues;
+  }
 }
 
 console.log('\n================================================================');

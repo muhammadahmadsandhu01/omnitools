@@ -74,8 +74,15 @@ Every designated viewport width was tested using automated Chrome DevTools Proto
 | **Show/Hide Toggle** | Clicked eye icon toggle. | Plaintext masked with bullet glyphs (`••••••`); copy button still copies actual password. | ✅ PASS |
 | **Preset Chips** | Clicked preset `32`. | Length slider updated to 32; new 32-character password generated immediately. | ✅ PASS |
 | **Bulk Generator** | Selected 10 passwords; clicked "Generate 10 Batch". | Rendered 10 distinct passwords; "Copy All" and individual copy buttons functioned properly. | ✅ PASS |
-| **Breach Check Isolation** | Tested empty breach check button. | Button remained disabled when blank; no external request made for generated password. | ✅ PASS |
+| **Network Request Isolation** | Monitored CDP network traffic during credential generation. | Zero outbound network requests made; 100% client-side local memory execution. | ✅ PASS |
 | **Reset Sensitive State**| Clicked "Reset Sensitive State". | Cleared all password, hash, file, and history memory hooks; showed temporary status alert. | ✅ PASS |
+
+---
+
+## 4. Testing Methodology Disclosures & Limitations
+1. **Automated Verification:** All 11 viewport overflow measurements (0px overflow), touch target padding ($\ge 44 \times 44\text{ px}$), focus ring rendering, and keyboard tab order were verified using automated Headless Chrome DevTools Protocol instrumentation.
+2. **Screen Reader Scope:** ARIA landmark attributes, `role="tab"`, `role="progressbar"`, and `aria-label` bindings were inspected and validated in the DOM. Full manual screen reader auditory walkthroughs with specialized assistive software (e.g. JAWS, NVDA, or Apple VoiceOver) were not conducted in this automated headless environment.
+3. **Cross-Browser Verification:** Verified on Chromium (Blink). Firefox (Gecko) and Safari (WebKit) compatibility was validated against standard ECMAScript / Web Cryptography API specifications; native Safari rendering was not independently audited via macOS native WebKit.
 
 ---
 *End of QA Results & Accessibility Report.*

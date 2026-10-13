@@ -86,8 +86,8 @@ The page injects two complementary structured data blocks:
    }
    ```
 2. **FAQPage Schema (`components/seo/PasswordGeneratorSeo.tsx`):**
-   - 10 distinct questions matching visible on-page accordion content.
-   - Fully compliant with Google Search Central FAQ structured data guidelines.
+   - 10 distinct questions matching visible on-page accordion content (including CSPRNG mechanics, rejection sampling, NIST SP 800-63B standards, Shannon entropy formulas, and local heuristic vulnerability analysis).
+   - Fully compliant with Google Search Central FAQ structured data guidelines (1:1 correspondence with visible body text).
 
 ---
 
