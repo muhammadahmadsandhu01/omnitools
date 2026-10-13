@@ -592,12 +592,18 @@ console.log('\n--- 12. Testing UI Invariants, Responsive Layout & Overflow Safeg
     'Security Analyzer score cards enforce min-w-0, responsive padding and flex column alignment'
   );
 
-  // F. Score value safe responsive formatting (no truncation hiding data)
+  // F. Score & Verdict values strictly on single line (no flex-wrap or word breaking)
   assert(
     source.includes('{a.score}</span>') &&
     source.includes('/100</span>') &&
-    source.includes('flex items-baseline flex-wrap gap-x-0.5'),
-    'Score card formats /100 with responsive font sizing and flex-wrap without hiding data via truncation'
+    source.includes('whitespace-nowrap flex items-baseline gap-0.5'),
+    'Score card formats /100 strictly on a single line with whitespace-nowrap (flex-wrap eliminated)'
+  );
+  assert(
+    source.includes('{a.label}') &&
+    source.includes('whitespace-nowrap') &&
+    source.includes('grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4'),
+    'Verdict card enforces whitespace-nowrap (single-line Excellent) and responsive multi-tier grid columns'
   );
 
   // G. Mathematical bounds of analyzePassword output

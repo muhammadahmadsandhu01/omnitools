@@ -1032,34 +1032,34 @@ export default function PasswordGenerator() {
               placeholder="Paste a password to analyze locally…"
               className="w-full h-24 p-4 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white text-sm resize-none font-mono"
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
               {(() => {
                 const a = analyzePassword(analysisInput || password);
                 return (
                   <>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Score</div>
-                      <div className="font-bold text-blue-600 dark:text-blue-400 text-base sm:text-lg tracking-tight leading-tight min-w-0 break-words flex items-baseline flex-wrap gap-x-0.5">
+                      <div className="font-bold text-blue-600 dark:text-blue-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-0.5">
                         <span>{a.score}</span>
                         <span className="text-xs sm:text-sm font-semibold text-blue-500/80 dark:text-blue-400/80">/100</span>
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Entropy</div>
-                      <div className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight leading-tight min-w-0 break-words flex items-baseline flex-wrap gap-x-1">
+                      <div className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-1">
                         <span>~{a.entropy}</span>
                         <span className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-400">bits</span>
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Length</div>
-                      <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg tracking-tight leading-tight min-w-0">
+                      <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg tracking-tight leading-tight min-w-0 whitespace-nowrap">
                         {a.length}
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Verdict</div>
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 break-words">
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap">
                         {a.label}
                       </div>
                     </div>
