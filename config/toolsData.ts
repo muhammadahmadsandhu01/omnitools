@@ -261,15 +261,16 @@ export const tools: Tool[] = [
 
   {
     id: 'json-converter',
-    name: 'JSON to CSV / Excel',
+    name: 'JSON Converter',
     slug: 'json-converter',
     categoryId: 'developer',
     description:
-      'Convert JSON data into CSV or Excel-compatible files directly in your browser.',
+      'Convert JSON data into CSV, Excel, YAML, XML, TSV, or JSONL directly in your browser with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON to CSV / Excel Converter',
-    seoDescription: 'Convert structured JSON arrays and objects into downloadable CSV, TSV, or Excel spreadsheets with automatic header extraction.',
+    seoTitle: 'JSON Converter — Convert JSON to CSV, Excel, YAML & XML',
+    seoDescription:
+      'Free client-side JSON converter. Convert JSON to CSV, Excel (.xlsx), YAML, XML, TSV, and JSONL in your browser with zero server uploads and formula defense.',
     relatedToolSlugs: ['json-formatter', 'sql-formatter', 'base64-encoder', 'text-analyzer'],
   },
 

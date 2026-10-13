@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import {
@@ -24,7 +24,18 @@ import {
   Check,
   Sliders,
   HelpCircle,
+  Code2,
+  FileCode,
+  Sparkles,
 } from 'lucide-react';
+import {
+  jsonToYaml,
+  jsonToXml,
+  jsonToCsv,
+  jsonToTsv,
+  jsonToJsonl,
+  SAMPLE_DATASETS,
+} from '@/lib/jsonConverterEngine';
 
 type CellValue = string | number | boolean | null | undefined;
 
@@ -698,7 +709,6 @@ export default function JsonConverter() {
   const [arrayMode, setArrayMode] = useState<FlattenOptions['arrayMode']>('json');
   const [maxDepth, setMaxDepth] = useState<number>(20);
   const [baseFilename, setBaseFilename] = useState('omnitools_export');
-  const [copied, setCopied] = useState(false);
   const [importedFileInfo, setImportedFileInfo] = useState<{ name: string; size: number } | null>(null);
 
   // Status & Progress
@@ -713,6 +723,13 @@ export default function JsonConverter() {
   const [selectedCell, setSelectedCell] = useState<SelectedCellInfo | null>(null);
   const [cellCopied, setCellCopied] = useState(false);
   const [showRulesHelp, setShowRulesHelp] = useState(false);
+
+  // Tab & Format states
+  const [outputViewTab, setOutputViewTab] = useState<'table' | 'code'>('table');
+  const [codeFormat, setCodeFormat] = useState<'yaml' | 'xml' | 'csv' | 'tsv' | 'jsonl'>('yaml');
+  const [copyToast, setCopyToast] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<'input' | 'output'>('input');
+  const [ariaAnnouncement, setAriaAnnouncement] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const parserTaskRef = useRef<{ dispose: () => void } | null>(null);
@@ -994,7 +1011,25 @@ export default function JsonConverter() {
     setIsProcessing(false);
     setParseStatus('Ready');
     setMetrics({ cells: 0, durationMs: 0 });
+    setAriaAnnouncement('Editor cleared.');
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const showToast = (message: string) => {
+    setCopyToast(message);
+    window.setTimeout(() => setCopyToast(null), 2500);
+  };
+
+  const loadSample = (sampleKey: 'users' | 'ecommerce' | 'geo') => {
+    const data = SAMPLE_DATASETS[sampleKey];
+    if (data) {
+      setInput(data);
+      setBaseFilename(`omnitools_${sampleKey}`);
+      setImportedFileInfo(null);
+      const label = sampleKey === 'users' ? 'Users (Nested)' : sampleKey === 'ecommerce' ? 'E-Commerce' : 'Geo Coordinates';
+      setAriaAnnouncement(`Loaded sample dataset: ${label}`);
+      showToast(`Loaded ${label} sample`);
+    }
   };
 
   const processFile = (file: File) => {
@@ -1072,14 +1107,17 @@ export default function JsonConverter() {
   };
 
   // Build clean export row structures for selected columns with formula-injection protection
-  const getExportData = () =>
-    parsedData.map((row) => {
-      const exportRow: Record<string, string | number | boolean> = {};
-      visibleColumnList.forEach((column) => {
-        exportRow[column] = safeSpreadsheetValue(row[column]);
-      });
-      return exportRow;
-    });
+  const getExportData = useCallback(
+    () =>
+      parsedData.map((row) => {
+        const exportRow: Record<string, string | number | boolean> = {};
+        visibleColumnList.forEach((column) => {
+          exportRow[column] = safeSpreadsheetValue(row[column]);
+        });
+        return exportRow;
+      }),
+    [parsedData, visibleColumnList],
+  );
 
   // 1. CSV Export (RFC 4180 compliant with UTF-8 BOM)
   const exportCSV = () => {
@@ -1333,29 +1371,183 @@ tr:hover td { background: #f8fafc; }
 
     try {
       await navigator.clipboard.writeText(summary);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      showToast('Dataset summary copied');
+      setAriaAnnouncement('Dataset summary copied to clipboard.');
     } catch {
-      setCopied(false);
+      // ignore
     }
   };
+
+  // 7. YAML Export
+  const exportYAML = () => {
+    try {
+      if (!input.trim()) return;
+      const parsed = JSON.parse(input);
+      const yamlContent = jsonToYaml(parsed);
+      triggerDownload(
+        new Blob([yamlContent], { type: 'text/yaml;charset=utf-8;' }),
+        `${baseFilename}.yaml`,
+      );
+      setAriaAnnouncement('YAML export downloaded.');
+      showToast('YAML file downloaded');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate YAML export.');
+    }
+  };
+
+  // 8. XML Export
+  const exportXML = () => {
+    try {
+      if (!input.trim()) return;
+      const parsed = JSON.parse(input);
+      const xmlContent = jsonToXml(parsed);
+      triggerDownload(
+        new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' }),
+        `${baseFilename}.xml`,
+      );
+      setAriaAnnouncement('XML export downloaded.');
+      showToast('XML file downloaded');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate XML export.');
+    }
+  };
+
+  // Quick Copy for all supported formats
+  const copyFormat = async (format: 'yaml' | 'xml' | 'csv' | 'tsv' | 'jsonl') => {
+    try {
+      if (!input.trim()) return;
+      let textToCopy = '';
+      if (format === 'yaml') {
+        textToCopy = jsonToYaml(JSON.parse(input));
+      } else if (format === 'xml') {
+        textToCopy = jsonToXml(JSON.parse(input));
+      } else {
+        const data = getExportData();
+        if (format === 'csv') {
+          textToCopy = jsonToCsv(data, visibleColumnList);
+        } else if (format === 'tsv') {
+          textToCopy = jsonToTsv(data, visibleColumnList);
+        } else if (format === 'jsonl') {
+          textToCopy = jsonToJsonl(data);
+        }
+      }
+
+      await navigator.clipboard.writeText(textToCopy);
+      showToast(`${format.toUpperCase()} copied to clipboard!`);
+      setAriaAnnouncement(`${format.toUpperCase()} copied to clipboard.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to copy ${format.toUpperCase()}.`);
+    }
+  };
+
+  // Real-time converted code preview
+  const codePreviewContent = useMemo(() => {
+    if (!input.trim() || error) return '';
+    try {
+      const parsed = JSON.parse(input);
+      switch (codeFormat) {
+        case 'yaml':
+          return jsonToYaml(parsed);
+        case 'xml':
+          return jsonToXml(parsed);
+        case 'csv': {
+          const data = getExportData();
+          return jsonToCsv(data, visibleColumnList);
+        }
+        case 'tsv': {
+          const data = getExportData();
+          return jsonToTsv(data, visibleColumnList);
+        }
+        case 'jsonl': {
+          const data = getExportData();
+          return jsonToJsonl(data);
+        }
+        default:
+          return '';
+      }
+    } catch {
+      return '';
+    }
+  }, [input, error, codeFormat, getExportData, visibleColumnList]);
 
   const canExport = parsedData.length > 0 && visibleColumns.size > 0 && !isProcessing;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 bg-gray-50 dark:bg-[#0B1120] transition-colors -m-6 md:-m-8 p-6 md:p-8 rounded-3xl min-h-screen">
-      {/* LEFT COLUMN: Data Source & Options */}
-      <div className="flex-grow flex flex-col gap-4 lg:w-1/3 xl:w-2/5">
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-3">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <FileJson className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-            JSON Data Source
-          </h2>
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/50">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>100% In-Browser</span>
+    <div className="flex flex-col gap-6 bg-gray-50 dark:bg-[#0B1120] transition-colors -m-6 md:-m-8 p-6 md:p-8 rounded-3xl min-h-screen">
+      {/* Mobile Workflow Switcher */}
+      <div className="flex lg:hidden rounded-2xl bg-gray-200 dark:bg-slate-800 p-1">
+        <button
+          type="button"
+          onClick={() => setMobileTab('input')}
+          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+            mobileTab === 'input'
+              ? 'bg-white dark:bg-[#111827] text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400'
+          }`}
+        >
+          1. Input &amp; Options
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab('output')}
+          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+            mobileTab === 'output'
+              ? 'bg-white dark:bg-[#111827] text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400'
+          }`}
+        >
+          2. Preview &amp; Export ({parsedData.length} rows)
+        </button>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* LEFT COLUMN: Data Source & Options */}
+        <div
+          className={`flex-grow flex-col gap-4 lg:w-1/3 xl:w-2/5 ${
+            mobileTab === 'input' ? 'flex' : 'hidden lg:flex'
+          }`}
+        >
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-slate-800 pb-3">
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <FileJson className="w-5 h-5 text-blue-600 dark:text-blue-500" />
+              JSON Data Source
+            </h2>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800/50">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>100% In-Browser</span>
+            </div>
           </div>
-        </div>
+
+          {/* Sample Dataset Quick-Loaders */}
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-[#111827] p-2.5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              Load Sample:
+            </span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => loadSample('users')}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Users (Nested)
+              </button>
+              <button
+                type="button"
+                onClick={() => loadSample('ecommerce')}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                E-Commerce
+              </button>
+              <button
+                type="button"
+                onClick={() => loadSample('geo')}
+                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              >
+                Geo Data
+              </button>
+            </div>
+          </div>
 
         {/* Upload Dropzone */}
         <div
@@ -1542,7 +1734,11 @@ tr:hover td { background: #f8fafc; }
       </div>
 
       {/* RIGHT COLUMN: Column Manager, Live Grid, Value Inspector, Exports */}
-      <div className="flex flex-col gap-6 lg:w-2/3 xl:w-3/5">
+      <div
+        className={`flex-col gap-6 lg:w-2/3 xl:w-3/5 ${
+          mobileTab === 'output' ? 'flex' : 'hidden lg:flex'
+        }`}
+      >
         {/* Dataset Insights & Status Header */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white dark:bg-[#111827] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm">
           <div className="flex flex-col">
@@ -1656,20 +1852,40 @@ tr:hover td { background: #f8fafc; }
         {/* Live Data Grid */}
         <div className="bg-white dark:bg-[#111827] rounded-3xl p-5 md:p-6 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col flex-grow">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-200 dark:border-slate-800 pb-3 mb-4">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-              <Table2 className="w-5 h-5 text-blue-600 dark:text-blue-500" />
-              Live Data Preview
-            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOutputViewTab('table')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-bold transition-all ${
+                  outputViewTab === 'table'
+                    ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.3)]'
+                    : 'bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Table2 className="w-4 h-4" /> Tabular Grid
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutputViewTab('code')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-sm font-bold transition-all ${
+                  outputViewTab === 'code'
+                    ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(37,99,235,0.3)]'
+                    : 'bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <Code2 className="w-4 h-4" /> Code Preview ({codeFormat.toUpperCase()})
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2 text-xs font-semibold">
               <span className="bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-3 py-1 rounded-lg">
                 {parsedData.length.toLocaleString()} Total Rows
               </span>
-              {parsedData.length > MAX_PREVIEW_ROWS && (
+              {parsedData.length > MAX_PREVIEW_ROWS && outputViewTab === 'table' && (
                 <span className="bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-lg">
                   Preview: first {MAX_PREVIEW_ROWS} rows
                 </span>
               )}
-              {visibleColumnList.length > MAX_PREVIEW_COLS && (
+              {visibleColumnList.length > MAX_PREVIEW_COLS && outputViewTab === 'table' && (
                 <span className="bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-lg">
                   Preview: first {MAX_PREVIEW_COLS} cols
                 </span>
@@ -1686,162 +1902,244 @@ tr:hover td { background: #f8fafc; }
             </div>
           )}
 
-          {/* Table Container */}
-          <div className="flex-grow overflow-auto max-h-[460px] border border-gray-200 dark:border-slate-800 rounded-xl bg-gray-50 dark:bg-[#0a0f1a] [scrollbar-width:thin]">
-            {parsedData.length > 0 && visibleColumnList.length > 0 ? (
-              <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
-                <thead className="sticky top-0 bg-gray-100 dark:bg-slate-800 z-10 shadow-sm">
-                  <tr>
-                    <th className="p-3 font-mono text-xs text-slate-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700 w-12 text-center">
-                      #
-                    </th>
-                    {previewColumns.map((col) => (
-                      <th
-                        key={col}
-                        className="p-3 font-semibold text-slate-700 dark:text-slate-300 border-b border-gray-200 dark:border-slate-700"
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-800 font-mono text-xs">
-                  {previewRows.map((row, i) => (
-                    <tr
-                      key={i}
-                      className="hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors"
+          {outputViewTab === 'code' ? (
+            <div className="flex flex-col gap-3 flex-grow">
+              {/* Code Format Selector Pills and Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 dark:bg-[#0a0f1a] p-2.5 rounded-2xl border border-gray-200 dark:border-slate-800">
+                <div className="flex items-center gap-1.5 overflow-x-auto">
+                  {(['yaml', 'xml', 'csv', 'tsv', 'jsonl'] as const).map((fmt) => (
+                    <button
+                      key={fmt}
+                      type="button"
+                      data-format-pill={fmt}
+                      onClick={() => setCodeFormat(fmt)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-colors ${
+                        codeFormat === fmt
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white dark:bg-[#111827] text-slate-600 dark:text-slate-400 hover:text-blue-600 border border-gray-200 dark:border-slate-700'
+                      }`}
                     >
-                      <td className="p-2.5 text-slate-400 dark:text-slate-600 border-r border-gray-200 dark:border-slate-800 text-center font-mono select-none">
-                        {i + 1}
-                      </td>
-                      {previewColumns.map((col) => {
-                        const val = row[col];
-                        const isSelected =
-                          selectedCell?.row === i && selectedCell?.column === col;
-
-                        return (
-                          <td
-                            key={col}
-                            onClick={() => selectCellForInspection(i, col, val)}
-                            tabIndex={0}
-                            role="button"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                selectCellForInspection(i, col, val);
-                              }
-                            }}
-                            className={`p-2.5 max-w-[260px] truncate cursor-pointer transition-colors focus:outline-none ${
-                              isSelected
-                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500'
-                                : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
-                            }`}
-                            title="Click to inspect full cell value"
-                          >
-                            {val !== undefined && val !== null ? (
-                              typeof val === 'boolean' ? (
-                                <span className="text-purple-600 dark:text-purple-400 font-bold">
-                                  {String(val)}
-                                </span>
-                              ) : typeof val === 'number' ? (
-                                <span className="text-emerald-600 dark:text-emerald-400">
-                                  {val}
-                                </span>
-                              ) : (
-                                String(val)
-                              )
-                            ) : (
-                              <span className="text-gray-400 dark:text-slate-600 italic">
-                                null
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                      {fmt}
+                    </button>
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-gray-500 dark:text-slate-500 gap-2 p-6 text-center">
-                <Table2 className="w-8 h-8 text-slate-300 dark:text-slate-700" />
-                <p className="font-medium">
-                  {parsedData.length > 0
-                    ? 'All columns are currently unselected. Check columns above to view data.'
-                    : 'Interactive tabular preview will appear here once JSON is loaded.'}
-                </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => copyFormat(codeFormat)}
+                    disabled={!codePreviewContent}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy {codeFormat.toUpperCase()}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (codeFormat === 'yaml') exportYAML();
+                      else if (codeFormat === 'xml') exportXML();
+                      else if (codeFormat === 'csv') exportCSV();
+                      else if (codeFormat === 'tsv') exportTSV();
+                      else if (codeFormat === 'jsonl') exportJSONL();
+                    }}
+                    disabled={!codePreviewContent}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 shadow-sm"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Interactive Cell Value Inspector */}
-          {selectedCell && (
-            <div className="mt-4 bg-slate-50 dark:bg-[#0a0f1a] border border-blue-200 dark:border-blue-900/50 rounded-2xl p-4 flex flex-col gap-2.5 animate-in fade-in">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  <Eye className="w-4 h-4 text-blue-500" />
-                  <span>Value Inspector</span>
-                  <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-[11px] font-mono">
-                    Column: {selectedCell.column} • Row #{selectedCell.row + 1}
-                  </span>
-                  <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-[11px] font-mono">
-                    Type: {selectedCell.type}
-                  </span>
-                  <span className="text-slate-400 text-[11px]">
-                    ({selectedCell.length.toLocaleString()} chars)
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={copyCellValue}
-                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-300 transition-colors"
-                  >
-                    {cellCopied ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-500" /> Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" /> Copy Value
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setSelectedCell(null)}
-                    aria-label="Close Inspector"
-                    className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="bg-white dark:bg-[#111827] p-3 rounded-xl border border-gray-200 dark:border-slate-800 font-mono text-xs max-h-36 overflow-y-auto break-all text-slate-800 dark:text-slate-200 [scrollbar-width:thin]">
-                {selectedCell.value === null ? (
-                  <span className="italic text-slate-400">null</span>
-                ) : selectedCell.value === undefined ? (
-                  <span className="italic text-slate-400">undefined</span>
+              {/* Monospace Code Preview Box */}
+              <div className="relative flex-grow min-h-[320px] max-h-[500px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800 bg-[#0f172a] text-slate-100 p-4 font-mono text-xs leading-relaxed [scrollbar-width:thin]">
+                {codePreviewContent ? (
+                  <pre className="whitespace-pre overflow-x-auto selection:bg-blue-500/30">
+                    <code>{codePreviewContent}</code>
+                  </pre>
                 ) : (
-                  String(selectedCell.value)
+                  <div className="h-full min-h-[220px] flex items-center justify-center text-slate-500 text-sm">
+                    {error ? 'Fix JSON syntax error on the left to preview output.' : 'Enter valid JSON to preview transformed code.'}
+                  </div>
                 )}
               </div>
+              <div className="flex justify-between items-center text-[11px] text-slate-500 px-1">
+                <span>Format: {codeFormat.toUpperCase()}</span>
+                <span>{codePreviewContent.length.toLocaleString()} characters • {codePreviewContent ? codePreviewContent.split('\n').length.toLocaleString() : 0} lines</span>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Table Container */}
+              <div className="flex-grow overflow-auto max-h-[460px] border border-gray-200 dark:border-slate-800 rounded-xl bg-gray-50 dark:bg-[#0a0f1a] [scrollbar-width:thin]">
+                {parsedData.length > 0 && visibleColumnList.length > 0 ? (
+                  <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                    <thead className="sticky top-0 bg-gray-100 dark:bg-slate-800 z-10 shadow-sm">
+                      <tr>
+                        <th className="p-3 font-mono text-xs text-slate-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700 w-12 text-center">
+                          #
+                        </th>
+                        {previewColumns.map((col) => (
+                          <th
+                            key={col}
+                            className="p-3 font-semibold text-slate-700 dark:text-slate-300 border-b border-gray-200 dark:border-slate-700"
+                          >
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-800 font-mono text-xs">
+                      {previewRows.map((row, i) => (
+                        <tr
+                          key={i}
+                          className="hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition-colors"
+                        >
+                          <td className="p-2.5 text-slate-400 dark:text-slate-600 border-r border-gray-200 dark:border-slate-800 text-center font-mono select-none">
+                            {i + 1}
+                          </td>
+                          {previewColumns.map((col) => {
+                            const val = row[col];
+                            const isSelected =
+                              selectedCell?.row === i && selectedCell?.column === col;
+
+                            return (
+                              <td
+                                key={col}
+                                onClick={() => selectCellForInspection(i, col, val)}
+                                tabIndex={0}
+                                role="button"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    selectCellForInspection(i, col, val);
+                                  }
+                                }}
+                                className={`p-2.5 max-w-[260px] truncate cursor-pointer transition-colors focus:outline-none ${
+                                  isSelected
+                                    ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-900 dark:text-blue-200 font-bold ring-2 ring-blue-500'
+                                    : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
+                                }`}
+                                title="Click to inspect full cell value"
+                              >
+                                {val !== undefined && val !== null ? (
+                                  typeof val === 'boolean' ? (
+                                    <span className="text-purple-600 dark:text-purple-400 font-bold">
+                                      {String(val)}
+                                    </span>
+                                  ) : typeof val === 'number' ? (
+                                    <span className="text-emerald-600 dark:text-emerald-400">
+                                      {val}
+                                    </span>
+                                  ) : (
+                                    String(val)
+                                  )
+                                ) : (
+                                  <span className="text-gray-400 dark:text-slate-600 italic">
+                                    null
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-gray-500 dark:text-slate-500 gap-2 p-6 text-center">
+                    <Table2 className="w-8 h-8 text-slate-300 dark:text-slate-700" />
+                    <p className="font-medium">
+                      {parsedData.length > 0
+                        ? 'All columns are currently unselected. Check columns above to view data.'
+                        : 'Interactive tabular preview will appear here once JSON is loaded.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Interactive Cell Value Inspector */}
+              {selectedCell && (
+                <div className="mt-4 bg-slate-50 dark:bg-[#0a0f1a] border border-blue-200 dark:border-blue-900/50 rounded-2xl p-4 flex flex-col gap-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <Eye className="w-4 h-4 text-blue-500" />
+                      <span>Value Inspector</span>
+                      <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-[11px] font-mono">
+                        Column: {selectedCell.column} • Row #{selectedCell.row + 1}
+                      </span>
+                      <span className="bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded text-[11px] font-mono">
+                        Type: {selectedCell.type}
+                      </span>
+                      <span className="text-slate-400 text-[11px]">
+                        ({selectedCell.length.toLocaleString()} chars)
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={copyCellValue}
+                        className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-300 transition-colors"
+                      >
+                        {cellCopied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-500" /> Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" /> Copy Value
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setSelectedCell(null)}
+                        aria-label="Close Inspector"
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-[#111827] p-3 rounded-xl border border-gray-200 dark:border-slate-800 font-mono text-xs max-h-36 overflow-y-auto break-all text-slate-800 dark:text-slate-200 [scrollbar-width:thin]">
+                    {selectedCell.value === null ? (
+                      <span className="italic text-slate-400">null</span>
+                    ) : selectedCell.value === undefined ? (
+                      <span className="italic text-slate-400">undefined</span>
+                    ) : (
+                      String(selectedCell.value)
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Primary Export Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
             <button
               onClick={exportCSV}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3.5 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.3)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex justify-center items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(37,99,235,0.25)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm"
             >
-              <FileText className="w-5 h-5" /> Download CSV (RFC 4180)
+              <FileText className="w-4 h-4" /> CSV (RFC 4180)
             </button>
             <button
               onClick={exportExcel}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3.5 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="flex justify-center items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(16,185,129,0.25)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-emerald-500 text-xs sm:text-sm"
             >
-              <FileSpreadsheet className="w-5 h-5" /> Download Excel (.xlsx)
+              <FileSpreadsheet className="w-4 h-4" /> Excel (.xlsx)
+            </button>
+            <button
+              onClick={exportYAML}
+              disabled={!input.trim() || !!error}
+              className="flex justify-center items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(99,102,241,0.25)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm"
+            >
+              <FileCode className="w-4 h-4" /> YAML (.yaml)
+            </button>
+            <button
+              onClick={exportXML}
+              disabled={!input.trim() || !!error}
+              className="flex justify-center items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3 py-3 rounded-xl font-bold transition-all shadow-[0_0_15px_rgba(217,119,6,0.25)] disabled:opacity-50 disabled:shadow-none focus:outline-none focus:ring-2 focus:ring-amber-500 text-xs sm:text-sm"
+            >
+              <Code2 className="w-4 h-4" /> XML (.xml)
             </button>
           </div>
 
@@ -1850,35 +2148,88 @@ tr:hover td { background: #f8fafc; }
             <button
               onClick={exportTSV}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-blue-500 disabled:opacity-50 transition-colors"
+              className="flex justify-center items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:border-blue-500 disabled:opacity-50 transition-colors"
             >
-              <Download className="w-4 h-4" /> TSV
+              <Download className="w-3.5 h-3.5" /> TSV
             </button>
             <button
               onClick={exportJSONL}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-blue-500 disabled:opacity-50 transition-colors"
+              className="flex justify-center items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:border-blue-500 disabled:opacity-50 transition-colors"
             >
               JSONL
             </button>
             <button
               onClick={exportFlattenedJSON}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-blue-500 disabled:opacity-50 transition-colors"
+              className="flex justify-center items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:border-blue-500 disabled:opacity-50 transition-colors"
             >
               Flattened JSON
             </button>
             <button
               onClick={exportHTML}
               disabled={!canExport}
-              className="flex justify-center items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-blue-500 disabled:opacity-50 transition-colors"
+              className="flex justify-center items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:border-blue-500 disabled:opacity-50 transition-colors"
             >
               HTML Table
             </button>
           </div>
 
-          {/* Filename & Copy Summary */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-4">
+          {/* Quick Copy Action Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 mt-3">
+            <span className="text-[11px] font-bold text-slate-500 uppercase px-2 select-none">Quick Copy:</span>
+            <button
+              type="button"
+              onClick={() => copyFormat('csv')}
+              disabled={!canExport}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+            >
+              CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => copyFormat('yaml')}
+              disabled={!input.trim() || !!error}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+            >
+              YAML
+            </button>
+            <button
+              type="button"
+              onClick={() => copyFormat('xml')}
+              disabled={!input.trim() || !!error}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+            >
+              XML
+            </button>
+            <button
+              type="button"
+              onClick={() => copyFormat('tsv')}
+              disabled={!canExport}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+            >
+              TSV
+            </button>
+            <button
+              type="button"
+              onClick={() => copyFormat('jsonl')}
+              disabled={!canExport}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50"
+            >
+              JSONL
+            </button>
+            <button
+              type="button"
+              onClick={copySummary}
+              disabled={!parsedData.length}
+              className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white dark:bg-[#111827] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-500 disabled:opacity-50 ml-auto"
+            >
+              Summary
+            </button>
+          </div>
+
+          {/* Filename Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
             <div className="flex-1 flex items-center bg-gray-50 dark:bg-[#0a0f1a] rounded-xl border border-gray-200 dark:border-slate-700 px-3 py-1">
               <span className="text-xs text-slate-400 font-mono select-none pr-1">export/</span>
               <input
@@ -1889,15 +2240,25 @@ tr:hover td { background: #f8fafc; }
                 aria-label="Export base filename"
               />
             </div>
-            <button
-              onClick={copySummary}
-              disabled={!parsedData.length}
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:border-blue-500 disabled:opacity-50 transition-colors shrink-0"
-            >
-              {copied ? 'Copied Summary' : 'Copy Summary'}
-            </button>
           </div>
         </div>
+      </div>
+    </div>
+
+      {/* Floating Copy Feedback Toast */}
+      {copyToast && (
+        <div
+          role="alert"
+          className="fixed bottom-6 right-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-2 z-50 animate-in fade-in slide-in-from-bottom-2"
+        >
+          <Check className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+          <span>{copyToast}</span>
+        </div>
+      )}
+
+      {/* Screen Reader ARIA Live Region */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {ariaAnnouncement}
       </div>
     </div>
   );
