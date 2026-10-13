@@ -92,42 +92,12 @@ export default function JsonFormatterSeo() {
     })),
   };
 
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'OmniTools JSON Formatter & Validator',
-    operatingSystem: 'Any (Web Browser)',
-    applicationCategory: 'DeveloperApplication',
-    offers: {
-      '@type': 'Offer',
-      price: '0.00',
-      priceCurrency: 'USD',
-    },
-    description:
-      'Free online JSON formatter, validator, and beautifier. Indent, inspect, minify, and fix JSON payloads with instant error detection and 100% private in-browser execution.',
-    featureList: [
-      'RFC 8259 strict JSON validation with line and column error indicators',
-      'Customizable indentation (2 spaces, 4 spaces, tab)',
-      'High-performance minification and whitespace removal',
-      'Virtualized interactive tree viewer supporting 60,000+ nodes',
-      'Duplicate object key detection and IEEE 754 BigInt precision scanning',
-      'Conservative syntax repair for trailing commas, comments, and unquoted keys',
-      'JSONPath querying and structural JSON diffing engine',
-      'TypeScript interface and JSON Schema code generation',
-      '100% private client-side execution with zero server uploads',
-    ],
-  };
-
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* Schema.org Structured Data */}
+      {/* Schema.org FAQPage Structured Data */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
       />
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">

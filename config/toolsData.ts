@@ -226,8 +226,8 @@ export const tools: Tool[] = [
       'Format, validate, and minify JSON data quickly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON Formatter & Validator — Beautify, Minify & Inspect',
-    seoDescription: 'Free online JSON formatter, validator, and beautifier. Inspect, minify, and fix JSON payloads with instant error detection and 100% private in-browser processing.',
+    seoTitle: 'JSON Formatter & Validator — Beautify & Minify',
+    seoDescription: 'Free online JSON formatter, validator, and beautifier. Inspect, minify, and fix JSON with instant error detection and 100% private in-browser processing.',
     relatedToolSlugs: ['json-converter', 'base64-encoder', 'sql-formatter', 'regex-tester'],
   },
 

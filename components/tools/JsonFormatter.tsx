@@ -35,7 +35,10 @@ import {
   AlertTriangle,
   Eye,
   FileCode2,
+  Sparkles,
 } from 'lucide-react';
+
+import { SAMPLE_JSON_PAYLOADS } from '@/lib/jsonFormatterEngine';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
@@ -1383,12 +1386,40 @@ export default function JsonFormatter() {
     }
   };
 
+  const handleLoadSample = () => {
+    setInput(SAMPLE_JSON_PAYLOADS.apiResponse);
+    setError(null);
+  };
+
   const handleMinify = () => {
-    if (parsedJson !== null) setInput(minifiedOutput);
+    if (parsedJson !== null) {
+      setInput(minifiedOutput);
+    } else if (input.trim()) {
+      try {
+        const parsed = JSON.parse(input) as JsonValue;
+        const sorted = sortKeysEnabled ? sortJsonKeys(parsed) : parsed;
+        setInput(JSON.stringify(sorted));
+        setError(null);
+      } catch (err) {
+        setError(parseJsonError(err, input));
+      }
+    }
   };
 
   const handleFormat = () => {
-    if (parsedJson !== null) setInput(formattedOutput);
+    if (parsedJson !== null) {
+      setInput(formattedOutput);
+    } else if (input.trim()) {
+      try {
+        const parsed = JSON.parse(input) as JsonValue;
+        const indent = indentStyle === 'tab' ? '\t' : Number(indentStyle);
+        const sorted = sortKeysEnabled ? sortJsonKeys(parsed) : parsed;
+        setInput(JSON.stringify(sorted, null, indent));
+        setError(null);
+      } catch (err) {
+        setError(parseJsonError(err, input));
+      }
+    }
   };
 
   const handleCopy = async () => {
@@ -1505,6 +1536,14 @@ export default function JsonFormatter() {
 
           <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <button
+              onClick={handleLoadSample}
+              aria-label="Load sample JSON"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Sample
+            </button>
+
+            <button
               onClick={() => fileInputRef.current?.click()}
               aria-label="Open file"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold"
@@ -1514,7 +1553,7 @@ export default function JsonFormatter() {
 
             <button
               onClick={handleFormat}
-              disabled={parsedJson === null}
+              disabled={!input.trim()}
               aria-label="Format JSON"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold disabled:opacity-50"
             >
@@ -1523,7 +1562,7 @@ export default function JsonFormatter() {
 
             <button
               onClick={handleMinify}
-              disabled={parsedJson === null}
+              disabled={!input.trim()}
               aria-label="Minify JSON"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold disabled:opacity-50"
             >
