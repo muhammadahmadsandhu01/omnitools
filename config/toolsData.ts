@@ -345,7 +345,7 @@ export const tools: Tool[] = [
     status: 'published',
     seoTitle: 'Image to PDF Converter — Convert JPG, PNG & Photos to PDF',
     seoDescription:
-      'Convert JPG, PNG, WebP, and photos to PDF online for free. Combine multiple images into one PDF or download separate files with custom page sizes, margins, and 100% private client-side processing.',
+      'Convert JPG, PNG, WebP, and photos to PDF for free. Combine images into one PDF or download separate files with custom page sizes and 100% private processing.',
     relatedToolSlugs: ['pdf-merge-split', 'webp-to-jpg-png', 'image-compressor', 'invoice-generator'],
   },
 
