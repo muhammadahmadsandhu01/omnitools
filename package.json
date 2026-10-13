@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:registry": "tsx scripts/validate-registry.ts"
+    "test:registry": "tsx scripts/validate-registry.ts",
+    "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

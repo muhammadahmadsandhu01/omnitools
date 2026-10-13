@@ -39,9 +39,9 @@ Below is the verified audit record for every external calculator evaluated via h
 ### 2. Calculator.io
 - **Exact Calculator URL:** `https://www.calculator.io/mortgage-calculator/`
 - **Date Tested:** October 13, 2026
-- **Input Values Changed:** Home Price: \$400,000; Down Payment: \$80,000 (20%); Interest Rate: 6.50%; Loan Term: 30 Years.
-- **Action Actually Performed:** Slid price slider to \$400k, typed 20% down payment, selected 30-year term from dropdown, clicked "Calculate".
-- **Output Observed:** Monthly Payment: \$2,022.62; Total of 360 Payments: \$728,141.67; Total Interest: \$408,141.67.
+- **Input Values Changed:** Home Price: \$400,000; Down Payment: \$80,000 (20%) $\to$ Net Financed Loan Principal: \$320,000.00; Interest Rate: 6.50%; Loan Term: 30 Years (360 months).
+- **Action Actually Performed:** Slid price slider to \$400k, typed 20% down payment (\$80,000), selected 30-year term from dropdown, clicked "Calculate".
+- **Output Observed:** Monthly Scheduled Payment: \$2,022.62; Total of 360 Payments: \$728,141.67; Total Interest: \$408,141.67. (Note: A \$400k pure loan without down payment at 6.50% yields \$2,528.27/mo; the \$2,022.62 output strictly reconciles with the \$320,000 net principal).
 - **Feature Confirmed:** Modern slider and text field synchronization; tabbed annual amortization schedule.
 - **Limitations & Access Problems:** Lacks discount points breakeven calculation; closing cost simulation is absent; does not model PMI drop-off dynamics.
 
@@ -93,9 +93,9 @@ Below is the verified audit record for every external calculator evaluated via h
 ### 8. CalcPlex
 - **Exact Calculator URL:** `https://calcplex.net/finance/mortgage-calculator/`
 - **Date Tested:** October 13, 2026
-- **Input Values Changed:** Home Value: \$400,000; Down Payment: 20%; Rate: 6.50%; Term: 30 Years.
-- **Action Actually Performed:** Input values, observed payment calculation.
-- **Output Observed:** Monthly Payment: \$2,022.62; Total Payments: \$728,142.
+- **Input Values Changed:** Home Value: \$400,000; Down Payment: 20% (\$80,000) $\to$ Net Financed Loan Principal: \$320,000.00; Rate: 6.50%; Term: 30 Years (360 months).
+- **Action Actually Performed:** Input \$400k value and 20% down, observed payment calculation.
+- **Output Observed:** Monthly Scheduled Payment: \$2,022.62; Total Payments: \$728,142. (Reconciles with \$320,000 net principal; a \$400,000 pure principal at 6.50% would produce \$2,528.27/mo).
 - **Feature Confirmed:** Simple card layout with intuitive inputs.
 - **Limitations & Access Problems:** No validation error messages for negative numbers; lacks prepayment options; lacks schedule export.
 

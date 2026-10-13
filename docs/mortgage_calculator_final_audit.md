@@ -77,10 +77,47 @@
 
 | Test Command | Purpose & Coverage Scope | Result / Pass Count | Exit Code |
 |---|---|---|---|
-| `npx tsx scratch/independent-math-oracle.ts` | 28 independent reference oracle tests covering standard fixed, 15y vs 30y, zero-rate, low/high rate, jumbo loans, extra payments, accelerated biweekly, beginning-balance PMI, 14-day dated day counts, and final payment residual settlement. | **28 Passed / 0 Failed** | **0** |
-| `npx tsx scratch/test-mortgage-calculator.ts` | 45 unit tests covering formulas, 0% rate, high rates, currency precision, PMI cancellation, biweekly schedules, 100-year loans, CSV formula defense. | **45 Passed / 0 Failed** | **0** |
+| `npm run test:mortgage` | Executes both tracked suites: `scripts/test-mortgage-oracle.ts` (28 benchmarks) and `scripts/test-mortgage-engine.ts` (45 unit tests). | **73 Passed / 0 Failed** | **0** |
+| `npx tsx scripts/test-mortgage-oracle.ts` | 28 independent reference oracle tests covering standard fixed, 15y vs 30y, zero-rate, low/high rate, jumbo loans, extra payments, accelerated biweekly, beginning-balance PMI, 14-day dated day counts, and final payment residual settlement. | **28 Passed / 0 Failed** | **0** |
+| `npx tsx scripts/test-mortgage-engine.ts` | 45 unit tests covering formulas, 0% rate, high rates, currency precision, PMI cancellation, biweekly schedules, 100-year loans, CSV formula defense. | **45 Passed / 0 Failed** | **0** |
 | `npm run test:registry` | Validates category registries, tool slug uniqueness, route isolation, and sitemap consistency. | **Passed (56 routes)** | **0** |
 | `npx tsc --noEmit` | Strict TypeScript compiler validation across entire codebase. | **0 Errors** | **0** |
 | `npx eslint ...` | ESLint style and Next.js rule verification on modified components and engine. | **0 Warnings / 0 Errors** | **0** |
 | `npm run build` | Next.js 16.3.7 Turbopack production build and static page generation. | **Compiled successfully (33 pages)** | **0** |
 | `node scratch/run-mortgage-chrome-qa.js` | Headless Chrome CDP multi-viewport overflow, preset loading, calculation, and reset verification. | **11 Viewports Passed (0px overflow)** | **0** |
+
+---
+
+## 5. Closure Check: Discrepancy Resolution & Test Tracking
+
+### A. Resolution of $400,000 Purchase vs $320,000 Financed Loan Benchmark
+- **Issue Investigated:** In casual reporting, entering a \$400,000 home price with a 20% down payment is sometimes casually transcribed as a "\$400,000 loan" producing \$2,022.62/month.
+- **Mathematical Reality:**
+  - Standard periodic payment on a **\$400,000.00 financed loan** (0% down) at 6.50% for 30 years is:
+    $$M = 400,000 \times \frac{0.00541667 \times (1.00541667)^{360}}{(1.00541667)^{360} - 1} = \mathbf{\$2,528.27/\text{mo}}$$
+  - Standard periodic payment on a **\$320,000.00 financed loan** (\$400,000 home price minus \$80,000 down payment) at 6.50% for 30 years is:
+    $$M = 320,000 \times \frac{0.00541667 \times (1.00541667)^{360}}{(1.00541667)^{360} - 1} = \mathbf{\$2,022.62/\text{mo}}$$
+- **Correction Applied:** All occurrences in [`docs/mortgage_calculator_competitor_matrix.md`](file:///d:/omnitools/docs/mortgage_calculator_competitor_matrix.md) (specifically Calculator.io Entry 2 and CalcPlex Entry 8) have been clarified to explicitly distinguish the **\$400,000 Home Purchase Price** and **20% Down Payment (\$80,000)** from the resulting **\$320,000 Net Financed Loan Principal**, eliminating transcription ambiguity.
+
+### B. Tracked Git Test Suites (Elimination of Scratch Dependency)
+- **Problem:** Previous test suites resided solely in untracked `scratch/` directories, preventing automated reproduction by external reviewers.
+- **Remediation:** 
+  1. Ported the 28-benchmark independent mathematical reference oracle to [`scripts/test-mortgage-oracle.ts`](file:///d:/omnitools/scripts/test-mortgage-oracle.ts).
+  2. Ported the 45-regression-test suite to [`scripts/test-mortgage-engine.ts`](file:///d:/omnitools/scripts/test-mortgage-engine.ts).
+  3. Added `"test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts"` to `package.json`.
+- **Reproducibility Status:** **100% TRACKED IN GIT**. Any developer or CI system can reproduce all 73 financial math tests via `npm run test:mortgage`.
+
+---
+
+## 6. Live Production Verification & Deployment Status
+
+- **Commit Deployed:** `7c30f22` (and subsequent closure commits)
+- **Production URL:** `https://omnitools-navy.vercel.app/finance/mortgage-calculator`
+- **Edge Deployment ID:** `sin1::iad1::ftsmj-1791917591784-6c98f851b7ed`
+- **Live Verifications:**
+  - HTTP `200 OK`
+  - Canonical link matches `https://omnitools-navy.vercel.app/finance/mortgage-calculator`
+  - `robots.txt` (`Allow: /`) and `sitemap.xml` verified
+  - Responsive layout verified at **0 px overflow** across 11 viewports
+  - Methodology accordion contains explicit disclosures for Accelerated Biweekly convention and US HPA 1998 PMI rules.
+
