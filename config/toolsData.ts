@@ -138,9 +138,10 @@ export const tools: Tool[] = [
       'Calculate monthly EMI, total interest, and repayment amounts for personal, car, or education loans.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Personal & Auto Loan EMI Calculator',
-    seoDescription: 'Calculate monthly loan EMI, total interest payable, and amortization schedules for personal, auto, and home loans with prepayment options.',
-    relatedToolSlugs: ['mortgage-calculator', 'compound-interest', 'sip-calculator', 'invoice-generator'],
+    seoTitle: 'EMI Calculator — Loan EMI & Amortization Schedule',
+    seoDescription:
+      'Calculate monthly loan EMI, total interest payable, and complete amortization schedules for personal, auto, and home loans with prepayment and fee modeling.',
+    relatedToolSlugs: ['mortgage-calculator', 'compound-interest', 'sip-calculator', 'salary-calculator', 'invoice-generator'],
   },
 
   {
