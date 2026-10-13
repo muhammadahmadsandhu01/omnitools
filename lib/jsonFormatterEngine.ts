@@ -358,26 +358,31 @@ export const scanJsonDiagnostics = (source: string): JsonDiagnosticsResult => {
 
 /**
  * Strips JavaScript-style comments (// and /* *\/) outside string literals.
+ * Accurately tracks both double and single quote strings to protect URLs and escaped slashes.
  */
 export const stripJsonComments = (source: string): string => {
   let output = '';
-  let inString = false;
+  let inQuote: null | '"' | "'" = null;
   let escaped = false;
 
   for (let i = 0; i < source.length; i += 1) {
     const char = source[i];
     const next = source[i + 1];
 
-    if (inString) {
+    if (inQuote !== null) {
       output += char;
-      if (escaped) escaped = false;
-      else if (char === '\\') escaped = true;
-      else if (char === '"') inString = false;
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === inQuote) {
+        inQuote = null;
+      }
       continue;
     }
 
-    if (char === '"') {
-      inString = true;
+    if (char === '"' || char === "'") {
+      inQuote = char;
       output += char;
     } else if (char === '/' && next === '/') {
       i += 1;
@@ -508,7 +513,7 @@ export const repairJson = (source: string): string => {
   repaired = convertSingleQuotedStrings(repaired);
   repaired = repaired.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
   repaired = replaceBareIdentifiers(repaired);
-  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+  repaired = repaired.replace(/(?:,\s*)+([}\]])/g, '$1');
 
   // Verify repaired result parses strictly
   JSON.parse(repaired);

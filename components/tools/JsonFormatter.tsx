@@ -298,23 +298,27 @@ const scanJsonDiagnostics = (source: string) => {
 
 const stripJsonComments = (source: string) => {
   let output = '';
-  let inString = false;
+  let inQuote: null | '"' | "'" = null;
   let escaped = false;
 
   for (let i = 0; i < source.length; i += 1) {
     const char = source[i];
     const next = source[i + 1];
 
-    if (inString) {
+    if (inQuote !== null) {
       output += char;
-      if (escaped) escaped = false;
-      else if (char === '\\') escaped = true;
-      else if (char === '"') inString = false;
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === inQuote) {
+        inQuote = null;
+      }
       continue;
     }
 
-    if (char === '"') {
-      inString = true;
+    if (char === '"' || char === "'") {
+      inQuote = char;
       output += char;
     } else if (char === '/' && next === '/') {
       i += 1;
@@ -431,7 +435,7 @@ const repairJson = (source: string) => {
   repaired = convertSingleQuotedStrings(repaired);
   repaired = repaired.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
   repaired = replaceBareIdentifiers(repaired);
-  repaired = repaired.replace(/,\s*([}\]])/g, '$1');
+  repaired = repaired.replace(/(?:,\s*)+([}\]])/g, '$1');
 
   JSON.parse(repaired);
   return repaired;
@@ -1051,6 +1055,8 @@ export default function JsonFormatter() {
   }>({ duplicateKeys: [], unsafeNumbers: [] });
 
   const [copied, setCopied] = useState(false);
+  const [copiedMinified, setCopiedMinified] = useState(false);
+  const [repairSuccess, setRepairSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [filename, setFilename] = useState('formatted-json.json');
@@ -1327,7 +1333,10 @@ export default function JsonFormatter() {
       const repaired = repairJson(input);
       setInput(JSON.stringify(JSON.parse(repaired), null, indentStyle === 'tab' ? '\t' : Number(indentStyle)));
       setError(null);
+      setRepairSuccess(true);
+      window.setTimeout(() => setRepairSuccess(false), 3000);
     } catch (e) {
+      setRepairSuccess(false);
       setError(`Repair could not produce valid JSON: ${e instanceof Error ? e.message : 'Unknown error.'}`);
     }
   };
@@ -1437,8 +1446,8 @@ export default function JsonFormatter() {
     if (parsedJson === null) return;
     try {
       await navigator.clipboard.writeText(minifiedOutput);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      setCopiedMinified(true);
+      window.setTimeout(() => setCopiedMinified(false), 2000);
     } catch {
       setError('Clipboard access was blocked by the browser.');
     }
@@ -1468,6 +1477,8 @@ export default function JsonFormatter() {
     setDiagnostics({ duplicateKeys: [], unsafeNumbers: [] });
     setSearchTerm('');
     setCopied(false);
+    setCopiedMinified(false);
+    setRepairSuccess(false);
     setQueryResult([]);
     setQueryError(null);
     setJsonPath('$');
@@ -1817,14 +1828,21 @@ export default function JsonFormatter() {
             <button
               onClick={handleCopyMinified}
               disabled={parsedJson === null}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50"
+              aria-label="Copy minified JSON"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${
+                copiedMinified
+                  ? 'bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-800/50'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
             >
-              Copy Minified
+              {copiedMinified ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+              {copiedMinified ? 'Minified Copied!' : 'Copy Minified'}
             </button>
 
             <button
               onClick={handleDownload}
               disabled={parsedJson === null}
+              aria-label="Download formatted JSON file"
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" /> Download
@@ -1833,6 +1851,7 @@ export default function JsonFormatter() {
             <button
               onClick={handleCopy}
               disabled={parsedJson === null}
+              aria-label="Copy formatted JSON to clipboard"
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition-all disabled:opacity-50 ${
                 copied
                   ? 'bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border border-emerald-800/50'
@@ -1844,6 +1863,16 @@ export default function JsonFormatter() {
             </button>
           </div>
         </div>
+
+        {/* Repair Success Notification Banner */}
+        {repairSuccess && (
+          <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 p-3 rounded-xl text-xs animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <span className="font-medium">
+              Syntax repaired successfully: stripped comments, normalized quotes, and cleaned trailing commas.
+            </span>
+          </div>
+        )}
 
         {/* Diagnostics Banners: Duplicate Keys & Unsafe Numbers */}
         {diagnostics.duplicateKeys.length > 0 && (
