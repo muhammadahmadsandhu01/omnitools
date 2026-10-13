@@ -203,12 +203,13 @@ export const tools: Tool[] = [
     slug: 'crypto-converter',
     categoryId: 'finance',
     description:
-      'Convert between supported fiat currencies and cryptocurrencies using available exchange-rate data.',
+      'Convert between 160+ world fiat currencies and top cryptocurrencies with transparent mid-market rates, card fee modeling, and 30-day trend charts.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Crypto & Fiat Currency Converter',
-    seoDescription: 'Convert between major fiat currencies (USD, EUR, GBP, PKR) and cryptocurrencies (BTC, ETH, SOL) with mid-market rates and fee modeling.',
-    relatedToolSlugs: ['precious-metals', 'compound-interest', 'invoice-generator', 'sip-calculator'],
+    seoTitle: 'Currency & Crypto Converter — Exchange Rates',
+    seoDescription:
+      'Convert between 160+ fiat currencies (USD, EUR, GBP, PKR, INR) and top cryptocurrencies (BTC, ETH, SOL) with mid-market rates, bank fee simulation, and 30-day historical charts.',
+    relatedToolSlugs: ['precious-metals', 'compound-interest', 'salary-calculator', 'invoice-generator', 'sip-calculator'],
   },
 
   // ============================================================
