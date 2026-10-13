@@ -863,7 +863,7 @@ export default function PasswordGenerator() {
                     <span>Append random 4-digit number (+13.3 bits entropy)</span>
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sampled uniformly without replacement from an auditable 1,024-word English dictionary (10.0 bits/word). Suffix adds ~13.3 bits.
+                    Sampled uniformly without replacement as an ordered sequence from an auditable 1,024-word English dictionary (keyspace P(1024, W)). Suffix adds ~13.3 bits.
                   </p>
                 </>
               )}
@@ -1425,7 +1425,7 @@ export default function PasswordGenerator() {
           {/* HASH COMPARE */}
           <section aria-labelledby="heading-compare" className="bg-gray-50 dark:bg-[#111827] rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
             <h2 id="heading-compare" className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
-              <Scale className="w-5 h-5 text-emerald-600" /> Timing-Safe Hash Compare
+              <Scale className="w-5 h-5 text-emerald-600" /> Hash Checksum Comparator
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -1476,7 +1476,7 @@ export default function PasswordGenerator() {
               </div>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Comparison normalizes whitespace/case and uses a constant-time byte-wise loop to mitigate timing side channels.
+              Comparison normalizes whitespace and hex casing before comparing characters via bitwise XOR without early exit for equal-length strings. Note: Client-side single-user comparisons carry no remote timing attack surface, and JavaScript JIT engines do not guarantee hardware constant-time execution.
             </p>
           </section>
         </div>
@@ -1510,14 +1510,14 @@ export default function PasswordGenerator() {
             <div>
               <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">Theoretical Entropy Estimates</h3>
               <p>
-                Entropy values displayed are estimated theoretical upper bounds based on the configuration space (<code className="font-mono text-blue-600 dark:text-blue-400">length × log₂(pool size)</code>). When constraints like &ldquo;Guarantee selected types&rdquo; are enforced, effective min-entropy may be slightly lower. Entropy estimates should not be construed as absolute crack-resistance guarantees against targeted brute-force attacks.
+                Entropy values displayed are theoretical metrics reflecting the combinatorial keyspace size under uniform random generation. For character passwords, theoretical entropy is calculated from the active pool. For passphrases of W words sampled without replacement from a 1,024-word dictionary, the keyspace is P(1024, W) = 1024! / (1024 - W)!, yielding sum(log₂(1024 - i)) bits plus ~13.3 bits if a 4-digit numeric suffix is appended. Theoretical entropy measures the search space size and must not be interpreted as a guaranteed real-world crack-time estimate, which depends on attacker hardware, offline vs online rate limiting, and password hashing algorithms (e.g. Argon2id vs unsalted hashes).
               </p>
             </div>
 
             <div>
               <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">Passphrase Architecture</h3>
               <p>
-                Passphrases are sampled uniformly without replacement from an auditable, distinct 1,024-word English dictionary (providing 10.0 bits per word). Suffix numbers are sampled uniformly from 0000 to 9999 (providing ~13.3 bits). Deterministic transformations such as word capitalization are not double-counted in the entropy score.
+                Passphrases are sampled uniformly without replacement as an ordered sequence from an auditable 1,024-word English dictionary. Suffix numbers are sampled uniformly from 0000 to 9999 (providing ~13.29 bits). Deterministic user settings (such as capitalization and word separator) add zero bits of random entropy and are not double-counted.
               </p>
             </div>
 

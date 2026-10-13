@@ -19,7 +19,7 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How is password entropy calculated mathematically?',
     answer:
-      'Password entropy is quantified in bits using Shannon information entropy: E = L * log2(R), where L represents password length and R denotes the size of the active character pool. For example, a 20-character password drawn uniformly from a 92-character printable ASCII pool provides 20 * log2(92) ≈ 130.47 bits of entropy, requiring approximately 2^130 brute-force trials to exhaust the entire search space.',
+      'Password entropy is quantified in bits using Shannon information entropy. For character passwords, E = L * log2(R), where L is length and R is the active pool size. For passphrases of W words sampled without replacement from an N-word dictionary, the ordered permutation keyspace is P(N, W) = N! / (N - W)!, giving entropy E = sum(log2(N - i)) for i = 0 to W - 1. If a 4-digit suffix (0000–9999) is appended, it adds log2(10000) ≈ 13.29 bits. Theoretical entropy measures the mathematical keyspace size under uniform random generation; it is not a guaranteed real-world crack-time estimate, which depends on offline vs online rate limits, GPU cluster capabilities, dictionary attack heuristics, and the specific key derivation function used (e.g. Argon2id vs fast unsalted digests).',
   },
   {
     question: 'Why does NIST SP 800-63B recommend multi-word passphrases over complex short passwords?',
@@ -191,15 +191,19 @@ export default function PasswordGeneratorSeo() {
         Instead, NIST advocates for <strong>longer, memorable passphrases</strong> and backend screening against known breach databases.
       </p>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools includes a dedicated Passphrase Generator using a curated 1,024-word dictionary. Because each word is sampled uniformly without replacement,
-        every word delivers exactly <code className="text-xs font-mono">log2(1024) = 10.0 bits</code> of theoretical entropy:
+        OmniTools includes a dedicated Passphrase Generator using a curated 1,024-word English dictionary. Because an ordered sequence of <code className="text-xs font-mono">W</code> words is sampled uniformly without replacement, the total permutation search space is <code className="text-xs font-mono">P(1024, W) = 1024! / (1024 - W)!</code>, yielding exact Shannon entropy <code className="text-xs font-mono">sum(log2(1024 - i))</code>:
       </p>
       <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li><strong>4 words:</strong> 40 bits of dictionary entropy</li>
-        <li><strong>5 words:</strong> 50 bits of dictionary entropy (plus ~13.3 bits if a 4-digit number is appended)</li>
-        <li><strong>6 words:</strong> 60 bits of entropy (strong everyday threshold for master passwords)</li>
-        <li><strong>7 words:</strong> 70 bits of entropy (high-security recommendation for disk encryption keys)</li>
+        <li><strong>3 words:</strong> ~30 bits dictionary entropy (~43 bits with 4-digit number)</li>
+        <li><strong>4 words:</strong> ~40 bits dictionary entropy (~53 bits with 4-digit number)</li>
+        <li><strong>5 words:</strong> ~50 bits dictionary entropy (~63 bits with 4-digit number, default)</li>
+        <li><strong>6 words:</strong> ~60 bits dictionary entropy (~73 bits with 4-digit number, master password baseline)</li>
+        <li><strong>7 words:</strong> ~70 bits dictionary entropy (~83 bits with 4-digit number)</li>
+        <li><strong>8 words:</strong> ~80 bits dictionary entropy (~93 bits with 4-digit number, disk encryption tier)</li>
       </ul>
+      <p className="mb-6 leading-relaxed text-xs text-slate-500 dark:text-slate-400">
+        Appending a 4-digit suffix adds <code className="text-xs font-mono">log2(10000) ≈ 13.29 bits</code>. Deterministic transformations (capitalization and separator symbols) add zero bits of random entropy. Theoretical entropy measures search space size and is not an absolute real-world crack-time guarantee.
+      </p>
 
       {/* CREDENTIAL REUSE & ZERO LEAKAGE */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">

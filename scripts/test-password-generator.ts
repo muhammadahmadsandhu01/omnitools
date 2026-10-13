@@ -432,20 +432,68 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
   const filteredTotal = filteredLower.length + filteredUpper.length + filteredNum.length + filteredSym.length;
   assert(filteredTotal === 83, 'Ambiguous-filtered character pool contains exactly 83 characters');
 
-  // B. Mathematical rejection sampling limits
-  const maxUint = 0x100000000; // 2^32
+  // B. Mathematical rejection sampling limits across all supported pool sizes
+  const maxUint = 0x100000000; // 2^32 = 4,294,967,296
   const limit10 = maxUint - (maxUint % 10);
+  const limit24 = maxUint - (maxUint % 24);
   const limit26 = maxUint - (maxUint % 26);
+  const limit27 = maxUint - (maxUint % 27);
   const limit29 = maxUint - (maxUint % 29);
+  const limit83 = maxUint - (maxUint % 83);
   const limit91 = maxUint - (maxUint % 91);
   const limit1024 = maxUint - (maxUint % 1024);
-  assert(limit10 === 4294967290, 'Rejection threshold for N=10 is exactly 4,294,967,290 (mod 6)');
-  assert(limit26 === 4294967274, 'Rejection threshold for N=26 is exactly 4,294,967,274 (mod 22)');
-  assert(limit29 === 4294967280, 'Rejection threshold for N=29 is exactly 4,294,967,280 (mod 16)');
-  assert(limit91 === 4294967222, 'Rejection threshold for N=91 is exactly 4,294,967,222 (mod 74)');
-  assert(limit1024 === 4294967296, 'Rejection threshold for N=1024 is exactly 2^32 (zero modulo discard)');
+  assert(limit10 === 4294967290, 'Deterministic limit: N=10 rejection threshold is exactly 4,294,967,290 (2^32 mod 10 = 6)');
+  assert(limit24 === 4294967280, 'Deterministic limit: N=24 rejection threshold is exactly 4,294,967,280 (2^32 mod 24 = 16)');
+  assert(limit26 === 4294967274, 'Deterministic limit: N=26 rejection threshold is exactly 4,294,967,274 (2^32 mod 26 = 22)');
+  assert(limit27 === 4294967274, 'Deterministic limit: N=27 rejection threshold is exactly 4,294,967,274 (2^32 mod 27 = 22)');
+  assert(limit29 === 4294967280, 'Deterministic limit: N=29 rejection threshold is exactly 4,294,967,280 (2^32 mod 29 = 16)');
+  assert(limit83 === 4294967219, 'Deterministic limit: N=83 rejection threshold is exactly 4,294,967,219 (2^32 mod 83 = 77)');
+  assert(limit91 === 4294967222, 'Deterministic limit: N=91 rejection threshold is exactly 4,294,967,222 (2^32 mod 91 = 74)');
+  assert(limit1024 === 4294967296, 'Deterministic limit: N=1024 rejection threshold is exactly 2^32 (zero modulo discard)');
 
-  // C. RFC 4122 UUID v4 bits verification across 100 trials
+  // C. Deterministic rejection boundary test (verifies rejection sampling loop without modulo bias)
+  {
+    const origGetRandomValues = globalThis.crypto.getRandomValues;
+    try {
+      // Mock CSPRNG to return boundary values: first limit (must reject), second limit - 1 (must accept)
+      const targetN = 10;
+      const targetLimit = 4294967290;
+      let callCount = 0;
+      globalThis.crypto.getRandomValues = (buf: Uint32Array) => {
+        callCount++;
+        if (callCount === 1) {
+          buf[0] = targetLimit; // In rejected zone (>= limit)
+        } else {
+          buf[0] = targetLimit - 1; // In accepted zone (< limit, 4294967289 % 10 = 9)
+        }
+        return buf;
+      };
+
+      const result = secureRandomInt(targetN);
+      assert(callCount === 2, 'secureRandomInt loops and resamples when value equals rejection boundary limit');
+      assert(result === (targetLimit - 1) % targetN, 'secureRandomInt accepts value immediately below boundary');
+    } finally {
+      globalThis.crypto.getRandomValues = origGetRandomValues;
+    }
+  }
+
+  // D. Exact theoretical passphrase entropy calculations
+  {
+    // Exact ordered sequence without replacement formula: sum(log2(1024 - i)) + suffix
+    const pass5NoSuffix = generatePassphrase({ wordCount: 5, includeNumber: false });
+    assert(pass5NoSuffix.entropy === 50, `5 words without suffix theoretical entropy is exactly 50 bits (got ${pass5NoSuffix.entropy})`);
+
+    const pass5WithSuffix = generatePassphrase({ wordCount: 5, includeNumber: true });
+    assert(pass5WithSuffix.entropy === 63, `5 words with 4-digit suffix theoretical entropy is exactly 63 bits (got ${pass5WithSuffix.entropy})`);
+
+    const pass3NoSuffix = generatePassphrase({ wordCount: 3, includeNumber: false });
+    assert(pass3NoSuffix.entropy === 30, `3 words without suffix theoretical entropy is exactly 30 bits (got ${pass3NoSuffix.entropy})`);
+
+    const pass6WithSuffix = generatePassphrase({ wordCount: 6, includeNumber: true });
+    assert(pass6WithSuffix.entropy === 73, `6 words with 4-digit suffix theoretical entropy is exactly 73 bits (got ${pass6WithSuffix.entropy})`);
+  }
+
+  // E. Statistical observations (explicitly distinct from mathematical proofs)
   let uuidCompliance = true;
   for (let i = 0; i < 100; i++) {
     const uuid = makeSecret('uuid');
@@ -454,9 +502,9 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
       break;
     }
   }
-  assert(uuidCompliance, '100 generated UUID v4 tokens strictly comply with RFC 4122 (version 4 and variant 1 bits)');
+  assert(uuidCompliance, 'Statistical observation: 100 generated UUID v4 tokens conform to RFC 4122 version 4 and variant 1 bits');
 
-  // D. Fisher-Yates positional spread (guaranteed classes not locked to prefixes)
+  // Positional diversity observation
   const firstCharClasses = new Set<string>();
   const lastCharClasses = new Set<string>();
   for (let i = 0; i < 100; i++) {
@@ -472,10 +520,10 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
     if (/\d/.test(last)) lastCharClasses.add('number');
     if (/[^A-Za-z0-9]/.test(last)) lastCharClasses.add('symbol');
   }
-  assert(firstCharClasses.size >= 3, 'Fisher-Yates shuffle distributes diverse character classes to index 0');
-  assert(lastCharClasses.size >= 3, 'Fisher-Yates shuffle distributes diverse character classes to final index');
+  assert(firstCharClasses.size >= 3, 'Statistical observation: Fisher-Yates shuffle distributes diverse character classes to index 0 across 100 trials');
+  assert(lastCharClasses.size >= 3, 'Statistical observation: Fisher-Yates shuffle distributes diverse character classes to final index across 100 trials');
 
-  // E. Web Crypto missing behavior simulation
+  // F. Web Crypto missing behavior simulation
   const originalGetRandomValues = globalThis.crypto.getRandomValues;
   try {
     // @ts-expect-error simulating missing API
@@ -486,7 +534,7 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
     } catch {
       threw = true;
     }
-    assert(threw, 'getCrypto() throws explicit error when Web Crypto getRandomValues is missing');
+    assert(threw, 'Deterministic fallback test: getCrypto() throws explicit error when Web Crypto getRandomValues is missing');
   } finally {
     globalThis.crypto.getRandomValues = originalGetRandomValues;
   }

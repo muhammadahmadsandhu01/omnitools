@@ -544,10 +544,11 @@ export function looksLikeHex(value: string): boolean {
 }
 
 /**
- * Constant-time comparison for two hexadecimal hash digests of equal length.
- * Implemented via an in-memory bitwise XOR accumulator in client-side JavaScript.
- * Avoids early termination on mismatched characters to prevent timing discrepancy leaks.
- * Note: This is a custom JavaScript bitwise loop, not a native browser Web Cryptography API.
+ * Bitwise XOR comparison helper for hexadecimal hash checksums.
+ * Compares equal-length strings across all character positions without early termination.
+ * Note: JavaScript execution in optimizing JIT engines cannot guarantee hardware-level
+ * constant-time behavior. In this client-side UI, remote timing attacks do not apply;
+ * the full-string XOR pass serves as defensive code practice for checksum equality checking.
  */
 export function constantTimeTextEqual(a: string, b: string): boolean {
   const aa = normalizeHash(a);

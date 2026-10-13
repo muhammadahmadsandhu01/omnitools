@@ -68,9 +68,11 @@ export function secureRandomInt(max: number): number {
 | Pool Category | Size ($N$) | Remainder ($2^{32} \pmod N$) | Rejection Threshold ($\text{limit}$) | Discard Probability |
 |---|---|---|---|---|
 | Numbers only | 10 | 6 | `4,294,967,290` | $1.40 \times 10^{-9}$ |
+| Filtered letters (without ambiguous) | 24 | 16 | `4,294,967,280` | $3.73 \times 10^{-9}$ |
 | Letters only (Lower or Upper) | 26 | 22 | `4,294,967,274` | $5.12 \times 10^{-9}$ |
+| Filtered symbols (without ambiguous) | 27 | 22 | `4,294,967,274` | $5.12 \times 10^{-9}$ |
 | Symbols only | 29 | 16 | `4,294,967,280` | $3.73 \times 10^{-9}$ |
-| Ambiguous-filtered pool | 83 | 73 | `4,294,967,223` | $1.70 \times 10^{-8}$ |
+| Ambiguous-filtered pool | 83 | 77 | `4,294,967,219` | $1.79 \times 10^{-8}$ |
 | Full printable ASCII pool | 91 | 74 | `4,294,967,222` | $1.72 \times 10^{-8}$ |
 | Passphrase dictionary | 1,024 | 0 | `4,294,967,296` ($2^{32}$) | $0.00$ (Zero discards) |
 
@@ -123,16 +125,24 @@ When guaranteeing that each selected character class is present:
 OmniTools embeds an auditable dictionary of **1,024 distinct English words** (`PASSPHRASE_WORDS` in `lib/passwordEngine.ts`):
 - All words are lowercase alphabetical strings between 3 and 10 characters.
 - Curated to eliminate offensive, confusing, or phonetically ambiguous words.
-- Each word represents an alphabet of size $N = 1,024$, yielding:
-  $$\log_2(1024) = 10.000 \text{ bits of theoretical entropy per word}$$
+- Each word is drawn from a dictionary of size $N = 1,024$. For an ordered sequence of $W$ words sampled without replacement, the total number of permutations is:
+  $$P(1024, W) = \frac{1024!}{(1024 - W)!} = \prod_{i=0}^{W-1} (1024 - i)$$
 
-### Sampling Without Replacement
-To prevent word duplication in a single passphrase, words are sampled uniformly without replacement:
+### Sampling Without Replacement & Ordered Sequence
+Because word choices are ordered and drawn without replacement, the exact theoretical entropy of the word sequence is:
 $$\text{Entropy}_{\text{words}} = \sum_{i=0}^{W - 1} \log_2(1024 - i)$$
-- For a 5-word passphrase: $\approx 49.98$ bits of dictionary entropy.
-- When the 4-digit numeric suffix (`0000` to `9999`) is included:
-  $$\text{Entropy}_{\text{suffix}} = \log_2(10000) \approx 13.288 \text{ bits}$$
-  $$\text{Total Entropy (5 words + number)} \approx 63.27 \text{ bits}$$
+- For a 3-word passphrase: $\approx 29.996$ bits (rounds to 30 bits; 43 bits with suffix).
+- For a 4-word passphrase: $\approx 39.992$ bits (rounds to 40 bits; 53 bits with suffix).
+- For a 5-word passphrase (default): $\approx 49.986$ bits (rounds to 50 bits; 63 bits with suffix).
+- For a 6-word passphrase: $\approx 59.979$ bits (rounds to 60 bits; 73 bits with suffix).
+- For a 7-word passphrase: $\approx 69.970$ bits (rounds to 70 bits; 83 bits with suffix).
+- For an 8-word passphrase: $\approx 79.960$ bits (rounds to 80 bits; 93 bits with suffix).
+
+When the 4-digit numeric suffix (`0000` to `9999`) is included, $10,000$ equiprobable outcomes are added:
+$$\text{Entropy}_{\text{suffix}} = \log_2(10000) \approx 13.288 \text{ bits}$$
+$$\text{Total Theoretical Entropy (5 words + number)} \approx 63.274 \text{ bits (rounds to 63 bits)}$$
+
+Deterministic configuration choices (such as word capitalization and separator characters) add $0$ bits of random entropy. Theoretical entropy reflects search space size under uniform brute-force assumptions; it is not a guaranteed real-world crack-time estimate.
 
 ---
 
@@ -190,24 +200,26 @@ OmniTools explicitly **rejects** fixed "time to crack" displays (e.g. "takes 400
 | **URL Parameters / History** | No query parameters or URL fragments store generated credentials. | ✅ PASS: Browser history clean. |
 | **Persistent Storage** | `localStorage`, `sessionStorage`, `cookies`, `IndexedDB` are unused. | ✅ PASS: Zero persistent storage. |
 | **Session History** | Opt-in memory array, disabled by default. Cleared on tab close or manual reset. | ✅ PASS: Ephemeral memory only. |
-| **Network Request Isolation** | **Zero outbound requests.** External breach queries removed; all credential generation, heuristic scoring, and file hashing execute 100% locally in browser memory. | ✅ PASS: Zero network requests intercepted via CDP. |
+| **Credential Generation Isolation** | **Zero outbound requests.** All password, passphrase, secret token generation, heuristic scoring, and file integrity hashing execute 100% locally in browser memory. (Note: The optional HIBP breach checker, if explicitly invoked by the user for a pre-existing password, uses k-anonymity transmitting strictly 5 hex characters of a SHA-1 hash; freshly generated credentials are never submitted). | ✅ PASS: Zero network requests during generation, hashing, and analysis. |
 | **Clipboard Behavior** | Uses standard `navigator.clipboard.writeText()` with 2-second timeout indicator. | ✅ PASS: Safe copy feedback. |
 | **Reset State Action** | "Reset Sensitive State" button overwrites all state hooks and revokes Worker URLs. | ✅ PASS: Complete best-effort reset. |
 
 ### Empirical Chrome DevTools Protocol (CDP) Network Audit Results
-During an automated headless Chrome session with active user interaction (generating 6 distinct credentials across random, passphrase, developer secret, and bulk modes):
-- **Total Network Requests Intercepted:** 21 requests (restricted strictly to static JS chunks, CSS, and web fonts).
+During an automated headless Chrome session with active user interaction (inspecting initial load, generating 6 distinct credentials across random characters, passphrases, developer secret tokens, and bulk batches, and toggling configuration options):
+- **Actions Inspected:** Page initial load, mode switching, password generation, passphrase generation, secret generation, bulk generation, local heuristic analysis, and sensitive state reset. (Does not include invoking the third-party HIBP breach check API).
+- **Total Network Requests Intercepted:** 21 requests (restricted strictly to local static Next.js JS chunks, CSS, and web fonts).
 - **Outbound Credential Leaks:** **0** (No generated passwords, passphrases, secrets, or file digests detected in any URL, query parameter, POST body, or header).
-- **Persistent Storage Inspection:** `localStorage.length === 0`, `sessionStorage.length === 0`, `cookies === 0`.
+- **Persistent Storage Inspection:** `localStorage.length === 0`, `sessionStorage.length === 0`, `document.cookie === ""` (zero items stored).
 - **Console Log Telemetry:** **0** credentials or sensitive inputs logged to browser console.
 
 ---
 
-## 8. Constant-Time Hash Comparison Analysis
+## 8. Hash Checksum Comparison Analysis (`constantTimeTextEqual`)
 The tool provides a local hex hash comparator (`constantTimeTextEqual` in `lib/passwordEngine.ts`) for verifying checksums against vendor-published hashes:
-- **Implementation:** Executes an in-memory bitwise XOR accumulator (`diff |= aa.charCodeAt(i) ^ bb.charCodeAt(i)`) over normalized strings without early termination on mismatch.
-- **Runtime Environment:** Pure client-side JavaScript. This is **not** a native browser Web Cryptography API (as the W3C Web Cryptography specification does not specify a synchronous `crypto.timingSafeEqual` method).
-- **Security Assessment:** In a client-side single-user browser session, microsecond timing attacks against local DOM inputs are practically non-existent. The constant-time loop is implemented as cryptographic defense-in-depth and is accurately documented as custom JavaScript logic.
+- **Implementation:** Normalizes hexadecimal case and whitespace, then executes an in-memory bitwise XOR accumulator (`diff |= aa.charCodeAt(i) ^ bb.charCodeAt(i)`) over equal-length strings without early exit on character mismatches.
+- **Unequal Length Strings:** If input strings have differing lengths (`aa.length !== bb.length`), the function returns `false` immediately without executing the bitwise loop. Thus, it does not mask length differences.
+- **Runtime Environment & JIT Optimizations:** Written in pure client-side JavaScript. JavaScript execution in modern optimizing JIT compilers (V8, SpiderMonkey) cannot guarantee hardware-level constant-time instruction cycles because branch prediction, instruction reordering, and loop unrolling are managed by the runtime engine.
+- **Security Scope & Attack Surface:** The comparator is used exclusively in the local browser DOM where a user pastes two hashes into input fields to verify a file download or build artifact. There is no remote authentication endpoint, server-side secret comparison, or network attacker capable of measuring millisecond/microsecond timing deltas. The full-string XOR pass serves as defensive code practice for checksum equality checking rather than an enterprise constant-time authentication primitive.
 
 ---
 

@@ -87,7 +87,11 @@ The page injects two complementary structured data blocks:
    ```
 2. **FAQPage Schema (`components/seo/PasswordGeneratorSeo.tsx`):**
    - 10 distinct questions matching visible on-page accordion content (including CSPRNG mechanics, rejection sampling, NIST SP 800-63B standards, Shannon entropy formulas, and local heuristic vulnerability analysis).
-   - Fully compliant with Google Search Central FAQ structured data guidelines (1:1 correspondence with visible body text).
+
+### Structured Data Verification Tiers
+- **JSON Syntax Validation:** PASS. The JSON-LD strings serialize cleanly and parse without syntax errors (`JSON.parse` passes cleanly during SSR and build).
+- **Schema Correctness:** PASS. Objects adhere strictly to Schema.org vocabulary specifications (`WebApplication`, `BreadcrumbList`, `FAQPage`). Properties like `name`, `url`, `mainEntity`, `question`, and `acceptedAnswer` use correct data types.
+- **Rich-Result Eligibility:** PASS. Markup conforms to Google Search Central documentation for FAQPage and Breadcrumbs. Note: While technically eligible, actual display of rich snippets in Google search results or AI summaries is governed entirely by search engine ranking algorithms and quality evaluation, and is never guaranteed.
 
 ---
 
