@@ -744,64 +744,70 @@ export default function PasswordGenerator() {
                   </div>
 
                   {/* Character Class Checkboxes */}
-                  <fieldset className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
                     <legend className="sr-only">Character types</legend>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
+                    <label htmlFor="checkbox-inc-upper" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-inc-upper"
                         type="checkbox"
                         checked={incUpper}
                         onChange={e => setIncUpper(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Uppercase (A-Z)</span>
+                      <span className="min-w-0 break-words leading-tight">Uppercase (A-Z)</span>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
+                    <label htmlFor="checkbox-inc-lower" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-inc-lower"
                         type="checkbox"
                         checked={incLower}
                         onChange={e => setIncLower(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Lowercase (a-z)</span>
+                      <span className="min-w-0 break-words leading-tight">Lowercase (a-z)</span>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
+                    <label htmlFor="checkbox-inc-num" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-inc-num"
                         type="checkbox"
                         checked={incNum}
                         onChange={e => setIncNum(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Numbers (0-9)</span>
+                      <span className="min-w-0 break-words leading-tight">Numbers (0-9)</span>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
+                    <label htmlFor="checkbox-inc-sym" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-inc-sym"
                         type="checkbox"
                         checked={incSym}
                         onChange={e => setIncSym(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Symbols (!@#$)</span>
+                      <span className="min-w-0 break-words leading-tight">Symbols (!@#$)</span>
                     </label>
                   </fieldset>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 pt-2 border-t border-gray-200/60 dark:border-slate-800/60">
+                    <label htmlFor="checkbox-require-each" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-require-each"
                         type="checkbox"
                         checked={requireEach}
                         onChange={e => setRequireEach(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Guarantee selected types</span>
+                      <span className="min-w-0 break-words leading-tight">Guarantee selected types</span>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <label htmlFor="checkbox-exclude-ambiguous" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-exclude-ambiguous"
                         type="checkbox"
                         checked={excludeAmbiguous}
                         onChange={e => setExcludeAmbiguous(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Exclude ambiguous (0, O, 1, l, |)</span>
+                      <span className="min-w-0 break-words leading-tight">Exclude ambiguous (0, O, 1, l, |)</span>
                     </label>
                   </div>
                 </>
@@ -843,24 +849,26 @@ export default function PasswordGenerator() {
                         <option value="/">Slash (/)</option>
                       </select>
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 pt-6 cursor-pointer">
+                    <label htmlFor="checkbox-passphrase-caps" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1.5 sm:self-end sm:pb-2.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                       <input
+                        id="checkbox-passphrase-caps"
                         type="checkbox"
                         checked={passphraseCaps}
                         onChange={e => setPassphraseCaps(e.target.checked)}
-                        className="w-4 h-4 accent-blue-600 rounded"
+                        className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                       />
-                      <span>Capitalize words</span>
+                      <span className="min-w-0 break-words leading-tight">Capitalize words</span>
                     </label>
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <label htmlFor="checkbox-passphrase-number" className="group flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none min-w-0 w-full py-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                     <input
+                      id="checkbox-passphrase-number"
                       type="checkbox"
                       checked={passphraseNumber}
                       onChange={e => setPassphraseNumber(e.target.checked)}
-                      className="w-4 h-4 accent-blue-600 rounded"
+                      className="mt-0.5 w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                     />
-                    <span>Append random 4-digit number (+13.3 bits entropy)</span>
+                    <span className="min-w-0 break-words leading-tight">Append random 4-digit number (+13.3 bits entropy)</span>
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Sampled uniformly without replacement as an ordered sequence from an auditable 1,024-word English dictionary (keyspace P(1024, W)). Suffix adds ~13.3 bits.
@@ -960,15 +968,16 @@ export default function PasswordGenerator() {
                 >
                   <Lock className="w-4 h-4" /> Session History {showRecent ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
-                <label className="flex items-center gap-2 text-xs text-slate-500 cursor-pointer">
+                <label htmlFor="checkbox-keep-history" className="group flex items-center gap-2 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer select-none">
                   <input
+                    id="checkbox-keep-history"
                     type="checkbox"
                     checked={keepHistory}
                     onChange={e => {
                       setKeepHistory(e.target.checked);
                       if (!e.target.checked) clearHistory();
                     }}
-                    className="w-4 h-4 accent-blue-600 rounded"
+                    className="w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-slate-900"
                   />
                   <span>Keep in memory</span>
                 </label>
@@ -1023,26 +1032,36 @@ export default function PasswordGenerator() {
               placeholder="Paste a password to analyze locally…"
               className="w-full h-24 p-4 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white text-sm resize-none font-mono"
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
               {(() => {
                 const a = analyzePassword(analysisInput || password);
                 return (
                   <>
-                    <div className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-3">
-                      <div className="text-slate-500">Score</div>
-                      <div className="font-bold text-blue-600 text-lg">{a.score}/100</div>
+                    <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Score</div>
+                      <div className="font-bold text-blue-600 dark:text-blue-400 text-base sm:text-lg tracking-tight leading-tight min-w-0 break-words flex items-baseline flex-wrap gap-x-0.5">
+                        <span>{a.score}</span>
+                        <span className="text-xs sm:text-sm font-semibold text-blue-500/80 dark:text-blue-400/80">/100</span>
+                      </div>
                     </div>
-                    <div className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-3">
-                      <div className="text-slate-500">Entropy</div>
-                      <div className="font-bold text-slate-800 dark:text-white">~{a.entropy} bits</div>
+                    <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Entropy</div>
+                      <div className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight leading-tight min-w-0 break-words flex items-baseline flex-wrap gap-x-1">
+                        <span>~{a.entropy}</span>
+                        <span className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-400">bits</span>
+                      </div>
                     </div>
-                    <div className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-3">
-                      <div className="text-slate-500">Length</div>
-                      <div className="font-bold text-slate-800 dark:text-white">{a.length}</div>
+                    <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Length</div>
+                      <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg tracking-tight leading-tight min-w-0">
+                        {a.length}
+                      </div>
                     </div>
-                    <div className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-3">
-                      <div className="text-slate-500">Verdict</div>
-                      <div className="font-bold text-emerald-600">{a.label}</div>
+                    <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
+                      <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Verdict</div>
+                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 break-words">
+                        {a.label}
+                      </div>
                     </div>
                   </>
                 );
@@ -1063,13 +1082,14 @@ export default function PasswordGenerator() {
                     ].map(([lbl, bad]) => (
                       <div
                         key={String(lbl)}
-                        className={`rounded-lg border px-3 py-2 ${
+                        className={`min-w-0 rounded-lg border px-2.5 py-1.5 text-xs break-words leading-tight flex items-center gap-1.5 ${
                           bad
                             ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300'
                             : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-300'
                         }`}
                       >
-                        {bad ? '⚠' : '✓'} {String(lbl)}
+                        <span className="shrink-0">{bad ? '⚠' : '✓'}</span>
+                        <span className="min-w-0 break-words">{String(lbl)}</span>
                       </div>
                     ))}
                   </>

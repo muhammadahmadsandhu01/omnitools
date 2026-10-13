@@ -5,6 +5,8 @@
  * Run with: npm run test:password
  */
 
+import fs from 'fs';
+import path from 'path';
 import {
   generatePassword,
   generatePassphrase,
@@ -537,6 +539,91 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
     assert(threw, 'Deterministic fallback test: getCrypto() throws explicit error when Web Crypto getRandomValues is missing');
   } finally {
     globalThis.crypto.getRandomValues = originalGetRandomValues;
+  }
+}
+
+// 12. UI INVARIANTS, RESPONSIVE LAYOUT & SCORE-CARD OVERFLOW SAFEGUARDS
+console.log('\n--- 12. Testing UI Invariants, Responsive Layout & Overflow Safeguards ---');
+{
+  const tsxPath = path.join(__dirname, '..', 'components', 'tools', 'PasswordGenerator.tsx');
+  assert(fs.existsSync(tsxPath), 'PasswordGenerator.tsx component file exists');
+  const source = fs.readFileSync(tsxPath, 'utf8');
+
+  // A. Checkbox option layout & card styling removal
+  assert(
+    !source.includes('<span>Lowercase (a-z)</span>\n                    </label>\n                    <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white'),
+    'Individual card backgrounds and borders removed from character type options'
+  );
+
+  // B. Semantic label association for full click-target coverage
+  const requiredIds = [
+    'checkbox-inc-upper',
+    'checkbox-inc-lower',
+    'checkbox-inc-num',
+    'checkbox-inc-sym',
+    'checkbox-require-each',
+    'checkbox-exclude-ambiguous',
+    'checkbox-passphrase-caps',
+    'checkbox-passphrase-number',
+    'checkbox-keep-history',
+  ];
+  for (const id of requiredIds) {
+    assert(
+      source.includes(`id="${id}"`) && source.includes(`htmlFor="${id}"`),
+      `Semantic <label htmlFor="${id}"> and <input id="${id}"> association preserved for accessible click target`
+    );
+  }
+
+  // C. Stable checkbox dimensions and focus ring accessibility
+  assert(
+    source.includes('w-4 h-4 shrink-0 rounded accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'),
+    'Checkboxes maintain stable dimensions (shrink-0) and visible focus ring on keyboard tab'
+  );
+
+  // D. Label wrapping and boundary constraints
+  assert(
+    source.includes('min-w-0 break-words leading-tight'),
+    'Checkbox option labels contain min-w-0 break-words to prevent container overflow'
+  );
+
+  // E. Password Security Analyzer score card overflow prevention
+  assert(
+    source.includes('min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between'),
+    'Security Analyzer score cards enforce min-w-0, responsive padding and flex column alignment'
+  );
+
+  // F. Score value safe responsive formatting (no truncation hiding data)
+  assert(
+    source.includes('{a.score}</span>') &&
+    source.includes('/100</span>') &&
+    source.includes('flex items-baseline flex-wrap gap-x-0.5'),
+    'Score card formats /100 with responsive font sizing and flex-wrap without hiding data via truncation'
+  );
+
+  // G. Mathematical bounds of analyzePassword output
+  const testInputs = [
+    '',
+    'a',
+    'password123',
+    'Tr0ub4dor&3',
+    'correct-horse-battery-staple-2026',
+    'x'.repeat(128),
+    'A1!b2@c3#d4$e5%f6^g7&h8*',
+  ];
+  for (const input of testInputs) {
+    const analysis = analyzePassword(input);
+    assert(
+      analysis.score >= 0 && analysis.score <= 100,
+      `Password analysis score for length ${input.length} is bounded within [0, 100] (got ${analysis.score})`
+    );
+    assert(
+      analysis.entropy >= 0,
+      `Entropy for length ${input.length} is non-negative (got ${analysis.entropy})`
+    );
+    assert(
+      ['No password', 'Very weak', 'Weak', 'Fair', 'Strong', 'Excellent'].includes(analysis.label),
+      `Verdict label is valid enum tier (got "${analysis.label}")`
+    );
   }
 }
 
