@@ -248,15 +248,16 @@ export const tools: Tool[] = [
 
   {
     id: 'password-generator',
-    name: 'Secure Password & Hash Generator',
+    name: 'Secure Password & Secret Generator',
     slug: 'password-generator',
     categoryId: 'developer',
     description:
-      'Generate strong passwords and create common cryptographic hashes for supported text or file data.',
+      'Generate cryptographically secure passwords, multi-word passphrases, API secrets, and file hashes client-side in your browser with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Secure Password & Hash Generator',
-    seoDescription: 'Generate cryptographically secure passwords and compute SHA-256, SHA-512, MD5, and HMAC hashes client-side in your browser.',
+    seoTitle: 'Secure Password Generator — Random Passwords, Passphrases & Secrets',
+    seoDescription:
+      'Free client-side password generator. Create cryptographically secure random passwords, memorable passphrases, API tokens, and file hashes with zero modulo bias and zero tracking.',
     relatedToolSlugs: ['base64-encoder', 'regex-tester', 'json-formatter', 'sql-formatter'],
   },
 

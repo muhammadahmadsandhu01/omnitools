@@ -7,35 +7,40 @@ import {
   ChevronUp,
   Copy,
   FileUp,
-  Fingerprint,
   Hash as HashIcon,
   Key,
   Lock,
   RefreshCw,
   ShieldCheck,
   Trash2,
-  AlertTriangle,
   Search,
   Code2,
   Scale,
+  Eye,
   EyeOff,
   ShieldAlert,
   Info,
   RotateCcw,
+  List,
 } from 'lucide-react';
-
-/**
- * Curated 1,024-word English dictionary.
- * Each word provides exactly log2(1024) = 10.0 bits of theoretical entropy
- * when sampled uniformly.
- */
-const PASSPHRASE_WORDS: readonly string[] = ["ability","able","about","above","accept","accord","account","acid","across","action","active","actor","actual","adapt","added","adjust","adopt","adult","advance","advice","affair","affect","afford","afraid","after","again","against","agent","agree","ahead","airport","alarm","album","alert","alike","alive","allow","almost","alone","along","aloud","alpha","already","alter","always","amaze","amber","among","amount","anchor","ancient","angel","anger","angle","angry","animal","ankle","annual","another","answer","anthem","anvil","anybody","anyhow","anymore","anyone","anyway","apart","apex","appeal","appear","apple","apply","apron","arcade","arch","arctic","arena","argue","arise","armor","around","arouse","arrange","array","arrest","arrival","arrive","arrow","artist","asleep","aspect","assault","assert","assess","asset","assign","assist","assume","assure","astonish","athlete","atlas","atom","atomic","attach","attack","attain","attempt","attend","attic","audio","audit","august","author","auto","autumn","avail","avenue","average","avoid","awake","award","aware","balance","balcony","bamboo","banana","bandit","banner","barber","barely","barrel","barter","basket","battle","beacon","beam","beauty","because","become","before","behave","behind","belief","belong","beloved","bench","benefit","beside","betray","beyond","bicycle","bidder","binary","biology","biscuit","bishop","bitter","blade","blanket","blender","blessing","blossom","blueprint","boulder","boundary","bracket","branch","bravery","breeze","bridge","bright","bronze","brother","bubble","bucket","budget","builder","bullet","bundle","burden","burger","butter","cabin","cabinet","cactus","camera","campus","canal","canary","candle","canvas","canyon","capable","capital","captain","capture","carbon","cardinal","cargo","carpet","carrot","cascade","castle","casual","catalog","catcher","cater","cathedral","cattle","caution","cavity","cedar","ceiling","celebrate","cement","censor","census","center","century","cereal","certain","chamber","champion","chance","change","channel","chapter","charcoal","charge","chariot","charity","charm","charter","chatter","cheese","chemical","cherry","chicken","chimney","choice","chronic","circle","circuit","citizen","citrus","civic","civil","clamor","clarity","classic","clause","cleaner","clever","client","cliff","climate","climb","clinic","cloak","clock","cloudy","cluster","coastal","cobalt","coconut","coffin","cognition","cohesion","collector","colony","column","combat","combine","comedy","comet","comfort","comic","command","commence","commerce","commit","common","compact","company","compass","compile","complex","compose","compound","compute","comrade","conceal","concede","concept","concern","conclude","concrete","condemn","conduct","confer","confess","confirm","conflict","conform","confront","confuse","conquer","consent","conserve","consider","consign","consist","console","constant","constrain","construct","consult","consume","contact","contain","contempt","contend","content","contest","context","continue","contour","contract","contrast","control","convene","converse","convert","convey","convict","convince","copper","coral","corner","corona","corps","correct","corridor","corrupt","cosmic","costume","cottage","cotton","council","counsel","counter","country","county","courage","courier","course","courtesy","covenant","cradle","crafty","crater","crayon","creature","credit","crevice","cricket","criminal","crisis","critic","crystal","culture","cupboard","curious","current","curtain","cushion","custom","cylinder","damage","dancer","danger","daring","dazzle","dealer","debate","decade","decay","deceive","decency","decide","decimal","declare","decline","decorate","decrease","dedicate","defense","defer","deficit","define","definite","deflect","degree","delight","deliver","demand","democracy","demolish","denial","depart","depend","depict","deposit","depth","deputy","derive","descend","describe","desert","deserve","design","desire","despair","dessert","destiny","destroy","detach","detail","detain","detect","deter","develop","device","devote","diamond","diary","dictate","diesel","differ","digest","digital","dignity","dilemma","dimension","dinner","diploma","direct","disable","disaster","discard","discern","disciple","disclose","discount","discourse","discover","disease","disguise","dismiss","disorder","dispatch","dispel","display","dispose","dispute","disrupt","distant","distort","district","disturb","diverse","divide","divine","divorce","doctor","doctrine","document","domain","domestic","dominant","dominate","donate","donkey","dormant","double","dragon","drainage","dramatic","drawer","drift","driver","droplet","drummer","dryer","durable","duration","dynamic","eager","eagle","earnest","earring","earth","easily","eastern","eccentric","echo","eclipse","ecology","economic","economy","ecstasy","edge","edition","educate","effect","effort","elastic","elbow","elder","elect","electric","elegant","element","elephant","elevate","eligible","elite","elixir","elm","embark","embassy","embrace","emerald","emerge","emission","emotion","empathy","emperor","emphasis","empire","employ","empower","empty","enable","enact","enchant","enclose","encoder","encounter","encourage","endear","endless","endorse","endure","enemy","energy","enforce","engage","engine","engrave","enhance","enigma","enjoy","enlarge","enlist","enough","enrich","enroll","ensemble","ensue","ensure","enter","enterprise","entire","entitle","entity","entrance","envelope","envision","enzyme","epic","episode","epoch","equal","equator","equip","equity","erase","erosion","errand","escape","escort","essence","estate","esteem","estimate","eternal","ethics","ethnic","eureka","evacuate","evaluate","evening","evident","evolution","evolve","exact","examine","example","exceed","excel","except","excerpt","excess","exchange","excite","exclude","execute","exempt","exercise","exert","exhaust","exhibit","exile","exist","exit","exotic","expand","expect","expedite","expel","expense","expert","expire","explain","explicit","explode","exploit","explore","export","expose","express","extend","exterior","external","extol","extra","extract","extreme","eyebrow","eyelid","fable","fabric","facet","facility","factor","factory","faculty","fade","fail","faint","falcon","falter","family","famous","fanatic","fancy","fantasy","farewell","farmer","fascinate","fashion","fasten","fatal","father","fathom","fatigue","fault","favor","feast","feather","feature","federal","fellow","female","fence","fender","fertile","festival","fever","fiber","fiction","field","fierce","fighter","figure","filter","final","finance","finder","finger","finish","fir","firefly","firewall","firmly","fiscal","fisher","fissure","fitness","flame","flavor","flawless","fleece","flight","flock","flourish","flowchart","flower","fluid","flutter","flying","focus","foggy","folder","foliage","follow","fondly","footpath","footstep","forbid","forecast","forefront","foreign","foresee","forest","forever","forge","forgive","formal","format","formula","forsake","fortress","fortune","forward","fossil","foster","founder","fountain","fracture","fragment","fragrance","framework","frankly","fraud","freckle","freedom","freeway","freeze","freight","frequency","fresh","friction","frigate","frontier","frost","frugal","fruit","fulfill","fulcrum","function","furious","furnace","furnish","furniture","further","galaxy","gallery","galley","gallon","gamble","garage","garden","garlic","garment","gateway","gather","gauge","gazebo","gecko","gemstone","general","generate","generic","generous","genius","gentle","genuine","geography","geology","gesture","giant","glacier","glamour","glance","glass","glider","glimmer","glimpse","glisten","glitter","global","glorious","goddess","golden","goodness","gorgeous","gorilla","gourmet","govern","grace","gradient","graduate","grain","grammar","granite","graphic","grapple","grasp","grateful","gravity","greatly","greedy","greenery","greeting","gridiron","grief","grinder","grizzly","grocery","ground","growth","guardian","guesswork","guidance","guillotine","guilt","guitar","gulf","gullible","gumdrop","gunfire","gurgle","gusto","gutter","gymnast","habitat","haircut","halfway","hallway","halve","hammer","hamster","handbag","handbook","handful","handle","handrail","handsome","handy","hangar","happen","happily","harbor","hardship","hardwood","harmful","harmony","harness","harpoon","harvest","hasten","hatchet","haven","havoc","hazard","heading","headlight","headline","headset","healthy","hearing","heartbeat","hearth","hearty","heaven","heavy","hectare","hedgerow","height","heirloom","helicopter","helium","helmet","helpful","herald","herbal","heritage","heroic","hexagon","hickory","hidden","hideout","highway","hinder","hint","hippie","historian","history","hockey","holdout","holistic","hollow","holster","homeland","homely","homestead","honesty","honeycomb","honor","hooded","hopeful","horizon","hormone","hornet","horror","horseback","hospital","hostage","hostess","hostile","hotel","hotspot","hourglass","housing","howler","hubcap","humane","humanity","humble","humidity","humming","humor","hunger","hunter","hurdle","hurricane","hurtful","husband","hybrid","hydrant","hydrate","hydraulic","hydrogen","hygiene","hyperlink","hypnosis","iceberg","icicle","iconic","ideology","ignite","ignition","ignore","illicit","illness","illuminate","illusion","illustrate","imagery","imagine","imitate","immense","immerse","immigrant","immune","impact","impartial","impede","imperfect","imperial","implore","imply","import","impose","impossible","impoverish","impress","imprison","improve","impulse","inability","inactive","inbound","incense","incentive","incident","incision","incline","include","income","incorrect","increase","incubate","incur","indebted","indeed","indent","indicator","indict","indirect"];
-
-const LOWER = 'abcdefghijklmnopqrstuvwxyz';
-const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const NUMBERS = '0123456789';
-const SYMBOLS = '!@#$%^&*()_+~`|}{[]:;?><,./-=';
-const AMBIGUOUS = new Set(['0', 'O', 'o', '1', 'I', 'l', '|', '`']);
+import {
+  MIN_PASSWORD_LENGTH,
+  MAX_PASSWORD_LENGTH,
+  DEFAULT_PASSWORD_LENGTH,
+  MIN_WORD_COUNT,
+  MAX_WORD_COUNT,
+  DEFAULT_WORD_COUNT,
+  bytesToHex,
+  generatePassword as engineGeneratePassword,
+  generatePassphrase as engineGeneratePassphrase,
+  generateBulkPasswords as engineGenerateBulkPasswords,
+  makeSecret,
+  analyzePassword,
+  strengthFor,
+  normalizeHash,
+  looksLikeHex,
+  constantTimeTextEqual,
+} from '@/lib/passwordEngine';
 
 const MAX_TEXT_HASH_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_FILE_BYTES = 1024 * 1024 * 1024; // 1 GB (1,024 MB) client-side browser limit
@@ -49,162 +54,6 @@ type Hashes = {
 };
 type HashAlgorithm = keyof Hashes;
 type FileHashAlgorithm = 'SHA-256' | 'SHA-384' | 'SHA-512';
-
-const bytesToHex = (bytes: Uint8Array): string =>
-  Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
-
-/**
- * Rejection sampling from CSPRNG to eliminate modulo bias completely.
- * For range [0, max - 1], values >= maxUint - (maxUint % max) are discarded.
- */
-function secureRandomInt(max: number): number {
-  if (!Number.isInteger(max) || max <= 0) throw new Error('Invalid random range');
-  const maxUint = 0x100000000;
-  const limit = maxUint - (maxUint % max);
-  const buf = new Uint32Array(1);
-  do {
-    crypto.getRandomValues(buf);
-  } while (buf[0] >= limit);
-  return buf[0] % max;
-}
-
-function pick(items: string): string;
-function pick<T>(items: readonly T[]): T;
-function pick<T>(items: string | readonly T[]): string | T {
-  if (typeof items === 'string') {
-    return items[secureRandomInt(items.length)];
-  }
-  return items[secureRandomInt(items.length)];
-}
-
-function secureRandomBytes(byteLength: number): Uint8Array {
-  if (!Number.isInteger(byteLength) || byteLength < 1 || byteLength > 256) {
-    throw new Error('Byte length must be between 1 and 256.');
-  }
-  const bytes = new Uint8Array(byteLength);
-  crypto.getRandomValues(bytes);
-  return bytes;
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  }
-  return btoa(binary);
-}
-
-function makeSecret(format: 'hex' | 'base64' | 'base64url' | 'uuid', byteLength: number): string {
-  if (format === 'uuid') {
-    const bytes = secureRandomBytes(16);
-    bytes[6] = (bytes[6] & 0x0f) | 0x40; // RFC 4122 v4 version nibble = 4
-    bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant 1 (bits 10xxxxxx)
-    const hex = bytesToHex(bytes);
-    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-  }
-  const bytes = secureRandomBytes(byteLength);
-  if (format === 'hex') return bytesToHex(bytes);
-  const base64 = bytesToBase64(bytes);
-  if (format === 'base64url') {
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-  }
-  return base64;
-}
-
-function strengthFor(bits: number) {
-  if (bits < 40) return { label: 'Weak', cls: 'text-red-500', bar: 'bg-red-500', width: Math.min((bits / 100) * 100, 100) };
-  if (bits < 60) return { label: 'Fair', cls: 'text-yellow-500', bar: 'bg-yellow-500', width: Math.min((bits / 100) * 100, 100) };
-  if (bits < 80) return { label: 'Strong', cls: 'text-emerald-500', bar: 'bg-emerald-500', width: Math.min((bits / 100) * 100, 100) };
-  return { label: 'Very Strong', cls: 'text-blue-500', bar: 'bg-blue-500', width: Math.min((bits / 100) * 100, 100) };
-}
-
-const COMMON_WEAK_PASSWORDS = new Set([
-  '123456','123456789','12345678','password','qwerty','1234567890','123123','111111','12345',
-  '1234567','dragon','password1','letmein','welcome','admin','abc123','iloveyou','monkey','login',
-  'qwerty123','football','baseball','master','shadow','princess','sunshine','passw0rd','password123',
-  'qwertyuiop','asdfghjkl','zxcvbnm','trustno1','changeme','secret','guest','root','superman',
-  'trustnoone','access','testing','default','correcthorsebatterystaple'
-]);
-
-const KEYBOARD_PATTERNS = [
-  'qwerty','asdfgh','zxcvbn','123456','654321','abcdef','fedcba','qazwsx','1q2w3e4r','!qaz2wsx'
-];
-
-function analyzePassword(value: string) {
-  if (!value) return {
-    score: 0,
-    label: 'No password',
-    entropy: 0,
-    length: 0,
-    charset: 0,
-    repeated: false,
-    sequence: false,
-    keyboard: false,
-    dictionary: false,
-    dateLike: false,
-    common: false,
-    warnings: ['Enter a password or generate one to analyze it locally.'],
-  };
-
-  const lower = value.toLowerCase();
-  const pools = [
-    /[a-z]/.test(value) ? 26 : 0,
-    /[A-Z]/.test(value) ? 26 : 0,
-    /\d/.test(value) ? 10 : 0,
-    /[^A-Za-z0-9]/.test(value) ? 33 : 0,
-  ];
-  const charset = pools.reduce((a, b) => a + b, 0);
-  const entropy = charset > 1 ? value.length * Math.log2(charset) : 0;
-  const repeated = /(.)\1{2,}/.test(value) || new Set(value).size <= Math.max(2, Math.floor(value.length / 3));
-  const sequence = /(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|defg|qwer|wert|erty|asdf|sdfg|zxcv)/i.test(value);
-  const keyboard = KEYBOARD_PATTERNS.some(pattern => lower.includes(pattern));
-  const common = COMMON_WEAK_PASSWORDS.has(lower);
-  const dictionary = /^(?:password|admin|welcome|letmein|qwerty|monkey|dragon|football|baseball|master|secret|login)/i.test(value);
-  const dateLike = /(?:19|20)\d{2}/.test(value) || /(?:0?[1-9]|[12]\d|3[01])(?:0?[1-9]|1[0-2])(?:19|20)?\d{2}/.test(value);
-
-  let score = 100;
-  if (value.length < 12) score -= 25;
-  else if (value.length < 16) score -= 10;
-  if (entropy < 50) score -= 25;
-  else if (entropy < 70) score -= 12;
-  if (repeated) score -= 12;
-  if (sequence) score -= 12;
-  if (keyboard) score -= 18;
-  if (common) score -= 45;
-  if (dictionary) score -= 30;
-  if (dateLike) score -= 8;
-  score = Math.max(0, Math.min(100, Math.round(score)));
-
-  const label = score >= 90 ? 'Excellent' : score >= 75 ? 'Strong' : score >= 55 ? 'Fair' : score >= 30 ? 'Weak' : 'Very weak';
-  const warnings: string[] = [];
-  if (value.length < 16) warnings.push('Use 16+ characters for a stronger general-purpose password.');
-  if (repeated) warnings.push('Repeated characters reduce effective unpredictability.');
-  if (sequence) warnings.push('Sequential character patterns are easier to guess.');
-  if (keyboard) warnings.push('Keyboard patterns are commonly targeted by attackers.');
-  if (common || dictionary) warnings.push('This resembles a known dictionary or frequently breached password.');
-  if (dateLike) warnings.push('A year/date-like pattern was detected, which is commonly targeted.');
-  if (!warnings.length) warnings.push('No obvious heuristic weakness patterns detected.');
-
-  return { score, label, entropy: Math.round(entropy), length: value.length, charset, repeated, sequence, keyboard, dictionary, dateLike, common, warnings };
-}
-
-function normalizeHash(value: string): string {
-  return value.trim().replace(/\s+/g, '').toLowerCase();
-}
-
-function looksLikeHex(value: string): boolean {
-  return /^[0-9a-f]+$/i.test(value) && value.length % 2 === 0;
-}
-
-function constantTimeTextEqual(a: string, b: string): boolean {
-  const aa = normalizeHash(a);
-  const bb = normalizeHash(b);
-  if (!looksLikeHex(aa) || !looksLikeHex(bb) || aa.length !== bb.length) return false;
-  let diff = 0;
-  for (let i = 0; i < aa.length; i++) diff |= aa.charCodeAt(i) ^ bb.charCodeAt(i);
-  return diff === 0;
-}
 
 async function sha1Hex(input: string): Promise<string> {
   const buffer = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(input));
@@ -326,13 +175,15 @@ self.onmessage = async function(e) {
 };
 `;
 
+const LENGTH_PRESETS = [12, 16, 20, 24, 32, 64];
+
 export default function PasswordGenerator() {
   const [passMode, setPassMode] = useState<'random' | 'passphrase'>('random');
   const [password, setPassword] = useState('');
   const [entropy, setEntropy] = useState(0);
   const [generationError, setGenerationError] = useState('');
-  const [length, setLength] = useState(20);
-  const [wordCount, setWordCount] = useState(5);
+  const [length, setLength] = useState(DEFAULT_PASSWORD_LENGTH);
+  const [wordCount, setWordCount] = useState(DEFAULT_WORD_COUNT);
   const [incUpper, setIncUpper] = useState(true);
   const [incLower, setIncLower] = useState(true);
   const [incNum, setIncNum] = useState(true);
@@ -342,10 +193,20 @@ export default function PasswordGenerator() {
   const [separator, setSeparator] = useState('-');
   const [passphraseCaps, setPassphraseCaps] = useState(false);
   const [passphraseNumber, setPassphraseNumber] = useState(true);
+  const [showPassword, setShowPassword] = useState(true);
   const [showRecent, setShowRecent] = useState(false);
   const [keepHistory, setKeepHistory] = useState(false);
   const [recentPasswords, setRecentPasswords] = useState<string[]>([]);
   const [copiedPass, setCopiedPass] = useState(false);
+
+  // Bulk generation state
+  const [showBulk, setShowBulk] = useState(false);
+  const [bulkCount, setBulkCount] = useState(5);
+  const [bulkPasswords, setBulkPasswords] = useState<string[]>([]);
+  const [copiedBulkAll, setCopiedBulkAll] = useState(false);
+  const [copiedBulkIdx, setCopiedBulkIdx] = useState<number | null>(null);
+
+  // Hash & HMAC state
   const [hashInput, setHashInput] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [hmacMode, setHmacMode] = useState(false);
@@ -354,6 +215,8 @@ export default function PasswordGenerator() {
   const [copiedHash, setCopiedHash] = useState('');
   const [hashing, setHashing] = useState(false);
   const [hashError, setHashError] = useState('');
+
+  // File integrity state
   const [fileHash, setFileHash] = useState('');
   const [fileHashAlgorithm, setFileHashAlgorithm] = useState<FileHashAlgorithm>('SHA-256');
   const [isFileHashing, setIsFileHashing] = useState(false);
@@ -362,18 +225,26 @@ export default function PasswordGenerator() {
   const [fileSize, setFileSize] = useState(0);
   const [fileError, setFileError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+
+  // Analyzer & breach checker state
   const [analysisInput, setAnalysisInput] = useState('');
   const [breachInput, setBreachInput] = useState('');
   const [breachChecking, setBreachChecking] = useState(false);
   const [breachCount, setBreachCount] = useState<number | null>(null);
   const [breachError, setBreachError] = useState('');
+
+  // Developer secret state
   const [secretFormat, setSecretFormat] = useState<'hex' | 'base64' | 'base64url' | 'uuid'>('hex');
   const [secretBytes, setSecretBytes] = useState(32);
   const [generatedSecret, setGeneratedSecret] = useState('');
+  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  // Hash compare state
   const [hashA, setHashA] = useState('');
   const [hashB, setHashB] = useState('');
   const [hashCompareResult, setHashCompareResult] = useState<'match' | 'different' | 'invalid' | ''>('');
-  const [copiedSecret, setCopiedSecret] = useState(false);
+
+  // UI state
   const [showMethodology, setShowMethodology] = useState(false);
   const [clearMessage, setClearMessage] = useState('');
 
@@ -398,100 +269,89 @@ export default function PasswordGenerator() {
   };
 
   const generatePassword = () => {
-    let newPass = '';
-    let bits = 0;
     setGenerationError('');
-
-    if (passMode === 'random') {
-      const lowerPool = excludeAmbiguous ? [...LOWER].filter(c => !AMBIGUOUS.has(c)).join('') : LOWER;
-      const upperPool = excludeAmbiguous ? [...UPPER].filter(c => !AMBIGUOUS.has(c)).join('') : UPPER;
-      const numberPool = excludeAmbiguous ? [...NUMBERS].filter(c => !AMBIGUOUS.has(c)).join('') : NUMBERS;
-      const symbolPool = excludeAmbiguous ? [...SYMBOLS].filter(c => !AMBIGUOUS.has(c)).join('') : SYMBOLS;
-
-      const selectedPools: string[] = [];
-      if (incUpper && upperPool.length) selectedPools.push(upperPool);
-      if (incLower && lowerPool.length) selectedPools.push(lowerPool);
-      if (incNum && numberPool.length) selectedPools.push(numberPool);
-      if (incSym && symbolPool.length) selectedPools.push(symbolPool);
-
-      if (selectedPools.length === 0) {
-        setPassword('');
-        setEntropy(0);
-        setGenerationError('Select at least one character type to generate a password.');
-        setCopiedPass(false);
-        return;
-      }
-
-      if (requireEach && length < selectedPools.length) {
-        setPassword('');
-        setEntropy(0);
-        setGenerationError(`Requested length (${length}) is smaller than the ${selectedPools.length} required character classes. Increase length to at least ${selectedPools.length} or uncheck "Guarantee selected types".`);
-        setCopiedPass(false);
-        return;
-      }
-
-      const fullPool = selectedPools.join('');
-      const chars: string[] = [];
-
-      if (requireEach) {
-        for (const pool of selectedPools) {
-          chars.push(pick(pool));
+    try {
+      if (passMode === 'random') {
+        const result = engineGeneratePassword({
+          length,
+          includeUpper: incUpper,
+          includeLower: incLower,
+          includeNumbers: incNum,
+          includeSymbols: incSym,
+          excludeAmbiguous,
+          requireEach,
+        });
+        setPassword(result.password);
+        setEntropy(result.entropy);
+        if (keepHistory) {
+          setRecentPasswords(prev => [result.password, ...prev.filter(p => p !== result.password)].slice(0, 5));
         }
-        while (chars.length < length) {
-          chars.push(pick(fullPool));
-        }
-        // Unbiased Fisher-Yates shuffle
-        for (let i = chars.length - 1; i > 0; i--) {
-          const j = secureRandomInt(i + 1);
-          [chars[i], chars[j]] = [chars[j], chars[i]];
-        }
-        newPass = chars.join('');
-        const requiredBits = selectedPools.reduce((sum, p) => sum + Math.log2(p.length), 0);
-        bits = requiredBits + (length - selectedPools.length) * Math.log2(fullPool.length);
       } else {
-        for (let i = 0; i < length; i++) {
-          newPass += pick(fullPool);
+        const result = engineGeneratePassphrase({
+          wordCount,
+          separator,
+          capitalize: passphraseCaps,
+          includeNumber: passphraseNumber,
+        });
+        setPassword(result.passphrase);
+        setEntropy(result.entropy);
+        if (keepHistory) {
+          setRecentPasswords(prev => [result.passphrase, ...prev.filter(p => p !== result.passphrase)].slice(0, 5));
         }
-        bits = length * Math.log2(fullPool.length);
       }
-    } else {
-      const words: string[] = [];
-      const available = [...PASSPHRASE_WORDS];
-
-      for (let i = 0; i < wordCount; i++) {
-        if (!available.length) break;
-        const index = secureRandomInt(available.length);
-        const word = available[index];
-        available[index] = available[available.length - 1];
-        available.pop();
-        words.push(passphraseCaps ? word.charAt(0).toUpperCase() + word.slice(1) : word);
-      }
-
-      if (!words.length) {
-        setPassword('');
-        setEntropy(0);
-        setGenerationError('The passphrase dictionary is empty.');
-        setCopiedPass(false);
-        return;
-      }
-
-      const number = passphraseNumber ? String(secureRandomInt(10000)).padStart(4, '0') : '';
-      newPass = words.join(separator) + (number ? `${separator}${number}` : '');
-
-      let wordBits = 0;
-      for (let i = 0; i < words.length; i++) {
-        wordBits += Math.log2(PASSPHRASE_WORDS.length - i);
-      }
-      bits = wordBits + (passphraseNumber ? Math.log2(10000) : 0);
+      setCopiedPass(false);
+    } catch (err) {
+      setPassword('');
+      setEntropy(0);
+      setGenerationError(err instanceof Error ? err.message : 'Error generating password.');
+      setCopiedPass(false);
     }
-
-    setPassword(newPass);
-    setEntropy(Math.round(bits));
-    if (keepHistory) {
-      setRecentPasswords(prev => [newPass, ...prev.filter(p => p !== newPass)].slice(0, 5));
-    }
-    setCopiedPass(false);
   };
+
+  const generateBulk = () => {
+    setGenerationError('');
+    try {
+      if (passMode === 'random') {
+        const results = engineGenerateBulkPasswords(
+          {
+            length,
+            includeUpper: incUpper,
+            includeLower: incLower,
+            includeNumbers: incNum,
+            includeSymbols: incSym,
+            excludeAmbiguous,
+            requireEach,
+          },
+          bulkCount
+        );
+        setBulkPasswords(results.map(r => r.password));
+      } else {
+        const list: string[] = [];
+        for (let i = 0; i < bulkCount; i++) {
+          const res = engineGeneratePassphrase({
+            wordCount,
+            separator,
+            capitalize: passphraseCaps,
+            includeNumber: passphraseNumber,
+          });
+          list.push(res.passphrase);
+        }
+        setBulkPasswords(list);
+      }
+      setCopiedBulkAll(false);
+    } catch (err) {
+      setGenerationError(err instanceof Error ? err.message : 'Error generating bulk passwords.');
+    }
+  };
+
+  // Initial generation on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      generatePassword();
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const id = ++hashRequest.current;
@@ -527,7 +387,6 @@ export default function PasswordGenerator() {
   }, [hashInput, secretKey, hmacMode, hashAlgorithm]);
 
   const hashFile = (file: File, algorithm: FileHashAlgorithm = fileHashAlgorithm) => {
-    const requestId = ++fileHashRequest.current;
     terminateFileHashWorker();
     selectedFileRef.current = file;
     setFileError('');
@@ -550,50 +409,26 @@ export default function PasswordGenerator() {
       const worker = new Worker(workerUrl);
       fileHashWorkerRef.current = worker;
 
-      worker.onmessage = (event: MessageEvent<{
-        type: 'progress' | 'result' | 'error' | 'cancelled';
-        progress?: number;
-        hash?: string;
-        message?: string;
-      }>) => {
-        if (requestId !== fileHashRequest.current) return;
-        const data = event.data;
-        if (data.type === 'progress') {
-          setFileProgress(Math.max(0, Math.min(100, data.progress ?? 0)));
-          return;
-        }
-        if (data.type === 'result') {
-          setFileHash(data.hash ?? '');
+      worker.onmessage = (e: MessageEvent<{ type: string; progress?: number; hash?: string; message?: string }>) => {
+        const msg = e.data;
+        if (msg.type === 'progress' && typeof msg.progress === 'number') {
+          setFileProgress(msg.progress);
+        } else if (msg.type === 'result' && msg.hash) {
+          setFileHash(msg.hash);
+          setIsFileHashing(false);
           setFileProgress(100);
+          terminateFileHashWorker();
+        } else if (msg.type === 'error') {
+          setFileError(msg.message || 'Worker hashing error');
           setIsFileHashing(false);
           terminateFileHashWorker();
-          return;
         }
-        if (data.type === 'cancelled') {
-          setIsFileHashing(false);
-          setFileProgress(0);
-          terminateFileHashWorker();
-          return;
-        }
-        setFileError(data.message || 'Unable to calculate file hash.');
-        setIsFileHashing(false);
-        terminateFileHashWorker();
       };
 
-      worker.onerror = () => {
-        if (requestId !== fileHashRequest.current) return;
-        setFileError('The file-hashing worker encountered an internal error. Please try again.');
-        setIsFileHashing(false);
-        terminateFileHashWorker();
-      };
-
-      worker.postMessage({ type: 'hash', file, algorithm, chunkSize: 4 * 1024 * 1024 });
-    } catch (error) {
-      if (requestId === fileHashRequest.current) {
-        setFileError(error instanceof Error ? error.message : 'Unable to start file hashing.');
-        setIsFileHashing(false);
-        terminateFileHashWorker();
-      }
+      worker.postMessage({ type: 'hash', file, algorithm });
+    } catch {
+      setIsFileHashing(false);
+      setFileError('Failed to initialize Web Worker for hashing.');
     }
   };
 
@@ -629,13 +464,37 @@ export default function PasswordGenerator() {
     }, 2000);
   };
 
+  const copyBulkAll = async () => {
+    if (!bulkPasswords.length) return;
+    try {
+      await navigator.clipboard.writeText(bulkPasswords.join('\n'));
+      setCopiedBulkAll(true);
+      setTimeout(() => setCopiedBulkAll(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const copyBulkSingle = async (p: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(p);
+      setCopiedBulkIdx(idx);
+      setTimeout(() => setCopiedBulkIdx(null), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
   const runBreachCheck = async () => {
-    const candidate = breachInput || password;
+    if (!breachInput.trim()) {
+      setBreachError('Enter an existing password in the input box below. Freshly generated passwords are never tested over the network.');
+      return;
+    }
     setBreachChecking(true);
     setBreachError('');
     setBreachCount(null);
     try {
-      const count = await checkPwnedPassword(candidate);
+      const count = await checkPwnedPassword(breachInput);
       setBreachCount(count);
     } catch (error) {
       setBreachError(error instanceof Error ? error.message : 'Unable to complete breach check.');
@@ -672,6 +531,8 @@ export default function PasswordGenerator() {
     setPassword('');
     setEntropy(0);
     setGenerationError('');
+    setBulkPasswords([]);
+    setShowBulk(false);
     setAnalysisInput('');
     setHashInput('');
     setSecretKey('');
@@ -718,10 +579,11 @@ export default function PasswordGenerator() {
 
   return (
     <div className="flex flex-col gap-8 bg-white dark:bg-[#0a0f1a] transition-colors">
+      {/* Privacy Notice Banner & Reset Action */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-full text-xs font-semibold border border-emerald-200 dark:border-emerald-800/50">
           <ShieldCheck className="w-4 h-4 shrink-0" />
-          <span>Local processing: No passwords, keys, or files are sent to servers. Breach check sends only a 5-char SHA-1 prefix.</span>
+          <span>Local processing: Generated passwords, secrets, and files are never sent to external servers or logged.</span>
         </div>
         <button
           type="button"
@@ -749,58 +611,77 @@ export default function PasswordGenerator() {
               <Key className="w-5 h-5 text-blue-600" /> Secure Password Generator
             </h2>
 
+            {/* Mode Switcher */}
             <div className="bg-white dark:bg-[#0a0f1a] p-1 rounded-xl flex gap-1 border border-gray-200 dark:border-slate-700" role="tablist" aria-label="Generation Mode">
               <button
                 type="button"
                 role="tab"
                 aria-selected={passMode === 'random'}
-                onClick={() => setPassMode('random')}
+                onClick={() => {
+                  setPassMode('random');
+                  setGenerationError('');
+                }}
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${passMode === 'random' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                Characters
+                Random Characters
               </button>
               <button
                 type="button"
                 role="tab"
                 aria-selected={passMode === 'passphrase'}
-                onClick={() => setPassMode('passphrase')}
+                onClick={() => {
+                  setPassMode('passphrase');
+                  setGenerationError('');
+                }}
                 className={`flex-1 py-2 text-sm font-semibold rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${passMode === 'passphrase' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
               >
-                Passphrase
+                Memorable Passphrase
               </button>
             </div>
 
+            {/* Main Output Box with Show/Hide and Copy */}
             {password ? (
-              <div className="w-full bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 flex items-center justify-between gap-4 shadow-inner">
+              <div className="w-full bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-2xl p-5 flex items-center justify-between gap-3 shadow-inner">
                 <div
                   tabIndex={0}
                   aria-label="Generated password output"
                   className="flex-1 min-w-0 break-all font-mono text-lg md:text-xl text-slate-900 dark:text-blue-100 select-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 >
-                  {password}
+                  {showPassword ? password : '•'.repeat(Math.min(password.length, 36))}
                 </div>
-                <button
-                  type="button"
-                  aria-label="Copy generated password to clipboard"
-                  onClick={() => copy(password, 'pass')}
-                  className="shrink-0 p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
-                >
-                  {copiedPass ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-2.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Copy generated password to clipboard"
+                    onClick={() => copy(password, 'pass')}
+                    className="p-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors"
+                  >
+                    {copiedPass ? <CheckCircle2 className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="w-full bg-white dark:bg-[#0a0f1a] border border-dashed border-gray-300 dark:border-slate-700 rounded-2xl p-5 min-h-[80px] flex items-center justify-center text-center shadow-inner">
                 <span className="text-gray-400 dark:text-slate-500 text-sm font-sans">
-                  Generate a password to see it here.
+                  Click Generate New to create a credential.
                 </span>
               </div>
             )}
 
+            {/* Strength & Entropy Indicator */}
             <div className="space-y-2">
               <div className="flex justify-between items-end">
                 <span className={`text-sm font-bold uppercase tracking-wider ${strength.cls}`}>{strength.label}</span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                  ~{entropy} bits estimated theoretical entropy
+                  ~{entropy} bits Shannon entropy
                 </span>
               </div>
               <div className="w-full h-2 bg-gray-200 dark:bg-slate-800 rounded-full overflow-hidden" role="progressbar" aria-valuenow={strength.width} aria-valuemin={0} aria-valuemax={100} aria-label="Password strength meter">
@@ -814,27 +695,55 @@ export default function PasswordGenerator() {
               </div>
             )}
 
+            {/* Parameters Panel */}
             <div className="space-y-5 pt-4 border-t border-gray-200 dark:border-slate-800">
               {passMode === 'random' ? (
                 <>
+                  {/* Password Length Slider & Presets */}
                   <div>
-                    <label htmlFor="input-password-length" className="flex justify-between text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-                      <span>Password Length</span>
-                      <span className="text-blue-600 dark:text-blue-400 font-mono">{length}</span>
-                    </label>
+                    <div className="flex justify-between items-center text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      <label htmlFor="input-password-length">Password Length</label>
+                      <span className="text-blue-600 dark:text-blue-400 font-mono text-base">{length}</span>
+                    </div>
                     <input
                       id="input-password-length"
                       type="range"
-                      min="8"
-                      max="128"
+                      min={MIN_PASSWORD_LENGTH}
+                      max={MAX_PASSWORD_LENGTH}
                       value={length}
-                      onChange={e => setLength(Number(e.target.value))}
+                      onChange={e => {
+                        const newLen = Number(e.target.value);
+                        setLength(newLen);
+                      }}
                       className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                      aria-valuemin={8}
-                      aria-valuemax={128}
+                      aria-valuemin={MIN_PASSWORD_LENGTH}
+                      aria-valuemax={MAX_PASSWORD_LENGTH}
                       aria-valuenow={length}
                     />
+
+                    {/* Quick Presets */}
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Quick Lengths:</span>
+                      {LENGTH_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setLength(preset);
+                          }}
+                          className={`px-2.5 py-1 text-xs font-mono font-medium rounded-lg border transition-colors ${
+                            length === preset
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : 'bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-400'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Character Class Checkboxes */}
                   <fieldset className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <legend className="sr-only">Character types</legend>
                     <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
@@ -844,7 +753,7 @@ export default function PasswordGenerator() {
                         onChange={e => setIncUpper(e.target.checked)}
                         className="w-4 h-4 accent-blue-600 rounded"
                       />
-                      <span>A-Z</span>
+                      <span>Uppercase (A-Z)</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
                       <input
@@ -853,7 +762,7 @@ export default function PasswordGenerator() {
                         onChange={e => setIncLower(e.target.checked)}
                         className="w-4 h-4 accent-blue-600 rounded"
                       />
-                      <span>a-z</span>
+                      <span>Lowercase (a-z)</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
                       <input
@@ -862,7 +771,7 @@ export default function PasswordGenerator() {
                         onChange={e => setIncNum(e.target.checked)}
                         className="w-4 h-4 accent-blue-600 rounded"
                       />
-                      <span>0-9</span>
+                      <span>Numbers (0-9)</span>
                     </label>
                     <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 cursor-pointer bg-white dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-blue-500 transition-colors">
                       <input
@@ -871,7 +780,7 @@ export default function PasswordGenerator() {
                         onChange={e => setIncSym(e.target.checked)}
                         className="w-4 h-4 accent-blue-600 rounded"
                       />
-                      <span>!@#$%</span>
+                      <span>Symbols (!@#$)</span>
                     </label>
                   </fieldset>
 
@@ -898,6 +807,7 @@ export default function PasswordGenerator() {
                 </>
               ) : (
                 <>
+                  {/* Passphrase Configuration */}
                   <div>
                     <label htmlFor="input-word-count" className="flex justify-between text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
                       <span>Number of Words</span>
@@ -906,19 +816,19 @@ export default function PasswordGenerator() {
                     <input
                       id="input-word-count"
                       type="range"
-                      min="3"
-                      max="12"
+                      min={MIN_WORD_COUNT}
+                      max={MAX_WORD_COUNT}
                       value={wordCount}
                       onChange={e => setWordCount(Number(e.target.value))}
                       className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                      aria-valuemin={3}
-                      aria-valuemax={12}
+                      aria-valuemin={MIN_WORD_COUNT}
+                      aria-valuemax={MAX_WORD_COUNT}
                       aria-valuenow={wordCount}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="text-sm text-slate-700 dark:text-slate-300">
-                      <span>Separator</span>
+                      <span>Word Separator</span>
                       <select
                         aria-label="Passphrase word separator"
                         value={separator}
@@ -953,19 +863,93 @@ export default function PasswordGenerator() {
                     <span>Append random 4-digit number (+13.3 bits entropy)</span>
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Sampled uniformly without replacement from a curated 1,024-word dictionary (10.0 bits/word). Suffix adds ~13.3 bits.
+                    Sampled uniformly without replacement from an auditable 1,024-word English dictionary (10.0 bits/word). Suffix adds ~13.3 bits.
                   </p>
                 </>
               )}
-              <button
-                type="button"
-                onClick={generatePassword}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3.5 rounded-xl font-bold shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              >
-                <RefreshCw className="w-5 h-5" /> Generate New
-              </button>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={generatePassword}
+                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3.5 rounded-xl font-bold shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <RefreshCw className="w-5 h-5" /> Generate New
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBulk(!showBulk)}
+                  className="flex items-center justify-center gap-2 bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 px-4 py-3.5 rounded-xl font-semibold border border-gray-200 dark:border-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                  aria-expanded={showBulk}
+                >
+                  <List className="w-4 h-4" /> Bulk Generator
+                </button>
+              </div>
+
+              {/* Bulk Generation Drawer */}
+              {showBulk && (
+                <div className="bg-white dark:bg-[#0a0f1a] p-4 rounded-2xl border border-gray-200 dark:border-slate-700 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-800 dark:text-white">Bulk Password Batch</span>
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="select-bulk-count" className="text-xs text-slate-500">Quantity:</label>
+                      <select
+                        id="select-bulk-count"
+                        value={bulkCount}
+                        onChange={e => setBulkCount(Number(e.target.value))}
+                        className="text-xs font-semibold px-2 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700"
+                      >
+                        <option value={5}>5 Passwords</option>
+                        <option value={10}>10 Passwords</option>
+                        <option value={20}>20 Passwords</option>
+                        <option value={50}>50 Passwords</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateBulk}
+                    className="w-full py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold text-xs rounded-xl hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors"
+                  >
+                    Generate {bulkCount} Batch
+                  </button>
+
+                  {bulkPasswords.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-slate-500 pt-1 border-t border-gray-100 dark:border-slate-800">
+                        <span>Generated {bulkPasswords.length} items</span>
+                        <button
+                          type="button"
+                          onClick={copyBulkAll}
+                          className="text-blue-600 font-semibold hover:underline flex items-center gap-1"
+                        >
+                          {copiedBulkAll ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedBulkAll ? 'Copied all!' : 'Copy All'}</span>
+                        </button>
+                      </div>
+                      <div className="max-h-48 overflow-y-auto space-y-1 pr-1 font-mono text-xs">
+                        {bulkPasswords.map((bp, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-[#111827] text-slate-800 dark:text-slate-200">
+                            <span className="truncate pr-2">{bp}</span>
+                            <button
+                              type="button"
+                              aria-label={`Copy password ${idx + 1}`}
+                              onClick={() => copyBulkSingle(bp, idx)}
+                              className="text-slate-400 hover:text-blue-600 p-1 rounded"
+                            >
+                              {copiedBulkIdx === idx ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Session History */}
             <div className="pt-2">
               <div className="flex items-center justify-between">
                 <button
@@ -1007,7 +991,7 @@ export default function PasswordGenerator() {
                     ))
                   ) : (
                     <p className="text-xs text-center text-slate-500">
-                      History is off by default to protect privacy. Passwords are never saved to storage.
+                      History is off by default to protect privacy. Passwords are never saved to persistent storage.
                     </p>
                   )}
                   {keepHistory && recentPasswords.length > 0 && (
@@ -1093,7 +1077,7 @@ export default function PasswordGenerator() {
               })()}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Local heuristic analysis — not a password-cracking guarantee. High scores do not imply mathematical uncrackability.
+              Local heuristic analysis — not an unhackability guarantee. High scores indicate high search space, not absolute immunity.
             </p>
           </section>
 
@@ -1248,101 +1232,69 @@ export default function PasswordGenerator() {
                 return (
                   <div
                     key={algo}
-                    className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700/80 rounded-2xl p-3.5 flex flex-col gap-2 transition-colors shadow-sm"
+                    className={`p-3 rounded-xl border ${
+                      algo === hashAlgorithm
+                        ? 'border-blue-400 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0a0f1a]'
+                    }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase font-mono tracking-wider text-slate-800 dark:text-slate-200">
-                          {algo.toUpperCase()}
-                        </span>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded font-sans font-semibold tracking-wide ${
-                            isLegacy
-                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40'
-                              : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40'
-                          }`}
-                        >
-                          {isLegacy ? 'Legacy / Insecure' : 'Recommended'}
-                        </span>
-                      </div>
-
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        {algo.toUpperCase()} {isLegacy && <span className="text-amber-500 text-[10px] lowercase font-normal">(legacy)</span>}
+                      </span>
                       {hasHash && (
                         <button
                           type="button"
-                          aria-label={`Copy ${algo.toUpperCase()} hash`}
+                          aria-label={`Copy ${algo} hash`}
                           onClick={() => copy(hashes[algo], 'hash')}
-                          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          className="text-xs text-blue-600 hover:text-blue-500 flex items-center gap-1 focus-visible:outline-none"
                         >
-                          {copiedHash === hashes[algo] ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-emerald-600 dark:text-emerald-400">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy</span>
-                            </>
-                          )}
+                          {copiedHash === hashes[algo] ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedHash === hashes[algo] ? 'Copied' : 'Copy'}</span>
                         </button>
                       )}
                     </div>
-
-                    <div className="min-h-[1.5rem] flex items-center">
-                      {hasHash ? (
-                        <div
-                          tabIndex={0}
-                          aria-label={`${algo.toUpperCase()} hash output`}
-                          className="w-full font-mono text-xs sm:text-sm text-blue-600 dark:text-blue-400 break-all select-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500 rounded"
-                        >
-                          {hashes[algo]}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 font-sans italic">
-                          Enter text above to generate this hash.
-                        </span>
-                      )}
+                    <div
+                      tabIndex={0}
+                      aria-label={`${algo} hash value`}
+                      className="font-mono text-xs break-all select-all text-slate-800 dark:text-slate-200 focus-visible:outline-none"
+                    >
+                      {hashes[algo] || <span className="text-gray-400 dark:text-slate-500 italic">Hash will appear here…</span>}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="flex items-start gap-2 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <div>
-                <strong>Password storage disclosure:</strong> Fast cryptographic hashes such as SHA-256 are not password-storage algorithms. Use a dedicated password KDF such as Argon2id, scrypt, or bcrypt for password storage. MD5 and SHA-1 are legacy digests and should not be used for modern security.
-              </div>
-            </div>
           </section>
 
-          {/* FILE INTEGRITY HASH */}
-          <section aria-labelledby="heading-file-hash" className="bg-gray-50 dark:bg-[#111827] rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
-            <h2 id="heading-file-hash" className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
-              <Fingerprint className="w-5 h-5 text-emerald-600" /> File Integrity Hash
+          {/* FILE INTEGRITY HASHER */}
+          <section aria-labelledby="heading-file" className="bg-gray-50 dark:bg-[#111827] rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
+            <h2 id="heading-file" className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
+              <FileUp className="w-5 h-5 text-emerald-600" /> File Checksum &amp; Integrity Hasher
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                <span>Algorithm</span>
-                <select
-                  aria-label="File hash algorithm"
-                  value={fileHashAlgorithm}
-                  onChange={e => setFileHashAlgorithm(e.target.value as FileHashAlgorithm)}
-                  className="mt-1 w-full px-3 py-2.5 text-sm normal-case font-normal rounded-xl bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                >
-                  <option value="SHA-256">SHA-256 (Standard)</option>
-                  <option value="SHA-384">SHA-384</option>
-                  <option value="SHA-512">SHA-512</option>
-                </select>
-              </label>
-              <div className="text-xs text-slate-500 flex items-end pb-2">
-                Processed locally via background Web Worker. The selected file is never uploaded.
-              </div>
+            <div className="flex items-center justify-between">
+              <label htmlFor="select-file-algorithm" className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Algorithm</label>
+              <select
+                id="select-file-algorithm"
+                value={fileHashAlgorithm}
+                onChange={e => setFileHashAlgorithm(e.target.value as FileHashAlgorithm)}
+                className="px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <option value="SHA-256">SHA-256</option>
+                <option value="SHA-384">SHA-384</option>
+                <option value="SHA-512">SHA-512</option>
+              </select>
             </div>
             <div
               tabIndex={0}
               role="button"
-              aria-label="File drop area: drop file or press enter to browse"
-              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+              aria-label="Upload file for client-side hashing"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
               onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onDrop={handleDrop}
@@ -1417,7 +1369,7 @@ export default function PasswordGenerator() {
               <EyeOff className="w-5 h-5 text-emerald-600" /> Compromised Password Check
             </h2>
             <label htmlFor="input-breach-check" className="text-xs text-slate-500 dark:text-slate-400">
-              Check against known data breaches via k-anonymity (leave blank to check generated password):
+              Check an existing password against known public data breaches (SHA-1 k-anonymity protocol):
             </label>
             <input
               id="input-breach-check"
@@ -1428,17 +1380,17 @@ export default function PasswordGenerator() {
                 setBreachCount(null);
                 setBreachError('');
               }}
-              placeholder="Enter password or check generated password…"
+              placeholder="Type an existing password to check historical breach exposure…"
               autoComplete="off"
               className="w-full px-4 py-3 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white text-sm"
             />
             <button
               type="button"
               onClick={runBreachCheck}
-              disabled={breachChecking || !(breachInput || password)}
+              disabled={breachChecking || !breachInput.trim()}
               className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-3 rounded-xl font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <Search className="w-4 h-4" /> {breachChecking ? 'Checking known breaches…' : 'Check known exposure'}
+              <Search className="w-4 h-4" /> {breachChecking ? 'Checking known breaches…' : 'Check Exposure (k-Anonymity)'}
             </button>
             {breachCount !== null && (
               <div
@@ -1456,7 +1408,7 @@ export default function PasswordGenerator() {
                     : 'No matches found in the current Pwned Passwords dataset.'}
                 </div>
                 <div className="text-xs mt-1 opacity-80">
-                  k-anonymity protocol: Only the first 5 characters of the locally computed SHA-1 hash are transmitted to HIBP. The password and full SHA-1 hash are never sent.
+                  k-anonymity protocol: Only the first 5 characters of the locally computed SHA-1 hash are transmitted to HIBP with padding enabled. Freshly generated passwords are never tested to guarantee zero exposure.
                 </div>
               </div>
             )}
@@ -1466,14 +1418,14 @@ export default function PasswordGenerator() {
               </div>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Uses the Have I Been Pwned Pwned Passwords range API with Add-Padding. This is the only feature that makes any external network request.
+              Uses the Have I Been Pwned Pwned Passwords range API with Add-Padding. Freshly generated credentials remain strictly on your device.
             </p>
           </section>
 
           {/* HASH COMPARE */}
           <section aria-labelledby="heading-compare" className="bg-gray-50 dark:bg-[#111827] rounded-3xl p-6 md:p-8 border border-gray-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
             <h2 id="heading-compare" className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
-              <Scale className="w-5 h-5 text-emerald-600" /> Hash Compare
+              <Scale className="w-5 h-5 text-emerald-600" /> Timing-Safe Hash Compare
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -1502,7 +1454,7 @@ export default function PasswordGenerator() {
               onClick={compareHashes}
               className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-3 rounded-xl font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              Compare hashes
+              Compare Hashes
             </button>
             {hashCompareResult && (
               <div
@@ -1524,7 +1476,7 @@ export default function PasswordGenerator() {
               </div>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Comparison normalizes whitespace/case and uses a constant-time byte-wise comparison loop to mitigate timing side channels.
+              Comparison normalizes whitespace/case and uses a constant-time byte-wise loop to mitigate timing side channels.
             </p>
           </section>
         </div>
@@ -1579,7 +1531,7 @@ export default function PasswordGenerator() {
             <div>
               <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-1">Breach Verification (k-Anonymity)</h3>
               <p>
-                The breach checker computes the SHA-1 digest locally and transmits strictly the first 5 hexadecimal characters to the Have I Been Pwned range API with padding enabled. The remaining 35 characters are evaluated entirely inside your browser. Only the first five SHA-1 characters are intentionally sent to HIBP; the password and full SHA-1 hash are never sent.
+                The breach checker computes the SHA-1 digest locally and transmits strictly the first 5 hexadecimal characters to the Have I Been Pwned range API with padding enabled. The remaining 35 characters are evaluated entirely inside your browser. Freshly generated passwords are never sent to HIBP to prevent unintended network disclosure.
               </p>
             </div>
 

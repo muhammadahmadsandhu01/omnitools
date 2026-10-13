@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:registry": "tsx scripts/validate-registry.ts",
-    "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts"
+    "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts",
+    "test:password": "tsx scripts/test-password-generator.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
