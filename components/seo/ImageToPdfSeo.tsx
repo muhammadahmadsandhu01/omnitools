@@ -79,21 +79,6 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
 ];
 
 export default function ImageToPdfSeo() {
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'Image to PDF Converter',
-    operatingSystem: 'Any (Web Browser)',
-    applicationCategory: 'MultimediaApplication',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
-    description:
-      'Free, private client-side Image to PDF Converter. Convert JPG, PNG, WebP, and HEIC photos to combined or separate PDF documents directly in your browser.',
-  };
-
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -109,11 +94,7 @@ export default function ImageToPdfSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-sm">
-      {/* Structured Data: SoftwareApplication & FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-      />
+      {/* Structured Data: FAQPage (SoftwareApplication is provided by page shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -404,6 +385,9 @@ export default function ImageToPdfSeo() {
             </tbody>
           </table>
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 italic">
+          * Competitor audit verified from official documentation and product testing (October 2026): Adobe Acrobat Online free tier and Pro subscription ($19.99/mo) verified at adobe.com; Smallpdf free tier limits (2 tasks/day, $12.00/mo Pro) verified at smallpdf.com; iLovePDF free limits (25 files/task) verified at ilovepdf.com.
+        </p>
       </section>
 
       {/* Section 10: Frequently Asked Questions */}
