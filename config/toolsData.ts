@@ -374,8 +374,9 @@ export const tools: Tool[] = [
       'Reduce image file size with adjustable compression directly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image Compressor & Optimizer',
-    seoDescription: 'Compress JPG, PNG, and WebP images client-side with visual quality sliders and side-by-side file size comparisons.',
+    seoTitle: 'Image Compressor & Optimizer — Reduce Image Size in KB',
+    seoDescription:
+      'Compress JPG, PNG, WebP, and AVIF images online for free in your browser. Reduce file size to target KB limits or preserve visual quality with private client-side processing.',
     relatedToolSlugs: ['webp-to-jpg-png', 'image-to-pdf', 'svg-optimizer', 'pdf-merge-split'],
   },
 

@@ -25,9 +25,25 @@ import {
   Shield,
 } from 'lucide-react';
 
-type OutputFormat = 'auto' | 'original' | 'webp' | 'avif' | 'jpeg' | 'png';
-type OptimizationMode = 'smart' | 'target' | 'lossless' | 'maximum';
-type ImageStatus = 'pending' | 'compressing' | 'done' | 'error' | 'already_optimized';
+import {
+  type OutputFormat,
+  type OptimizationMode,
+  type ImageStatus,
+  type CompressionCandidate,
+  formatBytes,
+  calculateSavings,
+  getExtension,
+  getBaseName,
+  getOutputExtension,
+  getMimeForFormat,
+  isAnimatedBytes,
+  calculateBatchStats,
+  selectOptimalCandidate,
+  MAX_FILES,
+  MAX_FILE_SIZE_MB,
+} from './imageCompressorEngine';
+
+const formatSize = formatBytes;
 
 interface ImageFile {
   id: string;
@@ -50,44 +66,6 @@ interface ImageFile {
   isAnimated?: boolean;
 }
 
-const MAX_FILES = 100;
-const MAX_FILE_SIZE_MB = 100;
-
-const getExtension = (name: string) => {
-  const parts = name.split('.');
-  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
-};
-
-const getBaseName = (name: string) =>
-  name.replace(/\.[^/.]+$/, '') || 'image';
-
-const formatSize = (bytes: number) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2))} ${units[i]}`;
-};
-
-const calculateSavings = (orig: number, comp: number) =>
-  orig > 0 ? Math.max(0, Math.round(((orig - comp) / orig) * 100)) : 0;
-
-const getOutputExtension = (format: OutputFormat, sourceName: string, mime: string) => {
-  if (format === 'jpeg') return 'jpg';
-  if (format === 'webp') return 'webp';
-  if (format === 'avif') return mime === 'image/avif' ? 'avif' : 'webp';
-  if (format === 'png') return 'png';
-  const sourceExt = getExtension(sourceName);
-  return sourceExt || mime.split('/')[1] || 'jpg';
-};
-
-const getMimeForFormat = (format: OutputFormat, sourceType: string) => {
-  if (format === 'webp') return 'image/webp';
-  if (format === 'avif') return 'image/avif';
-  if (format === 'jpeg') return 'image/jpeg';
-  if (format === 'png') return 'image/png';
-  return sourceType || 'image/jpeg';
-};
-
 const makeId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -103,23 +81,7 @@ const isAnimatedImage = async (file: File): Promise<boolean> => {
     try {
       const slice = file.slice(0, 1024);
       const buffer = await slice.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      if (bytes.length >= 21) {
-        const isRiff = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46;
-        const isWebp = bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50;
-        if (isRiff && isWebp) {
-          const isVp8x = bytes[12] === 0x56 && bytes[13] === 0x50 && bytes[14] === 0x38 && bytes[15] === 0x58;
-          if (isVp8x) {
-            const flags = bytes[20];
-            if ((flags & 0x02) !== 0) return true;
-          }
-          for (let i = 12; i < bytes.length - 4; i++) {
-            if (bytes[i] === 0x41 && bytes[i + 1] === 0x4E && bytes[i + 2] === 0x49 && bytes[i + 3] === 0x4D) {
-              return true;
-            }
-          }
-        }
-      }
+      return isAnimatedBytes(new Uint8Array(buffer));
     } catch {
       // Fallback safely
     }
@@ -161,22 +123,7 @@ export default function ImageCompressor() {
   }, []);
 
   const stats = useMemo(() => {
-    const processed = images.filter(
-      (i) => (i.status === 'done' || i.status === 'already_optimized') && i.compressedSize != null
-    );
-    const originalBytes = processed.reduce((sum, i) => sum + i.originalSize, 0);
-    const outputBytes = processed.reduce((sum, i) => sum + (i.compressedSize || 0), 0);
-    const savedBytes = Math.max(0, originalBytes - outputBytes);
-    const savings = originalBytes > 0 ? Math.max(0, Math.round(((originalBytes - outputBytes) / originalBytes) * 100)) : 0;
-    const compressionRatio = outputBytes > 0 && originalBytes > 0 ? parseFloat((originalBytes / outputBytes).toFixed(2)) : 1;
-    return {
-      processed: processed.length,
-      originalBytes,
-      outputBytes,
-      savedBytes,
-      savings,
-      compressionRatio,
-    };
+    return calculateBatchStats(images);
   }, [images]);
 
   const getImageDimensions = (file: File) =>
@@ -803,82 +750,49 @@ export default function ImageCompressor() {
       const originalBytes = baseFile.size;
       const requestedConversion = format !== 'auto' && format !== 'original';
       const requestedResize = maxDimension > 0 && maxDimension < sourceMaxDimension;
-      let selected: Candidate = fallbackCandidate;
-      let optimizationNote = '';
+      const candidateList: CompressionCandidate[] = uniqueCandidates.map((c) => ({
+        format: c.format,
+        quality: c.quality,
+        dimension: c.dimension,
+        width: c.width,
+        height: c.height,
+        sizeBytes: c.file.size,
+        score: c.score,
+      }));
 
-      if (uniqueCandidates.length === 0) {
-        selected = fallbackCandidate;
-        optimizationNote = 'Original file preserved.';
-      } else if (requestedTargetBytes) {
-        if (baseFile.size <= requestedTargetBytes && !requestedConversion && !requestedResize) {
-          selected = fallbackCandidate;
-          optimizationNote = `Target ${targetSizeKB} KB met: source file is already within requested target size (${formatSize(baseFile.size)}).`;
-        } else {
-          const underTarget = uniqueCandidates.filter((c) => c.file.size <= requestedTargetBytes);
-          if (underTarget.length) {
-            const safeFloor = contentType === 'text-graphic' ? 90 : contentType === 'photo' ? 88 : 89;
-            const safe = underTarget.filter((c) => c.score >= safeFloor);
-            const pool = safe.length ? safe : underTarget;
-            selected = pool.reduce((best, current) => {
-              const qualityGap = current.score - best.score;
-              if (qualityGap > 0.6) return current;
-              if (Math.abs(qualityGap) <= 0.6 && current.file.size > best.file.size) return current;
-              return best;
-            }, pool[0]);
-            optimizationNote = `Target achieved at ${formatSize(selected.file.size)} with a ${selected.score.toFixed(1)}/100 perceptual match.`;
-          } else {
-            const safeFloor = contentType === 'text-graphic' ? 88 : 84;
-            const safe = uniqueCandidates.filter((c) => c.score >= safeFloor);
-            const pool = safe.length ? safe : uniqueCandidates;
-            selected = pool.reduce((best, current) => {
-              const currentDistance = Math.abs(current.file.size - requestedTargetBytes);
-              const bestDistance = Math.abs(best.file.size - requestedTargetBytes);
-              if (current.score > best.score + 0.8 && currentDistance <= bestDistance * 1.35) return current;
-              if (Math.abs(current.score - best.score) <= 0.8 && currentDistance < bestDistance) return current;
-              return best;
-            }, pool[0]);
-            optimizationNote = `Target ${targetSizeKB} KB was not safely reachable. Best practical result: ${formatSize(selected.file.size)} at ${selected.score.toFixed(1)}/100.`;
-          }
-        }
-      } else if (optimizationMode === 'maximum') {
-        const safe = uniqueCandidates.filter((c) => c.score >= (contentType === 'text-graphic' ? 84 : 80));
-        const pool = safe.length ? safe : uniqueCandidates;
-        selected = pool.reduce((best, current) => {
-          const currentRatio = current.file.size / Math.max(originalBytes, 1);
-          const bestRatio = best.file.size / Math.max(originalBytes, 1);
-          const currentUtility = current.score - currentRatio * 10;
-          const bestUtility = best.score - bestRatio * 10;
-          return currentUtility > bestUtility ? current : best;
-        }, pool[0]);
-        optimizationNote = `Maximum mode selected ${formatSize(selected.file.size)} with a ${selected.score.toFixed(1)}/100 perceptual match.`;
-      } else {
-        const safeFloor = contentType === 'text-graphic' ? 94 : contentType === 'photo' ? 92 : 93;
-        const safe = uniqueCandidates.filter((c) => c.score >= safeFloor);
-        const nonLargerSafe = safe.filter((c) => c.file.size < originalBytes || c.format === 'original');
-        const pool = nonLargerSafe.length ? nonLargerSafe : safe.length ? safe : uniqueCandidates;
-        const bestScore = Math.max(...pool.map((c) => c.score));
-        const nearBest = pool.filter((c) => c.score >= bestScore - 0.65);
-        selected = nearBest.reduce((best, current) => {
-          if (current.file.size < best.file.size) return current;
-          if (current.file.size === best.file.size && current.score > best.score) return current;
-          return best;
-        }, nearBest[0] || pool[0]);
-        optimizationNote = `Best Optimize detected ${contentType.replace('-', ' ')} content and selected ${formatSize(selected.file.size)} at ${selected.score.toFixed(1)}/100 perceptual match.`;
-      }
+      const selectionResult = selectOptimalCandidate(
+        candidateList,
+        originalBytes,
+        optimizationMode,
+        requestedTargetBytes,
+        requestedConversion,
+        requestedResize,
+        contentType
+      );
 
-      const formatChanged = selected.format !== 'original';
+      const matchedCandidate = uniqueCandidates.find(
+        (c) =>
+          c.format === selectionResult.selected.format &&
+          c.dimension === selectionResult.selected.dimension &&
+          Math.abs(c.quality - selectionResult.selected.quality) < 0.001 &&
+          c.file.size === selectionResult.selected.sizeBytes
+      );
+
+      const selected = matchedCandidate || fallbackCandidate;
+      const optimizationNote = selectionResult.note;
       const dimensionsChanged = selected.width !== sourceWidth || selected.height !== sourceHeight;
-      const shouldKeepOriginal =
-        (selected.format === 'original' || selected.file === baseFile) &&
-        selected.file.size >= baseFile.size &&
-        !requestedConversion &&
-        !requestedResize &&
-        (!requestedTargetBytes || baseFile.size <= requestedTargetBytes) &&
-        optimizationMode !== 'maximum';
 
-      const autoConversionNeedsWin = format === 'auto' && formatChanged && selected.file.size >= baseFile.size * 0.995;
-      const finalFile = shouldKeepOriginal || autoConversionNeedsWin ? baseFile : selected.file;
-      const finalStatus: ImageStatus = finalFile === baseFile ? 'already_optimized' : 'done';
+      const autoConversionNeedsWin =
+        format === 'auto' &&
+        selected.format !== 'original' &&
+        selected.file.size >= baseFile.size * 0.995;
+
+      const finalFile =
+        selectionResult.shouldKeepOriginal || autoConversionNeedsWin
+          ? baseFile
+          : selected.file;
+      const finalStatus: ImageStatus =
+        finalFile === baseFile ? 'already_optimized' : 'done';
 
       const oldCompressedUrl = img.compressedUrl;
       if (oldCompressedUrl) URL.revokeObjectURL(oldCompressedUrl);
@@ -1443,7 +1357,7 @@ export default function ImageCompressor() {
                         img.compressedSize < img.originalSize ? (
                           <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800/50">
                             <CheckCircle2 className="w-3 h-3" />
-                            Saved {calculateSavings(img.originalSize, img.compressedSize)}%
+                            Saved {calculateSavings(img.originalSize, img.compressedSize).savingsPercent}%
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/40">
