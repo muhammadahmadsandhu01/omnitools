@@ -507,17 +507,6 @@ export function generateMetaHtml(
       lines.push(`<meta name="keywords" content="${escapeHtmlAttr(data.keywords)}">`);
     }
 
-    // Custom tags
-    if (data.customTags && data.customTags.length > 0) {
-      for (const tag of data.customTags) {
-        const contentVal = tag.content || tag.value || '';
-        if (isValidMetadataValue(tag.key) && isValidMetadataValue(contentVal)) {
-          lines.push(
-            `<meta ${escapeHtmlAttr(tag.type || 'name')}="${escapeHtmlAttr(tag.key.trim())}" content="${escapeHtmlAttr(contentVal.trim())}">`
-          );
-        }
-      }
-    }
   }
 
   // SECTION 2: Open Graph / Facebook / LinkedIn
