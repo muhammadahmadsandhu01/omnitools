@@ -12,331 +12,33 @@ import {
   Info,
   Layers,
   PieChart,
+  RotateCcw,
   ShieldCheck,
+  Sparkles,
   TrendingDown,
 } from 'lucide-react';
+import {
+  Currency,
+  Frequency,
+  ScheduleView,
+  PrepayTiming,
+  ScheduleRow,
+  CalculationInputs,
+  MortgageModelResult,
+  WORLD_CURRENCIES,
+  MORTGAGE_PRESETS,
+  PresetScenario,
+  roundMinor,
+  calculatePeriodicPayment,
+  buildMortgageModel,
+  annualizeSchedule,
+  generateMortgageCsv,
+  toNumber,
+  clamp,
+} from '@/lib/mortgageEngine';
 
-export type Currency = {
-  code: string;
-  name: string;
-  minorUnit: number;
-};
-
-export type Frequency = 'monthly' | 'biweekly';
-export type ScheduleView = 'yearly' | 'monthly';
-export type PrepayTiming = 'origination' | 'period';
-
-export type ScheduleRow = {
-  period: number;
-  year: number;
-  payment: number;
-  principal: number;
-  interest: number;
-  pmi: number;
-  extra: number;
-  balance: number;
-};
-
-export type CalculationInputs = {
-  price: number;
-  down: number;
-  rate: number;
-  years: number;
-  tax: number;
-  insurance: number;
-  hoa: number;
-  pmiRate: number;
-  pmiLtv: number;
-  closingPct: number;
-  points: number;
-  lenderFees: number;
-  frequency: Frequency;
-  extra: number;
-  prepay: number;
-  prepayTiming: PrepayTiming;
-  prepayPeriod: number;
-  currency: Currency;
-};
-
-/* Current active ISO-style currency coverage used by the calculator. */
-const CURRENCY_DATA: ReadonlyArray<readonly [string, string, number]> = [
-  ['AED', 'UAE Dirham', 2], ['AFN', 'Afghani', 2], ['ALL', 'Lek', 2], ['AMD', 'Armenian Dram', 2], ['AOA', 'Kwanza', 2],
-  ['ARS', 'Argentine Peso', 2], ['AUD', 'Australian Dollar', 2], ['AWG', 'Aruban Florin', 2], ['AZN', 'Azerbaijan Manat', 2],
-  ['BAM', 'Convertible Mark', 2], ['BBD', 'Barbados Dollar', 2], ['BDT', 'Taka', 2], ['BHD', 'Bahraini Dinar', 3], ['BIF', 'Burundi Franc', 0],
-  ['BMD', 'Bermudian Dollar', 2], ['BND', 'Brunei Dollar', 2], ['BOB', 'Boliviano', 2], ['BRL', 'Brazilian Real', 2], ['BSD', 'Bahamian Dollar', 2],
-  ['BTN', 'Ngultrum', 2], ['BWP', 'Pula', 2], ['BYN', 'Belarusian Ruble', 2], ['BZD', 'Belize Dollar', 2], ['CAD', 'Canadian Dollar', 2],
-  ['CDF', 'Congolese Franc', 2], ['CHF', 'Swiss Franc', 2], ['CLP', 'Chilean Peso', 0], ['CNY', 'Yuan Renminbi', 2], ['COP', 'Colombian Peso', 2],
-  ['CRC', 'Costa Rican Colon', 2], ['CUP', 'Cuban Peso', 2], ['CVE', 'Cabo Verde Escudo', 2], ['CZK', 'Czech Koruna', 2], ['DJF', 'Djibouti Franc', 0],
-  ['DKK', 'Danish Krone', 2], ['DOP', 'Dominican Peso', 2], ['DZD', 'Algerian Dinar', 2], ['EGP', 'Egyptian Pound', 2], ['ERN', 'Nakfa', 2],
-  ['ETB', 'Ethiopian Birr', 2], ['EUR', 'Euro', 2], ['FJD', 'Fiji Dollar', 2], ['FKP', 'Falkland Islands Pound', 2], ['GBP', 'Pound Sterling', 2],
-  ['GEL', 'Lari', 2], ['GHS', 'Ghana Cedi', 2], ['GIP', 'Gibraltar Pound', 2], ['GMD', 'Dalasi', 2], ['GNF', 'Guinean Franc', 0],
-  ['GTQ', 'Quetzal', 2], ['GYD', 'Guyana Dollar', 2], ['HKD', 'Hong Kong Dollar', 2], ['HNL', 'Lempira', 2], ['HTG', 'Gourde', 2],
-  ['HUF', 'Forint', 2], ['IDR', 'Rupiah', 2], ['ILS', 'New Israeli Sheqel', 2], ['INR', 'Indian Rupee', 2], ['IQD', 'Iraqi Dinar', 3],
-  ['IRR', 'Iranian Rial', 2], ['ISK', 'Iceland Krona', 0], ['JMD', 'Jamaican Dollar', 2], ['JOD', 'Jordanian Dinar', 3], ['JPY', 'Yen', 0],
-  ['KES', 'Kenyan Shilling', 2], ['KGS', 'Som', 2], ['KHR', 'Riel', 2], ['KMF', 'Comorian Franc', 0], ['KPW', 'North Korean Won', 2],
-  ['KRW', 'Won', 0], ['KWD', 'Kuwaiti Dinar', 3], ['KYD', 'Cayman Islands Dollar', 2], ['KZT', 'Tenge', 2], ['LAK', 'Lao Kip', 2],
-  ['LBP', 'Lebanese Pound', 2], ['LKR', 'Sri Lanka Rupee', 2], ['LRD', 'Liberian Dollar', 2], ['LSL', 'Loti', 2], ['LYD', 'Libyan Dinar', 3],
-  ['MAD', 'Moroccan Dirham', 2], ['MDL', 'Moldovan Leu', 2], ['MGA', 'Malagasy Ariary', 2], ['MKD', 'Denar', 2], ['MMK', 'Kyat', 2],
-  ['MNT', 'Tugrik', 2], ['MOP', 'Pataca', 2], ['MRU', 'Ouguiya', 2], ['MUR', 'Mauritius Rupee', 2], ['MVR', 'Rufiyaa', 2],
-  ['MWK', 'Malawi Kwacha', 2], ['MXN', 'Mexican Peso', 2], ['MYR', 'Malaysian Ringgit', 2], ['MZN', 'Mozambique Metical', 2], ['NAD', 'Namibia Dollar', 2],
-  ['NGN', 'Naira', 2], ['NIO', 'Cordoba Oro', 2], ['NOK', 'Norwegian Krone', 2], ['NPR', 'Nepalese Rupee', 2], ['NZD', 'New Zealand Dollar', 2],
-  ['OMR', 'Rial Omani', 3], ['PAB', 'Balboa', 2], ['PEN', 'Sol', 2], ['PGK', 'Kina', 2], ['PHP', 'Philippine Peso', 2], ['PKR', 'Pakistan Rupee', 2],
-  ['PLN', 'Zloty', 2], ['PYG', 'Guarani', 0], ['QAR', 'Qatari Rial', 2], ['RON', 'Romanian Leu', 2], ['RSD', 'Serbian Dinar', 2], ['RUB', 'Russian Ruble', 2],
-  ['RWF', 'Rwanda Franc', 0], ['SAR', 'Saudi Riyal', 2], ['SBD', 'Solomon Islands Dollar', 2], ['SCR', 'Seychelles Rupee', 2], ['SDG', 'Sudanese Pound', 2],
-  ['SEK', 'Swedish Krona', 2], ['SGD', 'Singapore Dollar', 2], ['SHP', 'Saint Helena Pound', 2], ['SLE', 'Leone', 2], ['SOS', 'Somali Shilling', 2],
-  ['SRD', 'Surinamese Dollar', 2], ['SSP', 'South Sudanese Pound', 2], ['STN', 'Dobra', 2], ['SVC', 'El Salvador Colon', 2], ['SYP', 'Syrian Pound', 2],
-  ['SZL', 'Lilangeni', 2], ['THB', 'Baht', 2], ['TJS', 'Somoni', 2], ['TMT', 'Turkmenistan Manat', 2], ['TND', 'Tunisian Dinar', 3],
-  ['TOP', 'Pa’anga', 2], ['TRY', 'Turkish Lira', 2], ['TTD', 'Trinidad and Tobago Dollar', 2], ['TWD', 'New Taiwan Dollar', 2], ['TZS', 'Tanzanian Shilling', 2],
-  ['UAH', 'Hryvnia', 2], ['UGX', 'Uganda Shilling', 0], ['USD', 'US Dollar', 2], ['UYU', 'Peso Uruguayo', 2], ['UZS', 'Uzbekistan Sum', 2],
-  ['VES', 'Bolívar Soberano', 2], ['VND', 'Dong', 0], ['VUV', 'Vatu', 0], ['WST', 'Tala', 2], ['XAF', 'CFA Franc BEAC', 0], ['XCD', 'East Caribbean Dollar', 2],
-  ['XCG', 'Caribbean Guilder', 2], ['XOF', 'CFA Franc BCEAO', 0], ['XPF', 'CFP Franc', 0], ['YER', 'Yemeni Rial', 2], ['ZAR', 'Rand', 2], ['ZMW', 'Zambian Kwacha', 2],
-  ['ZWG', 'Zimbabwe Gold', 2],
-];
-
-export const WORLD_CURRENCIES: Currency[] = CURRENCY_DATA
-  .map(([code, name, minorUnit]): Currency => ({ code, name, minorUnit }))
-  .sort((a, b) => a.name.localeCompare(b.name));
-
-const toNumber = (v: number | string): number => {
-  const x = Number(v);
-  return Number.isFinite(x) ? x : 0;
-};
-
-const clamp = (v: number, min: number, max: number): number => Math.min(max, Math.max(min, v));
-
-/**
- * Money precision rounding helper strictly respecting currency minor units.
- * Compounding offset prevents JavaScript binary float boundary anomalies.
- */
-export function roundMinor(amount: number, minorUnit: number): number {
-  const factor = 10 ** minorUnit;
-  return Math.round((amount + Number.EPSILON) * factor) / factor;
-}
-
-/**
- * Closed-form periodic payment formula:
- * P = L * i * (1 + i)^N / ((1 + i)^N - 1)
- */
-export function calculatePeriodicPayment(
-  principal: number,
-  annualRate: number,
-  periods: number,
-  paymentsPerYear: number,
-  minorUnit: number,
-): number {
-  if (principal <= 0 || periods <= 0) return 0;
-  if (annualRate <= 0) return roundMinor(principal / periods, minorUnit);
-  const r = annualRate / 100 / paymentsPerYear;
-  const factor = (1 + r) ** periods;
-  const payment = principal * ((r * factor) / (factor - 1));
-  return roundMinor(payment, minorUnit);
-}
-
-/**
- * Deterministic Financial Amortization Engine
- * Correctly models 100-year biweekly mortgages (up to 2,600+ periods) without truncation.
- */
-export function buildMortgageModel(inputs: CalculationInputs) {
-  const minorUnit = inputs.currency?.minorUnit ?? 2;
-  const price = Math.max(0, inputs.price);
-  const down = Math.min(price, Math.max(0, inputs.down));
-  const loan = roundMinor(Math.max(0, price - down), minorUnit);
-  const paymentsPerYear = inputs.frequency === 'biweekly' ? 26 : 12;
-  const periods = Math.max(1, Math.round(inputs.years * paymentsPerYear));
-
-  let balance = loan;
-  let appliedPrepayAtOrigination = 0;
-  let unappliedPrepayment = 0;
-
-  if (inputs.prepay > 0 && inputs.prepayTiming === 'origination') {
-    appliedPrepayAtOrigination = roundMinor(Math.min(inputs.prepay, balance), minorUnit);
-    unappliedPrepayment = roundMinor(Math.max(0, inputs.prepay - balance), minorUnit);
-    balance = roundMinor(balance - appliedPrepayAtOrigination, minorUnit);
-  }
-
-  const scheduled = calculatePeriodicPayment(balance, inputs.rate, periods, paymentsPerYear, minorUnit);
-  const extraPerPeriod = roundMinor((Math.max(0, inputs.extra) * 12) / paymentsPerYear, minorUnit);
-
-  const tax = roundMinor(Math.max(0, inputs.tax) / 12, minorUnit);
-  const insurance = roundMinor(Math.max(0, inputs.insurance) / 12, minorUnit);
-  const hoa = roundMinor(Math.max(0, inputs.hoa), minorUnit);
-
-  const closing = roundMinor((price * Math.max(0, inputs.closingPct)) / 100, minorUnit);
-  const points = roundMinor((loan * Math.max(0, inputs.points)) / 100, minorUnit);
-  const upfrontFees = roundMinor(Math.max(0, inputs.lenderFees), minorUnit);
-  const cashToClose = roundMinor(down + closing + points + upfrontFees + appliedPrepayAtOrigination, minorUnit);
-
-  let interestTotal = 0;
-  let principalTotal = appliedPrepayAtOrigination;
-  let pmiTotal = 0;
-  let extraTotal = appliedPrepayAtOrigination;
-  const rows: ScheduleRow[] = [];
-
-  const originalLtv = price > 0 ? (loan / price) * 100 : 0;
-  const pmiThreshold = clamp(inputs.pmiLtv, 0, 100);
-  // Ensures full support for 100-year biweekly loans (2,600 periods) with zero silent truncation.
-  const maxPeriods = Math.max(3000, periods + 50);
-
-  for (let period = 1; balance > 0 && period <= maxPeriods; period += 1) {
-    const periodicRate = inputs.rate > 0 ? inputs.rate / 100 / paymentsPerYear : 0;
-    const interest = roundMinor(balance * periodicRate, minorUnit);
-    const amountDue = roundMinor(balance + interest, minorUnit);
-
-    let scheduledPrincipal = 0;
-    let extra = 0;
-    let principal = 0;
-
-    // Check if this is the final payoff period
-    if (period >= periods || amountDue <= scheduled || balance <= roundMinor(scheduled - interest, minorUnit)) {
-      principal = balance;
-      scheduledPrincipal = balance;
-      extra = 0;
-    } else {
-      scheduledPrincipal = roundMinor(Math.min(balance, Math.max(0, scheduled - interest)), minorUnit);
-      const remainingAfterScheduled = roundMinor(balance - scheduledPrincipal, minorUnit);
-
-      let periodExtra = extraPerPeriod;
-      if (inputs.prepay > 0 && inputs.prepayTiming === 'period' && period === inputs.prepayPeriod) {
-        periodExtra = roundMinor(periodExtra + inputs.prepay, minorUnit);
-      }
-
-      extra = roundMinor(Math.min(periodExtra, remainingAfterScheduled), minorUnit);
-      principal = roundMinor(scheduledPrincipal + extra, minorUnit);
-    }
-
-    const nextBalance = roundMinor(Math.max(0, balance - principal), minorUnit);
-
-    // PMI calculation based on balance after principal payment
-    const currentLtv = price > 0 ? (nextBalance / price) * 100 : 0;
-    const pmiApplicable = originalLtv > 80 && currentLtv > pmiThreshold && nextBalance > 0;
-    const pmi = pmiApplicable
-      ? roundMinor(nextBalance * (Math.max(0, inputs.pmiRate) / 100 / paymentsPerYear), minorUnit)
-      : 0;
-
-    const payment = roundMinor(principal + interest + pmi, minorUnit);
-
-    interestTotal = roundMinor(interestTotal + interest, minorUnit);
-    principalTotal = roundMinor(principalTotal + principal, minorUnit);
-    pmiTotal = roundMinor(pmiTotal + pmi, minorUnit);
-    extraTotal = roundMinor(extraTotal + extra, minorUnit);
-
-    rows.push({
-      period,
-      year: Math.ceil(period / paymentsPerYear),
-      payment,
-      principal,
-      interest,
-      pmi,
-      extra,
-      balance: nextBalance,
-    });
-
-    balance = nextBalance;
-    if (balance <= 0) break;
-  }
-
-  const monthlyBase = inputs.frequency === 'biweekly' ? roundMinor((scheduled * 26) / 12, minorUnit) : scheduled;
-  const initialPmiPeriod = rows[0]?.pmi ?? 0;
-  const initialPmiMonthly = inputs.frequency === 'biweekly' ? roundMinor((initialPmiPeriod * 26) / 12, minorUnit) : initialPmiPeriod;
-  const payoffPeriods = rows.length;
-  const payoffYears = roundMinor(payoffPeriods / paymentsPerYear, 2);
-
-  const monthsEquivalent = inputs.frequency === 'biweekly' ? (payoffPeriods * 12) / 26 : payoffPeriods;
-  const totalTax = roundMinor(tax * monthsEquivalent, minorUnit);
-  const totalInsurance = roundMinor(insurance * monthsEquivalent, minorUnit);
-  const totalHoa = roundMinor(hoa * monthsEquivalent, minorUnit);
-
-  const totalOutOfPocket = roundMinor(
-    cashToClose + (principalTotal - appliedPrepayAtOrigination) + interestTotal + pmiTotal + totalTax + totalInsurance + totalHoa,
-    minorUnit,
-  );
-
-  return {
-    price,
-    down,
-    loan,
-    scheduled,
-    monthlyBase,
-    tax,
-    insurance,
-    hoa,
-    closing,
-    points,
-    upfrontFees,
-    cashToClose,
-    monthly: roundMinor(monthlyBase + tax + insurance + hoa + initialPmiMonthly, minorUnit),
-    initialPmiMonthly,
-    initialPmiPeriod,
-    interestTotal,
-    principalTotal,
-    pmiTotal,
-    extraTotal,
-    totalTax,
-    totalInsurance,
-    totalHoa,
-    totalCost: totalOutOfPocket,
-    payoffPeriods,
-    payoffYears,
-    appliedPrepayAtOrigination,
-    unappliedPrepayment,
-    rows,
-  };
-}
-
-/**
- * Aggregates period schedule into annual summaries.
- */
-export function annualizeSchedule(rows: ScheduleRow[], minorUnit: number): ScheduleRow[] {
-  const map = new Map<number, {
-    payment: number;
-    principal: number;
-    interest: number;
-    pmi: number;
-    extra: number;
-    balance: number;
-  }>();
-
-  for (const r of rows) {
-    const cur = map.get(r.year) || { payment: 0, principal: 0, interest: 0, pmi: 0, extra: 0, balance: 0 };
-    cur.payment = roundMinor(cur.payment + r.payment, minorUnit);
-    cur.principal = roundMinor(cur.principal + r.principal, minorUnit);
-    cur.interest = roundMinor(cur.interest + r.interest, minorUnit);
-    cur.pmi = roundMinor(cur.pmi + r.pmi, minorUnit);
-    cur.extra = roundMinor(cur.extra + r.extra, minorUnit);
-    cur.balance = r.balance;
-    map.set(r.year, cur);
-  }
-
-  const result: ScheduleRow[] = [];
-  for (const [year, d] of map.entries()) {
-    result.push({
-      period: year,
-      year,
-      payment: d.payment,
-      principal: d.principal,
-      interest: d.interest,
-      pmi: d.pmi,
-      extra: d.extra,
-      balance: d.balance,
-    });
-  }
-  return result;
-}
-
-/**
- * RFC-4180 CSV escaping with formula injection defense.
- */
-function escapeCsvValue(val: unknown): string {
-  if (val === null || val === undefined) return '""';
-  let str = String(val);
-  if (/^[=+\-@]/.test(str)) {
-    str = `'${str}`;
-  }
-  if (/[",\r\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+export type { Currency, Frequency, ScheduleView, PrepayTiming, ScheduleRow, CalculationInputs, MortgageModelResult };
+export { WORLD_CURRENCIES, roundMinor, calculatePeriodicPayment, buildMortgageModel, annualizeSchedule };
 
 export default function MortgageCalculator() {
   const [currency, setCurrency] = useState<Currency>(() => WORLD_CURRENCIES.find((c) => c.code === 'USD')!);
@@ -367,6 +69,50 @@ export default function MortgageCalculator() {
   const [schedulePage, setSchedulePage] = useState(1);
   const [methodologyOpen, setMethodologyOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const handleReset = () => {
+    setHomePrice('');
+    setDownPayment('');
+    setDownPct('');
+    setRate('');
+    setTerm('');
+    setTax('');
+    setInsurance('');
+    setHoa('');
+    setPmiRate('');
+    setPmiLtv('');
+    setClosingPct('');
+    setPoints('');
+    setLenderFees('');
+    setExtra('');
+    setPrepay('');
+    setPrepayTiming('origination');
+    setPrepayPeriod('');
+    setFrequency('monthly');
+    setSchedulePage(1);
+  };
+
+  const loadPreset = (preset: PresetScenario) => {
+    setHomePrice(preset.values.homePrice);
+    setDownPayment(preset.values.downPayment);
+    setDownPct(preset.values.downPct);
+    setRate(preset.values.rate);
+    setTerm(preset.values.term);
+    setTax(preset.values.tax);
+    setInsurance(preset.values.insurance);
+    setHoa(preset.values.hoa);
+    setPmiRate(preset.values.pmiRate);
+    setPmiLtv(preset.values.pmiLtv);
+    setClosingPct(preset.values.closingPct);
+    setPoints(preset.values.points);
+    setLenderFees(preset.values.lenderFees);
+    setExtra(preset.values.extra);
+    setPrepay(preset.values.prepay);
+    setPrepayTiming(preset.values.prepayTiming);
+    setPrepayPeriod(preset.values.prepayPeriod);
+    setFrequency(preset.values.frequency);
+    setSchedulePage(1);
+  };
 
   // Accessible unique IDs
   const currencySelectId = useId();
@@ -669,49 +415,24 @@ export default function MortgageCalculator() {
 
   const downloadCsv = () => {
     if (!result) return;
-    const lines: string[] = [
-      '\uFEFF# OmniTools Mortgage Amortization Schedule',
-      `# Currency: ${currency.name} (${currency.code})`,
-      `# Payment Frequency: ${frequency === 'biweekly' ? 'Biweekly (26/yr)' : 'Monthly (12/yr)'}`,
-      `# Home Price: ${priceNum}`,
-      `# Down Payment: ${dpNum} (${currentDownPct.toFixed(2)}%)`,
-      `# Loan Amount: ${result.loan}`,
-      `# Nominal Annual Rate: ${toNumber(rate)}%`,
-      `# Loan Term: ${toNumber(term)} years`,
-      `# Cash to Close: ${result.cashToClose}`,
-      `# Total Interest: ${result.interestTotal}`,
-      `# Total PMI: ${result.pmiTotal}`,
-      `# Lifetime Cash Outflow: ${result.totalCost}`,
-      '',
-      [
-        'Period',
-        'Year',
-        'Payment',
-        'Principal',
-        'Interest',
-        'PMI',
-        'Extra Principal',
-        'Ending Balance',
-      ].map(escapeCsvValue).join(','),
-    ];
-
-    const rowsToExport = scheduleView === 'yearly' ? yearlyRows : result.rows;
-    for (const r of rowsToExport) {
-      lines.push(
-        [
-          scheduleView === 'yearly' ? `Year ${r.year}` : `Period ${r.period}`,
-          r.year,
-          r.payment.toFixed(currency.minorUnit),
-          r.principal.toFixed(currency.minorUnit),
-          r.interest.toFixed(currency.minorUnit),
-          r.pmi.toFixed(currency.minorUnit),
-          r.extra.toFixed(currency.minorUnit),
-          r.balance.toFixed(currency.minorUnit),
-        ].map(escapeCsvValue).join(','),
-      );
-    }
-
-    const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const csvContent = generateMortgageCsv(scheduleView === 'yearly' ? yearlyRows : result.rows, {
+      currencyName: currency.name,
+      currencyCode: currency.code,
+      minorUnit: currency.minorUnit,
+      frequency,
+      price: priceNum,
+      down: dpNum,
+      downPct: currentDownPct,
+      loan: result.loan,
+      rate: toNumber(rate),
+      term: toNumber(term),
+      cashToClose: result.cashToClose,
+      interestTotal: result.interestTotal,
+      pmiTotal: result.pmiTotal,
+      totalCost: result.totalCost,
+      scheduleView,
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -724,6 +445,40 @@ export default function MortgageCalculator() {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* LEFT COLUMN: Inputs & Controls */}
       <div className="lg:col-span-5 space-y-6">
+        {/* Quick Presets & Reset Toolbar */}
+        <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              Quick Scenario Presets
+            </span>
+            <button
+              id="btn-reset"
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors focus:ring-2 focus:ring-red-400 focus:outline-none"
+              title="Reset all inputs to clean defaults"
+              aria-label="Reset calculator to blank values"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset Form
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {MORTGAGE_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => loadPreset(preset)}
+                className="px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-slate-700 dark:text-slate-300 transition-all font-medium shadow-2xs text-left"
+                title={preset.description}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Currency Selector */}
         <div>
           <label htmlFor={currencySelectId} className={labelClass}>Select Currency</label>

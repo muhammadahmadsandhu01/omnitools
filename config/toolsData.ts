@@ -111,7 +111,8 @@ export const tools: Tool[] = [
     isPopular: true,
     status: 'published',
     seoTitle: 'Mortgage Calculator — PITI, PMI & Amortization Schedule',
-    seoDescription: 'Calculate estimated monthly mortgage payments (PITI), property taxes, insurance, PMI drop-off, and complete amortization schedules.',
+    seoDescription:
+      'Calculate monthly mortgage payments (PITI), property taxes, home insurance, PMI drop-off, closing costs, and extra payments with full amortization schedules.',
     relatedToolSlugs: ['emi-calculator', 'compound-interest', 'salary-calculator', 'invoice-generator'],
   },
 
