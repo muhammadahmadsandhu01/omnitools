@@ -437,8 +437,8 @@ export const tools: Tool[] = [
       'Generate HTML meta tags and Open Graph markup for search and social sharing.',
     isPopular: false,
     status: 'published',
-    seoTitle: 'Meta Tag & Open Graph Generator',
-    seoDescription: 'Generate standard SEO meta tags, Open Graph cards, and Twitter Cards with real-time Google, Facebook, and Twitter social previews.',
+    seoTitle: 'Meta Tag & Open Graph Generator — SEO & Social',
+    seoDescription: 'Free Meta Tag & Open Graph Generator. Create SEO meta tags, Twitter Cards, and live social previews with instant validation and private in-browser processing.',
     relatedToolSlugs: ['qr-generator', 'text-analyzer', 'text-case-converter', 'json-formatter'],
   },
 

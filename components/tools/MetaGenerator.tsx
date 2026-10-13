@@ -731,7 +731,7 @@ export default function MetaGenerator() {
                       </p>
                     ) : (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                        Must be an absolute HTTPS URL to avoid duplicate content penalties.
+                        Authoritative public URL to consolidate duplicate variants. Canonical tags are search engine hints, not absolute guarantees, and do not replace server-side 301 redirects.
                       </p>
                     )}
                   </div>
@@ -803,6 +803,26 @@ export default function MetaGenerator() {
                         <span>notranslate</span>
                       </label>
                     </div>
+
+                    {(!formData.robots.index || !formData.robots.follow) && (
+                      <div className="mt-2.5 p-3 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold">
+                            Indexing Notice:{' '}
+                            {!formData.robots.index && (
+                              <span><code>index</code> disabled (emitting <code>noindex</code>). Search engines are instructed not to index this page in search results. </span>
+                            )}
+                            {!formData.robots.follow && (
+                              <span><code>follow</code> disabled (emitting <code>nofollow</code>). Search engines are instructed not to crawl links found on this page.</span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 leading-relaxed">
+                            Robots meta directives are crawler instructions, not security or access-control barriers. Crawlers must be able to fetch the page to discover this directive.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Secondary Fields (Author, Theme, Keywords) */}
