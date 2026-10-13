@@ -337,7 +337,21 @@ export function buildMortgageModel(inputs: CalculationInputs): MortgageModelResu
     balance = roundMinor(balance - appliedPrepayAtOrigination, minorUnit);
   }
 
-  const scheduled = calculatePeriodicPayment(balance, inputs.rate, periods, paymentsPerYear, minorUnit);
+  // Accelerated Biweekly convention: biweekly installment equals half of standard monthly payment.
+  // Making 26 half-payments per year is equivalent to 13 monthly payments, accelerating equity buildup.
+  const scheduled =
+    inputs.frequency === 'biweekly'
+      ? roundMinor(
+          calculatePeriodicPayment(
+            balance,
+            inputs.rate,
+            Math.max(1, Math.round(inputs.years * 12)),
+            12,
+            minorUnit,
+          ) / 2,
+          minorUnit,
+        )
+      : calculatePeriodicPayment(balance, inputs.rate, periods, paymentsPerYear, minorUnit);
   const extraPerPeriod = roundMinor((Math.max(0, inputs.extra) * 12) / paymentsPerYear, minorUnit);
 
   const tax = roundMinor(Math.max(0, inputs.tax) / 12, minorUnit);
@@ -389,11 +403,11 @@ export function buildMortgageModel(inputs: CalculationInputs): MortgageModelResu
 
     const nextBalance = roundMinor(Math.max(0, balance - principal), minorUnit);
 
-    // Dynamic PMI calculation: cancels once balance amortizes down to specified LTV threshold
-    const currentLtv = price > 0 ? (nextBalance / price) * 100 : 0;
-    const pmiApplicable = originalLtv > 80 && currentLtv > pmiThreshold && nextBalance > 0;
+    // Dynamic PMI calculation: evaluated on the cycle's balance and cancels once balance drops to or below threshold
+    const currentLtv = price > 0 ? (balance / price) * 100 : 0;
+    const pmiApplicable = originalLtv > 80 && currentLtv > pmiThreshold && balance > 0;
     const pmi = pmiApplicable
-      ? roundMinor(nextBalance * (Math.max(0, inputs.pmiRate) / 100 / paymentsPerYear), minorUnit)
+      ? roundMinor(balance * (Math.max(0, inputs.pmiRate) / 100 / paymentsPerYear), minorUnit)
       : 0;
 
     const payment = roundMinor(principal + interest + pmi, minorUnit);

@@ -728,7 +728,7 @@ export default function MortgageCalculator() {
           aria-controls={advancedControlsId}
           className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors"
         >
-          <span className="flex items-center gap-2 whitespace-nowrap">
+          <span className="flex items-center gap-2 text-left">
             <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             Advanced Mortgage & Financing Options
           </span>
@@ -1414,7 +1414,7 @@ export default function MortgageCalculator() {
             aria-controls={methodologyControlsId}
             className="w-full flex items-center justify-between p-4 text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
           >
-            <span className="flex items-center gap-2 whitespace-nowrap">
+            <span className="flex items-center gap-2 text-left">
               <Info className="w-4 h-4 text-blue-600 shrink-0" />
               Methodology & Calculation Assumptions
             </span>
