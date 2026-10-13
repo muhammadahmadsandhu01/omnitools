@@ -5,6 +5,16 @@ const nextConfig: NextConfig = {
     return [
       // 1. Specific legacy alias with category change (must precede generic /image/:slug)
       {
+        source: '/image/image-to-pdf',
+        destination: '/document/image-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/media/image-to-pdf',
+        destination: '/document/image-to-pdf',
+        permanent: true,
+      },
+      {
         source: '/image/webp-converter',
         destination: '/media/webp-to-jpg-png',
         permanent: true,

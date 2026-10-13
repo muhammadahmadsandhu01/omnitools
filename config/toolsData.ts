@@ -342,8 +342,9 @@ export const tools: Tool[] = [
       'Convert JPG, PNG, WebP, BMP, and GIF images into a PDF document directly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image to PDF Converter',
-    seoDescription: 'Convert JPG, PNG, WebP, BMP, and GIF images into clean, standardized PDF documents with adjustable margins, orientation, and reordering.',
+    seoTitle: 'Image to PDF Converter — Convert JPG, PNG & Photos to PDF',
+    seoDescription:
+      'Convert JPG, PNG, WebP, and photos to PDF online for free. Combine multiple images into one PDF or download separate files with custom page sizes, margins, and 100% private client-side processing.',
     relatedToolSlugs: ['pdf-merge-split', 'webp-to-jpg-png', 'image-compressor', 'invoice-generator'],
   },
 
