@@ -513,8 +513,14 @@ export function calculateDealerSpread(
    5. DATA FETCHING, VALIDATION & PROVIDER CONTRACT
    ========================================================================= */
 
-const INITIAL_UPDATED_AT = '2026-10-07T00:00:00.000Z';
-const INITIAL_TIMESTAMP_MS = 1791331200000;
+export const BASELINE_OBSERVATION_UPDATED_AT = '2026-10-14T22:00:00.000Z';
+export const BASELINE_OBSERVATION_TIMESTAMP_MS = 1792015200000;
+
+export const DEFAULT_FX_OBSERVATION_UPDATED_AT = '2026-10-14T00:02:32.000Z';
+export const DEFAULT_FX_OBSERVATION_TIMESTAMP_MS = 1791936152000;
+
+const INITIAL_UPDATED_AT = BASELINE_OBSERVATION_UPDATED_AT;
+const INITIAL_TIMESTAMP_MS = BASELINE_OBSERVATION_TIMESTAMP_MS;
 
 export const DEFAULT_FX_RATES: Record<CurrencyCode, number> = {
   USD: 1.0,
@@ -577,24 +583,49 @@ export async function fetchMetalPrice(
     }
 
     const data = await res.json();
-    const rawPrice = Number(data.price);
-
-    if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
-      throw new Error('Malformed price');
+    if (!data || typeof data !== 'object') {
+      throw new Error('Malformed API payload: expected JSON object');
     }
 
-    const parsedTimestamp = data.updatedAt ? new Date(data.updatedAt).getTime() : NaN;
-    const hasValidQuoteTs = Number.isFinite(parsedTimestamp) && parsedTimestamp > 0;
+    const rawPrice = Number(data.price);
+    if (!Number.isFinite(rawPrice) || rawPrice <= 0) {
+      throw new Error(`Malformed price for ${code}: ${data.price}`);
+    }
+
+    // Response validation: instrument symbol & currency
+    if (data.symbol && typeof data.symbol === 'string' && data.symbol.toUpperCase() !== code) {
+      throw new Error(`Symbol mismatch: expected ${code}, got ${data.symbol}`);
+    }
+    if (data.currency && typeof data.currency === 'string' && data.currency.toUpperCase() !== 'USD') {
+      throw new Error(`Currency mismatch for ${code}: expected USD, got ${data.currency}`);
+    }
+
+    // Response validation: timestamp must be present and recent
+    if (!data.updatedAt) {
+      throw new Error(`Missing updatedAt timestamp for ${code}`);
+    }
+
+    const parsedTimestamp = new Date(data.updatedAt).getTime();
+    if (!Number.isFinite(parsedTimestamp) || parsedTimestamp <= 0) {
+      throw new Error(`Invalid updatedAt timestamp for ${code}: ${data.updatedAt}`);
+    }
+
+    // Sanity check: provider timestamp must not be wildly in the future (>5m) or unreasonably stale (>30 days)
+    if (now - parsedTimestamp < -300000) {
+      throw new Error(`Clock skew detected: provider timestamp in future for ${code}`);
+    }
+    if (now - parsedTimestamp > 30 * 86400000) {
+      throw new Error(`Provider quote timestamp is older than 30 days for ${code}`);
+    }
 
     const freshnessEvaluation = evaluateQuoteFreshness({
-      providerTimestampMs: hasValidQuoteTs ? parsedTimestamp : null,
+      providerTimestampMs: parsedTimestamp,
       retrievedAtMs: now,
       nowMs: now,
       isFallback: false,
       providerName: 'Gold API — Spot Reference',
     });
 
-    const validTimestamp = hasValidQuoteTs ? parsedTimestamp : INITIAL_TIMESTAMP_MS;
     const changeUsd = Number.isFinite(Number(data.ch)) ? Number(data.ch) : 0;
     const changePct = Number.isFinite(Number(data.chp)) ? Number(data.chp) : 0;
 
@@ -606,8 +637,8 @@ export async function fetchMetalPrice(
       change24hPercent: changePct,
       high24hUsd: null,
       low24hUsd: null,
-      updatedAt: new Date(validTimestamp).toISOString(),
-      timestampMs: validTimestamp,
+      updatedAt: new Date(parsedTimestamp).toISOString(),
+      timestampMs: parsedTimestamp,
       retrievedAt: new Date(now).toISOString(),
       source: 'Gold API — Spot Reference',
       rateType: 'spot',
@@ -630,8 +661,8 @@ export async function fetchMetalPrice(
       change24hPercent: 0,
       high24hUsd: null,
       low24hUsd: null,
-      updatedAt: INITIAL_UPDATED_AT,
-      timestampMs: INITIAL_TIMESTAMP_MS,
+      updatedAt: BASELINE_OBSERVATION_UPDATED_AT,
+      timestampMs: BASELINE_OBSERVATION_TIMESTAMP_MS,
       retrievedAt: new Date(now).toISOString(),
       source: 'Verified Reference Baseline',
       rateType: 'reference',
@@ -664,7 +695,7 @@ export async function fetchFxData(signal?: AbortSignal): Promise<FxDataPayload> 
         }
       }
       const rawTs = Number(data.time_last_update_unix);
-      const timestampMs = Number.isFinite(rawTs) && rawTs > 0 ? rawTs * 1000 : INITIAL_TIMESTAMP_MS;
+      const timestampMs = Number.isFinite(rawTs) && rawTs > 0 ? rawTs * 1000 : DEFAULT_FX_OBSERVATION_TIMESTAMP_MS;
       return {
         provider: 'ExchangeRate-API',
         timestampMs,
@@ -674,14 +705,14 @@ export async function fetchFxData(signal?: AbortSignal): Promise<FxDataPayload> 
     }
     return {
       provider: 'ExchangeRate-API (Reference)',
-      timestampMs: INITIAL_TIMESTAMP_MS,
+      timestampMs: DEFAULT_FX_OBSERVATION_TIMESTAMP_MS,
       baseCurrency: 'USD',
       rates: DEFAULT_FX_RATES,
     };
   } catch {
     return {
       provider: 'ExchangeRate-API (Reference)',
-      timestampMs: INITIAL_TIMESTAMP_MS,
+      timestampMs: DEFAULT_FX_OBSERVATION_TIMESTAMP_MS,
       baseCurrency: 'USD',
       rates: DEFAULT_FX_RATES,
     };
@@ -1774,15 +1805,19 @@ export default function PreciousMetals() {
                       {mMeta.name}
                     </h3>
                     <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                      {mCode} • Intl. Spot
+                      {mCode} • {mData?.rateType === 'reference' ? 'Baseline Ref' : 'Intl. Spot'}
                     </span>
                   </div>
                 </div>
-                {isSelected && (
+                {isSelected ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                     Active
                   </span>
-                )}
+                ) : mData?.rateType === 'reference' ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    Baseline
+                  </span>
+                ) : null}
               </div>
 
               {/* Price Display */}
@@ -1791,8 +1826,12 @@ export default function PreciousMetals() {
                   {formatCurrencyValue(finalPrice, selectedCurrency)}
                 </div>
                 <div className="flex items-center justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
-                  <span>per {UNIT_LABELS[selectedUnit].short} (Spot)</span>
-                  {mData?.change24hPercent && mData.change24hPercent !== 0 ? (
+                  <span>per {UNIT_LABELS[selectedUnit].short} ({mData?.rateType === 'reference' ? 'Baseline' : 'Spot'})</span>
+                  {mData?.rateType === 'reference' ? (
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium" title="Statutory reference benchmark (API unavailable)">
+                      Reference Baseline
+                    </span>
+                  ) : mData?.change24hPercent && mData.change24hPercent !== 0 ? (
                     <span
                       className={`font-semibold flex items-center gap-0.5 ${
                         mData.change24hPercent > 0
@@ -2129,7 +2168,7 @@ export default function PreciousMetals() {
                 </p>
                 <p className="leading-relaxed">
                   The rates in this table represent pure international wholesale spot benchmarks (London OTC unallocated bullion) converted at official interbank exchange rates (USD/PKR ~{formatDecimal(fxRates.PKR, 2)}).
-                  In Pakistan, domestic bullion rates published by the All Pakistan Sarafa Gems and Jewellers Association (APGJSA) trade at a physical cash premium (typically +1.0% to +2.5% higher, currently around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K) due to open-market currency spreads, physical import costs, and local physical supply. Finished retail jewelry also includes 10% to 20% jeweler crafting charges (ujrat).
+                  In Pakistan, domestic bullion rates published by the All Pakistan Sarafa Gems and Jewellers Association (APGJSA) trade at a physical cash premium (typically +1.0% to +2.5% higher, currently indicative circular benchmark around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K as of October 2026) due to open-market currency spreads, physical import costs, and local physical supply. Note that there is no official automated real-time electronic feed for Sarafa rates; rates are determined daily via trade association circulars and local bazaar associations. Finished retail jewelry also includes 10% to 20% jeweler crafting charges (ujrat) and stone deductions.
                 </p>
               </div>
             </div>
@@ -2288,7 +2327,9 @@ export default function PreciousMetals() {
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono font-bold border border-purple-200 dark:border-purple-800">
                   <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  MANUAL OVERRIDE: {formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t
+                  {isManualSpotOverride && Math.abs(effectiveSpotPriceInSelectedCurrency - (432500 / 0.375)) < 1
+                    ? `SARAFA BENCHMARK: ${formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t (~₨ 432,500/tola ref.)`
+                    : `MANUAL OVERRIDE: ${formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t`}
                 </span>
               )}
             </div>
@@ -2302,10 +2343,10 @@ export default function PreciousMetals() {
                     setManualSpotPrice(sarafaRatePerOz);
                     setIsManualSpotOverride(true);
                   }}
-                  title="Apply All Pakistan Sarafa Gems and Jewellers Association (APGJSA) physical bullion rate"
+                  title="Apply APGJSA circular indicative reference benchmark (~₨ 432,500/tola 24K - indicative reference, not an automated live feed)"
                   className="px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold cursor-pointer transition-colors text-xs"
                 >
-                  Apply Sarafa Market (~₨ 432.5k/tola)
+                  Apply Indicative Sarafa Benchmark (~₨ 432.5k/tola)
                 </button>
               )}
               <button
@@ -2318,7 +2359,7 @@ export default function PreciousMetals() {
                 }}
                 className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer transition-colors text-xs"
               >
-                {isManualSpotOverride ? 'Reset to Benchmark Feed' : 'Enter Custom Spot Override'}
+                {isManualSpotOverride ? 'Reset to Spot Reference Feed' : 'Enter Custom Spot Override'}
               </button>
 
               {isManualSpotOverride && (
@@ -3058,7 +3099,7 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
           <strong>Dealer Cash Payout Disclosure:</strong> Bullion spot benchmarks do not guarantee retail dealer redemption payouts. Physical transactions are subject to dealer bid-ask margins, assay verification tests, melted slag deductions, minting premiums, and local sales tax/VAT. Actual payouts will differ from pure wholesale melt value.
         </p>
         <p className="leading-relaxed">
-          <strong>Local Bullion Market vs. Converted Spot Notice (Pakistan Sarafa, India MCX, UAE):</strong> Converted rates represent pure international spot prices multiplied by interbank foreign exchange rates. In domestic physical markets such as Pakistan (Karachi/Lahore Sarafa under APGJSA), physical bullion trades at a domestic cash premium (typically +1.0% to +2.5% higher, currently around Rs. 432,500 per tola for 24K) due to physical delivery logistics, open-market foreign exchange spreads, and local demand. In India, domestic market rates on MCX/IBJA include 6% customs duty and 3% GST. These rates must not be confused with physical jeweler retail prices, which also include craftsmanship and making charges (ujrat).
+          <strong>Local Bullion Market vs. Converted Spot Notice (Pakistan Sarafa, India MCX, UAE):</strong> Converted rates represent pure international spot prices multiplied by interbank foreign exchange rates. In domestic physical markets such as Pakistan (Karachi/Lahore Sarafa under APGJSA), physical bullion trades at a domestic cash premium (typically +1.0% to +2.5% higher, currently indicative circular benchmark around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K) due to physical delivery logistics, open-market foreign exchange spreads, and local demand. No official automated real-time electronic feed exists for local Pakistan Sarafa rates; rates are determined daily via trade association circulars and jeweler quotes will vary. In India, domestic market rates on MCX/IBJA include 6% customs duty and 3% GST. These rates must not be confused with physical jeweler retail prices, which also include craftsmanship and making charges (ujrat).
         </p>
         <p className="leading-relaxed">
           <strong>Unit Conversions:</strong> 1 Troy Ounce = exactly 31.1034768 grams. 1 Tola = exactly 180 grains = 11.6638038 grams (exactly 3/8 or 0.375 Troy Ounce). 1 Kilogram = 1,000 grams.

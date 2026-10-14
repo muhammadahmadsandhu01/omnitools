@@ -42,6 +42,10 @@ import {
 import {
   BASELINE_PRICES,
   DEFAULT_FX_RATES,
+  BASELINE_OBSERVATION_UPDATED_AT,
+  BASELINE_OBSERVATION_TIMESTAMP_MS,
+  DEFAULT_FX_OBSERVATION_UPDATED_AT,
+  DEFAULT_FX_OBSERVATION_TIMESTAMP_MS,
 } from '../components/tools/PreciousMetals';
 
 /* =========================================================================
@@ -1409,6 +1413,115 @@ console.log('\n[SUITE 14: Local Bullion Market (Sarafa) vs Converted Internation
   assert(BASELINE_PRICES.XPD === 1118.00, 'BASELINE_PRICES.XPD matches verified benchmark 1118.00');
   assert(DEFAULT_FX_RATES.PKR === 277.05, 'DEFAULT_FX_RATES.PKR is updated to 277.05');
   assert(DEFAULT_FX_RATES.INR === 95.11, 'DEFAULT_FX_RATES.INR is updated to 95.11');
+}
+
+/* =========================================================================
+   SUITE 15: PAYLOAD VALIDATION, RECOVERY INTEGRITY & SARAFA OVERRIDE ENGINE
+   ========================================================================= */
+
+console.log('\n[SUITE 15: Payload Validation, Recovery Integrity & Sarafa Override Engine]');
+
+{
+  // 1. Observation Timestamp Integrity
+  assert(
+    BASELINE_OBSERVATION_TIMESTAMP_MS === 1792015200000,
+    'BASELINE_OBSERVATION_TIMESTAMP_MS is exactly 1792015200000 (2026-10-14T22:00:00Z)'
+  );
+  assert(
+    BASELINE_OBSERVATION_UPDATED_AT === '2026-10-14T22:00:00.000Z',
+    'BASELINE_OBSERVATION_UPDATED_AT is valid ISO string for 2026-10-14T22:00:00.000Z'
+  );
+  assert(
+    DEFAULT_FX_OBSERVATION_TIMESTAMP_MS === 1791936152000,
+    'DEFAULT_FX_OBSERVATION_TIMESTAMP_MS is exactly 1791936152000'
+  );
+  assert(
+    DEFAULT_FX_OBSERVATION_UPDATED_AT === '2026-10-14T00:02:32.000Z',
+    'DEFAULT_FX_OBSERVATION_UPDATED_AT is valid ISO string'
+  );
+
+  // 2. Strict Fallback Provenance & Honest State Invariants
+  const fallbackEval = evaluateQuoteFreshness({
+    isFallback: true,
+    providerName: 'Verified Reference Baseline',
+  });
+  assert(fallbackEval.state === 'FALLBACK_BENCHMARK', 'Fallback evaluation state is strictly FALLBACK_BENCHMARK');
+  assert(fallbackEval.isLive === false, 'Fallback evaluation isLive is strictly false');
+  assert(fallbackEval.badgeLabel === 'FALLBACK BENCHMARK', 'Fallback badge label is FALLBACK BENCHMARK');
+  assert(fallbackEval.provenance.isFallback === true, 'Provenance flags isFallback === true');
+  assert(fallbackEval.provenance.sourceName === 'Verified Baseline Reference', 'Source name identifies baseline');
+
+  // 3. Response Validation Matrix: Null, Malformed, Stale, Future
+  const nullTsEval = evaluateQuoteFreshness({ providerTimestampMs: null });
+  assert(nullTsEval.state === 'UNVERIFIED_TIMESTAMP', 'Null quote timestamp flags UNVERIFIED_TIMESTAMP');
+  assert(nullTsEval.isLive === false, 'Null quote timestamp cannot be isLive');
+
+  const negativeTsEval = evaluateQuoteFreshness({ providerTimestampMs: -1000 });
+  assert(negativeTsEval.state === 'UNVERIFIED_TIMESTAMP', 'Negative timestamp flags UNVERIFIED_TIMESTAMP');
+
+  const futureTsEval = evaluateQuoteFreshness({
+    providerTimestampMs: Date.now() + 600000,
+    nowMs: Date.now(),
+  });
+  assert(futureTsEval.state === 'UNVERIFIED_TIMESTAMP', 'Future quote timestamp flags UNVERIFIED_TIMESTAMP clock skew');
+
+  // 4. All 4 Metals Validation Matrix
+  const metalCodes: MetalCode[] = ['XAU', 'XAG', 'XPT', 'XPD'];
+  for (const m of metalCodes) {
+    const basePrice = BASELINE_PRICES[m];
+    assert(Number.isFinite(basePrice) && basePrice > 0, `${m} baseline price is finite and positive (${basePrice})`);
+
+    const pricePerGram = basePrice / TROY_OUNCE_TO_GRAMS;
+    assert(pricePerGram > 0, `${m} price per gram is positive (${pricePerGram.toFixed(4)})`);
+
+    const pricePerTola = basePrice * 0.375;
+    assert(pricePerTola > 0, `${m} price per tola is positive (${pricePerTola.toFixed(4)})`);
+  }
+
+  // 5. Pakistan Sarafa Override Math & Payout Engine
+  const sarafaRatePerTola24K = 432500;
+  const sarafaRatePerOz = sarafaRatePerTola24K / 0.375;
+  assert(Math.abs(sarafaRatePerOz - 1153333.33) < 0.1, 'Sarafa per oz t conversion is exactly 1,153,333.33 PKR');
+
+  // 24K 1 Tola Melt Value using Sarafa Override (standard 99.9% fine bullion bar)
+  const sarafa24kResult = calculateMeltValue({
+    metal: 'XAU',
+    grossWeight: 1,
+    weightUnit: 'tola',
+    purityId: '24K',
+    spotPricePerTroyOz: sarafaRatePerOz,
+  });
+  assert(Math.abs(sarafa24kResult.totalMeltValue - 432067.50) < 0.1, '1 Tola 24K (99.9%) melt value under Sarafa override is 432,067.50 PKR');
+
+  // 100% fine gold custom benchmark = exactly 432,500 PKR
+  const sarafaPureResult = calculateMeltValue({
+    metal: 'XAU',
+    grossWeight: 1,
+    weightUnit: 'tola',
+    purityId: 'custom',
+    customFineness: 1.0,
+    spotPricePerTroyOz: sarafaRatePerOz,
+  });
+  assert(Math.abs(sarafaPureResult.totalMeltValue - 432500) < 0.01, '1 Tola 100% fine gold under Sarafa override is exactly 432,500 PKR');
+
+  // 22K 1 Tola Melt Value using Sarafa Override (22/24 ratio)
+  const sarafa22kResult = calculateMeltValue({
+    metal: 'XAU',
+    grossWeight: 1,
+    weightUnit: 'tola',
+    purityId: '22K',
+    spotPricePerTroyOz: sarafaRatePerOz,
+  });
+  assert(Math.abs(sarafa22kResult.totalMeltValue - 396458.33) < 0.1, '1 Tola 22K melt value under Sarafa override is exactly 396,458.33 PKR');
+
+  // Dealer payout tiers on 1 Tola Pure Sarafa Rate
+  const tiers = calculateDealerPayoutTiers(sarafaPureResult.totalMeltValue);
+  assert(tiers.refinerHighVolume < 432500, 'Sarafa refiner payout is strictly less than 432,500 PKR');
+  assert(tiers.dealerBullionCash < tiers.refinerHighVolume, 'Sarafa dealer payout is strictly less than refiner payout');
+  assert(tiers.pawnShopQuickCash < tiers.dealerBullionCash, 'Sarafa pawn payout is strictly less than dealer payout');
+  assert(Math.abs(tiers.refinerHighVolume - 432500 * 0.95) < 0.01, 'Sarafa refiner payout matches 95% tier (410,875 PKR)');
+  assert(Math.abs(tiers.dealerBullionCash - 432500 * 0.88) < 0.01, 'Sarafa dealer payout matches 88% tier (380,600 PKR)');
+  assert(Math.abs(tiers.pawnShopQuickCash - 432500 * 0.75) < 0.01, 'Sarafa pawn payout matches 75% tier (324,375 PKR)');
 }
 
 /* =========================================================================
