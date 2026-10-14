@@ -397,8 +397,8 @@ export const tools: Tool[] = [
       'Create customizable QR codes with options for colors, content, and supported branding elements.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Custom QR Code Generator',
-    seoDescription: 'Generate custom QR codes for URLs, WiFi credentials, plain text, and contact cards with customizable colors, error correction, and PNG/SVG export.',
+    seoTitle: 'Free QR Code Generator Online — Custom Colors, Logos & Print Vector',
+    seoDescription: 'Generate free, unexpiring static QR codes for URLs, Wi-Fi, vCard contacts, emails, and events. Customize colors, add logos, and download print-ready PNG, SVG, or PDF client-side.',
     relatedToolSlugs: ['meta-generator', 'text-analyzer', 'text-case-converter', 'base64-encoder'],
   },
 

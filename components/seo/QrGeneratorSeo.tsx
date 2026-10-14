@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ArrowUpRight, ShieldCheck, FileCheck } from 'lucide-react';
 
 export interface FaqItem {
   question: string;
@@ -7,29 +8,44 @@ export interface FaqItem {
 
 export const QR_GENERATOR_FAQS: FaqItem[] = [
   {
+    question: 'What is the difference between static and dynamic QR codes, and do these codes expire?',
+    answer:
+      'OmniTools generates 100% static QR codes. Static codes directly encode your destination URL, Wi-Fi password, or vCard details straight into the matrix modules. Because there is no middleman redirect server, static QR codes never expire, cannot be deactivated, and carry zero monthly subscription fees. In contrast, dynamic QR codes route through third-party redirect domains that often stop working or demand payment once free trials expire.',
+  },
+  {
     question: 'How do QR code error correction levels work when adding a custom logo?',
     answer:
-      'QR codes use Reed-Solomon error correction across four standardized tiers: L (~7% recovery), M (~15%), Q (~25%), and H (~30%). When you embed a logo in the center of the QR code, the logo physically covers a portion of the data modules. OmniTools automatically recommends Level H (High) error correction, ensuring the surrounding modules contain sufficient redundant parity bits for smartphones to decode the symbol instantly.',
+      'QR codes use Reed-Solomon error correction across four standardized tiers: L (~7% recovery), M (~15%), Q (~25%), and H (~30%). When you embed a logo in the center of the QR code, the logo physically overlays and obscures data modules. OmniTools automatically promotes error correction to Level H (High), ensuring the remaining perimeter modules contain sufficient redundant mathematical parity bits for smartphone cameras to decode the code instantly.',
   },
   {
     question: 'What is the minimum quiet zone required for reliable QR code scanning?',
     answer:
-      'Per the ISO/IEC 18004 standard, a QR code requires a "quiet zone"—an uninterrupted blank border surrounding all four sides—of at least 4 modules (blocks) wide. Without an adequate quiet zone, camera sensors struggle to distinguish the finder patterns from surrounding background graphics or printed packaging.',
+      'Per the ISO/IEC 18004 standard, a QR code requires an uninterrupted blank border—termed the "quiet zone"—of at least 4 modules wide on all four sides. Without this blank margin, camera sensors and optical barcode engines fail to isolate the three corner finder patterns from surrounding packaging art, text, or high-contrast backgrounds.',
   },
   {
-    question: 'Why should QR code foreground and background colors meet contrast standards?',
+    question: 'What export format should I choose: PNG, SVG, PDF, JPEG, or WebP?',
     answer:
-      'Optical barcode scanners rely on luminosity contrast to differentiate between dark and light modules. Inverted or low-contrast combinations (such as yellow on white or navy on black) fail in low-light environments. OmniTools includes a real-time WCAG contrast calculator that alerts you if the contrast ratio falls below the 4.5:1 threshold.',
+      'Choose SVG (Scalable Vector Graphics) for commercial printing, signage, billboards, and apparel, because vector paths scale infinitely without pixelation. Choose PDF for immediate office or home printing, complete with embedded scannability guidelines. Choose PNG for web pages, presentations, and email signatures. Choose WebP for modern web apps prioritizing minimal file size, or JPEG if your workflow requires a standardized opaque white background.',
   },
   {
-    question: 'What specialized QR formats are supported beyond standard web URLs?',
+    question: 'How large should a QR code be printed for business cards, flyers, and banners?',
     answer:
-      'OmniTools supports eight distinct data payloads: Web URLs, Plain Text, Wi-Fi network credentials (WPA/WPA2/WEP with auto-connect), Email messages (mailto: with subject and body), Direct phone calls (tel:), SMS text messages (sms:), vCard 3.0 business contact cards, and iCalendar (.ics) calendar events.',
+      'A practical optical rule of thumb is the 10:1 distance-to-size ratio: the minimum QR code width should be at least 1/10th of the intended scanning distance. For handheld business cards scanned at 30 cm (12 in), a minimum size of 2.5 cm to 3.0 cm (1.0 to 1.2 in) is recommended. For wall posters scanned from 1.5 meters away, print at least 15 cm wide. Dense payloads like vCards require larger minimum print dimensions.',
   },
   {
-    question: 'When should you download a vector SVG instead of a raster PNG QR code?',
+    question: 'Are my Wi-Fi credentials, contact details, and QR payload private?',
     answer:
-      'Raster PNG or JPEG files have fixed pixel resolutions and will pixelate if enlarged for large-format physical printing. Vector SVG (Scalable Vector Graphics) mathematically describes every module, making SVG ideal for commercial printing, billboards, merchandise, and vector design tools like Adobe Illustrator or Figma.',
+      'Yes, 100% private. All QR matrix computation, Reed-Solomon error correction, canvas rendering, and file export happen strictly in your client-side browser using Web APIs. No payload text, Wi-Fi passwords, contact names, or uploaded image logos are ever transmitted to or logged on OmniTools servers.',
+  },
+  {
+    question: 'Why do inverted or low-contrast QR codes fail to scan on some devices?',
+    answer:
+      'Standard barcode optical scanners expect dark modules on a light background. Inverted codes (light modules on a dark background) and low-contrast combinations (like yellow on white or dark grey on black) fail because camera sensors cannot clearly calculate luminance differences. OmniTools includes a real-time WCAG contrast calculator that warns you whenever contrast drops below the 4.5:1 recommended ratio.',
+  },
+  {
+    question: 'Can I use generated QR codes commercially without licensing fees?',
+    answer:
+      'Yes. The QR code standard was invented by Denso Wave in 1994, which made the patent royalty-free under ISO/IEC 18004. Codes generated by OmniTools are completely free to use on commercial products, restaurant menus, retail packaging, business stationery, and marketing campaigns with no licensing fees or attribution required.',
   },
 ];
 
@@ -47,179 +63,410 @@ export default function QrGeneratorSeo() {
     })),
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://omnitools-navy.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'SEO & Text Tools',
+        item: 'https://omnitools-navy.vercel.app/seo',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Custom QR Code Generator',
+        item: 'https://omnitools-navy.vercel.app/seo/qr-generator',
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* FAQ Schema */}
+    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-10">
+      {/* Structured Data: FAQ & Breadcrumbs */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Custom QR Code Generator Studio: Wi-Fi, vCard, Custom Logos &amp; Vector SVG
+      {/* SECTION 1: INTRODUCTION & PURPOSE */}
+      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
+        Free Online QR Code Generator: Custom Colors, Logos, Static Durability &amp; Vector Downloads
       </h2>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        <strong>Quick Response (QR) Codes</strong> are two-dimensional matrix barcodes governed by the <strong>ISO/IEC 18004</strong> standard.
-        Originally invented for industrial logistics by Denso Wave, QR codes now serve as the primary bridge between physical collateral
-        and digital web experiences. OmniTools <strong>Custom QR Code Generator</strong> creates high-precision, scannable QR codes
-        directly inside your browser with custom branding, color controls, Reed-Solomon error correction, and vector SVG exports.
+      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-base sm:text-lg">
+        <strong>Quick Response (QR) codes</strong> are two-dimensional matrix barcodes defined by the international <strong>ISO/IEC 18004</strong> standard.
+        Whether you are printing product packaging, displaying digital restaurant menus, configuring guest Wi-Fi access, or printing conference business cards,
+        OmniTools provides a 100% free, client-side QR studio that generates permanent, unexpiring static codes with enterprise-grade precision, customizable colors,
+        embedded brand logos, real-time scannability analysis, and multi-format exports including vector SVG and print-ready PDF.
       </p>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Supported QR Code Payloads &amp; Data Schemas
+      {/* SECTION 2: HOW TO CREATE A QR CODE */}
+      <div className="my-8 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+          <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <span>How to Create a Custom QR Code in 4 Simple Steps</span>
+        </h3>
+        <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">1. Choose Content Type</span>
+            <span className="text-slate-600 dark:text-slate-300">Select from URL, Plain Text, Wi-Fi Network, Email, Phone, SMS, vCard Contact, or Calendar Event.</span>
+          </li>
+          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">2. Fill &amp; Validate Fields</span>
+            <span className="text-slate-600 dark:text-slate-300">Enter your details. Real-time validation checks syntax, character escaping, and ISO byte capacity limits.</span>
+          </li>
+          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">3. Customize Design &amp; Logo</span>
+            <span className="text-slate-600 dark:text-slate-300">Fine-tune colors with live contrast calculation, adjust quiet zones, and upload your central brand badge.</span>
+          </li>
+          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">4. Verify &amp; Download</span>
+            <span className="text-slate-600 dark:text-slate-300">Run the in-browser scanner verification and download in SVG vector, print-ready PDF, PNG, JPEG, or WebP.</span>
+          </li>
+        </ol>
+      </div>
+
+      {/* SECTION 3: STATIC VS DYNAMIC QR CODES */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+        Static vs. Dynamic QR Codes: Why Unexpiring Static Codes Protect Your Business
       </h3>
-      <div className="overflow-x-auto mb-6">
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        Many online QR generator services steer users into <em>dynamic</em> QR codes. While dynamic codes allow changing the destination URL after printing,
+        they introduce a severe point of failure: they encode a proprietary third-party redirect link (e.g., <code className="text-xs">qrco.de/xyz</code> or <code className="text-xs">me-qr.com/link</code>).
+        If the service provider alters its pricing model, caps monthly scans, or goes out of business, your printed physical signs, restaurant menus, product boxes,
+        and brochures immediately display 404 errors or paywall pages.
+      </p>
+      <div className="overflow-x-auto mb-6 not-prose">
         <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
           <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">QR Payload Type</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Encoded Schema</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Smartphone Native Action</th>
+            <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature Comparison</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">OmniTools Static QR Codes</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-slate-500">Commercial Dynamic QR Services</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Code Longevity</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Permanent &amp; Unexpiring (Never expires)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-500">Expires after free trial or if subscription lapses</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Intermediary Servers</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Direct payload encoding (Zero middleman)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Routes through vendor redirect domain</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">User Data Privacy</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side (No server logs or telemetry)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Logs scanner IP addresses, device user-agents &amp; locations</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Cost &amp; Account Requirements</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium">100% Free, No Sign-up, No Credit Card</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Mandatory accounts, recurring monthly subscriptions ($15–$50/mo)</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Offline Scannability</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Wi-Fi, vCard &amp; Text scan without internet access</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Requires active internet connection to resolve redirect</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* SECTION 4: SUPPORTED PAYLOAD TYPES & DATA SCHEMAS */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+        Supported QR Code Payloads &amp; Real-World Applications
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        OmniTools natively formats eight distinct standardized payload architectures, ensuring smartphone cameras on iOS and Android trigger the exact native action:
+      </p>
+      <div className="overflow-x-auto mb-6 not-prose">
+        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Payload Type</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Standard Data Format</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Mobile Device Action</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Typical Real-World Use Case</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Website URL</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">https://example.com</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens default mobile web browser.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">https://yourdomain.com</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Launches default browser directly to the web page.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Product packaging, marketing flyers, menus, social media bios.</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Wi-Fi Network</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">WIFI:S:MySSID;T:WPA;P:pass;;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts user to join Wi-Fi without typing passwords.</td>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Wi-Fi Quick Connect</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">WIFI:T:WPA;S:SSID;P:Pass;;</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts user to join Wi-Fi without typing credentials.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Hotels, coffee shops, co-working offices, Airbnbs, trade shows.</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Contact Card (vCard)</th>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Digital Contact (vCard 3.0)</th>
               <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">BEGIN:VCARD ... END:VCARD</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens address book to save new phone contact.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts &ldquo;Save Contact&rdquo; with name, phone, email, company &amp; site.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Printed business cards, conference badges, email signatures.</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Calendar Event</th>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Calendar Event (iCalendar)</th>
               <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">BEGIN:VEVENT ... END:VEVENT</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Adds meeting with start/end time to device calendar.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens device calendar to schedule event with start/end time.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Event tickets, webinar banners, wedding invites, conferences.</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Email &amp; SMS</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">mailto: / smsto:</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Pre-populates recipient and drafted message.</td>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Direct Telephone Dial</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">tel:+15551234567</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens phone dialer with phone number pre-entered.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Customer support stickers, emergency dispatch, roadside billboards.</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Prefilled SMS Message</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">sms:+15551234567?body=Hello</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens SMS messaging app with drafted inquiry text.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Real estate lawn signs, text-to-win contests, booking requests.</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Prefilled Email Message</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">mailto:sales@ex.com?subject=...</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Opens email client with recipient, subject &amp; body template.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Warranty registration, feedback forms, customer inquiries.</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Plain Text / Serial Number</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">Raw UTF-8 text string</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Displays text directly on device screen or copies to clipboard.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Hardware inventory labels, Wi-Fi keys, cryptographic public keys.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Reed-Solomon Error Correction &amp; Logo Placement
+      {/* SECTION 5: REED-SOLOMON ERROR CORRECTION */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+        Reed-Solomon Error Correction &amp; Center Logo Placement
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        QR codes incorporate mathematical error correction algorithms that allow scanners to recover data even if the code
-        is partially dirty, torn, or overlaid with a central brand icon:
+        QR codes incorporate mathematical <strong>Reed-Solomon error correction</strong> codes. This redundancy enables smartphones and industrial barcode readers
+        to reconstruct missing or corrupted data if the code is scratched, smudged, torn, or partially covered by a central company logo:
       </p>
-
-      <div className="overflow-x-auto mb-6">
+      <div className="overflow-x-auto mb-6 not-prose">
         <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
           <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Level</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Data Recovery</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Data Density</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Use</th>
+            <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Tier</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recovery Percentage</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Matrix Density</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Deployment Environment</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level L</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">~7% of bytes</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Highest payload capacity</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Clean digital screen displays with no logo.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">~7% recovery</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Lowest density (fewest, largest modules)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Clean digital screen displays with no central logo.</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level M</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-medium">~15% of bytes</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-blue-600 dark:text-blue-400">~15% recovery</td>
               <td className="p-3 border border-gray-200 dark:border-slate-700">Standard default density</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">General print materials, posters, table tents.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">General print media, flyers, invoices, and table tents.</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level Q</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400 font-medium">~25% of bytes</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Moderate payload density</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Industrial labeling, small centered badges.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-amber-600 dark:text-amber-400">~25% recovery</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Moderate high density</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Industrial labeling, transit passes, subtle central icons.</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level H</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">~30% of bytes</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Lowest payload capacity</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold text-blue-600 dark:text-blue-400">Mandatory for central logo branding &amp; outdoor signage.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">~30% recovery</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Highest density (most redundant modules)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-bold text-blue-600 dark:text-blue-400">Mandatory for central brand logos &amp; outdoor weatherproof signage.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+        <strong>Important Logo Safety Rule:</strong> When adding a brand logo, OmniTools automatically switches error correction to <strong>Level H</strong>.
+        Keep the logo size below <strong>22% of total QR width</strong>. If a logo covers more than 25% of the surface area or obscures any of the three corner finder pattern squares,
+        smartphones will fail to identify the coordinate matrix.
+      </p>
+
+      {/* SECTION 6: PRINT SIZING & OPTICAL SCANNABILITY FORMULA */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+        Physical Printing Sizing &amp; The 10:1 Scannability Rule
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        A common cause of QR scanning failure in the field is printing the code too small for its intended viewing distance.
+        The industry standard rule of thumb for standard smartphone camera sensors is the <strong>10:1 distance-to-size ratio</strong>:
+      </p>
+      <div className="p-4 mb-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 not-prose">
+        <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 text-center font-mono">
+          Minimum QR Code Width = Intended Scanning Distance ÷ 10
+        </p>
+      </div>
+      <div className="overflow-x-auto mb-6 not-prose">
+        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Medium &amp; Context</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Typical Scanning Distance</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Minimum Size</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended File Format</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Business Card / Badge</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">25 – 35 cm (10 – 14 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">2.5 cm × 2.5 cm (1.0 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG or PNG (300 DPI)</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Restaurant Table Tent / Menu</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">40 – 50 cm (16 – 20 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">4.0 cm × 4.0 cm (1.6 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">PDF or SVG</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Retail Window Poster / Flyer</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">1.0 – 1.5 meters (3.3 – 5.0 ft)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">10 – 15 cm (4.0 – 6.0 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG Vector</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Outdoor Billboard / Trade Banner</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">5.0 – 10 meters (16 – 33 ft)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">50 – 100 cm (20 – 40 in)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG Vector (Infinite Scaling)</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How to Create &amp; Download Custom QR Codes
+      {/* SECTION 7: EXPORT FORMATS COMPARED */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+        Export Formats Compared: When to Use PNG, SVG, PDF, JPEG, or WebP
       </h3>
-      <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        OmniTools provides five distinct export formats tailored for professional designers, office administrators, and web developers:
+      </p>
+      <ul className="space-y-2 mb-6 text-slate-600 dark:text-slate-400 text-sm">
         <li>
-          <strong>Choose Content Type:</strong> Select from URL, Wi-Fi, vCard Contact, Email, Phone, SMS, or Event.
+          <strong>SVG (Scalable Vector Graphics):</strong> The gold standard for print production. SVG files store mathematical coordinates rather than raster pixels, ensuring razor-sharp edges at any scale—from a tiny postage stamp to an outdoor highway billboard—with zero loss of clarity in Adobe Illustrator, Figma, or InDesign.
         </li>
         <li>
-          <strong>Input Information:</strong> Fill out the validated form fields. The tool enforces ISO schema escaping for Wi-Fi and vCard characters.
+          <strong>PDF (Portable Document Format):</strong> Formatted as a standardized A4 document with the QR code centered and print guidelines pre-rendered. Ideal for sending directly to office printers without needing graphic design software.
         </li>
         <li>
-          <strong>Customize Colors &amp; Contrast:</strong> Select foreground and background colors while reviewing the live WCAG contrast ratio indicator.
+          <strong>PNG (Portable Network Graphics):</strong> High-resolution raster graphics supporting transparency. Perfect for websites, slide decks, newsletters, and email footers.
         </li>
         <li>
-          <strong>Add Brand Logo:</strong> Upload a PNG or JPEG logo to be centered automatically with high-tier error correction.
+          <strong>JPEG:</strong> Standardized raster image with guaranteed solid opaque background. Best for workflows requiring standard image files without alpha transparency.
         </li>
         <li>
-          <strong>Export Format:</strong> Download a high-res PNG for digital graphics or an infinite-resolution vector SVG for professional print production.
+          <strong>WebP:</strong> Modern lightweight web format that provides up to 30% smaller file sizes than PNG while preserving crisp edges, making it ideal for web app asset bundles.
         </li>
-      </ol>
+      </ul>
 
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      {/* SECTION 8: PRIVACY & CLIENT-SIDE ARCHITECTURE */}
+      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <span>Privacy by Design: 100% In-Browser Execution</span>
+      </h3>
+      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+        Many web services upload your QR payloads, generating codes on remote servers where sensitive contact details, home Wi-Fi network passwords,
+        or internal staging URLs are permanently stored in database access logs.
+        OmniTools follows a strict <strong>Zero-Knowledge Architecture</strong>: all matrix computations, error correction parity generation,
+        DOM vector rendering, and image encodings execute strictly within your local browser sandbox. No user inputs, uploaded brand graphics,
+        or generated images are ever transmitted to or logged on our servers.
+      </p>
+
+      {/* SECTION 9: FAQS */}
+      <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
-      <dl className="space-y-6 mb-6">
+      <dl className="space-y-5 mb-8 not-prose">
         {QR_GENERATOR_FAQS.map((faq, index) => (
-          <div key={index}>
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          <div key={index} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+            <dt className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1.5">
               {faq.question}
             </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <dd className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
               {faq.answer}
             </dd>
           </div>
         ))}
       </dl>
 
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
-          Related SEO &amp; Developer Utilities
+      {/* SECTION 10: CALL TO ACTION */}
+      <div className="my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
+        <h3 className="text-xl sm:text-2xl font-bold mb-2">Ready to Create Your Free, Permanent QR Code?</h3>
+        <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto mb-5 leading-relaxed">
+          Generate an unexpiring, high-precision QR code for your website, Wi-Fi network, or vCard contact right now in your browser.
+        </p>
+        <a
+          href="#qr-generator-tool"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-blue-700 font-bold text-sm hover:bg-blue-50 transition-all shadow-md active:scale-95"
+        >
+          <span>Open QR Code Studio</span>
+          <ArrowUpRight className="w-4 h-4" />
+        </a>
+      </div>
+
+      {/* SECTION 11: RELATED TOOLS INTERNAL LINKING */}
+      <div className="pt-6 border-t border-gray-200 dark:border-slate-800 not-prose">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+          Related SEO, Document &amp; Developer Tools
         </h4>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/seo/text-analyzer"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Word Counter &amp; Text Analyzer &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
+        <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
           <Link
             href="/seo/meta-generator"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
             Meta Tags &amp; Open Graph Generator &rarr;
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
-            href="/seo/text-case-converter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            href="/seo/text-analyzer"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
-            Text Case Converter &rarr;
+            Word Counter &amp; Text Analyzer &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/media/image-compressor"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+          >
+            Image Compressor &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/media/image-to-pdf"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+          >
+            Image to PDF Converter &rarr;
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
             href="/developer/base64-encoder"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
             Base64 Encoder &amp; Decoder &rarr;
           </Link>

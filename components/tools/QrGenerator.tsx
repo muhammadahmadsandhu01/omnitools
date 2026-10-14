@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { jsPDF } from 'jspdf';
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import {
   Check,
@@ -30,7 +31,7 @@ import {
 
 export type QrType = 'url' | 'text' | 'wifi' | 'email' | 'phone' | 'sms' | 'contact' | 'event';
 export type ErrorLevel = 'L' | 'M' | 'Q' | 'H';
-export type ExportFormat = 'png' | 'jpeg' | 'webp' | 'svg';
+export type ExportFormat = 'png' | 'jpeg' | 'webp' | 'svg' | 'pdf';
 
 export const MAX_CONTENT_CHARS = 2500;
 export const MAX_LOGO_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -263,6 +264,7 @@ export function sanitizeFilename(name: string, fallback: string): string {
     .replace(/[/\\]/g, '_')
     .replace(/[<>:"|?*\u0000-\u001F\u007F]/g, '_')
     .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
     .replace(/^_+/, '')
     .trim()
     .replace(/[._]+$/, '');
@@ -287,7 +289,7 @@ export default function QrGenerator() {
 
   // Content state
   const [qrType, setQrType] = useState<QrType>('url');
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState('https://omnitools-navy.vercel.app');
   const [text, setText] = useState('');
   const [wifiSsid, setWifiSsid] = useState('');
   const [wifiPass, setWifiPass] = useState('');
@@ -688,7 +690,7 @@ export default function QrGenerator() {
     }
   };
 
-  const exportRaster = (format: Exclude<ExportFormat, 'svg'>) => {
+  const exportRaster = (format: Exclude<ExportFormat, 'svg' | 'pdf'>) => {
     const sourceCanvas = canvasRef.current;
     if (!sourceCanvas) {
       setStatus('QR canvas is not ready.');
@@ -739,6 +741,93 @@ export default function QrGenerator() {
     }
   };
 
+  const exportPdf = () => {
+    const sourceCanvas = canvasRef.current;
+    if (!sourceCanvas) {
+      setStatus('QR canvas is not ready.');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const renderSize = Math.max(1000, size);
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = renderSize;
+      exportCanvas.height = renderSize;
+      const ctx = exportCanvas.getContext('2d');
+
+      if (!ctx) {
+        setStatus('Could not create canvas context for PDF export.');
+        setIsExporting(false);
+        return;
+      }
+
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, renderSize, renderSize);
+      ctx.drawImage(sourceCanvas, 0, 0, renderSize, renderSize);
+
+      const qrDataUrl = exportCanvas.toDataURL('image/png');
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Page header
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(30, 41, 59);
+      doc.text('OmniTools QR Code', 105, 28, { align: 'center' });
+
+      // Subheading / Type
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139);
+      const displayPayload = qrValue.length > 70 ? `${qrValue.slice(0, 67)}...` : qrValue;
+      doc.text(`Type: ${qrType.toUpperCase()} • Payload: ${displayPayload}`, 105, 36, { align: 'center' });
+
+      // QR Image centered on A4 (width 120mm x 120mm, A4 width is 210mm => x = (210 - 120) / 2 = 45mm)
+      const qrMm = 120;
+      const xPos = (210 - qrMm) / 2;
+      const yPos = 48;
+      doc.addImage(qrDataUrl, 'PNG', xPos, yPos, qrMm, qrMm);
+
+      // Print specifications / guidance box
+      doc.setDrawColor(226, 232, 240);
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(25, yPos + qrMm + 12, 160, 48, 3, 3, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      doc.text('Print & Scannability Guidelines', 32, yPos + qrMm + 20);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`• Error Correction: Level ${level} | Contrast: ${scanContrast ? `${scanContrast.toFixed(1)}:1` : 'Standard'}`, 32, yPos + qrMm + 27);
+      doc.text('• Maintain the quiet zone (border margin) when cutting, framing, or placing on signage.', 32, yPos + qrMm + 33);
+      doc.text('• Test scanning with multiple smartphone cameras under standard ambient lighting before batch printing.', 32, yPos + qrMm + 39);
+      doc.text('• 100% Static QR Code: Permanently decodes directly to payload. No intermediary redirect or expiry.', 32, yPos + qrMm + 45);
+      doc.text('• Recommended Print Sizing: ' + reliability.recommendedPrintSizeCm + ' for reliable reading distance.', 32, yPos + qrMm + 51);
+
+      // Footer
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Generated with OmniTools • https://omnitools-navy.vercel.app/seo/qr-generator', 105, 282, { align: 'center' });
+
+      const pdfBlob = doc.output('blob');
+      setIsExporting(false);
+      downloadBlob(pdfBlob, 'pdf');
+      setStatus('Print-ready PDF document downloaded.');
+    } catch {
+      setIsExporting(false);
+      setStatus('Failed to generate PDF document.');
+    }
+  };
+
   const downloadQR = () => {
     if (validationError) {
       setStatus(validationError);
@@ -749,6 +838,8 @@ export default function QrGenerator() {
     setStatus('');
     if (exportFormat === 'svg') {
       exportSvg();
+    } else if (exportFormat === 'pdf') {
+      exportPdf();
     } else {
       exportRaster(exportFormat);
     }
@@ -801,20 +892,6 @@ export default function QrGenerator() {
       return;
     }
 
-    const BarcodeDetectorCtor = (window as Window & {
-      BarcodeDetector?: new (options?: { formats?: string[] }) => {
-        detect(source: CanvasImageSource): Promise<Array<{ rawValue?: string }>>;
-      };
-    }).BarcodeDetector;
-
-    if (!BarcodeDetectorCtor) {
-      setVerificationResult({
-        status: 'unsupported',
-        message: 'Built-in browser verification is unavailable in this browser engine. The QR remains valid for mobile camera scanners.',
-      });
-      return;
-    }
-
     const canvas = canvasRef.current;
     if (!canvas) {
       setVerificationResult({ status: 'error', message: 'QR preview canvas is not ready.' });
@@ -822,10 +899,45 @@ export default function QrGenerator() {
     }
 
     try {
-      const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
-      const results = await detector.detect(canvas);
+      let decoded = '';
 
-      if (!results.length) {
+      // 1. Try hardware-accelerated BarcodeDetector if available
+      const BarcodeDetectorCtor = (window as Window & {
+        BarcodeDetector?: new (options?: { formats?: string[] }) => {
+          detect(source: CanvasImageSource): Promise<Array<{ rawValue?: string }>>;
+        };
+      }).BarcodeDetector;
+
+      if (BarcodeDetectorCtor) {
+        try {
+          const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
+          const results = await detector.detect(canvas);
+          if (results.length && results[0]?.rawValue) {
+            decoded = results[0].rawValue;
+          }
+        } catch {
+          // Fall back to software decoder
+        }
+      }
+
+      // 2. If not detected yet, use software jsQR engine
+      if (!decoded) {
+        try {
+          const jsQR = (await import('jsqr')).default;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const res = jsQR(imgData.data, imgData.width, imgData.height);
+            if (res && res.data) {
+              decoded = res.data;
+            }
+          }
+        } catch {
+          // Dynamic import or decoding error
+        }
+      }
+
+      if (!decoded) {
         setVerificationResult({
           status: 'not_detected',
           message: 'No QR code could be detected in the preview. Try increasing contrast or reducing logo size.',
@@ -834,11 +946,10 @@ export default function QrGenerator() {
         return;
       }
 
-      const decoded = results[0]?.rawValue ?? '';
       if (decoded === qrValue) {
         setVerificationResult({
           status: 'verified',
-          message: 'Verified: browser detector decoded the exact payload matching the generated QR.',
+          message: 'Verified: Decoded exact payload matching the generated QR code.',
           snapshotHash: currentSnapshotHash,
         });
       } else {
@@ -851,13 +962,13 @@ export default function QrGenerator() {
     } catch {
       setVerificationResult({
         status: 'error',
-        message: 'BarcodeDetector threw an execution error during scan attempt.',
+        message: 'Scanner engine threw an execution error during verification attempt.',
       });
     }
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div id="qr-generator-tool" className="flex flex-col gap-8">
       {/* 1. TOP PRIVACY BADGE */}
       <div className="flex items-center justify-between flex-wrap gap-4 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 px-4 py-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800/50 text-xs sm:text-sm">
         <div className="flex items-center gap-2">
@@ -1338,6 +1449,7 @@ export default function QrGenerator() {
                   <option value="jpeg">JPEG (Solid Background)</option>
                   <option value="webp">WebP (Compressed Raster)</option>
                   <option value="svg">SVG (Scalable Vector)</option>
+                  <option value="pdf">PDF (Print-Ready A4 Document)</option>
                 </select>
               </div>
             </div>

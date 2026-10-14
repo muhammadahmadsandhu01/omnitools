@@ -12,7 +12,8 @@
     "test:password": "tsx scripts/test-password-generator.ts",
     "test:pdf": "tsx scripts/test-pdf-merge-split.ts",
     "test:metals": "tsx scripts/test-precious-metals-engine.ts",
-    "test:image-to-pdf": "tsx scripts/test-image-to-pdf.ts"
+    "test:image-to-pdf": "tsx scripts/test-image-to-pdf.ts",
+    "test:qr": "tsx scripts/test-qr-generator.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
@@ -22,6 +23,7 @@
     "html2canvas": "^1.4.1",
     "html2pdf.js": "^0.14.0",
     "jspdf": "^4.2.1",
+    "jsqr": "^1.4.0",
     "jszip": "^3.10.2",
     "lucide-react": "^1.48.0",
     "next": "^16.3.7",
