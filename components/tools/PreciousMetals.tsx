@@ -12,7 +12,6 @@ import {
   TrendingDown,
   RefreshCw,
   Clock,
-  ShieldCheck,
   AlertTriangle,
   Download,
   Calculator,
@@ -24,7 +23,27 @@ import {
   Sparkles,
   X,
   Building2,
+  Plus,
+  Trash2,
+  RotateCcw,
+  FileSpreadsheet,
+  Check,
 } from 'lucide-react';
+import {
+  WeightUnit,
+  UNITS,
+  METAL_PURITIES_MAP,
+  calculateMeltValue as engineCalculateMeltValue,
+  calculateScrapLot,
+  LotItemInput,
+  SingleCalculationResult,
+  LotCalculationResult,
+} from '@/lib/preciousMetalsEngine';
+import {
+  FreshnessState,
+  FreshnessEvaluation,
+  evaluateQuoteFreshness,
+} from '@/lib/preciousMetalsFreshness';
 import {
   ResponsiveContainer,
   LineChart,
@@ -114,8 +133,6 @@ export type GoldKarat = '24K' | '22K' | '21K' | '18K' | '14K' | '9K';
 
 export type ChartTimeframe = '1D' | '1W' | '1M' | '3M' | '6M' | '1Y';
 
-export type FreshnessState = 'LIVE' | 'DELAYED' | 'REFERENCE' | 'STALE' | 'UNAVAILABLE';
-
 export interface MetalConfig {
   code: MetalCode;
   symbol: string;
@@ -138,9 +155,11 @@ export interface MetalPriceData {
   low24hUsd: number;
   updatedAt: string;
   timestampMs: number;
+  retrievedAt: string;
   source: string;
   rateType: 'spot' | 'futures' | 'reference';
   freshness: FreshnessState;
+  freshnessEvaluation: FreshnessEvaluation;
 }
 
 export interface HistoricalPoint {
@@ -545,6 +564,7 @@ export async function fetchMetalPrice(
 ): Promise<MetalPriceData> {
   const fallbackPrice = BASELINE_PRICES[code];
   const url = `https://api.gold-api.com/price/${code}`;
+  const now = Date.now();
 
   try {
     const res = await fetch(url, {
@@ -563,25 +583,18 @@ export async function fetchMetalPrice(
       throw new Error('Malformed price');
     }
 
-    const now = Date.now();
     const parsedTimestamp = data.updatedAt ? new Date(data.updatedAt).getTime() : NaN;
     const hasValidQuoteTs = Number.isFinite(parsedTimestamp) && parsedTimestamp > 0;
 
-    // Freshness threshold: 72 hours (to safely cover global bullion market weekend closures)
-    const FRESHNESS_THRESHOLD_MS = 72 * 60 * 60 * 1000;
-    const isWithinFreshness = hasValidQuoteTs && Math.abs(now - parsedTimestamp) <= FRESHNESS_THRESHOLD_MS;
-
-    let freshness: FreshnessState = 'REFERENCE';
-    if (hasValidQuoteTs && isWithinFreshness) {
-      freshness = 'LIVE';
-    } else if (hasValidQuoteTs) {
-      freshness = 'DELAYED';
-    } else {
-      freshness = 'REFERENCE';
-    }
+    const freshnessEvaluation = evaluateQuoteFreshness({
+      providerTimestampMs: hasValidQuoteTs ? parsedTimestamp : null,
+      retrievedAtMs: now,
+      nowMs: now,
+      isFallback: false,
+      providerName: 'Gold API — Spot Reference',
+    });
 
     const validTimestamp = hasValidQuoteTs ? parsedTimestamp : INITIAL_TIMESTAMP_MS;
-
     const changeUsd = Number.isFinite(Number(data.ch)) ? Number(data.ch) : 0;
     const changePct = Number.isFinite(Number(data.chp)) ? Number(data.chp) : 0;
 
@@ -595,11 +608,20 @@ export async function fetchMetalPrice(
       low24hUsd: rawPrice * 0.992,
       updatedAt: new Date(validTimestamp).toISOString(),
       timestampMs: validTimestamp,
+      retrievedAt: new Date(now).toISOString(),
       source: 'Gold API — Spot Reference',
       rateType: 'spot',
-      freshness,
+      freshness: freshnessEvaluation.state,
+      freshnessEvaluation,
     };
   } catch {
+    const fallbackEvaluation = evaluateQuoteFreshness({
+      isFallback: true,
+      retrievedAtMs: now,
+      nowMs: now,
+      providerName: 'Verified Reference Baseline',
+    });
+
     return {
       code,
       name: METALS[code].name,
@@ -610,9 +632,11 @@ export async function fetchMetalPrice(
       low24hUsd: fallbackPrice * 0.992,
       updatedAt: INITIAL_UPDATED_AT,
       timestampMs: INITIAL_TIMESTAMP_MS,
+      retrievedAt: new Date(now).toISOString(),
       source: 'Verified Reference Baseline',
       rateType: 'reference',
-      freshness: 'REFERENCE',
+      freshness: fallbackEvaluation.state,
+      freshnessEvaluation: fallbackEvaluation,
     };
   }
 }
@@ -669,83 +693,64 @@ export async function fetchFxRates(signal?: AbortSignal): Promise<Record<Currenc
   return result.rates;
 }
 
+export interface HistoricalResult {
+  points: HistoricalPoint[];
+  symbol?: string;
+  instrumentName?: string;
+  instrumentType?: string;
+  source?: string;
+  error?: string;
+}
+
 export async function fetchHistoricalPoints(
   code: MetalCode,
   timeframe: ChartTimeframe,
   signal?: AbortSignal
-): Promise<HistoricalPoint[]> {
-  // Yahoo Finance endpoint does not support browser cross-origin requests (CORS).
-  // Query Yahoo endpoint only in non-browser runtime (SSR/server) where CORS is not enforced.
-  if (typeof window === 'undefined') {
-    const yahooTicker = METALS[code].yahooSymbol;
-    let range = '1mo';
-    let interval = '1d';
+): Promise<HistoricalResult> {
+  const endpoint = '/api/precious-metals-history';
+  const url = `${endpoint}?metal=${encodeURIComponent(code)}&timeframe=${encodeURIComponent(timeframe)}`;
 
-    switch (timeframe) {
-      case '1D': range = '1d'; interval = '15m'; break;
-      case '1W': range = '5d'; interval = '60m'; break;
-      case '1M': range = '1mo'; interval = '1d'; break;
-      case '3M': range = '3mo'; interval = '1d'; break;
-      case '6M': range = '6mo'; interval = '1d'; break;
-      case '1Y': range = '1y'; interval = '1wk'; break;
-    }
-
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooTicker)}?range=${range}&interval=${interval}`;
-
-    try {
-      const res = await fetch(url, { signal });
-      if (res.ok) {
-        const json = await res.json();
-        const result = json?.chart?.result?.[0];
-        const timestamps = result?.timestamp as number[] | undefined;
-        const closes = result?.indicators?.quote?.[0]?.close as (number | null)[] | undefined;
-
-        if (timestamps && closes && timestamps.length > 0) {
-          const points: HistoricalPoint[] = [];
-          for (let i = 0; i < timestamps.length; i++) {
-            const p = closes[i];
-            if (p !== null && p !== undefined && Number.isFinite(p) && p > 0) {
-              const tsMs = timestamps[i] * 1000;
-              points.push({
-                timestamp: tsMs,
-                date: formatDeterministicDate(tsMs),
-                price: Number(p),
-              });
-            }
-          }
-          if (points.length >= 2) return points;
-        }
-      }
-    } catch {
-      // In SSR if external fetch fails, return empty array
-    }
-  }
-
-  // In browser runtime, CORS restrictions block direct Yahoo Finance queries.
-  // Never fabricate historical market data as actual market movements.
-  return [];
-}
-
-export function generateIllustrativeFallbackPoints(
-  timeframe: ChartTimeframe,
-  currentSpotUsd: number
-): HistoricalPoint[] {
-  const steps = timeframe === '1D' ? 12 : timeframe === '1W' ? 7 : 30;
-  const now = INITIAL_TIMESTAMP_MS;
-  const stepMs = timeframe === '1D' ? 86400000 / 12 : 86400000;
-  const mock: HistoricalPoint[] = [];
-
-  for (let i = steps; i >= 0; i--) {
-    const ts = now - i * stepMs;
-    const angle = (steps - i) * 0.2;
-    const variation = Math.sin(angle) * (currentSpotUsd * 0.015);
-    mock.push({
-      timestamp: ts,
-      date: formatDeterministicDate(ts),
-      price: Number((currentSpotUsd + variation).toFixed(2)),
+  try {
+    const res = await fetch(url, {
+      signal,
+      headers: { Accept: 'application/json' },
     });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => null);
+      throw new Error(errJson?.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    if (data.success && Array.isArray(data.points) && data.points.length > 0) {
+      const points: HistoricalPoint[] = data.points.map(
+        (p: { timestamp: number; date: string; price: number }) => ({
+          timestamp: p.timestamp,
+          date: p.date,
+          price: Number(p.price),
+        })
+      );
+
+      return {
+        points,
+        symbol: data.symbol,
+        instrumentName: data.instrumentName,
+        instrumentType: data.instrumentType,
+        source: data.provenance?.provider || data.source,
+      };
+    }
+
+    throw new Error(data.error || 'No historical quotes available.');
+  } catch (err: unknown) {
+    if (signal?.aborted) {
+      return { points: [] };
+    }
+    const msg = err instanceof Error ? err.message : 'Failed to retrieve historical data';
+    return {
+      points: [],
+      error: msg,
+    };
   }
-  return mock;
 }
 
 export function sanitizeCsvField(val: unknown): string {
@@ -765,19 +770,31 @@ export function generateCsvExport(
   metal: MetalCode,
   currency: CurrencyCode,
   unit: PriceUnit,
-  isFallback: boolean = false
+  source: string = 'COMEX / NYMEX via Yahoo Finance Market Data',
+  instrumentType: string = 'Futures Settlement'
 ): string {
-  const headers = ['Timestamp_UTC', 'Date', 'Metal_Code', 'Currency', 'Unit', 'Price', 'Source', 'Rate_Type'];
-  const rows = points.map((p) => [
-    sanitizeCsvField(new Date(p.timestamp).toISOString()),
-    sanitizeCsvField(p.date),
-    sanitizeCsvField(metal),
-    sanitizeCsvField(currency),
-    sanitizeCsvField(unit),
-    sanitizeCsvField(p.price.toFixed(4)),
-    sanitizeCsvField(isFallback ? 'Illustrative fallback — not market data' : 'OmniTools Bullion Feed'),
-    sanitizeCsvField(isFallback ? 'Illustrative Fallback' : 'Futures Reference'),
-  ].join(','));
+  const headers = [
+    'Timestamp_UTC',
+    'Date',
+    'Metal_Code',
+    'Currency',
+    'Unit',
+    'Price',
+    'Source',
+    'Instrument_Type',
+  ];
+  const rows = points.map((p) =>
+    [
+      sanitizeCsvField(new Date(p.timestamp).toISOString()),
+      sanitizeCsvField(p.date),
+      sanitizeCsvField(metal),
+      sanitizeCsvField(currency),
+      sanitizeCsvField(unit),
+      sanitizeCsvField(p.price.toFixed(4)),
+      sanitizeCsvField(source),
+      sanitizeCsvField(instrumentType),
+    ].join(',')
+  );
 
   return [headers.join(','), ...rows].join('\r\n');
 }
@@ -785,6 +802,35 @@ export function generateCsvExport(
 /* =========================================================================
    6. REACT COMPONENT — PRECIOUS METALS DASHBOARD
    ========================================================================= */
+
+function buildInitialMetalPrices(): Record<MetalCode, MetalPriceData> {
+  const codes: MetalCode[] = ['XAU', 'XAG', 'XPT', 'XPD'];
+  const res: Partial<Record<MetalCode, MetalPriceData>> = {};
+  for (const c of codes) {
+    const fallbackPrice = BASELINE_PRICES[c];
+    const evalResult = evaluateQuoteFreshness({
+      isFallback: true,
+      providerName: 'Verified Reference Baseline',
+    });
+    res[c] = {
+      code: c,
+      name: METALS[c].name,
+      priceUsdPerTroyOz: fallbackPrice,
+      change24hUsd: 0,
+      change24hPercent: 0,
+      high24hUsd: fallbackPrice * 1.008,
+      low24hUsd: fallbackPrice * 0.992,
+      updatedAt: INITIAL_UPDATED_AT,
+      timestampMs: INITIAL_TIMESTAMP_MS,
+      retrievedAt: INITIAL_UPDATED_AT,
+      source: 'Verified Reference Baseline',
+      rateType: 'reference',
+      freshness: 'FALLBACK_BENCHMARK',
+      freshnessEvaluation: evalResult,
+    };
+  }
+  return res as Record<MetalCode, MetalPriceData>;
+}
 
 export default function PreciousMetals() {
   // Navigation & Region Settings
@@ -794,65 +840,8 @@ export default function PreciousMetals() {
   const [selectedUnit, setSelectedUnit] = useState<PriceUnit>('tola');
   const [chartTimeframe, setChartTimeframe] = useState<ChartTimeframe>('1M');
 
-  // Rates Data State — Initial SSR values are REFERENCE, never false 'LIVE'
-  const [metalPrices, setMetalPrices] = useState<Record<MetalCode, MetalPriceData>>({
-    XAU: {
-      code: 'XAU',
-      name: 'Gold',
-      priceUsdPerTroyOz: BASELINE_PRICES.XAU,
-      change24hUsd: 0,
-      change24hPercent: 0,
-      high24hUsd: BASELINE_PRICES.XAU * 1.008,
-      low24hUsd: BASELINE_PRICES.XAU * 0.992,
-      updatedAt: INITIAL_UPDATED_AT,
-      timestampMs: INITIAL_TIMESTAMP_MS,
-      source: 'Verified Reference Baseline',
-      rateType: 'reference',
-      freshness: 'REFERENCE',
-    },
-    XAG: {
-      code: 'XAG',
-      name: 'Silver',
-      priceUsdPerTroyOz: BASELINE_PRICES.XAG,
-      change24hUsd: 0,
-      change24hPercent: 0,
-      high24hUsd: BASELINE_PRICES.XAG * 1.008,
-      low24hUsd: BASELINE_PRICES.XAG * 0.992,
-      updatedAt: INITIAL_UPDATED_AT,
-      timestampMs: INITIAL_TIMESTAMP_MS,
-      source: 'Verified Reference Baseline',
-      rateType: 'reference',
-      freshness: 'REFERENCE',
-    },
-    XPT: {
-      code: 'XPT',
-      name: 'Platinum',
-      priceUsdPerTroyOz: BASELINE_PRICES.XPT,
-      change24hUsd: 0,
-      change24hPercent: 0,
-      high24hUsd: BASELINE_PRICES.XPT * 1.008,
-      low24hUsd: BASELINE_PRICES.XPT * 0.992,
-      updatedAt: INITIAL_UPDATED_AT,
-      timestampMs: INITIAL_TIMESTAMP_MS,
-      source: 'Verified Reference Baseline',
-      rateType: 'reference',
-      freshness: 'REFERENCE',
-    },
-    XPD: {
-      code: 'XPD',
-      name: 'Palladium',
-      priceUsdPerTroyOz: BASELINE_PRICES.XPD,
-      change24hUsd: 0,
-      change24hPercent: 0,
-      high24hUsd: BASELINE_PRICES.XPD * 1.008,
-      low24hUsd: BASELINE_PRICES.XPD * 0.992,
-      updatedAt: INITIAL_UPDATED_AT,
-      timestampMs: INITIAL_TIMESTAMP_MS,
-      source: 'Verified Reference Baseline',
-      rateType: 'reference',
-      freshness: 'REFERENCE',
-    },
-  });
+  // Rates Data State — Initial values are verified fallback benchmarks with explicit provenance
+  const [metalPrices, setMetalPrices] = useState<Record<MetalCode, MetalPriceData>>(buildInitialMetalPrices);
 
   const [fxData, setFxData] = useState<FxDataPayload>({
     provider: 'ExchangeRate-API',
@@ -862,19 +851,89 @@ export default function PreciousMetals() {
   });
   const [fxRates, setFxRates] = useState<Record<CurrencyCode, number>>(DEFAULT_FX_RATES);
   const [chartPoints, setChartPoints] = useState<HistoricalPoint[]>([]);
-  const [showIllustrativeFallback, setShowIllustrativeFallback] = useState<boolean>(false);
+  const [chartMeta, setChartMeta] = useState<{
+    symbol?: string;
+    instrumentName?: string;
+    instrumentType?: string;
+    source?: string;
+  }>({
+    symbol: 'GC=F',
+    instrumentName: 'COMEX Gold Futures (Active Front-Month Contract)',
+    instrumentType: 'futures',
+    source: 'COMEX / NYMEX via Yahoo Finance Market Data',
+  });
+  const [chartError, setChartError] = useState<string | null>(null);
+  const [chartRetryCount, setChartRetryCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isChartLoading, setIsChartLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
 
-  // Calculator State
-  const [calcWeight, setCalcWeight] = useState<number>(1);
-  const [calcUnit, setCalcUnit] = useState<PriceUnit>('tola');
-  const [calcKarat, setCalcKarat] = useState<GoldKarat>('24K');
-  const [buyPremium, setBuyPremium] = useState<number>(2.0);
-  const [sellDiscount, setSellDiscount] = useState<number>(2.0);
+  // Enhanced Calculator State
+  const [calcMode, setCalcMode] = useState<'single' | 'lot'>('single');
+  const [calcMetal, setCalcMetal] = useState<MetalCode>('XAU');
+  const [calcWeight, setCalcWeight] = useState<number>(5.0);
+  const [calcUnit, setCalcUnit] = useState<WeightUnit>('gram');
+  const [calcPurityId, setCalcPurityId] = useState<string>('14K');
+  const [calcCustomFineness, setCalcCustomFineness] = useState<string>('0.925');
+  const [calcQuantity, setCalcQuantity] = useState<number>(1);
+  const [isManualSpotOverride, setIsManualSpotOverride] = useState<boolean>(false);
+  const [manualSpotPrice, setManualSpotPrice] = useState<string>('');
+  const [buyPremium, setBuyPremium] = useState<number>(3.0);
+  const [sellDiscount, setSellDiscount] = useState<number>(12.0);
   const [dealerFee, setDealerFee] = useState<number>(0);
+  const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
+  const [copiedLotSummary, setCopiedLotSummary] = useState<boolean>(false);
+
+  // Multi-Item Scrap Lot State
+  const [lotItems, setLotItems] = useState<LotItemInput[]>([
+    {
+      id: 'lot-item-1',
+      name: '14K Gold Band',
+      metal: 'XAU',
+      grossWeight: 5.0,
+      weightUnit: 'gram',
+      purityId: '14K',
+      quantity: 1,
+    },
+    {
+      id: 'lot-item-2',
+      name: '18K Gold Chain',
+      metal: 'XAU',
+      grossWeight: 12.0,
+      weightUnit: 'gram',
+      purityId: '18K',
+      quantity: 1,
+    },
+    {
+      id: 'lot-item-3',
+      name: 'Sterling Silver Fork',
+      metal: 'XAG',
+      grossWeight: 45.0,
+      weightUnit: 'gram',
+      purityId: '925',
+      quantity: 1,
+    },
+  ]);
+
+  // Form State for Adding an Item to the Scrap Lot
+  const [newItemName, setNewItemName] = useState<string>('');
+  const [newItemMetal, setNewItemMetal] = useState<MetalCode>('XAU');
+  const [newItemWeight, setNewItemWeight] = useState<number>(10.0);
+  const [newItemUnit, setNewItemUnit] = useState<WeightUnit>('gram');
+  const [newItemPurityId, setNewItemPurityId] = useState<string>('14K');
+  const [newItemCustomFineness] = useState<string>('0.925');
+  const [newItemQuantity] = useState<number>(1);
+
+  // Synchronize calcMetal and default purity when a metal card is clicked
+  const handleSelectMetal = (mCode: MetalCode) => {
+    setSelectedMetal(mCode);
+    setCalcMetal(mCode);
+    if (mCode === 'XAU') setCalcPurityId('14K');
+    else if (mCode === 'XAG') setCalcPurityId('925');
+    else if (mCode === 'XPT') setCalcPurityId('Pt950');
+    else if (mCode === 'XPD') setCalcPurityId('Pd950');
+  };
 
   // Async Safety & Request Ownership
   const requestIdRef = useRef<number>(0);
@@ -951,10 +1010,25 @@ export default function PreciousMetals() {
 
     const timer = setTimeout(() => {
       setIsChartLoading(true);
+      setChartError(null);
       fetchHistoricalPoints(selectedMetal, chartTimeframe, controller.signal)
-        .then((rawPts) => {
+        .then((result) => {
           if (!isCurrent) return;
-          const convertedPts = rawPts.map((p) => {
+          if (result.error && result.points.length === 0) {
+            setChartError(result.error);
+            setChartPoints([]);
+            setIsChartLoading(false);
+            return;
+          }
+          if (result.symbol) {
+            setChartMeta({
+              symbol: result.symbol,
+              instrumentName: result.instrumentName,
+              instrumentType: result.instrumentType,
+              source: result.source,
+            });
+          }
+          const convertedPts = result.points.map((p) => {
             const convertedTroyOz = convertCurrency(p.price, selectedCurrency, fxRates);
             const convertedUnit = convertPriceUnit(convertedTroyOz, selectedUnit);
             return {
@@ -965,8 +1039,9 @@ export default function PreciousMetals() {
           setChartPoints(convertedPts);
           setIsChartLoading(false);
         })
-        .catch(() => {
+        .catch((err) => {
           if (isCurrent) {
+            setChartError(err instanceof Error ? err.message : 'Historical data unavailable');
             setChartPoints([]);
             setIsChartLoading(false);
           }
@@ -978,7 +1053,7 @@ export default function PreciousMetals() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [selectedMetal, chartTimeframe, selectedCurrency, selectedUnit, fxRates]);
+  }, [selectedMetal, chartTimeframe, selectedCurrency, selectedUnit, fxRates, chartRetryCount]);
 
   // Active Metal Price in Current Currency & Unit
   const activeMetalData = metalPrices[selectedMetal];
@@ -1226,50 +1301,185 @@ export default function PreciousMetals() {
     ];
   }, [metalPrices, selectedCurrency, fxRates, currentCountryConfig]);
 
-  // Calculator Result
-  const calcResult = useMemo(() => {
-    const spotUsd = metalPrices[selectedMetal]?.priceUsdPerTroyOz || BASELINE_PRICES[selectedMetal];
-    const melt = calculateMeltValue(
-      selectedMetal,
-      calcWeight,
-      calcUnit,
-      calcKarat,
-      spotUsd,
-      selectedCurrency,
-      fxRates
-    );
-    const spread = calculateDealerSpread(melt.baseMarketValue, buyPremium, sellDiscount, dealerFee);
+  // Spot price for the currently active calculator metal in selected currency
+  const liveSpotPerTroyOzInSelectedCurrency = useMemo(() => {
+    const spotUsd = metalPrices[calcMetal]?.priceUsdPerTroyOz || BASELINE_PRICES[calcMetal];
+    return convertCurrency(spotUsd, selectedCurrency, fxRates);
+  }, [metalPrices, calcMetal, selectedCurrency, fxRates]);
 
-    return {
-      weightInput: calcWeight,
-      unitInput: calcUnit,
-      karat: calcKarat,
-      weightInGrams: melt.weightGrams,
-      pureMetalGrams: melt.pureGrams,
-      baseMarketValue: melt.baseMarketValue,
-      estimatedBuyPrice: spread.estimatedBuy,
-      estimatedSellPrice: spread.estimatedSell,
-      dealerSpreadValue: spread.spreadValue,
-    };
-  }, [selectedMetal, calcWeight, calcUnit, calcKarat, selectedCurrency, fxRates, metalPrices, buyPremium, sellDiscount, dealerFee]);
-
-  // Dynamic Chart Points: Actual provider history or optional illustrative fallback
-  const displayedChartPoints = useMemo<HistoricalPoint[]>(() => {
-    if (chartPoints.length > 0) return chartPoints;
-    if (showIllustrativeFallback) {
-      const activeSpotUsd = metalPrices[selectedMetal]?.priceUsdPerTroyOz || BASELINE_PRICES[selectedMetal];
-      const rawFallback = generateIllustrativeFallbackPoints(chartTimeframe, activeSpotUsd);
-      return rawFallback.map((p) => {
-        const convertedTroyOz = convertCurrency(p.price, selectedCurrency, fxRates);
-        const convertedUnit = convertPriceUnit(convertedTroyOz, selectedUnit);
-        return {
-          ...p,
-          price: convertedUnit,
-        };
-      });
+  const effectiveSpotPriceInSelectedCurrency = useMemo(() => {
+    if (isManualSpotOverride) {
+      const parsed = parseFloat(manualSpotPrice);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
     }
-    return [];
-  }, [chartPoints, showIllustrativeFallback, selectedMetal, chartTimeframe, selectedCurrency, selectedUnit, metalPrices, fxRates]);
+    return liveSpotPerTroyOzInSelectedCurrency;
+  }, [isManualSpotOverride, manualSpotPrice, liveSpotPerTroyOzInSelectedCurrency]);
+
+  // Spot prices for all 4 metals in selected currency (for lot summing)
+  const allSpotsInSelectedCurrency = useMemo<Record<MetalCode, number>>(() => {
+    return {
+      XAU: convertCurrency(metalPrices.XAU?.priceUsdPerTroyOz || BASELINE_PRICES.XAU, selectedCurrency, fxRates),
+      XAG: convertCurrency(metalPrices.XAG?.priceUsdPerTroyOz || BASELINE_PRICES.XAG, selectedCurrency, fxRates),
+      XPT: convertCurrency(metalPrices.XPT?.priceUsdPerTroyOz || BASELINE_PRICES.XPT, selectedCurrency, fxRates),
+      XPD: convertCurrency(metalPrices.XPD?.priceUsdPerTroyOz || BASELINE_PRICES.XPD, selectedCurrency, fxRates),
+    };
+  }, [metalPrices, selectedCurrency, fxRates]);
+
+  // Single Item Engine Calculation
+  const singleCalcResult = useMemo<SingleCalculationResult>(() => {
+    const customNum = parseFloat(calcCustomFineness);
+    return engineCalculateMeltValue({
+      metal: calcMetal,
+      grossWeight: calcWeight,
+      weightUnit: calcUnit,
+      purityId: calcPurityId,
+      customFineness: Number.isFinite(customNum) ? customNum : undefined,
+      spotPricePerTroyOz: effectiveSpotPriceInSelectedCurrency,
+      quantity: calcQuantity,
+      spreadConfig: {
+        buyPremiumPercent: buyPremium,
+        sellDiscountPercent: sellDiscount,
+        fixedFee: dealerFee,
+      },
+    });
+  }, [
+    calcMetal,
+    calcWeight,
+    calcUnit,
+    calcPurityId,
+    calcCustomFineness,
+    effectiveSpotPriceInSelectedCurrency,
+    calcQuantity,
+    buyPremium,
+    sellDiscount,
+    dealerFee,
+  ]);
+
+  // Scrap Lot Engine Calculation
+  const lotCalcResult = useMemo<LotCalculationResult>(() => {
+    return calculateScrapLot(lotItems, allSpotsInSelectedCurrency, {
+      buyPremiumPercent: buyPremium,
+      sellDiscountPercent: sellDiscount,
+      fixedFee: dealerFee,
+    });
+  }, [lotItems, allSpotsInSelectedCurrency, buyPremium, sellDiscount, dealerFee]);
+
+  // Quick Preset Selector
+  const applyPreset = (preset: { metal: MetalCode; weight: number; unit: WeightUnit; purityId: string }) => {
+    setCalcMetal(preset.metal);
+    setCalcWeight(preset.weight);
+    setCalcUnit(preset.unit);
+    setCalcPurityId(preset.purityId);
+    setCalcQuantity(1);
+  };
+
+  // Lot Item Handlers
+  const handleAddItemToLot = () => {
+    const customNum = parseFloat(newItemCustomFineness);
+    const item: LotItemInput = {
+      id: `lot-item-${Date.now()}`,
+      name: newItemName.trim() || `${METALS[newItemMetal].name} Item`,
+      metal: newItemMetal,
+      grossWeight: Math.max(0.001, newItemWeight || 1),
+      weightUnit: newItemUnit,
+      purityId: newItemPurityId,
+      customFineness: Number.isFinite(customNum) ? customNum : undefined,
+      quantity: Math.max(1, Math.floor(newItemQuantity || 1)),
+    };
+    setLotItems((prev) => [...prev, item]);
+    setNewItemName('');
+    setNewItemWeight(10);
+  };
+
+  const handleRemoveItemFromLot = (id: string) => {
+    setLotItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleClearLot = () => {
+    setLotItems([]);
+  };
+
+  const handleExportLotCsv = () => {
+    if (lotCalcResult.items.length === 0) return;
+    const headers = [
+      'Item ID',
+      'Name',
+      'Metal',
+      'Gross Weight',
+      'Unit',
+      'Gross Grams',
+      'Purity',
+      'Fineness',
+      'Pure Grams',
+      'Pure Troy Oz',
+      'Quantity',
+      `Melt Value (${selectedCurrency})`,
+    ];
+    const rows = lotCalcResult.items.map((it) => [
+      it.id,
+      `"${it.name.replace(/"/g, '""')}"`,
+      it.metal,
+      it.grossWeightInput,
+      it.grossWeightUnit,
+      it.totalGrossWeightGrams.toFixed(3),
+      `"${it.purityLabel}"`,
+      it.finenessDecimal.toFixed(4),
+      it.fineWeightGrams.toFixed(4),
+      it.fineWeightTroyOz.toFixed(5),
+      it.quantity,
+      it.totalMeltValue.toFixed(2),
+    ]);
+
+    rows.push([]);
+    rows.push([
+      'TOTALS',
+      '',
+      '',
+      '',
+      '',
+      lotCalcResult.grandTotalGrossGrams.toFixed(3),
+      '',
+      '',
+      lotCalcResult.grandTotalFineGrams.toFixed(4),
+      (lotCalcResult.grandTotalFineGrams / TROY_OUNCE_TO_GRAMS).toFixed(5),
+      lotCalcResult.itemCount,
+      lotCalcResult.grandTotalMeltValue.toFixed(2),
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `omnitools_precious_metals_lot_${selectedCurrency}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleCopyLotSummary = () => {
+    if (lotCalcResult.items.length === 0) return;
+    const lines = [
+      `OmniTools Precious Metals Scrap Lot Summary`,
+      `Currency: ${selectedCurrency}`,
+      `Items: ${lotCalcResult.itemCount}`,
+      `Total Gross Weight: ${formatDecimal(lotCalcResult.grandTotalGrossGrams, 3)} g`,
+      `Total Pure Fine Metal: ${formatDecimal(lotCalcResult.grandTotalFineGrams, 3)} g`,
+      `Grand Lot Melt Value: ${formatCurrencyValue(lotCalcResult.grandTotalMeltValue, selectedCurrency)}`,
+      `Refiner Payout (~95%): ${formatCurrencyValue(lotCalcResult.payoutTiers.refinerHighVolume, selectedCurrency)}`,
+      `Bullion Dealer (~88%): ${formatCurrencyValue(lotCalcResult.payoutTiers.dealerBullionCash, selectedCurrency)}`,
+      `Pawn Shop (~75%): ${formatCurrencyValue(lotCalcResult.payoutTiers.pawnShopQuickCash, selectedCurrency)}`,
+    ];
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(lines.join('\n'));
+      setCopiedLotSummary(true);
+      setTimeout(() => setCopiedLotSummary(false), 2000);
+    }
+  };
+
+  // Dynamic Chart Points: Actual provider history (no synthetic fallback)
+  const displayedChartPoints = chartPoints;
 
   // Chart Statistics
   const chartStats = useMemo(() => {
@@ -1288,22 +1498,22 @@ export default function PreciousMetals() {
 
   const handleExportCsv = () => {
     if (displayedChartPoints.length === 0) {
-      setErrorMessage('Historical futures time-series is unavailable in browser due to CORS. Toggle illustrative preview to export sample data.');
+      setErrorMessage('Historical futures time-series is currently unavailable. No quotes to export.');
       return;
     }
-    const isFallback = showIllustrativeFallback && chartPoints.length === 0;
     const csvContent = generateCsvExport(
       displayedChartPoints,
       selectedMetal,
       selectedCurrency,
       selectedUnit,
-      isFallback
+      chartMeta.source || 'Yahoo Finance (Indicative Futures Quotes)',
+      chartMeta.instrumentName || 'Futures Indicative Settlement (Front-Month Contract)'
     );
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${selectedMetal}_${selectedCurrency}_${chartTimeframe}_${isFallback ? 'illustrative_fallback' : 'quotes'}.csv`);
+    link.setAttribute('download', `${selectedMetal}_${selectedCurrency}_${chartTimeframe}_futures_quotes.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1318,11 +1528,11 @@ export default function PreciousMetals() {
   };
 
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full max-w-full space-y-8">
       {/* =========================================================================
           HERO & MASTER RATE CONTROLS
           ========================================================================= */}
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-sm">
+      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 lg:p-8 rounded-3xl shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -1332,14 +1542,21 @@ export default function PreciousMetals() {
               <span
                 role="status"
                 aria-live="polite"
+                title={activeMetalData.freshnessEvaluation?.detail}
                 className={`px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 ${
-                  activeMetalData.freshness === 'LIVE'
+                  activeMetalData.freshnessEvaluation?.state === 'LIVE'
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
-                    : 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300'
+                    : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
+                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                    : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                    : activeMetalData.freshnessEvaluation?.state === 'MANUAL_OVERRIDE'
+                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300'
+                    : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
                 }`}
               >
-                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                {activeMetalData.freshness}
+                <span className={`w-1.5 h-1.5 rounded-full bg-current ${activeMetalData.freshnessEvaluation?.state === 'LIVE' ? 'animate-pulse' : ''}`} />
+                {activeMetalData.freshnessEvaluation?.badgeLabel || activeMetalData.freshness}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -1434,11 +1651,18 @@ export default function PreciousMetals() {
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-slate-400" />
               <span>
-                Updated:{' '}
+                Quote Time:{' '}
                 <strong className="text-slate-700 dark:text-slate-300 font-mono">
                   {formatDeterministicTimestamp(activeMetalData.timestampMs)}
                 </strong>
               </span>
+            </span>
+            <span>•</span>
+            <span>
+              Retrieved:{' '}
+              <strong className="text-slate-700 dark:text-slate-300 font-mono">
+                {formatDeterministicTimestamp(new Date(activeMetalData.retrievedAt).getTime())}
+              </strong>
             </span>
             <span>•</span>
             <span>
@@ -1465,7 +1689,9 @@ export default function PreciousMetals() {
             <span>•</span>
             <span>
               Freshness:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">{activeMetalData.freshness}</strong>
+              <strong className="text-slate-700 dark:text-slate-300" title={activeMetalData.freshnessEvaluation?.detail}>
+                {activeMetalData.freshnessEvaluation?.badgeLabel || activeMetalData.freshness}
+              </strong>
             </span>
             <span>•</span>
             <span>
@@ -1527,7 +1753,7 @@ export default function PreciousMetals() {
             <button
               key={mCode}
               type="button"
-              onClick={() => setSelectedMetal(mCode)}
+              onClick={() => handleSelectMetal(mCode)}
               aria-label={`Select ${mMeta.name} for deep analysis and charting`}
               className={`p-5 rounded-3xl text-left transition-all border shadow-sm relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 isSelected
@@ -1581,7 +1807,7 @@ export default function PreciousMetals() {
           ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Historical Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -1598,11 +1824,11 @@ export default function PreciousMetals() {
             </div>
 
             {/* Timeframe & Export Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 max-w-full">
               <div
                 role="tablist"
                 aria-label="Chart timeframe selection"
-                className="flex bg-gray-100 dark:bg-[#0a0f1a] p-1 rounded-2xl border border-gray-200 dark:border-slate-800"
+                className="flex overflow-x-auto max-w-full bg-gray-100 dark:bg-[#0a0f1a] p-1 rounded-2xl border border-gray-200 dark:border-slate-800"
               >
                 {(['1D', '1W', '1M', '3M', '6M', '1Y'] as ChartTimeframe[]).map((tf) => (
                   <button
@@ -1610,7 +1836,7 @@ export default function PreciousMetals() {
                     role="tab"
                     aria-selected={chartTimeframe === tf}
                     onClick={() => setChartTimeframe(tf)}
-                    className={`px-2.5 py-1 text-xs font-semibold rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    className={`px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       chartTimeframe === tf
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -1638,7 +1864,7 @@ export default function PreciousMetals() {
               <span className="text-slate-400 block text-[11px]">Period High</span>
               <strong className="text-slate-800 dark:text-slate-200">
                 {displayedChartPoints.length >= 2
-                  ? `${formatCurrencyValue(chartStats.high, selectedCurrency)}${showIllustrativeFallback && chartPoints.length === 0 ? ' *' : ''}`
+                  ? formatCurrencyValue(chartStats.high, selectedCurrency)
                   : '—'}
               </strong>
             </div>
@@ -1646,7 +1872,7 @@ export default function PreciousMetals() {
               <span className="text-slate-400 block text-[11px]">Period Low</span>
               <strong className="text-slate-800 dark:text-slate-200">
                 {displayedChartPoints.length >= 2
-                  ? `${formatCurrencyValue(chartStats.low, selectedCurrency)}${showIllustrativeFallback && chartPoints.length === 0 ? ' *' : ''}`
+                  ? formatCurrencyValue(chartStats.low, selectedCurrency)
                   : '—'}
               </strong>
             </div>
@@ -1662,7 +1888,7 @@ export default function PreciousMetals() {
                 >
                   {chartStats.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                   {chartStats.percentChange >= 0 ? '+' : ''}
-                  {formatDecimal(chartStats.percentChange, 2)}%{showIllustrativeFallback && chartPoints.length === 0 ? ' *' : ''}
+                  {formatDecimal(chartStats.percentChange, 2)}%
                 </strong>
               ) : (
                 <span className="text-slate-400 font-medium">Unavailable</span>
@@ -1670,7 +1896,7 @@ export default function PreciousMetals() {
             </div>
           </div>
 
-          {/* Recharts Container / Explicit Unavailable State */}
+          {/* Recharts Container / Truthful Historical State */}
           <div className="h-64 sm:h-72 w-full flex-grow relative flex flex-col justify-center">
             {isChartLoading && (
               <div className="absolute inset-0 bg-white/60 dark:bg-[#111827]/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
@@ -1679,21 +1905,12 @@ export default function PreciousMetals() {
             )}
             {displayedChartPoints.length >= 2 ? (
               <>
-                {showIllustrativeFallback && chartPoints.length === 0 && (
-                  <div className="flex items-center justify-between p-2.5 mb-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl text-amber-800 dark:text-amber-200 text-xs">
-                    <span className="font-semibold flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                      Illustrative fallback — not market data
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowIllustrativeFallback(false)}
-                      className="text-[11px] font-medium text-amber-700 dark:text-amber-300 underline hover:no-underline"
-                    >
-                      Dismiss Preview
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center justify-between p-2 mb-2 bg-slate-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-xl text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {chartMeta.instrumentName || METALS[selectedMetal].futuresLabel} ({chartMeta.symbol || METALS[selectedMetal].yahooSymbol})
+                  </span>
+                  <span>Contract: Front-Month Futures Indicative Settlement • Source: {chartMeta.source || 'Yahoo Finance Indicative Reference'}</span>
+                </div>
                 <div className="w-full flex-grow relative min-h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={displayedChartPoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -1729,9 +1946,7 @@ export default function PreciousMetals() {
                                   {formatCurrencyValue(data.price, selectedCurrency)}
                                 </p>
                                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                  {showIllustrativeFallback && chartPoints.length === 0
-                                    ? 'Illustrative fallback — not market data'
-                                    : `per ${UNIT_LABELS[selectedUnit].short} (Futures Ref)`}
+                                  per {UNIT_LABELS[selectedUnit].short} (Futures Settlement)
                                 </p>
                               </div>
                             );
@@ -1757,17 +1972,18 @@ export default function PreciousMetals() {
                   <Info className="w-6 h-6" />
                 </div>
                 <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  Historical Futures Time-Series Unavailable in Browser
+                  Historical Futures Quotes Temporarily Unavailable
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-4 leading-relaxed">
-                  External futures history ({METALS[selectedMetal].futuresLabel}) cannot be queried directly in-browser due to CORS restrictions. Spot valuations and currency conversions remain live and operational.
+                  {chartError || `Unable to fetch historical settlements for ${METALS[selectedMetal].futuresLabel} (${METALS[selectedMetal].yahooSymbol}). Cash spot valuations remain live.`}
                 </p>
                 <button
                   type="button"
-                  onClick={() => setShowIllustrativeFallback(true)}
-                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-colors"
+                  onClick={() => setChartRetryCount((c) => c + 1)}
+                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
                 >
-                  Preview Illustrative Fallback (Testing Only)
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry Historical Query
                 </button>
               </div>
             )}
@@ -1851,7 +2067,7 @@ export default function PreciousMetals() {
       {/* =========================================================================
           SECTION 3: ADAPTIVE COUNTRY / CURRENCY MARKET REFERENCE TABLE
           ========================================================================= */}
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm">
+      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
@@ -1864,11 +2080,11 @@ export default function PreciousMetals() {
               Standard local market denominations for {currentCountryConfig.name} derived from verified spot rates.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
               FX Reference ({fxData.baseCurrency}/{selectedCurrency}): {formatDecimal(fxRates[selectedCurrency], 2)}
             </span>
-            <span className="px-3 py-1 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               [CONVERTED SPOT REFERENCE]
             </span>
           </div>
@@ -1926,224 +2142,828 @@ export default function PreciousMetals() {
       </div>
 
       {/* =========================================================================
-          SECTION 4: INTRINSIC METAL MELT VALUE CALCULATOR
+          SECTION 4: INTRINSIC METAL MELT VALUE & SCRAP LOT CALCULATOR
           ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Calculator Configuration Form */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-blue-600" /> Precious Metal Value Calculator
-            </h3>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-              Intrinsic Melt Estimate
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Metal Selection */}
+      <div className="space-y-6">
+        {/* Calculator Mode Header & Tabs */}
+        <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-slate-800">
             <div>
-              <label htmlFor="calc-metal-select" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Metal
-              </label>
-              <select
-                id="calc-metal-select"
-                aria-label="Select Metal for calculation"
-                value={selectedMetal}
-                onChange={(e) => setSelectedMetal(e.target.value as MetalCode)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              >
-                {(Object.keys(METALS) as MetalCode[]).map((mCode) => (
-                  <option key={mCode} value={mCode}>
-                    {METALS[mCode].name} ({mCode})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Purity Selection (Gold Only) */}
-            <div>
-              <label htmlFor="calc-karat-select" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Purity Rating
-              </label>
-              <select
-                id="calc-karat-select"
-                aria-label="Select Karat Purity"
-                disabled={selectedMetal !== 'XAU'}
-                value={calcKarat}
-                onChange={(e) => setCalcKarat(e.target.value as GoldKarat)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
-              >
-                {selectedMetal === 'XAU' ? (
-                  (Object.keys(PURITIES) as GoldKarat[]).map((k) => (
-                    <option key={k} value={k}>
-                      {PURITIES[k].name} ({formatDecimal(PURITIES[k].ratio * 100, 1)}%)
-                    </option>
-                  ))
-                ) : (
-                  <option value="24K">99.9% Pure Fine Metal</option>
-                )}
-              </select>
-            </div>
-
-            {/* Weight Input */}
-            <div>
-              <label htmlFor="calc-weight-input" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Weight Amount
-              </label>
-              <input
-                id="calc-weight-input"
-                aria-label="Enter Metal Weight Amount"
-                type="number"
-                min="0.001"
-                step="any"
-                value={calcWeight}
-                onChange={(e) => setCalcWeight(Math.max(0.001, parseFloat(e.target.value) || 0))}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Weight Unit */}
-            <div>
-              <label htmlFor="calc-unit-select" className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                Weight Unit
-              </label>
-              <select
-                id="calc-unit-select"
-                aria-label="Select Weight Unit for Calculation"
-                value={calcUnit}
-                onChange={(e) => setCalcUnit(e.target.value as PriceUnit)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              >
-                {Object.entries(UNIT_LABELS).map(([uKey, uVal]) => (
-                  <option key={uKey} value={uKey}>
-                    {uVal.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* User-Defined Dealer Spread Simulator */}
-          <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
-            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-blue-600" /> Optional Dealer Spread Modeling (User-Defined)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div>
-                <label htmlFor="buy-premium-input" className="block text-slate-400 mb-1 text-[11px]">
-                  Buy Premium (%)
-                </label>
-                <input
-                  id="buy-premium-input"
-                  aria-label="Buy Premium Percentage"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={buyPremium}
-                  onChange={(e) => setBuyPremium(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
-                />
+              <div className="flex items-center gap-2">
+                <Calculator className="w-5 h-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Precious Metals Melt Value &amp; Scrap Calculator
+                </h3>
               </div>
-              <div>
-                <label htmlFor="sell-discount-input" className="block text-slate-400 mb-1 text-[11px]">
-                  Sell Discount (%)
-                </label>
-                <input
-                  id="sell-discount-input"
-                  aria-label="Sell Discount Percentage"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={sellDiscount}
-                  onChange={(e) => setSellDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
-                />
-              </div>
-              <div>
-                <label htmlFor="dealer-fee-input" className="block text-slate-400 mb-1 text-[11px]">
-                  Fixed Fee ({selectedCurrency})
-                </label>
-                <input
-                  id="dealer-fee-input"
-                  aria-label="Fixed Dealer Fee in selected currency"
-                  type="number"
-                  min="0"
-                  value={dealerFee}
-                  onChange={(e) => setDealerFee(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Calculator Output Summary */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-900/40 dark:to-slate-900 border border-blue-500/20 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold text-blue-200 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-300" /> Estimated Metal Melt Value
-              </span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-mono">
-                {selectedCurrency}
-              </span>
-            </div>
-
-            {/* Giant Output Number */}
-            <div className="mb-6">
-              <div className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-                {formatCurrencyValue(calcResult.baseMarketValue, selectedCurrency)}
-              </div>
-              <p className="text-xs text-blue-200/90 mt-1">
-                Intrinsic commodity value of pure metal content at spot reference price.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Calculate pure fine metal content, intrinsic wholesale melt values, and estimated dealer cash payouts across Gold, Silver, Platinum, and Palladium.
               </p>
             </div>
 
-            {/* Calculation Breakdown */}
-            <div className="space-y-3 p-4 rounded-2xl bg-black/20 backdrop-blur-md text-xs border border-white/10">
-              <div className="flex justify-between items-center">
-                <span className="text-blue-200">Gross Input Weight</span>
-                <span className="font-mono font-semibold">
-                  {calcResult.weightInput} {UNIT_LABELS[calcResult.unitInput].short} ({formatDecimal(calcResult.weightInGrams, 3)} g)
-                </span>
-              </div>
-              {selectedMetal === 'XAU' && (
-                <div className="flex justify-between items-center">
-                  <span className="text-blue-200">Purity Rating</span>
-                  <span className="font-mono font-semibold">
-                    {calcResult.karat} ({formatDecimal(PURITIES[calcResult.karat].ratio * 100, 2)}% pure)
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-blue-200">Fine Pure Metal</span>
-                <span className="font-mono font-semibold text-amber-300">
-                  {formatDecimal(calcResult.pureMetalGrams, 4)} grams
-                </span>
-              </div>
-              <div className="border-t border-white/10 pt-2 flex justify-between items-center">
-                <span className="text-blue-200">Estimated Buy / Pay</span>
-                <span className="font-mono font-semibold">
-                  {formatCurrencyValue(calcResult.estimatedBuyPrice, selectedCurrency)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-blue-200">Estimated Sell / Cash</span>
-                <span className="font-mono font-semibold">
-                  {formatCurrencyValue(calcResult.estimatedSellPrice, selectedCurrency)}
-                </span>
-              </div>
+            {/* Mode Switcher Tabs */}
+            <div className="grid grid-cols-2 sm:inline-flex p-1 bg-gray-100 dark:bg-slate-800 rounded-2xl w-full sm:w-auto" role="tablist" aria-label="Calculator Mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={calcMode === 'single'}
+                onClick={() => setCalcMode('single')}
+                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${
+                  calcMode === 'single'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Quick Calculator</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={calcMode === 'lot'}
+                onClick={() => setCalcMode('lot')}
+                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${
+                  calcMode === 'lot'
+                    ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span>Scrap Lot ({lotItems.length})</span>
+              </button>
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 text-[11px] text-blue-200/80 flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-300" />
-            <p>
-              Excludes dealer retail premiums, craftsmanship making charges, hallmark certifications, and local sales taxes unless explicitly modeled.
-            </p>
+          {/* Pricing Feed & Manual Spot Override Bar */}
+          <div className="mt-4 pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Spot Reference Basis:</span>
+              {!isManualSpotOverride ? (
+                <span
+                  title={activeMetalData.freshnessEvaluation?.detail}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono font-bold border ${
+                    activeMetalData.freshnessEvaluation?.state === 'LIVE'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                      : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                      : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      : 'bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      activeMetalData.freshnessEvaluation?.state === 'LIVE'
+                        ? 'bg-emerald-500 animate-pulse'
+                        : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
+                        ? 'bg-indigo-500'
+                        : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                        ? 'bg-amber-500'
+                        : 'bg-slate-400'
+                    }`}
+                  />
+                  {activeMetalData.freshnessEvaluation?.badgeLabel || 'SPOT FEED'}:{' '}
+                  {formatCurrencyValue(liveSpotPerTroyOzInSelectedCurrency, selectedCurrency)} / oz t
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono font-bold border border-purple-200 dark:border-purple-800">
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
+                  MANUAL OVERRIDE: {formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isManualSpotOverride) {
+                    setManualSpotPrice(effectiveSpotPriceInSelectedCurrency.toFixed(2));
+                  }
+                  setIsManualSpotOverride(!isManualSpotOverride);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold cursor-pointer transition-colors text-xs"
+              >
+                {isManualSpotOverride ? 'Reset to Benchmark Feed' : 'Enter Custom Spot Override'}
+              </button>
+
+              {isManualSpotOverride && (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={manualSpotPrice}
+                    onChange={(e) => setManualSpotPrice(e.target.value)}
+                    placeholder="Custom price / oz t"
+                    className="w-32 px-2.5 py-1 bg-white dark:bg-[#0a0f1a] border border-amber-300 dark:border-amber-700 rounded-lg font-mono text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsManualSpotOverride(false);
+                      setManualSpotPrice('');
+                    }}
+                    title="Reset to benchmark spot price"
+                    className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-500 cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* =========================================================================
+            MODE 1: SINGLE ITEM QUICK CALCULATOR
+            ========================================================================= */}
+        {calcMode === 'single' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Single Item Form */}
+            <div className="lg:col-span-7 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm space-y-5 w-full max-w-full">
+              {/* Presets Chips */}
+              <div>
+                <span className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2">
+                  Quick Benchmark Presets:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 5, unit: 'gram', purityId: '14K' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    14K Ring (5g)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 15, unit: 'gram', purityId: '18K' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    18K Chain (15g)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAG', weight: 50, unit: 'gram', purityId: '925' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    Sterling Silver (50g)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 1, unit: 'troy_oz', purityId: '24K' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    1 oz t 24K Coin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 1, unit: 'tola', purityId: '22K' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    1 Tola 22K Bangle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 10, unit: 'dwt', purityId: '14K' })}
+                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    10 dwt 14K Scrap
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Controls Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Metal Selection */}
+                <div>
+                  <label htmlFor="calc-metal-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Precious Metal
+                  </label>
+                  <select
+                    id="calc-metal-select"
+                    value={calcMetal}
+                    onChange={(e) => {
+                      const newMetal = e.target.value as MetalCode;
+                      setCalcMetal(newMetal);
+                      if (newMetal === 'XAU') setCalcPurityId('14K');
+                      else if (newMetal === 'XAG') setCalcPurityId('925');
+                      else if (newMetal === 'XPT') setCalcPurityId('Pt950');
+                      else if (newMetal === 'XPD') setCalcPurityId('Pd950');
+                    }}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {(Object.keys(METALS) as MetalCode[]).map((mCode) => (
+                      <option key={mCode} value={mCode}>
+                        {METALS[mCode].name} ({mCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Metal Purity Selection */}
+                <div>
+                  <label htmlFor="calc-purity-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Purity / Fineness
+                  </label>
+                  <select
+                    id="calc-purity-select"
+                    value={calcPurityId}
+                    onChange={(e) => setCalcPurityId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {(METAL_PURITIES_MAP[calcMetal] || []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                    <option value="custom">Custom Fineness (% or Decimal)...</option>
+                  </select>
+                </div>
+
+                {/* Custom Fineness (Conditional) */}
+                {calcPurityId === 'custom' && (
+                  <div className="sm:col-span-2 p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40">
+                    <label htmlFor="calc-custom-fineness" className="block text-xs font-bold text-blue-900 dark:text-blue-300 mb-1">
+                      Custom Decimal Fineness or Purity %
+                    </label>
+                    <input
+                      id="calc-custom-fineness"
+                      type="number"
+                      step="any"
+                      min="0.001"
+                      max="1000"
+                      value={calcCustomFineness}
+                      onChange={(e) => setCalcCustomFineness(e.target.value)}
+                      placeholder="e.g. 0.9167, 91.67, or 916.7"
+                      className="w-full px-3 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold"
+                    />
+                    <p className="text-[11px] text-blue-700 dark:text-blue-400 mt-1">
+                      Enter as decimal (e.g. 0.750), percentage (75.0%), or parts-per-thousand (750).
+                    </p>
+                  </div>
+                )}
+
+                {/* Weight Input */}
+                <div>
+                  <label htmlFor="calc-weight-input" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Gross Weight
+                  </label>
+                  <input
+                    id="calc-weight-input"
+                    type="number"
+                    min="0.001"
+                    step="any"
+                    value={calcWeight}
+                    onChange={(e) => setCalcWeight(Math.max(0.001, parseFloat(e.target.value) || 0))}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Weight Unit Selection */}
+                <div>
+                  <label htmlFor="calc-unit-select" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Weight Unit
+                  </label>
+                  <select
+                    id="calc-unit-select"
+                    value={calcUnit}
+                    onChange={(e) => setCalcUnit(e.target.value as WeightUnit)}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    {Object.values(UNITS).map((u) => (
+                      <option key={u.key} value={u.key}>
+                        {u.label} {u.isTroy ? '• (Troy standard)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Quantity Input */}
+                <div>
+                  <label htmlFor="calc-quantity-input" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Item Quantity (Count)
+                  </label>
+                  <input
+                    id="calc-quantity-input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={calcQuantity}
+                    onChange={(e) => setCalcQuantity(Math.max(1, Math.floor(parseFloat(e.target.value) || 1)))}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Add to Lot Action Button */}
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item: LotItemInput = {
+                        id: `item-${Date.now()}`,
+                        name: `${singleCalcResult.purityLabel} ${singleCalcResult.metalName}`,
+                        metal: calcMetal,
+                        grossWeight: calcWeight,
+                        weightUnit: calcUnit,
+                        purityId: calcPurityId,
+                        customFineness: parseFloat(calcCustomFineness) || undefined,
+                        quantity: calcQuantity,
+                      };
+                      setLotItems((prev) => [...prev, item]);
+                      setCalcMode('lot');
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Add Item to Scrap Lot
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Dealer Spread & Buy/Sell Simulator */}
+              <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600" /> Dealer Spread &amp; Cash Payout Modeling
+                  </h4>
+                  <span className="text-[11px] text-slate-400">User-Adjustable Scenarios</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <label htmlFor="buy-premium-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                      Buy Premium (%)
+                    </label>
+                    <input
+                      id="buy-premium-input"
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={buyPremium}
+                      onChange={(e) => setBuyPremium(Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="sell-discount-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                      Sell Discount (%)
+                    </label>
+                    <input
+                      id="sell-discount-input"
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={sellDiscount}
+                      onChange={(e) => setSellDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="dealer-fee-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                      Fixed Assay Fee ({selectedCurrency})
+                    </label>
+                    <input
+                      id="dealer-fee-input"
+                      type="number"
+                      min="0"
+                      value={dealerFee}
+                      onChange={(e) => setDealerFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Single Item Output Card */}
+            <div className="lg:col-span-5 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-900/40 dark:to-slate-900 border border-blue-500/20 text-white p-4 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between w-full max-w-full">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-bold text-blue-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-300" /> Intrinsic Melt Value
+                  </span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-mono font-bold">
+                    {selectedCurrency}
+                  </span>
+                </div>
+
+                {/* Output Number */}
+                <div className="mb-5">
+                  <div className="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                    {formatCurrencyValue(singleCalcResult.totalMeltValue, selectedCurrency)}
+                  </div>
+                  {singleCalcResult.quantity > 1 && (
+                    <p className="text-xs text-blue-200/90 mt-1">
+                      {formatCurrencyValue(singleCalcResult.meltValuePerItem, selectedCurrency)} per item × {singleCalcResult.quantity} items
+                    </p>
+                  )}
+                  <p className="text-xs text-blue-200/90 mt-1">
+                    Intrinsic commodity value of pure metal at benchmark spot reference.
+                  </p>
+                </div>
+
+                {/* Dealer Payout Tiers Grid */}
+                <div className="mb-5 p-3 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 space-y-2 text-xs">
+                  <span className="block font-bold text-blue-200 uppercase tracking-wider text-[10px]">
+                    Estimated Dealer Payout Tiers:
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2 rounded-xl bg-white/10">
+                      <span className="text-blue-200 block text-[10px]">Refiner Tier (95%)</span>
+                      <span className="font-mono font-bold text-white">
+                        {formatCurrencyValue(singleCalcResult.payoutTiers.refinerHighVolume, selectedCurrency)}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white/10">
+                      <span className="text-blue-200 block text-[10px]">Jeweler Cash (88%)</span>
+                      <span className="font-mono font-bold text-white">
+                        {formatCurrencyValue(singleCalcResult.payoutTiers.dealerBullionCash, selectedCurrency)}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white/10">
+                      <span className="text-blue-200 block text-[10px]">Pawn Shop (75%)</span>
+                      <span className="font-mono font-bold text-white">
+                        {formatCurrencyValue(singleCalcResult.payoutTiers.pawnShopQuickCash, selectedCurrency)}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-white/10">
+                      <span className="text-blue-200 block text-[10px]">User Modeled Sell</span>
+                      <span className="font-mono font-bold text-amber-300">
+                        {formatCurrencyValue(singleCalcResult.payoutTiers.userModeledSell, selectedCurrency)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Technical Calculation Breakdown */}
+                <div className="space-y-2 p-3.5 rounded-2xl bg-black/20 backdrop-blur-md text-xs border border-white/10">
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Gross Weight:</span>
+                    <span className="font-mono font-semibold">
+                      {singleCalcResult.grossWeightInput} {UNITS[singleCalcResult.grossWeightUnit].short} ({formatDecimal(singleCalcResult.totalGrossWeightGrams, 3)} g)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Purity Rating:</span>
+                    <span className="font-mono font-semibold">
+                      {singleCalcResult.purityLabel}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Fine Pure Metal:</span>
+                    <span className="font-mono font-bold text-amber-300">
+                      {formatDecimal(singleCalcResult.fineWeightGrams, 4)} g ({formatDecimal(singleCalcResult.fineWeightTroyOz, 5)} oz t)
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Fine Weight (dwt):</span>
+                    <span className="font-mono font-semibold">
+                      {formatDecimal(singleCalcResult.fineWeightDwt, 3)} dwt
+                    </span>
+                  </div>
+                  <div className="border-t border-white/10 pt-2 flex justify-between items-center">
+                    <span className="text-blue-200">Spot / Gram:</span>
+                    <span className="font-mono font-semibold">
+                      {formatCurrencyValue(singleCalcResult.spotPricePerGram, selectedCurrency)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-blue-200">Spot / Troy Oz:</span>
+                    <span className="font-mono font-semibold">
+                      {formatCurrencyValue(singleCalcResult.spotPricePerTroyOz, selectedCurrency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = `OmniTools Melt Valuation:
+Metal: ${singleCalcResult.metalName} (${singleCalcResult.metal})
+Purity: ${singleCalcResult.purityLabel}
+Gross Weight: ${singleCalcResult.grossWeightInput} ${singleCalcResult.grossWeightUnit} (${singleCalcResult.totalGrossWeightGrams.toFixed(3)} g)
+Pure Fine Metal: ${singleCalcResult.fineWeightGrams.toFixed(4)} g (${singleCalcResult.fineWeightTroyOz.toFixed(5)} oz t)
+Quantity: ${singleCalcResult.quantity}
+Spot Benchmark: ${formatCurrencyValue(singleCalcResult.spotPricePerTroyOz, selectedCurrency)} / oz t
+Estimated Melt Value: ${formatCurrencyValue(singleCalcResult.totalMeltValue, selectedCurrency)}
+Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnShopQuickCash, selectedCurrency)} (Pawn) to ${formatCurrencyValue(singleCalcResult.payoutTiers.refinerHighVolume, selectedCurrency)} (Refiner)`;
+                    navigator.clipboard.writeText(text);
+                    setCopiedSummary(true);
+                    setTimeout(() => setCopiedSummary(false), 2000);
+                  }}
+                  className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  {copiedSummary ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedSummary ? 'Copied!' : 'Copy Summary'}
+                </button>
+
+                <div className="text-[10px] text-blue-200/80 text-right">
+                  Client-side calculation • Zero data sent
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            MODE 2: MULTI-ITEM SCRAP LOT BUILDER
+            ========================================================================= */}
+        {calcMode === 'lot' && (
+          <div className="space-y-6">
+            {/* Scrap Lot Item Adder Card */}
+            <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm space-y-4 w-full max-w-full">
+              <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Plus className="w-4 h-4 text-blue-600" /> Add Item to Scrap Lot
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div className="lg:col-span-2">
+                  <label htmlFor="lot-item-name" className="block text-[11px] font-bold text-slate-500 mb-1">
+                    Item Description
+                  </label>
+                  <input
+                    id="lot-item-name"
+                    type="text"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    placeholder="e.g. 14K Herringbone Chain"
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="lot-item-metal" className="block text-[11px] font-bold text-slate-500 mb-1">
+                    Metal
+                  </label>
+                  <select
+                    id="lot-item-metal"
+                    value={newItemMetal}
+                    onChange={(e) => {
+                      const m = e.target.value as MetalCode;
+                      setNewItemMetal(m);
+                      if (m === 'XAU') setNewItemPurityId('14K');
+                      else if (m === 'XAG') setNewItemPurityId('925');
+                      else if (m === 'XPT') setNewItemPurityId('Pt950');
+                      else if (m === 'XPD') setNewItemPurityId('Pd950');
+                    }}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    {(Object.keys(METALS) as MetalCode[]).map((mCode) => (
+                      <option key={mCode} value={mCode}>
+                        {METALS[mCode].name} ({mCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="lot-item-purity" className="block text-[11px] font-bold text-slate-500 mb-1">
+                    Purity
+                  </label>
+                  <select
+                    id="lot-item-purity"
+                    value={newItemPurityId}
+                    onChange={(e) => setNewItemPurityId(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    {(METAL_PURITIES_MAP[newItemMetal] || []).map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.shortLabel}
+                      </option>
+                    ))}
+                    <option value="custom">Custom...</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="lot-item-weight" className="block text-[11px] font-bold text-slate-500 mb-1">
+                    Weight
+                  </label>
+                  <input
+                    id="lot-item-weight"
+                    type="number"
+                    step="any"
+                    min="0.001"
+                    value={newItemWeight}
+                    onChange={(e) => setNewItemWeight(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-mono font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="lot-item-unit" className="block text-[11px] font-bold text-slate-500 mb-1">
+                    Unit
+                  </label>
+                  <select
+                    id="lot-item-unit"
+                    value={newItemUnit}
+                    onChange={(e) => setNewItemUnit(e.target.value as WeightUnit)}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    {Object.values(UNITS).map((u) => (
+                      <option key={u.key} value={u.key}>
+                        {u.short}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={handleAddItemToLot}
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Add Item to Lot
+                </button>
+              </div>
+            </div>
+
+            {/* Scrap Lot Items Table & Grand Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: Lot Items List */}
+              <div className="lg:col-span-8 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm space-y-4 w-full max-w-full">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-800">
+                  <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    Scrap Lot Manifest ({lotItems.length} items)
+                  </h4>
+                  {lotItems.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleExportLotCsv}
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" /> Export CSV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyLotSummary}
+                        className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer"
+                      >
+                        {copiedLotSummary ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                        {copiedLotSummary ? 'Copied!' : 'Copy Summary'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearLot}
+                        className="px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Clear All
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {lotCalcResult.items.length === 0 ? (
+                  <div className="py-12 text-center text-slate-400">
+                    <Scale className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm font-semibold">Your scrap lot is empty.</p>
+                    <p className="text-xs text-slate-500 mt-1">Add items above to calculate aggregated scrap melt value.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+                          <th className="py-2.5 px-3">Item</th>
+                          <th className="py-2.5 px-3">Metal</th>
+                          <th className="py-2.5 px-3">Gross Wt</th>
+                          <th className="py-2.5 px-3">Purity</th>
+                          <th className="py-2.5 px-3">Fine (g)</th>
+                          <th className="py-2.5 px-3 text-right">Melt ({selectedCurrency})</th>
+                          <th className="py-2.5 px-2 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-slate-800/60">
+                        {lotCalcResult.items.map((it) => (
+                          <tr key={it.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30">
+                            <td className="py-3 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                              {it.name}
+                            </td>
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                {it.metal}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 font-mono">
+                              {it.grossWeightInput} {UNITS[it.grossWeightUnit].short}
+                            </td>
+                            <td className="py-3 px-3">
+                              {it.purityLabel}
+                            </td>
+                            <td className="py-3 px-3 font-mono font-semibold text-amber-600 dark:text-amber-400">
+                              {formatDecimal(it.fineWeightGrams, 3)} g
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                              {formatCurrencyValue(it.totalMeltValue, selectedCurrency)}
+                            </td>
+                            <td className="py-3 px-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItemFromLot(it.id)}
+                                title="Remove item"
+                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Lot Grand Summary */}
+              <div className="lg:col-span-4 bg-gradient-to-br from-indigo-700 to-blue-800 dark:from-indigo-950/60 dark:to-slate-900 border border-indigo-500/20 text-white p-4 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between w-full max-w-full">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-amber-300" /> Grand Lot Melt Value
+                    </span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/20 font-mono font-bold">
+                      {selectedCurrency}
+                    </span>
+                  </div>
+
+                  {/* Grand Output */}
+                  <div className="mb-5">
+                    <div className="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">
+                      {formatCurrencyValue(lotCalcResult.grandTotalMeltValue, selectedCurrency)}
+                    </div>
+                    <p className="text-xs text-indigo-200/90 mt-1">
+                      Aggregated intrinsic metal content across {lotCalcResult.itemCount} lot items.
+                    </p>
+                  </div>
+
+                  {/* Payout Estimates */}
+                  <div className="mb-5 p-3 rounded-2xl bg-black/25 backdrop-blur-md border border-white/10 space-y-2 text-xs">
+                    <span className="block font-bold text-indigo-200 uppercase tracking-wider text-[10px]">
+                      Aggregated Cash Payout Tiers:
+                    </span>
+                    <div className="space-y-1.5 text-[11px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-indigo-200">Refiner Payout (~95%):</span>
+                        <span className="font-mono font-bold text-white">
+                          {formatCurrencyValue(lotCalcResult.payoutTiers.refinerHighVolume, selectedCurrency)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-indigo-200">Bullion Dealer (~88%):</span>
+                        <span className="font-mono font-bold text-white">
+                          {formatCurrencyValue(lotCalcResult.payoutTiers.dealerBullionCash, selectedCurrency)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-indigo-200">Pawn Shop (~75%):</span>
+                        <span className="font-mono font-bold text-white">
+                          {formatCurrencyValue(lotCalcResult.payoutTiers.pawnShopQuickCash, selectedCurrency)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Metal Breakdown Subtotals */}
+                  <div className="space-y-2 p-3.5 rounded-2xl bg-black/20 backdrop-blur-md text-xs border border-white/10">
+                    <span className="block font-bold text-indigo-200 uppercase tracking-wider text-[10px] mb-1">
+                      Pure Metal Weights:
+                    </span>
+                    {Object.values(lotCalcResult.metalSummaries).map((sum) => (
+                      sum.itemCount > 0 && (
+                        <div key={sum.metal} className="flex justify-between items-center">
+                          <span className="text-indigo-200">{METALS[sum.metal].name}:</span>
+                          <span className="font-mono font-semibold">
+                            {formatDecimal(sum.totalFineGrams, 3)} g ({formatCurrencyValue(sum.totalMeltValue, selectedCurrency)})
+                          </span>
+                        </div>
+                      )
+                    ))}
+                    <div className="border-t border-white/10 pt-2 flex justify-between items-center">
+                      <span className="text-indigo-200">Total Gross Weight:</span>
+                      <span className="font-mono font-semibold">
+                        {formatDecimal(lotCalcResult.grandTotalGrossGrams, 3)} g
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-indigo-200">Total Pure Fine Metal:</span>
+                      <span className="font-mono font-bold text-amber-300">
+                        {formatDecimal(lotCalcResult.grandTotalFineGrams, 3)} g
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-white/10 text-[10px] text-indigo-200/80">
+                  Calculated locally in browser • No personal data sent to servers.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================
