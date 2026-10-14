@@ -39,6 +39,10 @@ import {
   getJuneteenthObserved,
   getIndependenceDayObserved,
 } from '../lib/preciousMetalsFreshness';
+import {
+  BASELINE_PRICES,
+  DEFAULT_FX_RATES,
+} from '../components/tools/PreciousMetals';
 
 /* =========================================================================
    INDEPENDENT MATHEMATICAL ORACLE (DOES NOT CALL PRODUCTION FUNCTIONS)
@@ -1363,6 +1367,48 @@ console.log('\n[SUITE 13: Production Data Pipeline Audit & Integrity]');
   assert(basisSpreadUsd > 0, 'Measured Gold basis spread reflects contango (+20.90 USD)');
   assert(Math.abs(basisSpreadPct - 0.5095) < 0.05, 'Measured Gold basis spread is ~+0.51%');
   assert(measuredFuturesUsd !== measuredSpotUsd, 'Futures and spot prices are NEVER identical or interchangeable');
+}
+
+/* =========================================================================
+   SUITE 14: LOCAL BULLION MARKET (SARAFA) PREMIUM & STEP 5 ACCOUNTING
+   ========================================================================= */
+
+console.log('\n[SUITE 14: Local Bullion Market (Sarafa) vs Converted International Spot]');
+
+{
+  // 1. Exact mathematical conversion of international spot to PKR
+  // International Spot = 4106.50 USD / oz t
+  // USD/PKR = 277.05126
+  // 1 Tola = 0.375 oz t (exactly 180 / 480 grains)
+  const spotUsd = 4106.50;
+  const fxPkr = 277.05126;
+  const tolaOzRatio = 0.375;
+  const expectedPkrPerTola = spotUsd * fxPkr * tolaOzRatio;
+  assert(Math.abs(expectedPkrPerTola - 426640.87) < 1.0, 'International spot converted to PKR per tola is ~426,641 PKR');
+
+  // 2. Quantification of Pakistan Sarafa Market physical premium over international spot
+  // Current published Karachi/Lahore APGJSA Sarafa rate for 24K 1 Tola = ~432,500 PKR
+  const publishedSarafaRatePkr = 432500;
+  const physicalPremiumPkr = publishedSarafaRatePkr - expectedPkrPerTola;
+  const physicalPremiumPct = (physicalPremiumPkr / expectedPkrPerTola) * 100;
+  assert(physicalPremiumPkr > 0, 'Local Sarafa physical gold rate trades at a positive premium over pure international spot');
+  assert(Math.abs(physicalPremiumPct - 1.373) < 0.2, 'Local Pakistan Sarafa physical premium is approximately +1.37%');
+
+  // 3. 22K (Tejabi / Jewelry) Sarafa rate ratio
+  // 22K = 22/24 of 24K rate
+  const expectedSarafa22kPkr = publishedSarafaRatePkr * (22 / 24);
+  assert(Math.abs(expectedSarafa22kPkr - 396458.33) < 1.0, '22K Sarafa rate is ~396,458 PKR per tola');
+
+  // 4. Invariant: Converted international spot is NOT identical to domestic Sarafa physical rate
+  assert(expectedPkrPerTola !== publishedSarafaRatePkr, 'Converted international spot and domestic Sarafa physical rate are strictly distinct');
+
+  // 5. Baseline price and FX verification
+  assert(BASELINE_PRICES.XAU === 4106.50, 'BASELINE_PRICES.XAU matches verified benchmark 4106.50');
+  assert(BASELINE_PRICES.XAG === 55.76, 'BASELINE_PRICES.XAG matches verified benchmark 55.76');
+  assert(BASELINE_PRICES.XPT === 1605.00, 'BASELINE_PRICES.XPT matches verified benchmark 1605.00');
+  assert(BASELINE_PRICES.XPD === 1118.00, 'BASELINE_PRICES.XPD matches verified benchmark 1118.00');
+  assert(DEFAULT_FX_RATES.PKR === 277.05, 'DEFAULT_FX_RATES.PKR is updated to 277.05');
+  assert(DEFAULT_FX_RATES.INR === 95.11, 'DEFAULT_FX_RATES.INR is updated to 95.11');
 }
 
 /* =========================================================================

@@ -300,13 +300,13 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyMetadata> = {
 };
 
 export const COUNTRIES: Record<CountryCode, CountryConfig> = {
-  PK: { code: 'PK', name: 'Pakistan', flag: '🇵🇰', currency: 'PKR', locale: 'en-PK', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'Pakistan Market Reference', isGulfOrSouthAsia: true },
-  US: { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD', locale: 'en-US', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'US Market Reference', isGulfOrSouthAsia: false },
-  GB: { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', locale: 'en-GB', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'UK Market Reference', isGulfOrSouthAsia: false },
-  EU: { code: 'EU', name: 'Eurozone / EU', flag: '🇪🇺', currency: 'EUR', locale: 'en-DE', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'Eurozone Market Reference', isGulfOrSouthAsia: false },
-  AE: { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', locale: 'ar-AE', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'UAE Market Reference', isGulfOrSouthAsia: true },
-  SA: { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', locale: 'ar-SA', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'Saudi Arabia Market Reference', isGulfOrSouthAsia: true },
-  IN: { code: 'IN', name: 'India', flag: '🇮🇳', currency: 'INR', locale: 'en-IN', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'India Market Reference', isGulfOrSouthAsia: true },
+  PK: { code: 'PK', name: 'Pakistan', flag: '🇵🇰', currency: 'PKR', locale: 'en-PK', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'Pakistan Spot Conversion (Interbank)', isGulfOrSouthAsia: true },
+  US: { code: 'US', name: 'United States', flag: '🇺🇸', currency: 'USD', locale: 'en-US', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'US Spot Benchmark', isGulfOrSouthAsia: false },
+  GB: { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', currency: 'GBP', locale: 'en-GB', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'UK Spot Benchmark', isGulfOrSouthAsia: false },
+  EU: { code: 'EU', name: 'Eurozone / EU', flag: '🇪🇺', currency: 'EUR', locale: 'en-DE', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'Eurozone Spot Benchmark', isGulfOrSouthAsia: false },
+  AE: { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', currency: 'AED', locale: 'ar-AE', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'UAE Spot Conversion', isGulfOrSouthAsia: true },
+  SA: { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦', currency: 'SAR', locale: 'ar-SA', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'Saudi Arabia Spot Conversion', isGulfOrSouthAsia: true },
+  IN: { code: 'IN', name: 'India', flag: '🇮🇳', currency: 'INR', locale: 'en-IN', primaryUnit: 'tola', secondaryUnit: '10g', marketLabel: 'India Spot Conversion (Interbank)', isGulfOrSouthAsia: true },
   CA: { code: 'CA', name: 'Canada', flag: '🇨🇦', currency: 'CAD', locale: 'en-CA', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'Canada Market Reference', isGulfOrSouthAsia: false },
   AU: { code: 'AU', name: 'Australia', flag: '🇦🇺', currency: 'AUD', locale: 'en-AU', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'Australia Market Reference', isGulfOrSouthAsia: false },
   NZ: { code: 'NZ', name: 'New Zealand', flag: '🇳🇿', currency: 'NZD', locale: 'en-NZ', primaryUnit: 'troy_oz', secondaryUnit: 'gram', marketLabel: 'New Zealand Market Reference', isGulfOrSouthAsia: false },
@@ -518,12 +518,12 @@ const INITIAL_TIMESTAMP_MS = 1791331200000;
 
 export const DEFAULT_FX_RATES: Record<CurrencyCode, number> = {
   USD: 1.0,
-  PKR: 278.50,
-  EUR: 0.915,
-  GBP: 0.772,
+  PKR: 277.05,
+  EUR: 0.893,
+  GBP: 0.755,
   AED: 3.6725,
   SAR: 3.75,
-  INR: 83.95,
+  INR: 95.11,
   CAD: 1.378,
   AUD: 1.512,
   NZD: 1.662,
@@ -552,10 +552,10 @@ export const DEFAULT_FX_RATES: Record<CurrencyCode, number> = {
 };
 
 export const BASELINE_PRICES: Record<MetalCode, number> = {
-  XAU: 4115.50,
-  XAG: 60.10,
-  XPT: 1645.00,
-  XPD: 1150.00,
+  XAU: 4106.50,
+  XAG: 55.76,
+  XPT: 1605.00,
+  XPD: 1118.00,
 };
 
 export async function fetchMetalPrice(
@@ -872,9 +872,9 @@ export default function PreciousMetals() {
   // Enhanced Calculator State
   const [calcMode, setCalcMode] = useState<'single' | 'lot'>('single');
   const [calcMetal, setCalcMetal] = useState<MetalCode>('XAU');
-  const [calcWeight, setCalcWeight] = useState<number>(5.0);
-  const [calcUnit, setCalcUnit] = useState<WeightUnit>('gram');
-  const [calcPurityId, setCalcPurityId] = useState<string>('14K');
+  const [calcWeight, setCalcWeight] = useState<number>(1.0);
+  const [calcUnit, setCalcUnit] = useState<WeightUnit>('tola');
+  const [calcPurityId, setCalcPurityId] = useState<string>('24K');
   const [calcCustomFineness, setCalcCustomFineness] = useState<string>('0.925');
   const [calcQuantity, setCalcQuantity] = useState<number>(1);
   const [isManualSpotOverride, setIsManualSpotOverride] = useState<boolean>(false);
@@ -1774,7 +1774,7 @@ export default function PreciousMetals() {
                       {mMeta.name}
                     </h3>
                     <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                      {mCode} • Spot
+                      {mCode} • Intl. Spot
                     </span>
                   </div>
                 </div>
@@ -1791,7 +1791,7 @@ export default function PreciousMetals() {
                   {formatCurrencyValue(finalPrice, selectedCurrency)}
                 </div>
                 <div className="flex items-center justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
-                  <span>per {UNIT_LABELS[selectedUnit].short}</span>
+                  <span>per {UNIT_LABELS[selectedUnit].short} (Spot)</span>
                   {mData?.change24hPercent && mData.change24hPercent !== 0 ? (
                     <span
                       className={`font-semibold flex items-center gap-0.5 ${
@@ -2096,7 +2096,7 @@ export default function PreciousMetals() {
           SECTION 3: ADAPTIVE COUNTRY / CURRENCY MARKET REFERENCE TABLE
           ========================================================================= */}
       <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl">{currentCountryConfig.flag}</span>
@@ -2105,18 +2105,51 @@ export default function PreciousMetals() {
               </h2>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Standard local market denominations for {currentCountryConfig.name} derived from verified spot rates.
+              Unallocated wholesale spot bullion rates converted at interbank exchange rates ({fxData.provider}).
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              FX Reference ({fxData.baseCurrency}/{selectedCurrency}): {formatDecimal(fxRates[selectedCurrency], 2)}
+              Interbank FX ({fxData.baseCurrency}/{selectedCurrency}): {formatDecimal(fxRates[selectedCurrency], 2)}
             </span>
-            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              [CONVERTED SPOT REFERENCE]
+            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+              WHOLESALE SPOT BASIS
             </span>
           </div>
         </div>
+
+        {/* Domestic Bullion Market / Sarafa Notice */}
+        {currentCountryConfig.code === 'PK' && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
+            <div className="flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-950 dark:text-amber-100">
+                  Important: International Converted Spot vs. Pakistan Sarafa Bullion Market Rates
+                </p>
+                <p className="leading-relaxed">
+                  The rates in this table represent pure international wholesale spot benchmarks (London OTC unallocated bullion) converted at official interbank exchange rates (USD/PKR ~{formatDecimal(fxRates.PKR, 2)}).
+                  In Pakistan, domestic bullion rates published by the All Pakistan Sarafa Gems and Jewellers Association (APGJSA) trade at a physical cash premium (typically +1.0% to +2.5% higher, currently around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K) due to open-market currency spreads, physical import costs, and local physical supply. Finished retail jewelry also includes 10% to 20% jeweler crafting charges (ujrat).
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {currentCountryConfig.code === 'IN' && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
+            <div className="flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-950 dark:text-amber-100">
+                  Notice: Converted International Spot vs. India Domestic Bullion (IBJA / MCX)
+                </p>
+                <p className="leading-relaxed">
+                  These rates reflect international spot bullion converted at interbank exchange rates and exclude Indian import duties (6% basic customs duty) and 3% Goods and Services Tax (GST). Domestic retail prices published by IBJA will reflect these statutory additions.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Responsive Horizontally Scrollable Table with Fixed Row Integrity */}
         <div className="overflow-x-auto w-full max-w-full">
@@ -2126,9 +2159,9 @@ export default function PreciousMetals() {
                 <th scope="col" className="py-3 px-4 whitespace-nowrap">Metal / Denomination</th>
                 <th scope="col" className="py-3 px-4 whitespace-nowrap">Weight</th>
                 <th scope="col" className="py-3 px-4 whitespace-nowrap">Purity</th>
-                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">Rate ({selectedCurrency})</th>
+                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">Converted Spot ({selectedCurrency})</th>
                 <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">USD Ref</th>
-                <th scope="col" className="py-3 px-4 text-center whitespace-nowrap">Market Type</th>
+                <th scope="col" className="py-3 px-4 text-center whitespace-nowrap">Pricing Basis</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800/60 text-xs">
@@ -2261,6 +2294,20 @@ export default function PreciousMetals() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {selectedCountry === 'PK' && calcMetal === 'XAU' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const sarafaRatePerOz = (432500 / 0.375).toFixed(2);
+                    setManualSpotPrice(sarafaRatePerOz);
+                    setIsManualSpotOverride(true);
+                  }}
+                  title="Apply All Pakistan Sarafa Gems and Jewellers Association (APGJSA) physical bullion rate"
+                  className="px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold cursor-pointer transition-colors text-xs"
+                >
+                  Apply Sarafa Market (~₨ 432.5k/tola)
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -3009,6 +3056,9 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
         </p>
         <p className="leading-relaxed">
           <strong>Dealer Cash Payout Disclosure:</strong> Bullion spot benchmarks do not guarantee retail dealer redemption payouts. Physical transactions are subject to dealer bid-ask margins, assay verification tests, melted slag deductions, minting premiums, and local sales tax/VAT. Actual payouts will differ from pure wholesale melt value.
+        </p>
+        <p className="leading-relaxed">
+          <strong>Local Bullion Market vs. Converted Spot Notice (Pakistan Sarafa, India MCX, UAE):</strong> Converted rates represent pure international spot prices multiplied by interbank foreign exchange rates. In domestic physical markets such as Pakistan (Karachi/Lahore Sarafa under APGJSA), physical bullion trades at a domestic cash premium (typically +1.0% to +2.5% higher, currently around Rs. 432,500 per tola for 24K) due to physical delivery logistics, open-market foreign exchange spreads, and local demand. In India, domestic market rates on MCX/IBJA include 6% customs duty and 3% GST. These rates must not be confused with physical jeweler retail prices, which also include craftsmanship and making charges (ujrat).
         </p>
         <p className="leading-relaxed">
           <strong>Unit Conversions:</strong> 1 Troy Ounce = exactly 31.1034768 grams. 1 Tola = exactly 180 grains = 11.6638038 grams (exactly 3/8 or 0.375 Troy Ounce). 1 Kilogram = 1,000 grams.
