@@ -151,8 +151,8 @@ export interface MetalPriceData {
   priceUsdPerTroyOz: number;
   change24hUsd: number;
   change24hPercent: number;
-  high24hUsd: number;
-  low24hUsd: number;
+  high24hUsd?: number | null;
+  low24hUsd?: number | null;
   updatedAt: string;
   timestampMs: number;
   retrievedAt: string;
@@ -604,8 +604,8 @@ export async function fetchMetalPrice(
       priceUsdPerTroyOz: rawPrice,
       change24hUsd: changeUsd,
       change24hPercent: changePct,
-      high24hUsd: rawPrice * 1.008,
-      low24hUsd: rawPrice * 0.992,
+      high24hUsd: null,
+      low24hUsd: null,
       updatedAt: new Date(validTimestamp).toISOString(),
       timestampMs: validTimestamp,
       retrievedAt: new Date(now).toISOString(),
@@ -628,8 +628,8 @@ export async function fetchMetalPrice(
       priceUsdPerTroyOz: fallbackPrice,
       change24hUsd: 0,
       change24hPercent: 0,
-      high24hUsd: fallbackPrice * 1.008,
-      low24hUsd: fallbackPrice * 0.992,
+      high24hUsd: null,
+      low24hUsd: null,
       updatedAt: INITIAL_UPDATED_AT,
       timestampMs: INITIAL_TIMESTAMP_MS,
       retrievedAt: new Date(now).toISOString(),
@@ -818,8 +818,8 @@ function buildInitialMetalPrices(): Record<MetalCode, MetalPriceData> {
       priceUsdPerTroyOz: fallbackPrice,
       change24hUsd: 0,
       change24hPercent: 0,
-      high24hUsd: fallbackPrice * 1.008,
-      low24hUsd: fallbackPrice * 0.992,
+      high24hUsd: null,
+      low24hUsd: null,
       updatedAt: INITIAL_UPDATED_AT,
       timestampMs: INITIAL_TIMESTAMP_MS,
       retrievedAt: INITIAL_UPDATED_AT,
@@ -1792,9 +1792,28 @@ export default function PreciousMetals() {
                 </div>
                 <div className="flex items-center justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
                   <span>per {UNIT_LABELS[selectedUnit].short}</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
-                    <TrendingUp className="w-3.5 h-3.5" /> +0.00%
-                  </span>
+                  {mData?.change24hPercent && mData.change24hPercent !== 0 ? (
+                    <span
+                      className={`font-semibold flex items-center gap-0.5 ${
+                        mData.change24hPercent > 0
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-rose-600 dark:text-rose-400'
+                      }`}
+                    >
+                      {mData.change24hPercent > 0 ? (
+                        <TrendingUp className="w-3.5 h-3.5" />
+                      ) : (
+                        <TrendingDown className="w-3.5 h-3.5" />
+                      )}
+                      {mData.change24hPercent > 0
+                        ? `+${mData.change24hPercent.toFixed(2)}%`
+                        : `${mData.change24hPercent.toFixed(2)}%`}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">
+                      Indicative Spot
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
@@ -2012,15 +2031,19 @@ export default function PreciousMetals() {
 
               <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
                 <span className="text-slate-500 dark:text-slate-400">24-Hour Range</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono">
-                  {formatCurrencyValue(
-                    convertPriceUnit(convertCurrency(activeMetalData.low24hUsd, selectedCurrency, fxRates), selectedUnit),
-                    selectedCurrency
-                  )}{' '}
-                  -{' '}
-                  {formatCurrencyValue(
-                    convertPriceUnit(convertCurrency(activeMetalData.high24hUsd, selectedCurrency, fxRates), selectedUnit),
-                    selectedCurrency
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono text-xs">
+                  {activeMetalData.low24hUsd != null && activeMetalData.high24hUsd != null ? (
+                    `${formatCurrencyValue(
+                      convertPriceUnit(convertCurrency(activeMetalData.low24hUsd, selectedCurrency, fxRates), selectedUnit),
+                      selectedCurrency
+                    )} - ${formatCurrencyValue(
+                      convertPriceUnit(convertCurrency(activeMetalData.high24hUsd, selectedCurrency, fxRates), selectedUnit),
+                      selectedCurrency
+                    )}`
+                  ) : (
+                    <span className="text-slate-400 font-sans font-normal text-[11px]">
+                      Not Reported by Spot Feed
+                    </span>
                   )}
                 </span>
               </div>
@@ -2057,9 +2080,14 @@ export default function PreciousMetals() {
 
           <div className="mt-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-blue-900 dark:text-blue-200 text-xs flex items-start gap-3">
             <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <p className="leading-relaxed">
-              Quoted rates represent international spot bullion contracts traded without physical delivery surcharges. Local retail coins, minted wafers, and jewelry include dealer premiums.
-            </p>
+            <div className="space-y-1">
+              <p className="font-semibold text-blue-950 dark:text-blue-100">
+                Indicative Spot Reference &amp; Cash Payout Notice:
+              </p>
+              <p className="leading-relaxed">
+                Quoted rates represent unallocated wholesale spot bullion reference benchmarks (London OTC fix / public market data) converted at mid-market FX rates. Actual physical dealer payouts, retail coin premiums, jewelry buyback offers, assay refining deductions, and pawnbroker cash purchases will differ. Use the Dealer Spread &amp; Cash Payout Modeling tool below to calculate net proceeds based on specific dealer discount tiers and refining fees.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -2975,6 +3003,12 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
         </h4>
         <p className="leading-relaxed">
           Precious metals spot rates (XAU, XAG, XPT, XPD) are derived from independent public financial feeds (Gold API — Spot Reference) and converted via FX Reference Rates (ExchangeRate-API). All mathematical calculations execute locally inside your browser for zero latency and privacy protection.
+        </p>
+        <p className="leading-relaxed">
+          <strong>Market-Data Provenance &amp; Instrument Clarification:</strong> Spot rates (XAU, XAG, XPT, XPD) reflect unallocated institutional bullion benchmarks sourced from public financial feeds (Gold API). Historical price charts represent front-month exchange futures contracts (COMEX/NYMEX via Yahoo Finance) and reflect cost-of-carry contango/backwardation spreads. Futures quotes must not be conflated with physical cash settlement.
+        </p>
+        <p className="leading-relaxed">
+          <strong>Dealer Cash Payout Disclosure:</strong> Bullion spot benchmarks do not guarantee retail dealer redemption payouts. Physical transactions are subject to dealer bid-ask margins, assay verification tests, melted slag deductions, minting premiums, and local sales tax/VAT. Actual payouts will differ from pure wholesale melt value.
         </p>
         <p className="leading-relaxed">
           <strong>Unit Conversions:</strong> 1 Troy Ounce = exactly 31.1034768 grams. 1 Tola = exactly 180 grains = 11.6638038 grams (exactly 3/8 or 0.375 Troy Ounce). 1 Kilogram = 1,000 grams.

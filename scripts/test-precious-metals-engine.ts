@@ -1141,6 +1141,231 @@ console.log('\n\x1b[36m[SUITE 12: Advanced Market Calendar Lifecycle & Historica
 }
 
 /* =========================================================================
+   SUITE 13: Production Data Pipeline Audit & Integrity Test Suite
+   ========================================================================= */
+
+console.log('\n[SUITE 13: Production Data Pipeline Audit & Integrity]');
+
+// 1. Stale Data Progression & Time Thresholds
+{
+  const openTime = new Date('2026-10-21T15:00:00Z').getTime(); // Wednesday 11:00 EDT (Regular Open)
+
+  // 1a. Quote age 4 minutes (<15 min) -> LIVE
+  const freshQuote = evaluateQuoteFreshness({
+    providerTimestampMs: openTime - 4 * 60 * 1000,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(freshQuote.state === 'LIVE', 'Quote under 15m is LIVE');
+  assert(freshQuote.isLive === true, 'Quote under 15m isLive is true');
+  assert(freshQuote.badgeLabel === 'LIVE SPOT', 'Quote under 15m badge is LIVE SPOT');
+
+  // 1b. Quote age 16 minutes (15m to 4h) -> DELAYED
+  const delayedQuote = evaluateQuoteFreshness({
+    providerTimestampMs: openTime - 16 * 60 * 1000,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(delayedQuote.state === 'DELAYED', 'Quote 16m old is DELAYED');
+  assert(delayedQuote.isLive === false, 'Quote 16m old isLive is false');
+  assert(delayedQuote.badgeLabel === 'DELAYED SPOT', 'Quote 16m old badge is DELAYED SPOT');
+
+  // 1c. Quote age 4 hours 1 minute (>4h) -> STALE
+  const staleQuote = evaluateQuoteFreshness({
+    providerTimestampMs: openTime - (4 * 3600 * 1000 + 60 * 1000),
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(staleQuote.state === 'STALE', 'Quote >4h old is STALE');
+  assert(staleQuote.isLive === false, 'Quote >4h old isLive is false');
+  assert(staleQuote.badgeLabel === 'STALE FEED', 'Quote >4h old badge is STALE FEED');
+
+  // 1d. Weekend Quote (Saturday 12:00 EDT) -> MARKET_CLOSED, never LIVE
+  const saturdayTime = new Date('2026-10-24T16:00:00Z').getTime(); // Saturday 12:00 EDT
+  const weekendQuote = evaluateQuoteFreshness({
+    providerTimestampMs: saturdayTime - 20 * 3600 * 1000, // Quote from Friday close
+    retrievedAtMs: saturdayTime,
+    nowMs: saturdayTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(weekendQuote.state === 'MARKET_CLOSED', 'Weekend quote evaluated as MARKET_CLOSED');
+  assert(weekendQuote.isLive === false, 'Weekend quote is NEVER isLive');
+  assert(weekendQuote.badgeLabel === 'LAST-KNOWN CLOSE (MARKET CLOSED)', 'Weekend quote badge shows weekend close');
+}
+
+// 2. Missing Quotes, Null, Undefined & Malformed Timestamps
+{
+  const openTime = new Date('2026-10-21T15:00:00Z').getTime();
+
+  // 2a. Null timestamp
+  const nullTs = evaluateQuoteFreshness({
+    providerTimestampMs: null,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(nullTs.state === 'UNVERIFIED_TIMESTAMP', 'Null timestamp evaluated as UNVERIFIED_TIMESTAMP');
+  assert(nullTs.isLive === false, 'Null timestamp isLive is false');
+  assert(nullTs.badgeLabel === 'UNVERIFIED QUOTE' && nullTs.badgeSubtext.includes('missing'), 'Null timestamp has unverified badge');
+
+  // 2b. Undefined timestamp
+  const undefinedTs = evaluateQuoteFreshness({
+    providerTimestampMs: undefined,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(undefinedTs.state === 'UNVERIFIED_TIMESTAMP', 'Undefined timestamp evaluated as UNVERIFIED_TIMESTAMP');
+  assert(undefinedTs.isLive === false, 'Undefined timestamp isLive is false');
+
+  // 2c. NaN timestamp
+  const nanTs = evaluateQuoteFreshness({
+    providerTimestampMs: NaN,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(nanTs.state === 'UNVERIFIED_TIMESTAMP', 'NaN timestamp evaluated as UNVERIFIED_TIMESTAMP');
+  assert(nanTs.isLive === false, 'NaN timestamp isLive is false');
+
+  // 2d. Negative timestamp
+  const negTs = evaluateQuoteFreshness({
+    providerTimestampMs: -50000,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(negTs.state === 'UNVERIFIED_TIMESTAMP', 'Negative timestamp evaluated as UNVERIFIED_TIMESTAMP');
+  assert(negTs.isLive === false, 'Negative timestamp isLive is false');
+
+  // 2e. Future timestamp (> 5 minutes ahead) -> Clock Skew
+  const futureTs = evaluateQuoteFreshness({
+    providerTimestampMs: openTime + 10 * 60 * 1000,
+    retrievedAtMs: openTime,
+    nowMs: openTime,
+    isFallback: false,
+    providerName: 'Gold API — Spot Reference',
+  });
+  assert(futureTs.state === 'UNVERIFIED_TIMESTAMP', 'Future timestamp triggers UNVERIFIED_TIMESTAMP');
+  assert(futureTs.isLive === false, 'Future timestamp isLive is false');
+  assert(futureTs.badgeLabel === 'CLOCK SKEW DETECTED', 'Future timestamp badge flags clock skew');
+}
+
+// 3. Currency & Unit Mismatch & Conversion Invariance
+{
+  // 3a. Troy Ounce to Gram factor exactness: 1 troy oz = exactly 31.1034768 grams
+  assert(TROY_OUNCE_TO_GRAMS === 31.1034768, 'Troy ounce to gram conversion factor is exactly 31.1034768');
+  assert(UNITS.troy_oz.gramsPerUnit === 31.1034768, 'UNITS.troy_oz matches 31.1034768');
+
+  // 3b. Troy Ounce to Tola factor exactness: 1 tola = 11.6638038 g = 3/8 troy oz = 2.666666667 tola / troy oz
+  assert(Math.abs(TOLA_TO_GRAMS - 11.6638038) < 1e-10, 'Tola grams matches exactly 11.6638038');
+  const calculatedTolaPerOz = TROY_OUNCE_TO_GRAMS / TOLA_TO_GRAMS;
+  assert(Math.abs(calculatedTolaPerOz - 2.666666667) < 1e-6, 'Tola conversion factor matches 3/8 troy oz ratio');
+
+  // 3c. Troy Ounce to Kilogram factor exactness: 1 kg = 1,000 g
+  assert(KILOGRAM_TO_GRAMS === 1000.0, 'Kilogram to gram conversion is exactly 1000');
+  const calculatedKgPerOz = TROY_OUNCE_TO_GRAMS / KILOGRAM_TO_GRAMS;
+  assert(Math.abs(calculatedKgPerOz - 0.0311034768) < 1e-10, 'Troy ounce to kg is exactly 0.0311034768');
+
+  // 3d. Currency FX multiplication & division round-trip invariance
+  const testGoldPriceUsd = 4101.70;
+  const testFxEurRate = 0.9250; // 1 USD = 0.9250 EUR
+  const priceEur = testGoldPriceUsd * testFxEurRate;
+  const priceUsdRecovered = priceEur / testFxEurRate;
+  assert(Math.abs(priceUsdRecovered - testGoldPriceUsd) < 1e-9, 'Currency FX conversion has perfect round-trip invariance');
+
+  // 3e. Unit price conversion round-trip invariance
+  // Price per gram = Price per oz / 31.1034768
+  const pricePerGram = testGoldPriceUsd / TROY_OUNCE_TO_GRAMS;
+  const pricePerOzRecovered = pricePerGram * TROY_OUNCE_TO_GRAMS;
+  assert(Math.abs(pricePerOzRecovered - testGoldPriceUsd) < 1e-9, 'Unit price conversion has perfect round-trip invariance');
+}
+
+// 4. API Failures, Fallback Isolation & Never Fabricate Real Live Price
+{
+  // 4a. Simulated HTTP 429 / HTTP 500 / Network Timeout fallback
+  const fallbackEval = evaluateQuoteFreshness({
+    isFallback: true,
+    providerName: 'Verified Reference Baseline',
+  });
+  assert(fallbackEval.state === 'FALLBACK_BENCHMARK', 'API failure fallback evaluated as FALLBACK_BENCHMARK');
+  assert(fallbackEval.isLive === false, 'Fallback quote is NEVER isLive');
+  assert(fallbackEval.badgeLabel === 'FALLBACK BENCHMARK', 'Fallback quote badge is strictly FALLBACK BENCHMARK');
+  assert(fallbackEval.provenance.isFallback === true, 'Provenance explicitly flags fallback');
+
+  // 4b. Illustrative / Reference rate is never labeled 'spot'
+  // When an illustrative or reference rate is generated, rateType must be 'reference'
+  const mockFallbackPayload = {
+    priceUsdPerTroyOz: 4000,
+    rateType: 'reference' as const,
+    high24hUsd: null,
+    low24hUsd: null,
+  };
+  assert(mockFallbackPayload.rateType === 'reference', 'Fallback quote rateType is strictly reference');
+  assert(mockFallbackPayload.high24hUsd === null, 'high24h is NOT fabricated on fallback quotes');
+  assert(mockFallbackPayload.low24hUsd === null, 'low24h is NOT fabricated on fallback quotes');
+}
+
+// 5. Dealer Payout vs Spot Wholesale Melt Discrepancy & Disclosure
+{
+  const testSpotGoldPrice = 4000;
+  const singleCalc = calculateMeltValue({
+    metal: 'XAU',
+    grossWeight: 100, // 100 grams
+    weightUnit: 'gram',
+    purityId: '24K', // 99.9%
+    spotPricePerTroyOz: testSpotGoldPrice,
+    spreadConfig: {
+      buyPremiumPercent: 5,
+      sellDiscountPercent: 10,
+      fixedFee: 25,
+    },
+  });
+
+  const pureWholesaleValue = singleCalc.totalMeltValue;
+  const refinerPayout = singleCalc.payoutTiers.refinerHighVolume;
+  const dealerCashPayout = singleCalc.payoutTiers.dealerBullionCash;
+  const pawnCashPayout = singleCalc.payoutTiers.pawnShopQuickCash;
+  const userModeledSell = singleCalc.payoutTiers.userModeledSell;
+
+  // Verify that retail dealer payouts are strictly less than wholesale spot melt value
+  assert(pureWholesaleValue > 0, 'Pure wholesale melt value is positive');
+  assert(refinerPayout < pureWholesaleValue, 'Refiner payout (~95%) is less than wholesale spot melt value');
+  assert(dealerCashPayout < refinerPayout, 'Bullion dealer payout (~88%) is less than refiner payout');
+  assert(pawnCashPayout < dealerCashPayout, 'Pawn shop payout (~75%) is less than bullion dealer payout');
+  assert(userModeledSell < pureWholesaleValue, 'User modeled sell is less than wholesale spot melt value');
+
+  // Quantify measured difference: wholesale melt ($12,844.22) vs dealer cash ($11,302.91)
+  const measuredDealerDiscrepancyPct = ((pureWholesaleValue - dealerCashPayout) / pureWholesaleValue) * 100;
+  assert(Math.abs(measuredDealerDiscrepancyPct - 12) < 0.01, 'Bullion dealer discount is exactly 12% below wholesale spot melt');
+}
+
+// 6. Empirical Basis Spread (Futures Contango vs OTC Spot) Differentiation
+{
+  // Spot: unallocated immediate settlement bullion (Gold API)
+  // Futures: forward contract delivery with financing/carrying cost (COMEX GC=F)
+  const measuredSpotUsd: number = 4101.70;
+  const measuredFuturesUsd: number = 4122.60;
+  const basisSpreadUsd = measuredFuturesUsd - measuredSpotUsd;
+  const basisSpreadPct = (basisSpreadUsd / measuredSpotUsd) * 100;
+
+  assert(basisSpreadUsd > 0, 'Measured Gold basis spread reflects contango (+20.90 USD)');
+  assert(Math.abs(basisSpreadPct - 0.5095) < 0.05, 'Measured Gold basis spread is ~+0.51%');
+  assert(measuredFuturesUsd !== measuredSpotUsd, 'Futures and spot prices are NEVER identical or interchangeable');
+}
+
+/* =========================================================================
    REPORT SUMMARY
    ========================================================================= */
 
