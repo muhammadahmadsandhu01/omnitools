@@ -154,7 +154,8 @@ export function clampScore(value: number): number {
 }
 
 export interface ReliabilityReport {
-  score: number;
+  status: 'ready' | 'unavailable';
+  score: number | null;
   version: number | null;
   warnings: string[];
   recommendedPrintSizeCm: string;
@@ -168,6 +169,7 @@ export function getReliabilityReport({
   inverted,
   logo,
   logoSize,
+  isValidPayload = true,
 }: {
   bytes: number;
   level: ErrorLevel;
@@ -176,7 +178,18 @@ export function getReliabilityReport({
   inverted: boolean;
   logo: boolean;
   logoSize: number;
+  isValidPayload?: boolean;
 }): ReliabilityReport {
+  if (!isValidPayload || bytes <= 0) {
+    return {
+      status: 'unavailable',
+      score: null,
+      version: null,
+      warnings: [],
+      recommendedPrintSizeCm: '—',
+    };
+  }
+
   const version = estimateQrVersion(bytes, level);
   let score = 100;
   const warnings: string[] = [];
@@ -235,11 +248,275 @@ export function getReliabilityReport({
   }
 
   return {
+    status: 'ready',
     score: clampScore(score),
     version,
     warnings,
     recommendedPrintSizeCm: printSize,
   };
+}
+
+export function validateQrInput({
+  qrType,
+  url,
+  text,
+  wifiSsid,
+  wifiPass,
+  wifiEnc,
+  email,
+  phone,
+  sms,
+  contactFirst,
+  contactLast,
+  contactPhone,
+  contactEmail,
+  contactOrg,
+  contactUrl,
+  eventTitle,
+  eventStart,
+  eventEnd,
+  fgColor,
+  bgColor,
+  marginSize,
+}: {
+  qrType: QrType;
+  url: string;
+  text: string;
+  wifiSsid: string;
+  wifiPass: string;
+  wifiEnc: 'WPA' | 'WEP' | 'nopass';
+  email: string;
+  phone: string;
+  sms: string;
+  contactFirst: string;
+  contactLast: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactOrg: string;
+  contactUrl: string;
+  eventTitle: string;
+  eventStart: string;
+  eventEnd: string;
+  fgColor: string;
+  bgColor: string;
+  marginSize: number;
+}): string | null {
+  if (!validHex(fgColor) || !validHex(bgColor)) {
+    return 'Use valid 6-digit HEX colors (e.g. #000000).';
+  }
+  if (contrastRatio(fgColor, bgColor) < 3.0) {
+    return 'Foreground and background contrast ratio is too low (< 3.0:1) for readable scanning.';
+  }
+  if (marginSize < 0 || !Number.isInteger(marginSize)) {
+    return 'Quiet zone must be a non-negative integer of modules.';
+  }
+
+  if (qrType === 'url') {
+    const trimmed = url.trim();
+    if (!trimmed) return 'Enter a website URL to generate a QR code.';
+    try {
+      const parsed = new URL(trimmed);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return 'URL must use http:// or https:// protocol.';
+      }
+    } catch {
+      return 'Enter a valid website URL (e.g. https://example.com).';
+    }
+    return null;
+  }
+
+  if (qrType === 'text') {
+    if (!text.trim()) return 'Enter plain text content to generate a QR code.';
+    if (text.length > MAX_CONTENT_CHARS) {
+      return `Text exceeds maximum allowed length of ${MAX_CONTENT_CHARS} characters.`;
+    }
+    return null;
+  }
+
+  if (qrType === 'wifi') {
+    if (!wifiSsid.trim()) return 'Enter a Wi-Fi network name (SSID).';
+    if (/[\r\n]/.test(`${wifiSsid}${wifiPass}`)) {
+      return 'Wi-Fi network name and password cannot contain line breaks.';
+    }
+    if (wifiEnc !== 'nopass' && !wifiPass) {
+      return 'Enter a password for the secured Wi-Fi network.';
+    }
+    return null;
+  }
+
+  if (qrType === 'email') {
+    const trimmed = email.trim();
+    if (!trimmed) return 'Enter an email recipient address.';
+    if (/[\r\n]/.test(trimmed)) return 'Email address cannot contain line breaks.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      return 'Enter a valid email address (e.g. name@example.com).';
+    }
+    return null;
+  }
+
+  if (qrType === 'phone') {
+    const trimmed = phone.trim();
+    if (!trimmed) return 'Enter a phone number to dial.';
+    if (!/^[+*#0-9][+*#0-9xXpPwW\s().-]{2,}$/.test(trimmed)) {
+      return 'Enter a valid telephone number with digits and standard dial symbols (+, *, #).';
+    }
+    return null;
+  }
+
+  if (qrType === 'sms') {
+    const trimmed = sms.trim();
+    if (!trimmed) return 'Enter a recipient phone number for SMS.';
+    if (!/^[+*#0-9][+*#0-9xXpPwW\s().-]{2,}$/.test(trimmed)) {
+      return 'Enter a valid phone number for SMS.';
+    }
+    return null;
+  }
+
+  if (qrType === 'contact') {
+    if (!contactFirst.trim() && !contactLast.trim() && !contactPhone.trim() && !contactEmail.trim() && !contactOrg.trim()) {
+      return 'Add at least one contact field (name, phone, email, or organization).';
+    }
+    if (contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
+      return 'Enter a valid contact email address.';
+    }
+    if (contactUrl.trim()) {
+      try {
+        const parsed = new URL(contactUrl.trim());
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          return 'Contact website URL must use http:// or https://.';
+        }
+      } catch {
+        return 'Enter a valid contact website URL.';
+      }
+    }
+    return null;
+  }
+
+  if (qrType === 'event') {
+    if (!eventTitle.trim()) return 'Enter an event title to generate a QR code.';
+    if (!eventStart || !eventEnd) return 'Enter both event start and end dates and times.';
+    if (!toIcsDate(eventStart) || !toIcsDate(eventEnd)) return 'Enter valid event dates and times.';
+    if (new Date(eventEnd).getTime() <= new Date(eventStart).getTime()) {
+      return 'Event end time must be chronologically after the start time.';
+    }
+    return null;
+  }
+
+  return null;
+}
+
+export function buildQrPayload({
+  qrType,
+  url,
+  text,
+  wifiSsid,
+  wifiPass,
+  wifiEnc,
+  wifiHidden,
+  email,
+  emailSub,
+  emailBody,
+  phone,
+  sms,
+  smsBody,
+  contactFirst,
+  contactLast,
+  contactPhone,
+  contactEmail,
+  contactOrg,
+  contactUrl,
+  eventTitle,
+  eventLocation,
+  eventStart,
+  eventEnd,
+  eventDescription,
+}: {
+  qrType: QrType;
+  url: string;
+  text: string;
+  wifiSsid: string;
+  wifiPass: string;
+  wifiEnc: 'WPA' | 'WEP' | 'nopass';
+  wifiHidden: boolean;
+  email: string;
+  emailSub: string;
+  emailBody: string;
+  phone: string;
+  sms: string;
+  smsBody: string;
+  contactFirst: string;
+  contactLast: string;
+  contactPhone: string;
+  contactEmail: string;
+  contactOrg: string;
+  contactUrl: string;
+  eventTitle: string;
+  eventLocation: string;
+  eventStart: string;
+  eventEnd: string;
+  eventDescription: string;
+}): string {
+  if (qrType === 'url') return canonicalizeUrl(url);
+  if (qrType === 'text') return text;
+
+  if (qrType === 'wifi') {
+    const type = wifiEnc === 'nopass' ? 'nopass' : wifiEnc;
+    const pass = wifiEnc === 'nopass' ? '' : escapeWifi(wifiPass);
+    return `WIFI:T:${type};S:${escapeWifi(wifiSsid)};P:${pass};H:${wifiHidden ? 'true' : 'false'};;`;
+  }
+
+  if (qrType === 'email') {
+    const address = email.trim();
+    const params: string[] = [];
+    if (emailSub) params.push(`subject=${encodeURIComponent(emailSub)}`);
+    if (emailBody) params.push(`body=${encodeURIComponent(emailBody)}`);
+    return `mailto:${address}${params.length ? `?${params.join('&')}` : ''}`;
+  }
+
+  if (qrType === 'phone') {
+    return `tel:${normalizePhone(phone)}`;
+  }
+
+  if (qrType === 'sms') {
+    const number = normalizePhone(sms);
+    return `sms:${number}${smsBody ? `?body=${encodeURIComponent(smsBody)}` : ''}`;
+  }
+
+  if (qrType === 'contact') {
+    const fullName = `${contactFirst} ${contactLast}`.trim();
+    return [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      `N:${escapeVCard(contactLast)};${escapeVCard(contactFirst)};;;`,
+      `FN:${escapeVCard(fullName)}`,
+      contactPhone.trim() ? `TEL:${normalizePhone(contactPhone)}` : '',
+      contactEmail.trim() ? `EMAIL:${contactEmail.trim()}` : '',
+      contactOrg.trim() ? `ORG:${escapeVCard(contactOrg)}` : '',
+      contactUrl.trim() ? `URL:${canonicalizeUrl(contactUrl)}` : '',
+      'END:VCARD',
+    ].filter(Boolean).join('\r\n');
+  }
+
+  const start = toIcsDate(eventStart);
+  const end = toIcsDate(eventEnd);
+  const dtstamp = deterministicIcsStamp(eventStart, eventTitle);
+  const uidHash = hashString(`${eventTitle}|${eventLocation}|${eventStart}|${eventEnd}|${eventDescription}`);
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//OmniTools//QR Generator//EN',
+    'BEGIN:VEVENT',
+    `UID:${uidHash}@omnitools`,
+    `DTSTAMP:${dtstamp}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${escapeIcs(eventTitle)}`,
+    eventLocation.trim() ? `LOCATION:${escapeIcs(eventLocation)}` : '',
+    eventDescription.trim() ? `DESCRIPTION:${escapeIcs(eventDescription)}` : '',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].filter(Boolean).join('\r\n');
 }
 
 export function canonicalizeUrl(value: string): string {
@@ -331,13 +608,14 @@ export default function QrGenerator() {
   // Status & interactive UI states
   const [status, setStatus] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showReliability, setShowReliability] = useState(false);
   const [showDisclosures, setShowDisclosures] = useState(false);
 
-  // Verification state
+  // Verification state: idle | verifying | verified | mismatch | not_detected | unsupported | error
   const [verificationResult, setVerificationResult] = useState<{
-    status: 'idle' | 'verified' | 'mismatch' | 'not_detected' | 'unsupported' | 'error';
+    status: 'idle' | 'verifying' | 'verified' | 'mismatch' | 'not_detected' | 'unsupported' | 'error';
     message: string;
     snapshotHash?: string;
   }>({ status: 'idle', message: '' });
@@ -349,83 +627,99 @@ export default function QrGenerator() {
     () => false
   );
 
-  // Exact QR Payload Generator
-  const qrValue = useMemo(() => {
-    if (qrType === 'url') return canonicalizeUrl(url);
-    if (qrType === 'text') return text;
-
-    if (qrType === 'wifi') {
-      const type = wifiEnc === 'nopass' ? 'nopass' : wifiEnc;
-      const pass = wifiEnc === 'nopass' ? '' : escapeWifi(wifiPass);
-      return `WIFI:T:${type};S:${escapeWifi(wifiSsid)};P:${pass};H:${wifiHidden ? 'true' : 'false'};;`;
-    }
-
-    if (qrType === 'email') {
-      const address = email.trim();
-      const params: string[] = [];
-      if (emailSub) params.push(`subject=${encodeURIComponent(emailSub)}`);
-      if (emailBody) params.push(`body=${encodeURIComponent(emailBody)}`);
-      return `mailto:${address}${params.length ? `?${params.join('&')}` : ''}`;
-    }
-
-    if (qrType === 'phone') {
-      return `tel:${normalizePhone(phone)}`;
-    }
-
-    if (qrType === 'sms') {
-      const number = normalizePhone(sms);
-      return `sms:${number}${smsBody ? `?body=${encodeURIComponent(smsBody)}` : ''}`;
-    }
-
-    if (qrType === 'contact') {
-      const fullName = `${contactFirst} ${contactLast}`.trim();
-      return [
-        'BEGIN:VCARD',
-        'VERSION:3.0',
-        `N:${escapeVCard(contactLast)};${escapeVCard(contactFirst)};;;`,
-        `FN:${escapeVCard(fullName)}`,
-        contactPhone.trim() ? `TEL:${normalizePhone(contactPhone)}` : '',
-        contactEmail.trim() ? `EMAIL:${contactEmail.trim()}` : '',
-        contactOrg.trim() ? `ORG:${escapeVCard(contactOrg)}` : '',
-        contactUrl.trim() ? `URL:${canonicalizeUrl(contactUrl)}` : '',
-        'END:VCARD',
-      ].filter(Boolean).join('\r\n');
-    }
-
-    const start = toIcsDate(eventStart);
-    const end = toIcsDate(eventEnd);
-    const dtstamp = deterministicIcsStamp(eventStart, eventTitle);
-    const uidHash = hashString(`${eventTitle}|${eventLocation}|${eventStart}|${eventEnd}|${eventDescription}`);
-
-    return [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//OmniTools//QR Generator//EN',
-      'BEGIN:VEVENT',
-      `UID:${uidHash}@omnitools`,
-      `DTSTAMP:${dtstamp}`,
-      `DTSTART:${start}`,
-      `DTEND:${end}`,
-      `SUMMARY:${escapeIcs(eventTitle)}`,
-      eventLocation.trim() ? `LOCATION:${escapeIcs(eventLocation)}` : '',
-      eventDescription.trim() ? `DESCRIPTION:${escapeIcs(eventDescription)}` : '',
-      'END:VEVENT',
-      'END:VCALENDAR',
-    ].filter(Boolean).join('\r\n');
+  // 1. Comprehensive Input Validation
+  const inputValidationError = useMemo(() => {
+    return validateQrInput({
+      qrType,
+      url,
+      text,
+      wifiSsid,
+      wifiPass,
+      wifiEnc,
+      email,
+      phone,
+      sms,
+      contactFirst,
+      contactLast,
+      contactPhone,
+      contactEmail,
+      contactOrg,
+      contactUrl,
+      eventTitle,
+      eventStart,
+      eventEnd,
+      fgColor,
+      bgColor,
+      marginSize,
+    });
   }, [
+    qrType, url, text, wifiSsid, wifiPass, wifiEnc,
+    email, phone, sms,
+    contactFirst, contactLast, contactPhone, contactEmail, contactOrg, contactUrl,
+    eventTitle, eventStart, eventEnd,
+    fgColor, bgColor, marginSize,
+  ]);
+
+  // 2. Exact QR Payload Generator — only builds when inputs are strictly valid!
+  const qrValue = useMemo(() => {
+    if (inputValidationError) return '';
+    return buildQrPayload({
+      qrType,
+      url,
+      text,
+      wifiSsid,
+      wifiPass,
+      wifiEnc,
+      wifiHidden,
+      email,
+      emailSub,
+      emailBody,
+      phone,
+      sms,
+      smsBody,
+      contactFirst,
+      contactLast,
+      contactPhone,
+      contactEmail,
+      contactOrg,
+      contactUrl,
+      eventTitle,
+      eventLocation,
+      eventStart,
+      eventEnd,
+      eventDescription,
+    });
+  }, [
+    inputValidationError,
     qrType, url, text, wifiSsid, wifiPass, wifiEnc, wifiHidden,
     email, emailSub, emailBody, phone, sms, smsBody,
     contactFirst, contactLast, contactPhone, contactEmail, contactOrg, contactUrl,
-    eventTitle, eventLocation, eventStart, eventEnd, eventDescription
+    eventTitle, eventLocation, eventStart, eventEnd, eventDescription,
   ]);
 
-  const qrBytes = useMemo(() => utf8ByteLength(qrValue), [qrValue]);
-  const estimatedVersion = useMemo(() => estimateQrVersion(qrBytes, level), [qrBytes, level]);
+  const qrBytes = useMemo(() => (qrValue ? utf8ByteLength(qrValue) : 0), [qrValue]);
+  const estimatedVersion = useMemo(() => (qrBytes > 0 ? estimateQrVersion(qrBytes, level) : null), [qrBytes, level]);
   const scanContrast = useMemo(() => contrastRatio(fgColor, bgColor), [fgColor, bgColor]);
   const qrIsInverted = useMemo(() => isInverted(fgColor, bgColor), [fgColor, bgColor]);
   const hasLogo = Boolean(logoDataUrl);
   const logoWarning = hasLogo && level !== 'H';
 
+  // Capacity validation
+  const capacityError = useMemo(() => {
+    if (!qrValue) return null;
+    if (qrBytes > MAX_QR_BYTES) {
+      return `Payload is too large for QR generation (${qrBytes.toLocaleString()} UTF-8 bytes). Shorten content or reduce error correction.`;
+    }
+    if (!estimatedVersion) {
+      return 'Payload length exceeds the maximum QR byte capacity for this error correction level.';
+    }
+    return null;
+  }, [qrValue, qrBytes, estimatedVersion]);
+
+  const validationError = inputValidationError || capacityError;
+  const isReady = !validationError && Boolean(qrValue);
+
+  // Honest Scan Reliability Report (status: 'unavailable' and score: null when no QR is generated)
   const reliability = useMemo(() => getReliabilityReport({
     bytes: qrBytes,
     level,
@@ -434,126 +728,18 @@ export default function QrGenerator() {
     inverted: qrIsInverted,
     logo: hasLogo,
     logoSize,
-  }), [qrBytes, level, marginSize, scanContrast, qrIsInverted, hasLogo, logoSize]);
-
-  // Comprehensive Input Validation
-  const validationError = useMemo(() => {
-    if (!qrValue.trim()) return 'Enter content to generate a QR code.';
-    if (qrBytes > MAX_QR_BYTES) {
-      return `Payload is too large for QR generation (${qrBytes.toLocaleString()} UTF-8 bytes). Shorten content or reduce error correction.`;
-    }
-    if (!validHex(fgColor) || !validHex(bgColor)) {
-      return 'Use valid 6-digit HEX colors (e.g. #000000).';
-    }
-    if (scanContrast < 3.0) {
-      return 'Foreground and background contrast ratio is too low (< 3.0:1) for readable scanning.';
-    }
-    if (marginSize < 0 || !Number.isInteger(marginSize)) {
-      return 'Quiet zone must be a non-negative integer of modules.';
-    }
-
-    if (qrType === 'url') {
-      const trimmed = url.trim();
-      if (!trimmed) return 'Enter a website URL.';
-      try {
-        const parsed = new URL(trimmed);
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-          return 'URL must use http:// or https:// protocol.';
-        }
-      } catch {
-        return 'Enter a valid website URL (e.g. https://example.com).';
-      }
-    }
-
-    if (qrType === 'text') {
-      if (text.length > MAX_CONTENT_CHARS) {
-        return `Text exceeds maximum allowed length of ${MAX_CONTENT_CHARS} characters.`;
-      }
-    }
-
-    if (qrType === 'wifi') {
-      if (!wifiSsid.trim()) return 'Enter a Wi-Fi network name (SSID).';
-      if (/[\r\n]/.test(`${wifiSsid}${wifiPass}`)) {
-        return 'Wi-Fi network name and password cannot contain line breaks.';
-      }
-      if (wifiEnc !== 'nopass' && !wifiPass) {
-        return 'Enter a password for secured Wi-Fi network.';
-      }
-    }
-
-    if (qrType === 'email') {
-      const trimmed = email.trim();
-      if (!trimmed) return 'Enter an email address.';
-      if (/[\r\n]/.test(trimmed)) return 'Email address cannot contain line breaks.';
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        return 'Enter a valid email address (e.g. name@example.com).';
-      }
-    }
-
-    if (qrType === 'phone') {
-      const trimmed = phone.trim();
-      if (!trimmed) return 'Enter a phone number.';
-      if (!/^[+*#0-9][+*#0-9xXpPwW\s().-]{2,}$/.test(trimmed)) {
-        return 'Enter a valid phone number with digits and standard dial symbols (+, *, #).';
-      }
-    }
-
-    if (qrType === 'sms') {
-      const trimmed = sms.trim();
-      if (!trimmed) return 'Enter a recipient phone number.';
-      if (!/^[+*#0-9][+*#0-9xXpPwW\s().-]{2,}$/.test(trimmed)) {
-        return 'Enter a valid phone number for SMS.';
-      }
-    }
-
-    if (qrType === 'contact') {
-      if (!contactFirst.trim() && !contactLast.trim() && !contactPhone.trim() && !contactEmail.trim() && !contactOrg.trim()) {
-        return 'Add at least one contact field (name, phone, email, or organization).';
-      }
-      if (contactEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim())) {
-        return 'Enter a valid contact email address.';
-      }
-      if (contactUrl.trim()) {
-        try {
-          const parsed = new URL(contactUrl.trim());
-          if (!['http:', 'https:'].includes(parsed.protocol)) {
-            return 'Contact website URL must use http:// or https://.';
-          }
-        } catch {
-          return 'Enter a valid contact website URL.';
-        }
-      }
-    }
-
-    if (qrType === 'event') {
-      if (!eventTitle.trim()) return 'Enter an event title.';
-      if (!eventStart || !eventEnd) return 'Enter both event start and end times.';
-      if (!toIcsDate(eventStart) || !toIcsDate(eventEnd)) return 'Enter valid event dates and times.';
-      if (new Date(eventEnd).getTime() <= new Date(eventStart).getTime()) {
-        return 'Event end time must be chronologically after the start time.';
-      }
-    }
-
-    if (!estimatedVersion) {
-      return 'Payload length exceeds the maximum QR byte capacity for this error correction level.';
-    }
-
-    return '';
-  }, [
-    qrValue, qrBytes, scanContrast, fgColor, bgColor, marginSize, qrType, url, text,
-    wifiSsid, wifiPass, wifiEnc, email, phone, sms,
-    contactFirst, contactLast, contactPhone, contactEmail, contactOrg, contactUrl,
-    eventTitle, eventStart, eventEnd, estimatedVersion
-  ]);
+    isValidPayload: isReady,
+  }), [qrBytes, level, marginSize, scanContrast, qrIsInverted, hasLogo, logoSize, isReady]);
 
   // Current visual snapshot hash for invalidating stale verification
   const currentSnapshotHash = useMemo(() => {
+    if (!isReady) return '';
     return hashString(`${qrValue}|${fgColor}|${bgColor}|${level}|${marginSize}|${logoDataUrl || ''}|${logoSize}|${logoOpacity}`);
-  }, [qrValue, fgColor, bgColor, level, marginSize, logoDataUrl, logoSize, logoOpacity]);
+  }, [isReady, qrValue, fgColor, bgColor, level, marginSize, logoDataUrl, logoSize, logoOpacity]);
 
-  // Reactive verification: if snapshot changed, mark verification as needing refresh
+  // Reactive verification: if snapshot changed or not ready, drop verified state
   const activeVerification = useMemo(() => {
-    if (verificationResult.status === 'idle') return null;
+    if (!isReady || verificationResult.status === 'idle') return null;
     if (verificationResult.snapshotHash && verificationResult.snapshotHash !== currentSnapshotHash) {
       return {
         status: 'idle' as const,
@@ -561,7 +747,7 @@ export default function QrGenerator() {
       };
     }
     return verificationResult;
-  }, [verificationResult, currentSnapshotHash]);
+  }, [isReady, verificationResult, currentSnapshotHash]);
 
   const tabs = [
     { id: 'url', icon: Link2, label: 'URL' },
@@ -829,8 +1015,8 @@ export default function QrGenerator() {
   };
 
   const downloadQR = () => {
-    if (validationError) {
-      setStatus(validationError);
+    if (!isReady) {
+      setStatus(validationError || 'Generate a valid QR code before downloading.');
       return;
     }
     if (isExporting) return;
@@ -846,8 +1032,8 @@ export default function QrGenerator() {
   };
 
   const copyImage = async () => {
-    if (validationError) {
-      setStatus(validationError);
+    if (!isReady) {
+      setStatus(validationError || 'Generate a valid QR code before copying.');
       return;
     }
     const canvas = canvasRef.current;
@@ -870,8 +1056,8 @@ export default function QrGenerator() {
   };
 
   const copyData = async () => {
-    if (validationError) {
-      setStatus(validationError);
+    if (!isReady) {
+      setStatus(validationError || 'Generate a valid QR code before copying payload.');
       return;
     }
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
@@ -887,8 +1073,8 @@ export default function QrGenerator() {
   };
 
   const verifyGeneratedQr = async () => {
-    if (validationError) {
-      setVerificationResult({ status: 'error', message: validationError });
+    if (!isReady) {
+      setVerificationResult({ status: 'error', message: validationError || 'Generate a valid QR code before verifying payload.' });
       return;
     }
 
@@ -898,6 +1084,7 @@ export default function QrGenerator() {
       return;
     }
 
+    setIsVerifying(true);
     try {
       let decoded = '';
 
@@ -964,6 +1151,8 @@ export default function QrGenerator() {
         status: 'error',
         message: 'Scanner engine threw an execution error during verification attempt.',
       });
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -1591,26 +1780,34 @@ export default function QrGenerator() {
                   </span>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      reliability.score >= 85
+                      reliability.status === 'unavailable' || reliability.score === null
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        : reliability.score >= 85
                         ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300'
                         : reliability.score >= 65
                         ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
                         : 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
                     }`}
                   >
-                    {reliability.score}/100
+                    {reliability.status === 'unavailable' || reliability.score === null
+                      ? 'Available after generation'
+                      : `${reliability.score}/100`}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
                   <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 p-2.5 border border-blue-100/50 dark:border-slate-800">
                     <span className="text-slate-500 dark:text-slate-400 block">Payload Length</span>
-                    <p className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5">{qrBytes.toLocaleString()} bytes</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5">
+                      {isReady ? `${qrBytes.toLocaleString()} bytes` : '— (Not generated)'}
+                    </p>
                   </div>
                   <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 p-2.5 border border-blue-100/50 dark:border-slate-800">
                     <span className="text-slate-500 dark:text-slate-400 block">Estimated Version</span>
                     <p className="font-semibold text-slate-800 dark:text-slate-100 mt-0.5">
-                      {estimatedVersion ? `V${estimatedVersion} (${17 + estimatedVersion * 4}×${17 + estimatedVersion * 4})` : 'Over Capacity'}
+                      {isReady
+                        ? (estimatedVersion ? `V${estimatedVersion} (${17 + estimatedVersion * 4}×${17 + estimatedVersion * 4})` : 'Over Capacity')
+                        : '— (Not generated)'}
                     </p>
                   </div>
                   <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 p-2.5 border border-blue-100/50 dark:border-slate-800">
@@ -1627,7 +1824,7 @@ export default function QrGenerator() {
                   </div>
                 </div>
 
-                {reliability.warnings.length > 0 && (
+                {isReady && reliability.warnings.length > 0 && (
                   <div className="space-y-1.5 pt-1">
                     {reliability.warnings.map((warning) => (
                       <p key={warning} className="text-xs text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
@@ -1639,7 +1836,9 @@ export default function QrGenerator() {
                 )}
 
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 leading-relaxed border-t border-blue-200/50 dark:border-blue-900/40">
-                  Heuristic engineering score — not a guarantee of physical scanning. Recommended minimum print size for this density is <strong>{reliability.recommendedPrintSizeCm}</strong>.
+                  {isReady
+                    ? `Heuristic engineering score — not a guarantee of physical scanning. Recommended minimum print size for this density is ${reliability.recommendedPrintSizeCm}.`
+                    : 'Reliability metrics and print size guidelines will be calculated once valid QR payload data is entered.'}
                 </p>
               </div>
             )}
@@ -1655,11 +1854,13 @@ export default function QrGenerator() {
 
             {/* PREVIEW CONTAINER */}
             <div className="w-full max-w-[420px] aspect-square rounded-2xl p-4 bg-white border border-gray-200 dark:border-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
-              {validationError ? (
+              {!isReady ? (
                 <div className="flex flex-col items-center justify-center text-center p-6 space-y-2">
-                  <ShieldCheck className="w-10 h-10 text-amber-500" />
-                  <p className="text-sm font-bold text-slate-700">QR Preview Unavailable</p>
-                  <p className="text-xs text-slate-500 max-w-[280px]">{validationError}</p>
+                  <ShieldCheck className="w-10 h-10 text-slate-400" />
+                  <p className="text-sm font-bold text-slate-700">QR Code Not Generated</p>
+                  <p className="text-xs text-slate-500 max-w-[280px]">
+                    {validationError || 'Enter required fields to generate a readable QR code.'}
+                  </p>
                 </div>
               ) : (
                 <QRCodeCanvas
@@ -1691,7 +1892,7 @@ export default function QrGenerator() {
 
             {/* HIDDEN SVG ELEMENT FOR DIRECT VECTOR SERIALIZATION */}
             <div className="hidden" aria-hidden="true">
-              {!validationError && (
+              {isReady && (
                 <QRCodeSVG
                   ref={svgRef}
                   value={qrValue}
@@ -1719,29 +1920,64 @@ export default function QrGenerator() {
 
             {/* QUICK STATS BADGES */}
             <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs">
-              <span className={`px-2.5 py-1 rounded-full font-medium ${scanContrast >= 4.5 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
-                Contrast {scanContrast ? `${scanContrast.toFixed(1)}:1` : '—'}
-              </span>
-              <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
-                {qrBytes.toLocaleString()} bytes
-              </span>
-              {estimatedVersion && (
-                <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
-                  Est. V{estimatedVersion}
-                </span>
+              {!isReady ? (
+                <>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    QR Status: Not generated
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full font-medium ${scanContrast >= 4.5 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
+                    Palette Contrast {scanContrast ? `${scanContrast.toFixed(1)}:1` : '—'}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    Reliability: Available after generation
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                    Verification: Not performed
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 font-medium">
+                    QR Status: Ready
+                  </span>
+                  <span className={`px-2.5 py-1 rounded-full font-medium ${scanContrast >= 4.5 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
+                    Contrast {scanContrast ? `${scanContrast.toFixed(1)}:1` : '—'}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                    {qrBytes.toLocaleString()} bytes
+                  </span>
+                  {estimatedVersion && (
+                    <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                      Est. V{estimatedVersion}
+                    </span>
+                  )}
+                  {hasLogo && (
+                    <span className={`px-2.5 py-1 rounded-full font-medium ${logoWarning ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'}`}>
+                      {logoWarning ? 'Logo (H required)' : 'Logo Active'}
+                    </span>
+                  )}
+                  <span className={`px-2.5 py-1 rounded-full font-medium ${reliability.score !== null && reliability.score >= 85 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
+                    Reliability Estimate: {reliability.score !== null ? `${reliability.score}/100` : 'Available after generation'}
+                  </span>
+                  {activeVerification?.status === 'verified' ? (
+                    <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300 font-medium">
+                      Verification: Passed
+                    </span>
+                  ) : activeVerification?.status === 'mismatch' ? (
+                    <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300 font-medium">
+                      Verification: Failed
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium">
+                      Verification: Not verified
+                    </span>
+                  )}
+                </>
               )}
-              {hasLogo && (
-                <span className={`px-2.5 py-1 rounded-full font-medium ${logoWarning ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300'}`}>
-                  {logoWarning ? 'Logo (H required)' : 'Logo Active'}
-                </span>
-              )}
-              <span className={`px-2.5 py-1 rounded-full font-medium ${reliability.score >= 85 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
-                Reliability {reliability.score}/100
-              </span>
             </div>
 
             {/* WARNINGS */}
-            {logoWarning && (
+            {isReady && logoWarning && (
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-3 text-center">
                 A center logo replaces QR modules. High (H) error correction is strongly advised.
               </p>
@@ -1784,23 +2020,30 @@ export default function QrGenerator() {
               <button
                 type="button"
                 onClick={verifyGeneratedQr}
-                disabled={Boolean(validationError)}
+                disabled={!isReady || isVerifying}
                 title={
-                  isDetectorSupported
+                  !isReady
+                    ? 'Generate a valid QR code first to enable verification'
+                    : isDetectorSupported
                     ? 'Verify generated QR code payload using browser detector'
-                    : 'Built-in browser barcode detector unavailable in this engine'
+                    : 'Verify generated QR code payload using software scanner'
                 }
-                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
-                <ScanLine className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-                <span>Verify Payload</span>
+                {isVerifying ? (
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0 text-blue-600 dark:text-blue-400" />
+                ) : (
+                  <ScanLine className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                )}
+                <span>{isVerifying ? 'Verifying...' : 'Verify Payload'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={downloadQR}
-                disabled={Boolean(validationError) || isExporting}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                disabled={!isReady || isExporting}
+                title={!isReady ? 'Generate a valid QR code first to enable download' : `Download as ${exportFormat.toUpperCase()}`}
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 {isExporting ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Download className="w-4 h-4 shrink-0" />}
                 <span>Download {exportFormat.toUpperCase()}</span>
@@ -1809,8 +2052,9 @@ export default function QrGenerator() {
               <button
                 type="button"
                 onClick={copyImage}
-                disabled={Boolean(validationError)}
-                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                disabled={!isReady}
+                title={!isReady ? 'Generate a valid QR code first to enable image copying' : 'Copy PNG image to clipboard'}
+                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <Copy className="w-4 h-4 shrink-0" />
                 <span>Copy Image</span>
@@ -1819,8 +2063,9 @@ export default function QrGenerator() {
               <button
                 type="button"
                 onClick={copyData}
-                disabled={Boolean(validationError)}
-                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                disabled={!isReady}
+                title={!isReady ? 'Generate a valid QR code first to enable copying raw payload' : 'Copy raw payload text to clipboard'}
+                className="flex items-center justify-center gap-2 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 px-4 py-3 rounded-2xl font-semibold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <Copy className="w-4 h-4 shrink-0" />
                 <span>Copy Raw Data</span>
