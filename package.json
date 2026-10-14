@@ -11,7 +11,8 @@
     "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts",
     "test:password": "tsx scripts/test-password-generator.ts",
     "test:pdf": "tsx scripts/test-pdf-merge-split.ts",
-    "test:metals": "tsx scripts/test-precious-metals-engine.ts"
+    "test:metals": "tsx scripts/test-precious-metals-engine.ts",
+    "test:image-to-pdf": "tsx scripts/test-image-to-pdf.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

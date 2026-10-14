@@ -5,6 +5,21 @@ const nextConfig: NextConfig = {
     return [
       // 1. Specific legacy alias with category change (must precede generic /image/:slug)
       {
+        source: '/pdf/image-to-pdf',
+        destination: '/document/image-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/pdf/pdf-merge-split',
+        destination: '/document/pdf-merge-split',
+        permanent: true,
+      },
+      {
+        source: '/pdf',
+        destination: '/document',
+        permanent: true,
+      },
+      {
         source: '/image/image-to-pdf',
         destination: '/document/image-to-pdf',
         permanent: true,
