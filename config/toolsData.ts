@@ -165,12 +165,13 @@ export const tools: Tool[] = [
     slug: 'sip-calculator',
     categoryId: 'finance',
     description:
-      'Estimate potential SIP and mutual fund growth based on investment amount, duration, and expected return.',
+      'Calculate mutual fund SIP and lump-sum returns with annual step-up, inflation discounting, expense ratio drag, and Monte Carlo risk simulations.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SIP Calculator — Systematic Investment Plan Growth',
-    seoDescription: 'Estimate mutual fund SIP and lump-sum investment returns with annual step-up options, wealth gain breakdowns, and growth charts.',
-    relatedToolSlugs: ['compound-interest', 'crypto-converter', 'emi-calculator', 'precious-metals'],
+    seoTitle: 'SIP Calculator — Systematic Investment Plan & Mutual Fund Returns',
+    seoDescription:
+      'Calculate hypothetical SIP and lump-sum mutual fund returns with annual step-up, inflation-adjusted purchasing power, expense ratio fees, tax drag, and year-by-year schedule.',
+    relatedToolSlugs: ['compound-interest', 'emi-calculator', 'mortgage-calculator', 'crypto-converter', 'precious-metals'],
   },
 
   {

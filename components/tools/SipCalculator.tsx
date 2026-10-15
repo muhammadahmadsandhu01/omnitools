@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   Calculator,
@@ -12,6 +12,7 @@ import {
   FileText,
   Info,
   RotateCcw,
+  Share2,
   ShieldAlert,
   Sparkles,
   Target,
@@ -323,7 +324,9 @@ export function projectInvestment({
     }
 
     // Escalated contribution for this year (zero cumulative floating-point drift)
-    const currentYearContribution = baseRecurring * Math.pow(1 + annualStepUpDecimal, year - 1);
+    const currentYearContribution = stepUp > 0
+      ? Math.round(baseRecurring * Math.pow(1 + annualStepUpDecimal, year - 1) * 100) / 100
+      : baseRecurring;
 
     for (let p = 1; p <= periodsPerYear; p++) {
 
@@ -397,7 +400,9 @@ export function projectInvestment({
   const returnsPercent = futureValue > 0 ? clamp((netGain / futureValue) * 100, 0, 100) : 0;
   const multiple = totalInvested > 0 ? futureValue / totalInvested : 0;
   const endingAnnualContribution = mode === 'sip'
-    ? baseRecurring * Math.pow(1 + annualStepUpDecimal, Math.max(0, T - 1)) * periodsPerYear
+    ? (stepUp > 0
+        ? (Math.round(baseRecurring * Math.pow(1 + annualStepUpDecimal, Math.max(0, T - 1)) * 100) / 100)
+        : baseRecurring) * periodsPerYear
     : grossInitial;
 
   const overflow = !Number.isFinite(futureValue) || !Number.isFinite(totalInvested) || futureValue > 1e18;
@@ -1023,18 +1028,55 @@ export default function SipCalculator() {
   const [showSchedule, setShowSchedule] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [hoveredYear, setHoveredYear] = useState<number | null>(null);
+
+  // URL hash state hydration
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleHashChange = () => {
+      try {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#state=')) {
+          const rawJson = decodeURIComponent(atob(hash.slice(7)));
+          const data = JSON.parse(rawJson);
+          if (data && typeof data === 'object') {
+            if (data.m === 'sip' || data.m === 'lumpsum') setMode(data.m);
+            if (typeof data.c === 'string') {
+              const foundCurr = WORLD_CURRENCIES.find((item) => item.code === data.c);
+              if (foundCurr) setCurrency(foundCurr);
+            }
+            if (typeof data.p === 'string') setInitialInvestment(String(data.p));
+            if (typeof data.i === 'string') setInvestment(String(data.i));
+            if (typeof data.r === 'string') setRate(String(data.r));
+            if (typeof data.y === 'string') setYears(String(data.y));
+            if (typeof data.s === 'string') setStepUp(String(data.s));
+            if (typeof data.inf === 'string') setInflation(String(data.inf));
+            if (data.f === 'monthly' || data.f === 'quarterly' || data.f === 'yearly') setFrequency(data.f);
+            if (data.t === 'beginning' || data.t === 'end') setContributionTiming(data.t);
+          }
+        }
+      } catch {
+        // Ignore malformed URL state safely
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    const timer = setTimeout(handleHashChange, 0);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      clearTimeout(timer);
+    };
+  }, []);
 
   // Goal planner state
   const [goalAmount, setGoalAmount] = useState<string>('');
   const [showGoalPlanner, setShowGoalPlanner] = useState(false);
 
   // Monte Carlo state
-  const [monteCarloVolatility, setMonteCarloVolatility] = useState<string>('');
-  const [monteCarloResult, setMonteCarloResult] = useState<MonteCarloResult | null>(null);
+  const [monteCarloVolatility, setMonteCarloVolatility] = useState<string>('15');
   const [showMonteCarlo, setShowMonteCarlo] = useState(false);
 
-  // Monotonic async calculation ID
-  const activeCalcIdRef = useRef(0);
 
   // Input sanitization & validation
   const parsedInvestment = safeNumber(investment, 0);
@@ -1186,16 +1228,13 @@ export default function SipCalculator() {
     };
   }, [hasRequiredInputs, mode, calculations, parsedRate, parsedYears, rateBasis, annualFee, contributionFee, taxRate, inflation]);
 
-  // Monte Carlo simulation runner
-  const handleRunMonteCarlo = () => {
-    if (!hasRequiredInputs || !calculations) return;
-    const vol = safeNumber(monteCarloVolatility, 0);
-    if (vol <= 0) return;
+  // Monte Carlo stochastic simulation (calculated when section is open)
+  const monteCarloResult = useMemo(() => {
+    if (!showMonteCarlo || !hasRequiredInputs || !calculations) return null;
+    const vol = safeNumber(monteCarloVolatility || '15', 0);
+    if (vol <= 0) return null;
 
-    activeCalcIdRef.current++;
-    const currentId = activeCalcIdRef.current;
-
-    const res = runMonteCarloSimulations({
+    return runMonteCarloSimulations({
       mode,
       initialInvestment: calculations.initialInvestment,
       recurringContribution: calculations.recurringContribution,
@@ -1212,15 +1251,27 @@ export default function SipCalculator() {
       simulations: 3000,
       targetAmount: hasGoalInputs ? parsedGoal : null,
     });
-
-    if (activeCalcIdRef.current === currentId) {
-      setMonteCarloResult(res);
-    }
-  };
+  }, [
+    showMonteCarlo,
+    hasRequiredInputs,
+    calculations,
+    monteCarloVolatility,
+    mode,
+    parsedRate,
+    parsedYears,
+    frequency,
+    stepUp,
+    rateBasis,
+    contributionTiming,
+    annualFee,
+    contributionFee,
+    taxRate,
+    hasGoalInputs,
+    parsedGoal,
+  ]);
 
   // Reset handler (fresh clean state)
   const handleReset = () => {
-    activeCalcIdRef.current++;
     setMode('sip');
     setCurrency(DEFAULT_CURRENCY);
     setInitialInvestment('');
@@ -1242,8 +1293,7 @@ export default function SipCalculator() {
     setCopied(false);
     setGoalAmount('');
     setShowGoalPlanner(false);
-    setMonteCarloVolatility('');
-    setMonteCarloResult(null);
+    setMonteCarloVolatility('15');
     setShowMonteCarlo(false);
   };
 
@@ -1281,6 +1331,38 @@ export default function SipCalculator() {
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopied(false);
+    }
+  };
+
+  // Share calculation handler (URL-safe encoded non-sensitive params)
+  const handleShare = async () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stateObj: Record<string, string> = {
+        m: mode,
+        c: currency.code,
+        i: investment,
+        r: rate,
+        y: years,
+      };
+      if (initialInvestment) stateObj.p = initialInvestment;
+      if (stepUp) stateObj.s = stepUp;
+      if (inflation) stateObj.inf = inflation;
+      if (frequency !== 'monthly') stateObj.f = frequency;
+      if (contributionTiming !== 'beginning') stateObj.t = contributionTiming;
+
+      const encoded = btoa(encodeURIComponent(JSON.stringify(stateObj)));
+      window.location.hash = `state=${encoded}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}#state=${encoded}`;
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShareCopied(true);
+        window.setTimeout(() => setShareCopied(false), 2000);
+      } catch {
+        setShareCopied(true);
+      }
+    } catch {
+      setShareCopied(false);
     }
   };
 
@@ -1351,10 +1433,17 @@ export default function SipCalculator() {
     ? frequency === 'monthly' ? 'Monthly Contribution' : frequency === 'quarterly' ? 'Quarterly Contribution' : 'Yearly Contribution'
     : 'Lump Sum Investment Amount';
 
+  const QUICK_PRESETS = [
+    { label: 'Starter SIP', desc: '$100/mo · 12% · 10 Yrs', m: 'sip' as Mode, i: '100', r: '12', y: '10', s: '' },
+    { label: 'Wealth Builder', desc: '$500/mo · 12% · 15 Yrs', m: 'sip' as Mode, i: '500', r: '12', y: '15', s: '' },
+    { label: 'Aggressive Step-Up', desc: '$1,000/mo · 14% · 20 Yrs (5% Step-up)', m: 'sip' as Mode, i: '1000', r: '14', y: '20', s: '5' },
+    { label: 'One-Time Lump Sum', desc: '$25,000 · 10% · 10 Yrs', m: 'lumpsum' as Mode, i: '25000', r: '10', y: '10', s: '' },
+  ];
+
   return (
     <div className="flex flex-col gap-8 max-w-full">
-      {/* Mode Selection Tabs */}
-      <div className="flex justify-center">
+      {/* Mode Selection Tabs & Presets */}
+      <div className="flex flex-col items-center gap-4">
         <div
           role="tablist"
           aria-label="Investment Calculation Mode"
@@ -1390,6 +1479,32 @@ export default function SipCalculator() {
           >
             Lump Sum (One-Time)
           </button>
+        </div>
+
+        {/* Quick Example Presets */}
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+            Quick Illustrative Presets:
+          </span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {QUICK_PRESETS.map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => {
+                  setMode(p.m);
+                  setInvestment(p.i);
+                  setRate(p.r);
+                  setYears(p.y);
+                  setStepUp(p.s);
+                }}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 border border-gray-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              >
+                <span className="font-bold">{p.label}:</span>{' '}
+                <span className="text-slate-500 dark:text-slate-400">{p.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -1453,9 +1568,14 @@ export default function SipCalculator() {
 
           {/* Primary Investment Amount */}
           <div>
-            <label htmlFor={`${idPrefix}-investment`} className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              {investmentLabel}
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor={`${idPrefix}-investment`} className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                {investmentLabel}
+              </label>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                {investment.trim() !== '' ? formatCurrency(parsedInvestment, currency.code) : 'Enter amount'}
+              </span>
+            </div>
             <div className="flex items-stretch w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500 transition-all">
               <span className="shrink-0 flex items-center px-4 text-slate-500 dark:text-slate-400 font-semibold border-r border-gray-200 dark:border-slate-700 select-none">
                 {currency.symbol}
@@ -1473,6 +1593,23 @@ export default function SipCalculator() {
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setInvestment(e.target.value)}
                 className="min-w-0 flex-1 px-4 py-3 bg-transparent focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
+            </div>
+            <div className="mt-2.5 px-0.5">
+              <input
+                type="range"
+                aria-label={`${investmentLabel} slider`}
+                min={mode === 'sip' ? 50 : 1000}
+                max={mode === 'sip' ? 10000 : 250000}
+                step={mode === 'sip' ? 50 : 1000}
+                value={clamp(parsedInvestment || (mode === 'sip' ? 500 : 25000), mode === 'sip' ? 50 : 1000, mode === 'sip' ? 10000 : 250000)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setInvestment(e.target.value)}
+                className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 block focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              />
+              <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1 select-none">
+                <span>{currency.symbol}{mode === 'sip' ? '50' : '1,000'}</span>
+                <span className="text-center">{currency.symbol}{mode === 'sip' ? '5,000' : '125,000'}</span>
+                <span className="text-right">{currency.symbol}{mode === 'sip' ? '10,000+' : '250,000+'}</span>
+              </div>
             </div>
           </div>
 
@@ -1519,24 +1656,48 @@ export default function SipCalculator() {
             </>
           )}
 
-          {/* Expected Return Rate */}
+          {/* Expected Return Rate with sync slider */}
           <div>
-            <label htmlFor={`${idPrefix}-rate`} className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              Expected Return Rate (% P.A.)
-            </label>
-            <input
-              id={`${idPrefix}-rate`}
-              type="number"
-              inputMode="decimal"
-              autoComplete="off"
-              min="-99.99"
-              max="1000"
-              step="0.1"
-              value={rate}
-              placeholder="e.g. 12"
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setRate(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
-            />
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor={`${idPrefix}-rate`} className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Expected Return Rate (% P.A.)
+              </label>
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                {rate.trim() !== '' ? `${clamp(parsedRate, -99.99, 1000)}%` : 'Enter rate'}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <input
+                id={`${idPrefix}-rate`}
+                type="number"
+                inputMode="decimal"
+                autoComplete="off"
+                min="-99.99"
+                max="1000"
+                step="0.1"
+                value={rate}
+                placeholder="e.g. 12"
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setRate(e.target.value)}
+                className="w-24 sm:w-28 shrink-0 px-3.5 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white text-sm"
+              />
+              <div className="flex-1 min-w-0">
+                <input
+                  type="range"
+                  aria-label="Expected return rate slider"
+                  min="1"
+                  max="30"
+                  step="0.5"
+                  value={clamp(parsedRate || 12, 1, 30)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setRate(e.target.value)}
+                  className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-600 block focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+                />
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1.5 select-none px-0.5">
+                  <span>1%</span>
+                  <span className="text-center">15%</span>
+                  <span className="text-right">30%</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Time Period (Years) with sync slider */}
@@ -1721,22 +1882,31 @@ export default function SipCalculator() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-wrap sm:flex-nowrap gap-2.5 pt-2">
             <button
               type="button"
               onClick={handleReset}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 px-3.5 py-3 rounded-xl border border-gray-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4 shrink-0" />
               <span>Reset</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              disabled={!hasRequiredInputs}
+              className="flex-1 min-w-[95px] inline-flex items-center justify-center gap-1.5 px-3.5 py-3 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm font-semibold hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            >
+              {shareCopied ? <Check className="w-4 h-4 shrink-0 text-emerald-600" /> : <Share2 className="w-4 h-4 shrink-0" />}
+              <span>{shareCopied ? 'Link Copied!' : 'Share'}</span>
             </button>
             <button
               type="button"
               onClick={handleCopySummary}
               disabled={!hasRequiredInputs}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+              className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 px-3.5 py-3 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-semibold hover:bg-emerald-700 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 shrink-0" /> : <Copy className="w-4 h-4 shrink-0" />}
               <span>{copied ? 'Copied!' : 'Copy Summary'}</span>
             </button>
           </div>
@@ -1801,6 +1971,160 @@ export default function SipCalculator() {
                     className="bg-emerald-500 transition-all duration-300"
                   />
                 </div>
+              </div>
+
+              {/* Interactive SVG Compounding Wealth Area Chart */}
+              <div className="mb-6 bg-white/70 dark:bg-slate-900/60 p-4 rounded-2xl border border-emerald-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Compounding Growth Curve
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+                      Invested
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      Total Wealth
+                    </span>
+                  </div>
+                </div>
+
+                {/* SVG Area Chart */}
+                <div className="relative w-full">
+                  <svg
+                    viewBox="0 0 400 160"
+                    className="w-full h-36 overflow-visible select-none"
+                    role="img"
+                    aria-label={`Compounding growth chart over ${calculations.schedule.length} years`}
+                  >
+                    <defs>
+                      <linearGradient id={`${idPrefix}-wealthGrad`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
+                      </linearGradient>
+                      <linearGradient id={`${idPrefix}-investedGrad`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.05" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Grid lines */}
+                    <line x1="20" y1="20" x2="390" y2="20" stroke="currentColor" strokeOpacity="0.08" strokeDasharray="3 3" />
+                    <line x1="20" y1="75" x2="390" y2="75" stroke="currentColor" strokeOpacity="0.08" strokeDasharray="3 3" />
+                    <line x1="20" y1="130" x2="390" y2="130" stroke="currentColor" strokeOpacity="0.15" />
+
+                    {/* Paths generated from calculations.schedule */}
+                    {(() => {
+                      const sched = calculations.schedule;
+                      if (!sched.length) return null;
+                      const maxVal = Math.max(...sched.map((s) => s.endingBalance), 1);
+                      const chartLeft = 25;
+                      const chartRight = 385;
+                      const chartTop = 20;
+                      const chartBottom = 130;
+                      const chartHeight = chartBottom - chartTop;
+                      const chartWidth = chartRight - chartLeft;
+
+                      let cumulativeInvested = 0;
+                      const points = sched.map((row, idx) => {
+                        cumulativeInvested += row.contributions;
+                        const x = chartLeft + (idx / Math.max(sched.length - 1, 1)) * chartWidth;
+                        const yBal = chartBottom - (Math.max(0, row.endingBalance) / maxVal) * chartHeight;
+                        const yInv = chartBottom - (Math.max(0, cumulativeInvested) / maxVal) * chartHeight;
+                        return { x, yBal, yInv, row, cumulativeInvested };
+                      });
+
+                      const wealthPathD = `M ${points[0].x} ${points[0].yBal} ` + points.slice(1).map((p) => `L ${p.x} ${p.yBal}`).join(' ');
+                      const wealthAreaD = `${wealthPathD} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
+
+                      const investedPathD = `M ${points[0].x} ${points[0].yInv} ` + points.slice(1).map((p) => `L ${p.x} ${p.yInv}`).join(' ');
+                      const investedAreaD = `${investedPathD} L ${points[points.length - 1].x} ${chartBottom} L ${points[0].x} ${chartBottom} Z`;
+
+                      const activePoint = hoveredYear !== null ? points.find((p) => p.row.year === hoveredYear) || points[points.length - 1] : null;
+
+                      return (
+                        <>
+                          {/* Areas */}
+                          <path d={wealthAreaD} fill={`url(#${idPrefix}-wealthGrad)`} />
+                          <path d={investedAreaD} fill={`url(#${idPrefix}-investedGrad)`} />
+
+                          {/* Lines */}
+                          <path d={investedPathD} fill="none" stroke="#94a3b8" strokeWidth="2" strokeLinecap="round" />
+                          <path d={wealthPathD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+
+                          {/* Interactive invisible hover columns */}
+                          {points.map((p) => (
+                            <rect
+                              key={p.row.year}
+                              x={p.x - chartWidth / (points.length * 2)}
+                              y={chartTop}
+                              width={chartWidth / points.length}
+                              height={chartHeight + 20}
+                              fill="transparent"
+                              className="cursor-pointer"
+                              onMouseEnter={() => setHoveredYear(p.row.year)}
+                              onMouseLeave={() => setHoveredYear(null)}
+                            />
+                          ))}
+
+                          {/* Active hover indicator */}
+                          {activePoint && (
+                            <g>
+                              <line
+                                x1={activePoint.x}
+                                y1={chartTop}
+                                x2={activePoint.x}
+                                y2={chartBottom}
+                                stroke="#10b981"
+                                strokeWidth="1.5"
+                                strokeDasharray="2 2"
+                              />
+                              <circle cx={activePoint.x} cy={activePoint.yInv} r="3.5" fill="#94a3b8" stroke="#fff" strokeWidth="1.5" />
+                              <circle cx={activePoint.x} cy={activePoint.yBal} r="4.5" fill="#10b981" stroke="#fff" strokeWidth="1.5" />
+                            </g>
+                          )}
+
+                          {/* X Axis labels */}
+                          <text x={chartLeft} y={chartBottom + 16} fontSize="10" fill="currentColor" fillOpacity="0.5" textAnchor="start">
+                            Yr 1
+                          </text>
+                          {sched.length > 3 && (
+                            <text x={(chartLeft + chartRight) / 2} y={chartBottom + 16} fontSize="10" fill="currentColor" fillOpacity="0.5" textAnchor="middle">
+                              Yr {Math.round(sched.length / 2)}
+                            </text>
+                          )}
+                          <text x={chartRight} y={chartBottom + 16} fontSize="10" fill="currentColor" fillOpacity="0.5" textAnchor="end">
+                            Yr {sched.length}
+                          </text>
+                        </>
+                      );
+                    })()}
+                  </svg>
+                </div>
+
+                {/* Scrubber Tooltip Summary */}
+                {hoveredYear !== null && calculations.schedule[hoveredYear - 1] && (
+                  <div className="mt-2 pt-2 border-t border-emerald-500/10 flex justify-between items-center text-xs animate-fadeIn">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Year {hoveredYear} Horizon:
+                    </span>
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Invested:{' '}
+                      <strong className="text-slate-900 dark:text-white">
+                        {formatCurrency(
+                          calculations.schedule.slice(0, hoveredYear).reduce((acc, r) => acc + r.contributions, 0),
+                          currency.code
+                        )}
+                      </strong>{' '}
+                      · Value:{' '}
+                      <strong className="text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(calculations.schedule[hoveredYear - 1].endingBalance, currency.code)}
+                      </strong>
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Detailed Accounting Breakdown */}
@@ -1992,19 +2316,13 @@ export default function SipCalculator() {
                   placeholder="e.g. 15"
                   onChange={(e: ChangeEvent<HTMLInputElement>) => {
                     setMonteCarloVolatility(e.target.value);
-                    setMonteCarloResult(null);
                   }}
                   className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400"
                 />
               </div>
-              <button
-                type="button"
-                disabled={!hasRequiredInputs || safeNumber(monteCarloVolatility, 0) <= 0}
-                onClick={handleRunMonteCarlo}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 shadow-xs"
-              >
-                Run 3,000 Simulations
-              </button>
+              <div className="flex items-center px-4 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-xs font-bold text-purple-700 dark:text-purple-300">
+                Live 3,000 Paths Calculated
+              </div>
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400">

@@ -14,7 +14,8 @@
     "test:metals": "tsx scripts/test-precious-metals-engine.ts",
     "test:image-to-pdf": "tsx scripts/test-image-to-pdf.ts",
     "test:qr": "tsx scripts/test-qr-generator.ts",
-    "test:regex": "tsx scripts/test-regex-tester.ts"
+    "test:regex": "tsx scripts/test-regex-tester.ts",
+    "test:sip": "tsx scripts/test-sip-calculator.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
