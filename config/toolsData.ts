@@ -239,12 +239,13 @@ export const tools: Tool[] = [
     slug: 'svg-optimizer',
     categoryId: 'developer',
     description:
-      'Optimize SVG markup by cleaning unnecessary data and reducing file size.',
+      'Optimize SVG markup by stripping redundant editor metadata, formatting path coordinates, collapsing empty groups, and reducing file size directly in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SVG Optimizer & Cleaner',
-    seoDescription: 'Optimize SVG markup by stripping redundant metadata, formatting coordinates, and reducing file size directly in your browser.',
-    relatedToolSlugs: ['image-compressor', 'webp-to-jpg-png', 'json-formatter', 'base64-encoder'],
+    seoTitle: 'SVG Optimizer & Cleaner — Compress & Minify Vector Graphics Online',
+    seoDescription:
+      'Free online SVG optimizer and cleaner. Strip redundant metadata, minify coordinates, remove unused defs, and reduce file size with local in-browser processing (no server uploads).',
+    relatedToolSlugs: ['image-compressor', 'webp-to-jpg-png', 'sql-formatter', 'json-formatter', 'base64-encoder'],
   },
 
   {

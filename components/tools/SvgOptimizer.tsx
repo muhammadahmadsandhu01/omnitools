@@ -739,9 +739,11 @@ export const sanitizeSvgForPreview = (rawSvg: string): string => {
     }
     const root = doc.documentElement;
 
-    const dangerousTags = ['script', 'foreignobject', 'iframe', 'object', 'embed', 'applet', 'meta', 'link', 'audio', 'video'];
-    dangerousTags.forEach((tag) => {
-      root.querySelectorAll(tag).forEach((el) => el.remove());
+    const dangerousTagSet = new Set(['script', 'foreignobject', 'iframe', 'object', 'embed', 'applet', 'meta', 'link', 'audio', 'video', 'set', 'handler', 'listener']);
+    Array.from(root.querySelectorAll('*')).forEach((el) => {
+      if (dangerousTagSet.has(el.localName.toLowerCase())) {
+        el.remove();
+      }
     });
 
     // INSPECT ROOT <svg> AND ALL DESCENDANTS
@@ -757,12 +759,26 @@ export const sanitizeSvgForPreview = (rawSvg: string): string => {
           return;
         }
 
+        // Neutralize target attributes that could attempt parent navigation
+        if (name === 'target') {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
+        // Neutralize SMIL attribute injection targeting event handlers or links
+        if (name === 'attributename' && (val.startsWith('on') || val.includes('href'))) {
+          el.removeAttribute(attr.name);
+          return;
+        }
+
         if (name === 'href' || name === 'xlink:href' || name === 'src' || name === 'action') {
           if (
             val.startsWith('javascript:') ||
             val.startsWith('vbscript:') ||
             val.startsWith('data:text/html') ||
-            val.startsWith('data:text/javascript')
+            val.startsWith('data:text/javascript') ||
+            val.startsWith('http://') ||
+            val.startsWith('https://')
           ) {
             el.removeAttribute(attr.name);
             return;
@@ -849,13 +865,14 @@ const convertSimpleShapesToPaths = (root: Element, applied: string[]) => {
     }
 
     if (!d) return;
-    const clone = el.cloneNode(false) as Element;
-    clone.setAttribute('d', d);
-    clone.removeAttribute('points'); clone.removeAttribute('x'); clone.removeAttribute('y');
-    clone.removeAttribute('x1'); clone.removeAttribute('x2'); clone.removeAttribute('y1'); clone.removeAttribute('y2');
-    clone.removeAttribute('width'); clone.removeAttribute('height'); clone.removeAttribute('rx'); clone.removeAttribute('ry');
-    clone.removeAttribute('cx'); clone.removeAttribute('cy'); clone.removeAttribute('r');
-    el.parentNode?.replaceChild(clone, el);
+    const pathEl = el.ownerDocument!.createElementNS(SVG_NS, 'path');
+    Array.from(el.attributes).forEach((a) => pathEl.setAttribute(a.name, a.value));
+    pathEl.setAttribute('d', d);
+    pathEl.removeAttribute('points'); pathEl.removeAttribute('x'); pathEl.removeAttribute('y');
+    pathEl.removeAttribute('x1'); pathEl.removeAttribute('x2'); pathEl.removeAttribute('y1'); pathEl.removeAttribute('y2');
+    pathEl.removeAttribute('width'); pathEl.removeAttribute('height'); pathEl.removeAttribute('rx'); pathEl.removeAttribute('ry');
+    pathEl.removeAttribute('cx'); pathEl.removeAttribute('cy'); pathEl.removeAttribute('r');
+    el.parentNode?.replaceChild(pathEl, el);
     converted++;
   });
   if (converted) applied.push(`Converted ${converted} unstyled simple shape(s) to candidate paths`);
@@ -1027,6 +1044,9 @@ const stripCommentsPass = (doc: Document, applied: string[]) => {
 
 // Remove metadata
 const removeMetadata = (root: Element, applied: string[]) => {
+  if (root.ownerDocument?.doctype) {
+    root.ownerDocument.doctype.remove();
+  }
   const wanted = new Set(['metadata', 'namedview', 'perspective', 'sfw', 'slices', 'pgf']);
   const nodes = Array.from(root.querySelectorAll('*')).filter((node) => wanted.has(node.localName.toLowerCase()));
   nodes.forEach((n) => n.parentNode?.removeChild(n));
@@ -1097,7 +1117,7 @@ const minifyAttributes = (root: Element, precision: number, minifyColors: boolea
   let colors = 0;
   let transforms = 0;
 
-  const coordAttributes = /^(?:d|points|viewBox|x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height|dx|dy|stroke-width|stroke-dasharray|stroke-dashoffset|stroke-miterlimit|font-size)$/i;
+  const coordAttributes = /^(?:d|x|y|x1|y1|x2|y2|cx|cy|r|rx|ry|width|height|dx|dy|stroke-width|stroke-dasharray|stroke-dashoffset|stroke-miterlimit|font-size)$/i;
   const filterAttributes = /^(?:baseFrequency|tableValues|kernelMatrix|stdDeviation|scale|elevation|azimuth|surfaceScale|specularConstant|specularExponent|slope|intercept|amplitude|exponent|offset|diffuseConstant)$/i;
   const colorAttribute = /^(?:fill|stroke|color|stop-color|flood-color|lighting-color)$/i;
 
@@ -1110,8 +1130,12 @@ const minifyAttributes = (root: Element, precision: number, minifyColors: boolea
     } else if (name === 'transform') {
       next = optimizeTransforms(next, precision);
       if (next !== attr.value) transforms++;
-    } else if (name === 'points' || name === 'viewBox') {
+    } else if (name === 'points') {
       next = roundNumericTokens(next, precision).replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    } else if (name === 'viewBox') {
+      // Safeguard: Never reduce viewBox precision below 2 decimals to prevent aspect ratio distortion
+      const safeVbPrecision = Math.max(2, precision);
+      next = roundNumericTokens(next, safeVbPrecision).replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
     } else if (coordAttributes.test(name)) {
       next = roundNumericTokens(next, precision);
     } else if (filterAttributes.test(name)) {
@@ -1473,7 +1497,9 @@ const healthScore = (a: SvgAnalysis) => {
 };
 
 const serializeDocument = (doc: Document) =>
-  new XMLSerializer().serializeToString(doc).replace(/^<\?xml[^>]*>\s*/i, '');
+  new XMLSerializer().serializeToString(doc)
+    .replace(/^<\?xml[^>]*>\s*/i, '')
+    .replace(/^<!DOCTYPE[^>]*>\s*/i, '');
 
 // Candidate validation gate
 const isCandidateAcceptable = (original: SvgAnalysis, candidate: SvgAnalysis, candidateSvg: string, originalCompact: string): boolean => {
@@ -1682,6 +1708,66 @@ const sanitizeExportFilename = (originalName?: string): string => {
     name = name.replace(/\.svg$/i, '.optimized.svg');
   }
   return name;
+};
+
+// --- PRESET SVG SAMPLES FOR INSTANT EVALUATION ---
+export const SVG_SAMPLES = {
+  star: {
+    name: 'Star Icon',
+    description: 'Clean vector geometry with stroke attributes',
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Star icon -->
+  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+</svg>`,
+  },
+  badge: {
+    name: 'Gradient Badge',
+    description: 'Linear gradients, multiple groups, and path coordinates',
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="badge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <linearGradient id="unused-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#b91c1c" />
+    </linearGradient>
+  </defs>
+  <!-- Main Badge Container -->
+  <g id="badge-group">
+    <circle cx="50" cy="50" r="45" fill="url(#badge-grad)" stroke="#1e40af" stroke-width="2" />
+    <path d="M30 50 L45 65 L70 35" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>`,
+  },
+  bloated: {
+    name: 'Bloated Export',
+    description: 'Simulated Illustrator/Figma export with XML header, editor metadata, 8 decimals, and empty groups',
+    svg: `<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 28.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   x="0px" y="0px" width="128px" height="128px" viewBox="0 0 128 128" enable-background="new 0 0 128 128" xml:space="preserve">
+  <metadata>
+    <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <cc:Work rdf:about="" xmlns:cc="http://creativecommons.org/ns#">
+        <dc:format xmlns:dc="http://purl.org/dc/elements/1.1/">image/svg+xml</dc:format>
+        <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" xmlns:dc="http://purl.org/dc/elements/1.1/"/>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <!-- Empty nested groups from editor layers -->
+  <g id="Background_Guides"><g></g></g>
+  <g id="Artwork_Group">
+    <g>
+      <rect x="14.00000000" y="14.00000000" width="100.00000000" height="100.00000000" rx="16.00000000" fill="#2563EB" stroke="#1E40AF" stroke-width="4.00000000"/>
+      <path fill="#FFFFFF" d="M64.00000000,34.12345678 L72.98765432,52.34567890 L92.87654321,55.23456789 L78.43210987,69.34567890 L81.87654321,89.23456789 L64.00000000,79.87654321 L46.12345678,89.23456789 L49.56789012,69.34567890 L35.12345678,55.23456789 L55.01234567,52.34567890 Z"/>
+    </g>
+  </g>
+</svg>`,
+  },
 };
 
 // --- REACT COMPONENT ---
@@ -2055,6 +2141,35 @@ export default function SvgOptimizer() {
     setResult(runOptimizerCore('', { removeXml, removeComments, removeEmptyGroups, minifyColors, precision, mode }));
   };
 
+  const handleResetAll = useCallback(() => {
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+    }
+    requestIdRef.current++;
+    pendingRequestsRef.current.clear();
+    setInputSvg('');
+    setRemoveXml(true);
+    setRemoveComments(true);
+    setRemoveEmptyGroups(true);
+    setMinifyColors(true);
+    setPrecision(2);
+    setMode('smart');
+    setPreviewMode('optimized');
+    setPreviewBg('checkerboard');
+    setErrorMessage(null);
+    setOriginalFilename('image.svg');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setResult(runOptimizerCore('', {
+      removeXml: true,
+      removeComments: true,
+      removeEmptyGroups: true,
+      minifyColors: true,
+      precision: 2,
+      mode: 'smart'
+    }));
+  }, []);
+
   return (
     <div className="flex flex-col gap-6 bg-white dark:bg-[#0a0f1a] transition-colors">
       {/* Accessible in-page Alert Notification */}
@@ -2123,6 +2238,56 @@ export default function SvgOptimizer() {
             />
           </div>
 
+          {/* Quick-Load Samples */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Sample:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setInputSvg(SVG_SAMPLES.star.svg);
+                setOriginalFilename('star-icon.svg');
+                setErrorMessage(null);
+              }}
+              className="px-2.5 py-1 text-xs rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              title={SVG_SAMPLES.star.description}
+            >
+              ⭐ Star Icon
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInputSvg(SVG_SAMPLES.badge.svg);
+                setOriginalFilename('gradient-badge.svg');
+                setErrorMessage(null);
+              }}
+              className="px-2.5 py-1 text-xs rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              title={SVG_SAMPLES.badge.description}
+            >
+              🛡️ Badge
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setInputSvg(SVG_SAMPLES.bloated.svg);
+                setOriginalFilename('illustrator-export.svg');
+                setErrorMessage(null);
+              }}
+              className="px-2.5 py-1 text-xs rounded-lg font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              title={SVG_SAMPLES.bloated.description}
+            >
+              📦 Bloated Export
+            </button>
+            {inputSvg && (
+              <button
+                type="button"
+                onClick={handleResetAll}
+                className="ml-auto text-xs font-semibold text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Reset All
+              </button>
+            )}
+          </div>
+
           <div className="relative flex-grow">
             <textarea
               id="raw-svg-input"
@@ -2169,6 +2334,19 @@ export default function SvgOptimizer() {
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-4">
               <SlidersHorizontal className="w-5 h-5 text-blue-600" /> Optimization Engine
             </h3>
+
+            {/* Safe Defaults Badge */}
+            <div className="flex items-center justify-between p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 mb-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <span className="text-xs font-medium text-emerald-900 dark:text-emerald-200">
+                  Preserve viewBox (Recommended for Responsive SVG)
+                </span>
+              </div>
+              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
+                Safe
+              </span>
+            </div>
 
             <div role="radiogroup" aria-label="Optimization mode" className="grid grid-cols-2 gap-2 mb-4">
               {([['smart', '✨ Smart'], ['safe', '🛡 Safe'], ['balanced', '⚖ Balanced'], ['maximum', '🔥 Maximum']] as [OptimizationMode, string][]).map(([key, label]) => (
@@ -2274,7 +2452,13 @@ export default function SvgOptimizer() {
               <h4 className="text-sm font-bold text-blue-100 dark:text-blue-400 mb-4">Optimization Results</h4>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs font-medium">Size Reduction</span>
-                <span className="text-sm font-bold">{savedPercent}%</span>
+                <span className="text-sm font-bold">
+                  {inputSvg && originalBytes > 0
+                    ? savedBytes > 0
+                      ? `${savedPercent}%`
+                      : '0% (Already Optimal)'
+                    : '—'}
+                </span>
               </div>
               <div className="w-full h-2 bg-blue-800 dark:bg-slate-800 rounded-full overflow-hidden mb-5">
                 <div className="h-full bg-white dark:bg-blue-500 transition-all duration-500" style={{ width: `${savedPercent}%` }} />
@@ -2289,6 +2473,19 @@ export default function SvgOptimizer() {
                   <span className="font-bold text-green-300 dark:text-emerald-400">{formatSize(optimizedBytes)}</span>
                 </div>
               </div>
+              {inputSvg && originalBytes > 0 && (
+                <div className="mt-3 text-xs text-blue-100/90 dark:text-slate-300">
+                  {savedBytes > 0 ? (
+                    <span className="text-emerald-200 dark:text-emerald-300 font-medium">
+                      ✓ Saved {formatSize(savedBytes)} ({savedPercent}% reduction)
+                    </span>
+                  ) : (
+                    <span className="text-blue-200 dark:text-slate-400">
+                      ℹ Original retained — already optimal, no quality-degrading changes applied.
+                    </span>
+                  )}
+                </div>
+              )}
               {inputSvg && (
                 <div className="mt-4 pt-4 border-t border-blue-400/30 text-xs flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 flex-shrink-0" />
@@ -2374,7 +2571,7 @@ export default function SvgOptimizer() {
                 <iframe
                   title="Safe SVG Preview"
                   sandbox=""
-                  srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;color:${previewBg === 'dark' ? '#f8fafc' : '#0f172a'};}svg{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;}</style></head><body>${sanitizedPreviewSvg}</body></html>`}
+                  srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:;"><style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:transparent;color:${previewBg === 'dark' ? '#f8fafc' : '#0f172a'};}svg{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;}</style></head><body>${sanitizedPreviewSvg}</body></html>`}
                   className="w-full h-full border-0 pointer-events-none"
                 />
               ) : shownSvg && !analysis.valid ? (

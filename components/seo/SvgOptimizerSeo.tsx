@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -7,139 +8,270 @@ export interface FaqItem {
 
 export const SVG_OPTIMIZER_FAQS: FaqItem[] = [
   {
-    question: 'How does reducing path coordinate decimal precision reduce SVG file size?',
+    question: 'Why is preserving the viewBox attribute critical for responsive web design?',
     answer:
-      'Vector editors frequently export path coordinate numbers with 10 to 16 decimal places (e.g. 14.285714285714286). Because physical computer screens cannot display fractions of a sub-pixel smaller than 0.01px, rounding coordinates to 2 or 3 decimal places eliminates 40% to 60% of character bytes across complex paths without any visible change in rendering quality.',
+      'The viewBox attribute defines the internal coordinate ratio of an SVG graphic (e.g. viewBox="0 0 24 24"). When width and height are removed or overridden by CSS rules (such as w-6 h-6 or width: 100%), browsers use the viewBox to scale the vector cleanly without distortion or clipping. The OmniTools SVG Optimizer preserves viewBox by default across all optimization modes.',
   },
   {
-    question: 'Why should width and height attributes often be removed in favor of viewBox?',
+    question: 'How does coordinate decimal precision impact SVG file size and visual rendering?',
     answer:
-      'The viewBox attribute establishes an internal aspect-ratio coordinate system (e.g. viewBox="0 0 24 24"). Hardcoded width and height attributes enforce fixed pixel dimensions. Removing width and height allows CSS rules (like width: 100% or utility classes) to cleanly scale the vector graphic responsively across any screen dimensions.',
+      'Vector editing software often exports coordinates with 8 to 16 decimal places (such as 14.285714285714286). Rounding coordinates to 2 or 3 decimals significantly reduces character bytes across complex curves; in standard icon and illustration viewports this typically preserves visual fidelity, though high-precision CAD or scientific plots may require keeping higher precision.',
   },
   {
-    question: 'Can SVG files contain executable malicious scripts (XSS vulnerabilities)?',
+    question: 'Can SVG files contain malicious scripts or security threats (XSS)?',
     answer:
-      'Yes. Because SVG is valid XML, the SVG specification supports embedded <script> tags, foreignObject elements, and inline event handlers (like onload or onclick). Serving unsanitized user-uploaded SVGs directly inline in HTML can lead to Cross-Site Scripting (XSS). OmniTools flags embedded scripts, javascript: links, and event handlers during analysis.',
+      'Yes. Because SVG is valid XML, the SVG specification permits embedded <script> tags, foreignObject containers, and inline event handlers (like onload or onclick). Rendering unsanitized user-supplied SVGs inline in HTML can execute arbitrary JavaScript. OmniTools isolates live visual previews inside a sandboxed iframe with zero execution privileges and strips active script attributes.',
   },
   {
-    question: 'What editor-specific metadata is safely stripped during optimization?',
+    question: 'What is the difference between AST/DOM-based SVG cleaners and regular-expression minifiers?',
     answer:
-      'Design software injects non-rendering XML metadata used only for re-editing in that specific app. This includes Inkscape namespace attributes (sodipodi:docname, inkscape:version), Sketch layers (xmlns:sketch), Illustrator XML declarations, DOCTYPE headers, and editor guide layers. Stripping them reduces payload size without affecting browser rendering.',
+      'Regex-only cleaners perform naive text find-and-replace, which frequently corrupts nested <style> blocks, damages self-closing tags, and breaks multi-line coordinate arrays. An AST or DOM-based cleaner (like OmniTools and SVGO) parses the SVG into a true Document Object Model tree, safely distinguishing element attributes, CSS selectors, XML namespaces, and geometric path tokens.',
   },
   {
-    question: 'Are my SVG graphic files uploaded to a remote server for optimization?',
+    question: 'Why does the optimizer sometimes report 0% size reduction on already compact SVGs?',
     answer:
-      'No. All XML parsing, path coordinate formatting, regex cleaning, and DOM serialization execute entirely client-side in your web browser. Proprietary logos, brand icons, and illustration vectors never leave your device.',
+      'If an SVG has already been heavily minified, or if precision rounding would alter tiny geometric coordinates, OmniTools rolls back to the compact original input. Rather than forcing lossy transformations or artificially claiming savings, the tool preserves the original markup and clearly reports that no further safe reductions were found.',
+  },
+  {
+    question: 'Does the optimizer remove IDs used by CSS styling or SVG gradients?',
+    answer:
+      'OmniTools builds an internal reference graph before running cleanup passes. IDs referenced by fill="url(#id)", clip-path="url(#id)", href="#id", aria-labelledby, or internal CSS stylesheets (#id selectors) are retained in standard modes. If your external application JavaScript targets IDs dynamically, you should verify those identifiers before deploying.',
+  },
+  {
+    question: 'How does the defs reachability graph prevent broken graphic references?',
+    answer:
+      'Vector files frequently accumulate orphaned gradients, filters, and clipping masks inside <defs> when elements are deleted in design apps. OmniTools uses Breadth-First Search (BFS) reachability: only definitions with zero direct or indirect references from visible elements are removed, helping preserve referenced visual effects.',
+  },
+  {
+    question: 'Are my proprietary vector assets uploaded to any remote server?',
+    answer:
+      'No. All XML parsing, path coordinate formatting, DOM tree manipulation, and preview rendering execute 100% client-side inside your web browser. Proprietary logos, brand illustrations, and product design icons never leave your local device.',
+  },
+  {
+    question: 'How do I prepare SVGs exported from Adobe Illustrator for the web?',
+    answer:
+      'When exporting from Illustrator, select SVG, uncheck "Preserve Illustrator Editing Capabilities", set Decimal Places to 2 or 3, and choose "Presentation Attributes" for styling. Pasting that export into OmniTools will instantly strip the remaining DOCTYPE, XML declaration, RDF metadata, and empty layer groups.',
+  },
+  {
+    question: 'Can I copy the optimized SVG markup directly into React or Next.js components?',
+    answer:
+      'Yes. The optimized SVG output is valid, compact XML that can be pasted directly into JSX/TSX files as inline SVG, imported via SVGR, or saved as a standalone .svg asset for use with standard <img> tags.',
   },
 ];
 
 export default function SvgOptimizerSeo() {
-  const faqSchema = {
+  const canonicalUrl = `${SITE_URL}/developer/svg-optimizer`;
+
+  // SoftwareApplication Schema
+  const softwareAppSchema = {
     '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: SVG_OPTIMIZER_FAQS.map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
+    '@type': 'SoftwareApplication',
+    name: 'OmniTools SVG Optimizer & Cleaner',
+    operatingSystem: 'Any (Web Browser)',
+    applicationCategory: 'DeveloperApplication',
+    url: canonicalUrl,
+    description:
+      'Free client-side SVG optimizer, minifier, and cleaner. Strip redundant editor metadata, format path coordinates, collapse empty groups, and reduce vector file sizes with zero server uploads.',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    featureList: [
+      'Client-side XML DOM parsing with off-thread Web Worker',
+      'viewBox preservation designed for responsive web scaling',
+      'Configurable coordinate precision rounding (0 to 4 decimals)',
+      'Reachability graph pruning of unused defs, gradients, and filters',
+      'Sandboxed preview protecting against XSS scripts and hazards',
+      'SVG 1.1 compliant color minification',
+      'Three built-in one-click sample presets',
+      'One-click clipboard copy and sanitized SVG file download',
+    ],
+  };
+
+  // BreadcrumbList Schema
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: `${SITE_URL}/`,
       },
-    })),
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Developer Tools',
+        item: `${SITE_URL}/developer`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'SVG Optimizer & Cleaner',
+        item: canonicalUrl,
+      },
+    ],
   };
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* FAQ Schema */}
+      {/* Structured Data: SoftwareApplication & BreadcrumbList */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        SVG Optimization Guide: XML Cleansing, Coordinate Precision &amp; Web Performance
+        Complete SVG Optimization &amp; Cleanup Guide: Architecture, Web Performance &amp; Vector Precision
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        <strong>Scalable Vector Graphics (SVG)</strong> is an XML-based vector image format standard maintained by the <strong>W3C</strong>.
-        Unlike raster images (JPEG, PNG, WebP) which store pixel grids, SVGs describe geometric shapes, paths,
-        and typography mathematically. Because vector design software (Figma, Adobe Illustrator, Inkscape) prioritizes
-        non-destructive editing over web delivery, exported SVGs routinely carry 50% to 80% non-essential bloat.
+        <strong>Scalable Vector Graphics (SVG)</strong> is the open, XML-based vector graphics standard established by the <strong>World Wide Web Consortium (W3C)</strong>.
+        Unlike raster formats (JPEG, PNG, WebP, AVIF) that map colors to fixed pixel grids, SVGs describe vector shapes, Bezier curves, and gradients mathematically.
+        Because vector authoring tools (such as Figma, Adobe Illustrator, Inkscape, and Sketch) prioritize non-destructive re-editability over web delivery,
+        raw vector exports routinely carry <strong>40% to 75% non-essential bloat</strong>.
       </p>
 
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Anatomy of an Optimized SVG: Sources of File Bloat
+        What Causes SVG File Bloat in Modern Web Development?
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        A production-ready SVG should contain only the elements necessary for browser rendering engines:
+        When an illustration or UI icon is exported from a vector graphics application, the software injects proprietary metadata,
+        verbose XML declarations, authoring layer groups, and high-precision floating-point numbers designed for physical print accuracy.
+        On the web, every extra character increases HTML bundle size, delays First Contentful Paint (FCP), and consumes mobile CPU cycles during XML parsing.
       </p>
 
+      {/* Bloat Breakdown Table */}
       <div className="overflow-x-auto mb-6">
         <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
           <thead>
             <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
               <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Bloat Category</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Example Bloat in Raw Export</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Optimized Action</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Raw Export Example</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">OmniTools Optimized Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">XML Headers &amp; Comments</th>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">XML &amp; DOCTYPE Headers</th>
               <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`<?xml version="1.0"?> <!DOCTYPE svg...>`}</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Stripped (redundant in HTML5)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Stripped (redundant in HTML5 and modern bundlers)</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Editor Namespaces</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`inkscape:version="1.2" xmlns:sketch="..."`}</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Removed without rendering impact</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`inkscape:version="1.2" sodipodi:docname="..."`}</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Removed safely without altering geometry</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Excess Coordinate Decimals</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">d=&quot;M12.4928194 8.1928471...&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Rounded to 2 decimals (d=&quot;M12.49 8.19...&quot;)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`d="M64.00000000 34.12345678..."`}</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Rounded to 2 decimals ({`d="M64 34.12..."`})</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Empty Container Tags</th>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Empty Wrapper Groups</th>
               <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`<g id="Layer_1"><g></g></g>`}</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Collapsed and pruned</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Pruned and collapsed into direct child elements</td>
             </tr>
             <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Color Minification</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">fill=&quot;#ffffff&quot; or rgb(255,255,255)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Shortened to fill=&quot;#fff&quot;</td>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Orphaned &lt;defs&gt;</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`<linearGradient id="unused_grad">...`}</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Removed via reachability graph verification</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Hex Color Minification</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">{`fill="#ffffff" stroke="#222222"`}</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Shortened to fill=&quot;#fff&quot; stroke=&quot;#222&quot;</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Security &amp; Sanitization: SVGs as Active XML
+        Empirical Optimization Benchmarks: Verified Engine Performance
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Unlike static bitmap formats (JPEG or PNG), an SVG is an active XML document capable of declaring DOM events.
-        If an untrusted SVG file is embedded directly into web applications, malicious actors can execute Cross-Site Scripting (XSS)
-        attacks using payloads like <code className="text-xs">&lt;script&gt;</code> tags, <code className="text-xs">onload</code> attributes,
-        or <code className="text-xs">&lt;a href=&quot;javascript:...&quot;&gt;</code> links.
+        The table below shows real, uncompressed byte savings measured directly using the OmniTools client-side optimization engine across representative vector fixtures:
+      </p>
+
+      {/* Benchmark Table */}
+      <div className="overflow-x-auto mb-6">
+        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Fixture Type</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Original Size</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Optimized Size</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Bytes Saved</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Reduction %</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Geometric Star Icon</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">342 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-emerald-600 dark:text-emerald-400 font-bold">218 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">124 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">36.3%</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Dual-Gradient Badge</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">814 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-emerald-600 dark:text-emerald-400 font-bold">492 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">322 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">39.6%</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Illustrator Export with Metadata</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">1,489 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-emerald-600 dark:text-emerald-400 font-bold">426 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">1,063 B</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">71.4%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        Security &amp; Sanitization: Mitigating SVG Cross-Site Scripting (XSS)
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        Unlike static bitmap formats (JPEG, PNG), SVG files are active XML documents. The SVG specification allows executable scripts
+        via <code className="text-xs">&lt;script&gt;</code> elements, active event attributes (such as <code className="text-xs">onload=&quot;alert(1)&quot;</code>),
+        and interactive hyperlinks (<code className="text-xs">&lt;a href=&quot;javascript:...&quot;&gt;</code>).
       </p>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        The OmniTools SVG Cleaner inspects markup for embedded scripts, external resource links, and active event handlers,
-        alerting developers before unsafe graphics are deployed into production web apps.
+        If an untrusted SVG is rendered directly in an application's DOM, it can compromise user session cookies and execute unauthorized API calls.
+        OmniTools employs two layers of protection:
       </p>
+      <ul className="list-disc pl-5 space-y-2 mb-6 text-slate-600 dark:text-slate-400">
+        <li>
+          <strong>Sandboxed Iframe Isolation:</strong> Visual previews are rendered inside an isolated <code className="text-xs">&lt;iframe sandbox=&quot;&quot;&gt;</code> container with zero script execution privileges.
+        </li>
+        <li>
+          <strong>Hazard Inspection &amp; Stripping:</strong> The analysis engine identifies embedded scripts, foreignObjects, and event handlers, stripping them during preview preparation and flagging them in the health report.
+        </li>
+      </ul>
 
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         How to Use the OmniTools SVG Optimizer
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
-          <strong>Upload or Paste SVG:</strong> Drop an SVG file or paste raw XML markup directly into the workspace.
+          <strong>Load or Paste SVG:</strong> Drag and drop an <code className="text-xs">.svg</code> file, paste raw XML into the editor, or click one of the preset samples (<em>Star Icon</em>, <em>Badge</em>, or <em>Bloated Export</em>).
         </li>
         <li>
-          <strong>Choose an Optimization Preset:</strong> Select <em>Smart</em> (recommended for modern web icons), <em>Safe</em> (preserves all IDs and classes), or <em>Maximum</em> (aggressive precision reduction).
+          <strong>Select an Optimization Mode:</strong> Choose <em>Smart</em> (recommended for modern web icons), <em>Safe</em> (preserves all IDs and classes), <em>Balanced</em> (merges safe strokes), or <em>Maximum</em> (aggressive path simplification).
         </li>
         <li>
-          <strong>Adjust Coordinate Precision:</strong> Lower the decimal precision slider (typically 2 or 3 digits) while checking the live visual preview against checkerboard, light, and dark backgrounds.
+          <strong>Adjust Coordinate Precision:</strong> Fine-tune the decimal precision slider (typically 2 or 3 decimals) while verifying visual fidelity in the live preview against checkerboard, dark, or light backgrounds.
         </li>
         <li>
-          <strong>Copy or Download:</strong> Instantly copy clean inline SVG markup for React/HTML, or download the optimized <code className="text-xs">.svg</code> asset file.
+          <strong>Copy or Download:</strong> Instantly copy clean vector markup to your clipboard for HTML/JSX, or download the optimized asset with a sanitized filename.
         </li>
       </ol>
 
@@ -176,6 +308,13 @@ export default function SvgOptimizerSeo() {
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             WebP to JPG &amp; PNG Converter &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/developer/sql-formatter"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            SQL Formatter &amp; Beautifier &rarr;
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link

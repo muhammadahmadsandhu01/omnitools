@@ -16,7 +16,8 @@
     "test:qr": "tsx scripts/test-qr-generator.ts",
     "test:regex": "tsx scripts/test-regex-tester.ts",
     "test:sip": "tsx scripts/test-sip-calculator.ts",
-    "test:sql": "tsx scripts/test-sql-formatter.ts"
+    "test:sql": "tsx scripts/test-sql-formatter.ts",
+    "test:svg": "tsx scripts/test-svg-optimizer.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
