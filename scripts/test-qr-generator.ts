@@ -158,7 +158,19 @@ const eventPayload = [
 ].join('\r\n');
 assert.strictEqual(decodeQrPayload(eventPayload, 'M', 4), eventPayload, 'iCalendar payload decode mismatch');
 
-console.log('  ✓ All 8 standard QR content types successfully decoded.');
+// 8. Complex Multilingual Unicode & Emoji
+const multilingualText = 'こんにちは世界 · مرحبا بالعالم · 你好世界 · Hello World 🌐 ✨';
+assert.strictEqual(decodeQrPayload(multilingualText, 'M', 4), multilingualText, 'Multilingual Unicode decode mismatch');
+
+// 9. Escaped Special Characters in Wi-Fi and vCard
+const complexWifi = 'WIFI:T:WPA;S:Coffee\\;House\\\\HQ;P:Sec\\"ret:P@ss;H:true;;';
+assert.strictEqual(decodeQrPayload(complexWifi, 'M', 4), complexWifi, 'Escaped Wi-Fi payload decode mismatch');
+
+// 10. Long Plain Text Payload (1200 chars)
+const longContent = 'OmniTools-Test-Payload-'.repeat(50);
+assert.strictEqual(decodeQrPayload(longContent, 'L', 4), longContent, 'Long payload decode mismatch');
+
+console.log('  ✓ All 8 standard QR content types, complex Unicode, escaped schemas & long payloads decoded.');
 
 // ==========================================
 // TEST 3: ERROR CORRECTION TIERS (L, M, Q, H)
@@ -244,9 +256,14 @@ assert.strictEqual(estimateQrVersion(14, 'M'), 1);
 assert.strictEqual(estimateQrVersion(15, 'M'), 2);
 assert.strictEqual(estimateQrVersion(3000, 'L'), null); // Exceeds capacity
 
-// Reliability report tests
-const perfectReport = getReliabilityReport({
-  bytes: 35,
+// ========================================================
+// RELIABILITY & SCAN FEASIBILITY HEURISTIC EDGE CASES
+// ========================================================
+console.log('  Testing multi-factor reliability & scan feasibility model edge cases...');
+
+// Edge Case 1: Short URL with default settings (33 bytes, Level M, V2)
+const shortUrlReport = getReliabilityReport({
+  bytes: 33,
   level: 'M',
   marginSize: 4,
   contrast: 21.0,
@@ -255,37 +272,132 @@ const perfectReport = getReliabilityReport({
   logoSize: 20,
   isValidPayload: true,
 });
-assert.strictEqual(perfectReport.status, 'ready');
-assert.strictEqual(perfectReport.score, 100);
-assert.strictEqual(perfectReport.warnings.length, 0);
+assert.strictEqual(shortUrlReport.status, 'ready');
+assert.strictEqual(shortUrlReport.score, 93); // 30 (contrast) + 15 (quiet zone) + 18 (level M) + 30 (V2 density)
+assert.strictEqual(shortUrlReport.feasibility, 'optimal');
+assert.strictEqual(shortUrlReport.feasibilityLabel, 'Optimal');
+assert.strictEqual(shortUrlReport.contrastRating, 'optimal');
+assert.strictEqual(shortUrlReport.quietZoneRating, 'compliant');
+assert.strictEqual(shortUrlReport.densityRating, 'low');
+assert.ok(shortUrlReport.score <= 95, 'Score must never exceed 95/100 to prevent guarantee claims');
 
-const lowContrastReport = getReliabilityReport({
-  bytes: 35,
+// Edge Case 2: Long URL / text payload (500 bytes, Level M, V17)
+const longPayloadReport = getReliabilityReport({
+  bytes: 500,
   level: 'M',
   marginSize: 4,
-  contrast: 2.5,
+  contrast: 21.0,
   inverted: false,
   logo: false,
   logoSize: 20,
   isValidPayload: true,
 });
-assert.strictEqual(lowContrastReport.status, 'ready');
-assert.ok(lowContrastReport.score !== null && lowContrastReport.score <= 65);
+assert.strictEqual(longPayloadReport.status, 'ready');
+assert.strictEqual(longPayloadReport.score, 83); // 30 + 15 + 18 + 20 (moderate density)
+assert.strictEqual(longPayloadReport.feasibility, 'good');
+assert.strictEqual(longPayloadReport.densityRating, 'moderate');
+
+// Edge Case 3: Near QR encoder capacity limit (2300 bytes, Level M, V40)
+const nearCapacityReport = getReliabilityReport({
+  bytes: 2300,
+  level: 'M',
+  marginSize: 4,
+  contrast: 21.0,
+  inverted: false,
+  logo: false,
+  logoSize: 20,
+  isValidPayload: true,
+});
+assert.strictEqual(nearCapacityReport.status, 'ready');
+assert.strictEqual(nearCapacityReport.score, 71); // 30 + 15 + 18 + 8 (extreme density)
+assert.strictEqual(nearCapacityReport.feasibility, 'good');
+assert.strictEqual(nearCapacityReport.densityRating, 'extreme');
+assert.ok(nearCapacityReport.warnings.some((w) => w.includes('Very high density')));
+
+// Edge Case 4: Over capacity limit (> 2331 bytes for M)
+const overCapacityReport = getReliabilityReport({
+  bytes: 2500,
+  level: 'M',
+  marginSize: 4,
+  contrast: 21.0,
+  inverted: false,
+  logo: false,
+  logoSize: 20,
+  isValidPayload: true,
+});
+assert.strictEqual(overCapacityReport.status, 'ready');
+assert.strictEqual(overCapacityReport.score, 0);
+assert.strictEqual(overCapacityReport.version, null);
+assert.strictEqual(overCapacityReport.densityRating, 'over_capacity');
+assert.strictEqual(overCapacityReport.feasibility, 'critical');
+
+// Edge Case 5: Error Correction Tiers (H > Q > M > L monotonic ordering)
+const reportH = getReliabilityReport({ bytes: 33, level: 'H', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const reportQ = getReliabilityReport({ bytes: 33, level: 'Q', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const reportM = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const reportL = getReliabilityReport({ bytes: 33, level: 'L', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+
+assert.strictEqual(reportH.score, 95); // 30 + 15 + 25 + 30 = 100 -> capped at 95
+assert.strictEqual(reportQ.score, 95); // 30 + 15 + 22 + 30 = 97 -> capped at 95
+assert.strictEqual(reportM.score, 93); // 30 + 15 + 18 + 30 = 93
+assert.strictEqual(reportL.score, 87); // 30 + 15 + 12 + 30 = 87
+assert.ok(reportH.score >= reportQ.score && reportQ.score >= reportM.score && reportM.score > reportL.score);
+
+// Edge Case 6: High vs Low Contrast
+const highContrastReport = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const lowContrastReport = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 2.5, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(highContrastReport.score, 93);
+assert.strictEqual(lowContrastReport.score, 63); // 0 + 15 + 18 + 30 = 63
+assert.strictEqual(lowContrastReport.feasibility, 'caution');
 assert.ok(lowContrastReport.warnings.some((w) => w.includes('critically low')));
 
-const logoWithoutHighReport = getReliabilityReport({
-  bytes: 35,
-  level: 'M',
-  marginSize: 4,
-  contrast: 21.0,
-  inverted: false,
-  logo: true,
-  logoSize: 20,
-  isValidPayload: true,
-});
-assert.ok(logoWithoutHighReport.warnings.some((w) => w.includes('High (H) error correction')));
+// Edge Case 7: Inverted Colors (light on dark)
+const invertedReport = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 21.0, inverted: true, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(invertedReport.score, 83); // (30-10) + 15 + 18 + 30 = 83
+assert.ok(invertedReport.warnings.some((w) => w.includes('Inverted QR code')));
 
-console.log('  ✓ Capacity tables and scan reliability scoring verified.');
+// Edge Case 8: Quiet Zone Margin variations
+const margin4Report = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const margin2Report = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 2, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+const margin0Report = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 0, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(margin4Report.score, 93);
+assert.strictEqual(margin2Report.score, 83); // 30 + 5 + 18 + 30 = 83
+assert.strictEqual(margin0Report.score, 78); // 30 + 0 + 18 + 30 = 78
+
+// Edge Case 9: Center Logo on/off and size scaling
+const logoH20 = getReliabilityReport({ bytes: 33, level: 'H', marginSize: 4, contrast: 21.0, inverted: false, logo: true, logoSize: 20, isValidPayload: true });
+assert.strictEqual(logoH20.score, 95); // 30 + 15 + 20 + 30 = 95
+assert.strictEqual(logoH20.feasibility, 'optimal');
+
+const logoH26 = getReliabilityReport({ bytes: 33, level: 'H', marginSize: 4, contrast: 21.0, inverted: false, logo: true, logoSize: 26, isValidPayload: true });
+assert.strictEqual(logoH26.score, 83); // 30 + 15 + 8 + 30 = 83
+
+const logoM = getReliabilityReport({ bytes: 33, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: true, logoSize: 20, isValidPayload: true });
+assert.strictEqual(logoM.score, 79); // 30 + 15 + 4 + 30 = 79
+assert.ok(logoM.warnings.some((w) => w.includes('Level M (~15% recovery)')));
+
+const logoL = getReliabilityReport({ bytes: 33, level: 'L', marginSize: 4, contrast: 21.0, inverted: false, logo: true, logoSize: 20, isValidPayload: true });
+assert.strictEqual(logoL.score, 75); // 30 + 15 + 0 + 30 = 75
+assert.ok(logoL.warnings.some((w) => w.includes('Level L error correction')));
+
+// Edge Case 10: Empty / Invalid Payload
+const edgeCaseEmptyReport = getReliabilityReport({ bytes: 0, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: false });
+assert.strictEqual(edgeCaseEmptyReport.status, 'unavailable');
+assert.strictEqual(edgeCaseEmptyReport.score, null);
+assert.strictEqual(edgeCaseEmptyReport.version, null);
+assert.strictEqual(edgeCaseEmptyReport.feasibility, 'unavailable');
+assert.strictEqual(edgeCaseEmptyReport.recommendedPrintSizeCm, '—');
+
+// Edge Case 11: Dynamic Print Size Recommendations
+assert.strictEqual(shortUrlReport.recommendedPrintSizeCm, '2.5 cm (1.0 in)');
+const v10Report = getReliabilityReport({ bytes: 200, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(v10Report.recommendedPrintSizeCm, '3.5 cm (1.4 in)');
+const v20Report = getReliabilityReport({ bytes: 800, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(v20Report.recommendedPrintSizeCm, '4.5 cm (1.8 in)');
+const v30Report = getReliabilityReport({ bytes: 1500, level: 'M', marginSize: 4, contrast: 21.0, inverted: false, logo: false, logoSize: 20, isValidPayload: true });
+assert.strictEqual(v30Report.recommendedPrintSizeCm, '6.0 cm (2.4 in)');
+
+console.log('  ✓ Capacity tables, multi-factor reliability scoring & edge cases verified.');
 
 // ==========================================
 // TEST 7: PRINT-READY PDF EXPORT VALIDATION
@@ -456,13 +568,15 @@ const validReport = getReliabilityReport({
 });
 assert.strictEqual(validReport.status, 'ready');
 assert.strictEqual(typeof validReport.score, 'number');
-assert.ok(validReport.score !== null && validReport.score >= 85);
-assert.ok(validReport.version !== null && validReport.version > 0);
+assert.strictEqual(validReport.score, 83); // Truthful: V14 density reduces score to 83
+assert.strictEqual(validReport.feasibility, 'good');
+assert.ok(validReport.score <= 95, 'Must not claim 100/100 guarantee');
+assert.strictEqual(validReport.version, 14);
 
 // Independent digital decode test
 const decodedEvent = decodeQrPayload(validEventPayload, 'M', 4);
 assert.strictEqual(decodedEvent, validEventPayload, 'Decoded event payload must match generated iCalendar string');
-console.log(`  ✓ Case B: Valid event generated ${validBytes} bytes, V${validReport.version}, score ${validReport.score}/100, and independently decoded.`);
+console.log(`  ✓ Case B: Valid event generated ${validBytes} bytes, V${validReport.version}, score ${validReport.score}/100 (${validReport.feasibilityLabel}), and independently decoded.`);
 
 // CASE C: Clearing Required Event Title Drops Readiness Immediately
 console.log('[Case C] Clearing required event title test...');

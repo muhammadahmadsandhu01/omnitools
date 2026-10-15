@@ -149,14 +149,19 @@ export function estimateQrVersion(bytes: number, level: ErrorLevel): number | nu
   return index === -1 ? null : index + 1;
 }
 
-export function clampScore(value: number): number {
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
+export type FeasibilityRating = 'optimal' | 'good' | 'caution' | 'critical' | 'unavailable';
 
 export interface ReliabilityReport {
   status: 'ready' | 'unavailable';
+  feasibility: FeasibilityRating;
+  feasibilityLabel: string;
   score: number | null;
   version: number | null;
+  contrastRatio: number;
+  contrastRating: 'optimal' | 'good' | 'caution' | 'critical';
+  quietZoneRating: 'compliant' | 'warning';
+  densityRating: 'low' | 'moderate' | 'high' | 'extreme' | 'over_capacity';
+  errorCorrectionRating: 'optimal' | 'standard' | 'minimal' | 'insufficient_for_logo';
   warnings: string[];
   recommendedPrintSizeCm: string;
 }
@@ -183,63 +188,161 @@ export function getReliabilityReport({
   if (!isValidPayload || bytes <= 0) {
     return {
       status: 'unavailable',
+      feasibility: 'unavailable',
+      feasibilityLabel: 'Available after generation',
       score: null,
       version: null,
+      contrastRatio: contrast,
+      contrastRating: contrast >= 7.0 ? 'optimal' : contrast >= 4.5 ? 'good' : contrast >= 3.0 ? 'caution' : 'critical',
+      quietZoneRating: marginSize >= MIN_RECOMMENDED_QUIET_ZONE ? 'compliant' : 'warning',
+      densityRating: 'low',
+      errorCorrectionRating: level === 'H' ? 'optimal' : level === 'Q' ? 'standard' : 'minimal',
       warnings: [],
       recommendedPrintSizeCm: '—',
     };
   }
 
   const version = estimateQrVersion(bytes, level);
-  let score = 100;
   const warnings: string[] = [];
 
-  if (contrast < 3.0) {
-    score -= 35;
+  // 1. Contrast Dimension (0 to 30 points)
+  let contrastPoints = 0;
+  let contrastRating: 'optimal' | 'good' | 'caution' | 'critical' = 'critical';
+  if (contrast >= 7.0) {
+    contrastPoints = 30;
+    contrastRating = 'optimal';
+  } else if (contrast >= 4.5) {
+    contrastPoints = 20;
+    contrastRating = 'good';
+    warnings.push(`Contrast ratio (${contrast.toFixed(1)}:1) is below the recommended 7.0:1 optimal target. Lighting variations may affect scanning.`);
+  } else if (contrast >= 3.0) {
+    contrastPoints = 10;
+    contrastRating = 'caution';
+    warnings.push(`Contrast ratio is marginal (${contrast.toFixed(1)}:1). Some camera sensors in low light will fail.`);
+  } else {
+    contrastPoints = 0;
+    contrastRating = 'critical';
     warnings.push('Contrast ratio is critically low (< 3.0:1). Most physical camera scanners will fail.');
-  } else if (contrast < 4.5) {
-    score -= 18;
-    warnings.push('Contrast is below the recommended 4.5:1 target. Darker foreground or lighter background is advised.');
-  } else if (contrast < 7.0) {
-    score -= 5;
   }
 
   if (inverted) {
-    score -= 15;
-    warnings.push('Inverted QR code (light modules on dark background). Some legacy scanners do not support inverted codes.');
+    contrastPoints = Math.max(0, contrastPoints - 10);
+    warnings.push('Inverted QR code (light modules on dark background). Some legacy scanners do not support inverted polarity.');
   }
 
-  if (marginSize < MIN_RECOMMENDED_QUIET_ZONE) {
-    score -= 15;
-    warnings.push('Quiet zone is below the standard 4-module minimum. Neighboring graphics or edges may impair scanning.');
+  // 2. Quiet Zone Dimension (0 to 15 points)
+  let marginPoints = 0;
+  let quietZoneRating: 'compliant' | 'warning' = 'warning';
+  if (marginSize >= MIN_RECOMMENDED_QUIET_ZONE) {
+    marginPoints = 15;
+    quietZoneRating = 'compliant';
+  } else if (marginSize >= 2) {
+    marginPoints = 5;
+    warnings.push(`Quiet zone (${marginSize} modules) is below the ISO/IEC 18004 4-module standard. Adjacent graphics may impair finder pattern detection.`);
+  } else {
+    marginPoints = 0;
+    warnings.push(`Quiet zone is virtually absent (${marginSize} modules). Scanners require a blank border to isolate the matrix.`);
   }
 
-  if (logo) {
-    if (level !== 'H') {
-      score -= 22;
-      warnings.push('Center logo present without High (H) error correction. Scan recovery margin is severely reduced.');
+  // 3. Error Correction & Logo Area Occlusion Dimension (0 to 25 points)
+  let errorPoints = 0;
+  let errorCorrectionRating: 'optimal' | 'standard' | 'minimal' | 'insufficient_for_logo' = 'standard';
+  if (level === 'H') {
+    if (!logo) {
+      errorPoints = 25;
+      errorCorrectionRating = 'optimal';
+    } else if (logoSize <= 20) {
+      errorPoints = 20;
+      errorCorrectionRating = 'optimal';
+    } else if (logoSize <= 24) {
+      errorPoints = 14;
+      errorCorrectionRating = 'standard';
+      warnings.push(`Logo size (${logoSize}%) covers significant area. Keep under 20% for optimal recovery margin.`);
+    } else {
+      errorPoints = 8;
+      errorCorrectionRating = 'standard';
+      warnings.push(`Logo size (${logoSize}%) approaches the 30% Level H recovery limit.`);
     }
-    if (logoSize > 24) {
-      score -= 15;
-      warnings.push(`Logo size (${logoSize}%) covers significant matrix area. Keep under 22% for reliable decoding.`);
-    } else if (logoSize > 20) {
-      score -= 6;
+  } else if (level === 'Q') {
+    if (!logo) {
+      errorPoints = 22;
+      errorCorrectionRating = 'standard';
+    } else {
+      errorPoints = 10;
+      errorCorrectionRating = 'insufficient_for_logo';
+      warnings.push('Center logo with Level Q error correction. High (H) error correction is strongly advised to maintain redundancy.');
+    }
+  } else if (level === 'M') {
+    if (!logo) {
+      errorPoints = 18;
+      errorCorrectionRating = 'standard';
+    } else {
+      errorPoints = 4;
+      errorCorrectionRating = 'insufficient_for_logo';
+      warnings.push('Center logo present with Level M (~15% recovery). The logo consumes all parity margin; scan failure risk is high.');
+    }
+  } else { // Level L
+    if (!logo) {
+      errorPoints = 12;
+      errorCorrectionRating = 'minimal';
+      warnings.push('Level L provides only ~7% error correction. Any surface smudge or damage will cause scan failure.');
+    } else {
+      errorPoints = 0;
+      errorCorrectionRating = 'insufficient_for_logo';
+      warnings.push('Center logo with Level L error correction. Data recovery margin is completely exhausted.');
     }
   }
 
-  if (version && version >= 30) {
-    score -= 10;
-    warnings.push(`High density (V${version}). Requires larger physical print dimensions (min 5.0 cm / 2.0 in).`);
-  } else if (version && version >= 20) {
-    score -= 4;
-  }
-
+  // 4. Matrix Density & Physical Scale Dimension (0 to 30 points)
+  let densityPoints = 0;
+  let densityRating: 'low' | 'moderate' | 'high' | 'extreme' | 'over_capacity' = 'low';
   if (!version) {
-    score = 0;
+    densityPoints = 0;
+    densityRating = 'over_capacity';
     warnings.push('Payload exceeds conservative QR byte capacity. Reduce content length or lower error correction.');
+  } else if (version <= 5) {
+    densityPoints = 30;
+    densityRating = 'low';
+  } else if (version <= 10) {
+    densityPoints = 26;
+    densityRating = 'moderate';
+  } else if (version <= 20) {
+    densityPoints = 20;
+    densityRating = 'moderate';
+  } else if (version <= 30) {
+    densityPoints = 14;
+    densityRating = 'high';
+    warnings.push(`High density (V${version}). Requires larger physical print dimensions (min 5.0 cm / 2.0 in) and sharp print resolution.`);
+  } else {
+    densityPoints = 8;
+    densityRating = 'extreme';
+    warnings.push(`Very high density (V${version}). Difficult for budget camera sensors to resolve unless printed large (min 6.5 cm).`);
   }
 
-  // Print size recommendations
+  const rawScore = contrastPoints + marginPoints + errorPoints + densityPoints;
+
+  // Crucial: Software cannot validate physical environment (lighting, lens quality, sensor autofocus, print surface).
+  // Therefore, the maximum heuristic score is capped at 95 to prevent misleading 100/100 guarantees.
+  const MAX_HEURISTIC_SCORE = 95;
+  const clampedScore = !version ? 0 : Math.min(MAX_HEURISTIC_SCORE, Math.max(0, Math.round(rawScore)));
+
+  let feasibility: FeasibilityRating = 'critical';
+  let feasibilityLabel = 'Critical Risk';
+  if (clampedScore >= 85) {
+    feasibility = 'optimal';
+    feasibilityLabel = 'Optimal';
+  } else if (clampedScore >= 70) {
+    feasibility = 'good';
+    feasibilityLabel = 'Good';
+  } else if (clampedScore >= 50) {
+    feasibility = 'caution';
+    feasibilityLabel = 'Caution';
+  } else {
+    feasibility = 'critical';
+    feasibilityLabel = 'High Risk';
+  }
+
+  // Recommended print size based on version density (10:1 distance rule with 0.5mm module threshold)
   let printSize = '2.5 cm (1.0 in)';
   if (version) {
     if (version >= 25) printSize = '6.0 cm (2.4 in)';
@@ -249,8 +352,15 @@ export function getReliabilityReport({
 
   return {
     status: 'ready',
-    score: clampScore(score),
+    feasibility,
+    feasibilityLabel,
+    score: clampedScore,
     version,
+    contrastRatio: contrast,
+    contrastRating,
+    quietZoneRating,
+    densityRating,
+    errorCorrectionRating,
     warnings,
     recommendedPrintSizeCm: printSize,
   };
@@ -1775,23 +1885,30 @@ export default function QrGenerator() {
             {showReliability && (
               <div className="rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                    Estimated Scan Reliability
-                  </span>
+                  <div>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100 block">
+                      Estimated Scan Reliability
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Multi-factor structural heuristic (Max 95/100 · Physical environment unmeasured)
+                    </span>
+                  </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold ${
                       reliability.status === 'unavailable' || reliability.score === null
                         ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                         : reliability.score >= 85
                         ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300'
-                        : reliability.score >= 65
+                        : reliability.score >= 70
+                        ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
+                        : reliability.score >= 50
                         ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
                         : 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300'
                     }`}
                   >
                     {reliability.status === 'unavailable' || reliability.score === null
                       ? 'Available after generation'
-                      : `${reliability.score}/100`}
+                      : `${reliability.score}/100 · ${reliability.feasibilityLabel}`}
                   </span>
                 </div>
 
@@ -1835,11 +1952,18 @@ export default function QrGenerator() {
                   </div>
                 )}
 
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 leading-relaxed border-t border-blue-200/50 dark:border-blue-900/40">
-                  {isReady
-                    ? `Heuristic engineering score — not a guarantee of physical scanning. Recommended minimum print size for this density is ${reliability.recommendedPrintSizeCm}.`
-                    : 'Reliability metrics and print size guidelines will be calculated once valid QR payload data is entered.'}
-                </p>
+                <div className="space-y-1 text-[11px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-blue-200/50 dark:border-blue-900/40 leading-relaxed">
+                  <p>
+                    {isReady
+                      ? `Heuristic engineering score (max 95/100) — not a physical scan guarantee. Recommended minimum print size for this density is ${reliability.recommendedPrintSizeCm}.`
+                      : 'Reliability metrics and print size guidelines will be calculated once valid QR payload data is entered.'}
+                  </p>
+                  {isReady && (
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                      Measured: WCAG contrast, quiet zone margin, Reed-Solomon tier, matrix density, and logo occlusion. Real-world illumination, camera sensor resolution, and substrate texture cannot be measured by software.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1956,8 +2080,8 @@ export default function QrGenerator() {
                       {logoWarning ? 'Logo (H required)' : 'Logo Active'}
                     </span>
                   )}
-                  <span className={`px-2.5 py-1 rounded-full font-medium ${reliability.score !== null && reliability.score >= 85 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
-                    Reliability Estimate: {reliability.score !== null ? `${reliability.score}/100` : 'Available after generation'}
+                  <span className={`px-2.5 py-1 rounded-full font-medium ${reliability.score !== null && reliability.score >= 85 ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : reliability.score !== null && reliability.score >= 70 ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'}`}>
+                    Reliability Estimate: {reliability.score !== null ? `${reliability.score}/100 (${reliability.feasibilityLabel})` : 'Available after generation'}
                   </span>
                   {activeVerification?.status === 'verified' ? (
                     <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300 font-medium">
