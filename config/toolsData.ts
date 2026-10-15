@@ -313,9 +313,10 @@ export const tools: Tool[] = [
       'Test regular expressions with live matching and generate code examples for supported languages.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Regex Tester & Code Generator',
-    seoDescription: 'Test regular expressions in real time with capture groups, syntax explanations, and export ready code snippets for JavaScript, Python, Go, and PHP.',
-    relatedToolSlugs: ['text-analyzer', 'text-case-converter', 'json-formatter', 'sql-formatter'],
+    seoTitle: 'Regex Tester & Code Generator — Test, Debug & Explain Regex Online',
+    seoDescription:
+      'Test regular expressions in real time with capture groups, syntax explanations, split and replacement testing, ReDoS safety heuristics, and export-ready code snippets. 100% private in-browser evaluation.',
+    relatedToolSlugs: ['text-analyzer', 'text-case-converter', 'json-formatter', 'sql-formatter', 'base64-encoder'],
   },
 
   // ============================================================

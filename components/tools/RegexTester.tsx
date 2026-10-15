@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode, UIEvent } from 'react';
 import {
   AlertCircle,
+  BookOpen,
   Braces,
   CheckCircle2,
   ChevronLeft,
@@ -14,7 +15,9 @@ import {
   Play,
   RotateCcw,
   Rows,
+  Scissors,
   Search,
+  Share2,
   ShieldAlert,
   ShieldCheck,
   Terminal,
@@ -23,7 +26,7 @@ import {
 } from 'lucide-react';
 
 export type RegexFlag = 'g' | 'i' | 'm' | 's' | 'u' | 'y' | 'd';
-export type ActiveTab = 'breakdown' | 'replace' | 'explain' | 'analyze' | 'code';
+export type ActiveTab = 'breakdown' | 'replace' | 'split' | 'cheatsheet' | 'explain' | 'analyze' | 'code';
 
 export interface MatchData {
   match: string;
@@ -35,7 +38,15 @@ export interface MatchData {
 }
 
 export type WorkerResponse =
-  | { type: 'result'; requestId: number; matches: MatchData[]; matchLimitReached: boolean; durationMs: number }
+  | {
+      type: 'result';
+      requestId: number;
+      matches: MatchData[];
+      replacedText: string;
+      splitResult: string[];
+      matchLimitReached: boolean;
+      durationMs: number;
+    }
   | { type: 'error'; requestId: number; error: string }
   | { type: 'ready' };
 
@@ -46,20 +57,22 @@ const EXECUTION_TIMEOUT_MS = 1_200;
 const PAGE_SIZE = 50;
 const MAX_HIGHLIGHT_MATCHES = 300;
 
-const COMMON_PATTERNS = [
+export const COMMON_PATTERNS = [
   { name: 'Email Address', pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$', flags: 'gm', desc: 'Standard email format heuristic' },
   { name: 'Strong Password', pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{12,}$', flags: 'gm', desc: '12+ chars with upper, lower, digit, and symbol' },
   { name: 'URL / Website', pattern: 'https?:\\/\\/(?:www\\.)?[^\\s<]+', flags: 'gi', desc: 'HTTP/HTTPS web address' },
   { name: 'IPv4 Address', pattern: '\\b(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\b', flags: 'g', desc: 'Valid 0.0.0.0 to 255.255.255.255 octets' },
   { name: 'HTML Tags', pattern: '<\\/?[a-z][a-z0-9-]*\\b[^>]*>', flags: 'gi', desc: 'HTML opening, closing, and self-closing tags' },
-  { name: 'Phone Number', pattern: '\\+?[1-9]\\d[\\d ()-]{6,}\\d', flags: 'g', desc: 'International and national phone heuristic' },
   { name: 'Date (YYYY-MM-DD)', pattern: '\\b\\d{4}-\\d{2}-\\d{2}\\b', flags: 'g', desc: 'ISO 8601 calendar date' },
+  { name: 'UUID / GUID', pattern: '\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b', flags: 'gi', desc: 'Standard 8-4-4-4-12 hexadecimal GUID' },
   { name: 'Hex Color', pattern: '#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\\b', flags: 'gi', desc: '3 or 6 hex digit color code' },
-  { name: 'IPv6 Address', pattern: '(?:(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})', flags: 'g', desc: 'Standard 8-group IPv6 format' },
-  { name: 'Quoted String', pattern: "\"(?:\\.|[^\"\\])*\"|'(?:\\.|[^'\\])*'", flags: 'g', desc: 'Single or double quoted literals with escapes' },
+  { name: 'Currency Amount', pattern: '(?:\\$|€|£|¥)\\s*\\d+(?:,\\d{3})*(?:\\.\\d{2})?', flags: 'g', desc: 'Currency symbol with comma-separated numbers' },
+  { name: 'SemVer', pattern: '\\bv?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9a-zA-Z.-]+)?(?:\\+[0-9a-zA-Z.-]+)?\\b', flags: 'g', desc: 'Semantic version number' },
+  { name: 'Phone Number', pattern: '\\+?[1-9]\\d[\\d ()-]{6,}\\d', flags: 'g', desc: 'International and national phone heuristic' },
+  { name: 'Quoted String', pattern: '"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\'', flags: 'g', desc: 'Single or double quoted literals with escapes' },
 ];
 
-const FLAG_INFO: { id: RegexFlag; label: string; title: string; desc: string }[] = [
+export const FLAG_INFO: { id: RegexFlag; label: string; title: string; desc: string }[] = [
   { id: 'g', label: 'g', title: 'Global', desc: 'Find all matches rather than stopping after first' },
   { id: 'i', label: 'i', title: 'Ignore Case', desc: 'Case-insensitive matching' },
   { id: 'm', label: 'm', title: 'Multiline', desc: '^ and $ match start and end of each line' },
@@ -67,6 +80,72 @@ const FLAG_INFO: { id: RegexFlag; label: string; title: string; desc: string }[]
   { id: 'u', label: 'u', title: 'Unicode', desc: 'Treat pattern as a sequence of Unicode code points' },
   { id: 'y', label: 'y', title: 'Sticky', desc: 'Match only from the index indicated by lastIndex' },
   { id: 'd', label: 'd', title: 'Indices', desc: 'Generate indices for substring matches' },
+];
+
+export interface CheatSheetEntry {
+  token: string;
+  name: string;
+  desc: string;
+  example: string;
+  category: 'Classes' | 'Quantifiers' | 'Anchors' | 'Groups' | 'Flags' | 'Replacements';
+}
+
+export const CHEAT_SHEET_DATA: CheatSheetEntry[] = [
+  // Character Classes
+  { token: '\\d', name: 'Digit', desc: 'Matches any Arabic numeral character [0-9]', example: '\\d+', category: 'Classes' },
+  { token: '\\D', name: 'Non-Digit', desc: 'Matches any character that is not a digit [^0-9]', example: '\\D+', category: 'Classes' },
+  { token: '\\w', name: 'Word Character', desc: 'Matches ASCII letter, digit, or underscore [A-Za-z0-9_]', example: '\\w+', category: 'Classes' },
+  { token: '\\W', name: 'Non-Word Character', desc: 'Matches any non-word character [^A-Za-z0-9_]', example: '\\W+', category: 'Classes' },
+  { token: '\\s', name: 'Whitespace', desc: 'Matches space, tab, newline, carriage return, form feed', example: '\\s+', category: 'Classes' },
+  { token: '\\S', name: 'Non-Whitespace', desc: 'Matches any character that is not whitespace', example: '\\S+', category: 'Classes' },
+  { token: '.', name: 'Wildcard (Dot)', desc: 'Matches any character except line breaks (or all with s flag)', example: 'a.c', category: 'Classes' },
+  { token: '[abc]', name: 'Character Set', desc: 'Matches any one character enclosed in the brackets', example: '[aeiou]', category: 'Classes' },
+  { token: '[^abc]', name: 'Negated Set', desc: 'Matches any one character NOT enclosed in the brackets', example: '[^0-9]', category: 'Classes' },
+  { token: '[a-z]', name: 'Character Range', desc: 'Matches any single character within the ASCII range', example: '[0-9a-fA-F]', category: 'Classes' },
+  { token: '\\p{L}', name: 'Unicode Category', desc: 'Matches any letter in any writing system (requires u flag)', example: '\\p{Letter}+', category: 'Classes' },
+
+  // Quantifiers
+  { token: '*', name: 'Zero or More', desc: 'Matches 0 or more times (greedy)', example: 'ba*', category: 'Quantifiers' },
+  { token: '+', name: 'One or More', desc: 'Matches 1 or more times (greedy)', example: 'ba+', category: 'Quantifiers' },
+  { token: '?', name: 'Optional / Lazy', desc: 'Matches 0 or 1 time, or turns preceding quantifier lazy', example: 'colou?r', category: 'Quantifiers' },
+  { token: '{n}', name: 'Exact Count', desc: 'Matches exactly n consecutive times', example: '\\d{4}', category: 'Quantifiers' },
+  { token: '{n,}', name: 'Minimum Count', desc: 'Matches n or more consecutive times', example: '\\d{2,}', category: 'Quantifiers' },
+  { token: '{n,m}', name: 'Bounded Range', desc: 'Matches between n and m consecutive times', example: '\\d{2,4}', category: 'Quantifiers' },
+  { token: '*?', name: 'Lazy Zero or More', desc: 'Matches 0 or more times, taking as few chars as possible', example: '<.*?>', category: 'Quantifiers' },
+  { token: '+?', name: 'Lazy One or More', desc: 'Matches 1 or more times, taking as few chars as possible', example: '<.+?>', category: 'Quantifiers' },
+
+  // Anchors & Boundaries
+  { token: '^', name: 'Start Anchor', desc: 'Matches beginning of string (or line with m flag)', example: '^http', category: 'Anchors' },
+  { token: '$', name: 'End Anchor', desc: 'Matches end of string (or line with m flag)', example: '\\.html$', category: 'Anchors' },
+  { token: '\\b', name: 'Word Boundary', desc: 'Matches zero-width position between word and non-word char', example: '\\bcat\\b', category: 'Anchors' },
+  { token: '\\B', name: 'Non-Word Boundary', desc: 'Matches zero-width position inside or outside words', example: '\\Bcat', category: 'Anchors' },
+
+  // Groups & Lookarounds
+  { token: '(...)', name: 'Capturing Group', desc: 'Groups tokens and creates a numbered capture ($1, $2)', example: '(\\w+)@(\\w+)', category: 'Groups' },
+  { token: '(?:...)', name: 'Non-Capturing Group', desc: 'Groups tokens without creating a numbered capture', example: '(?:https?|ftp)', category: 'Groups' },
+  { token: '(?<name>...)', name: 'Named Group', desc: 'Captures match into a named dictionary key', example: '(?<id>\\d+)', category: 'Groups' },
+  { token: '(?=...)', name: 'Positive Lookahead', desc: 'Asserts succeeding text matches without consuming chars', example: 'q(?=u)', category: 'Groups' },
+  { token: '(?!...)', name: 'Negative Lookahead', desc: 'Asserts succeeding text does NOT match', example: 'q(?!u)', category: 'Groups' },
+  { token: '(?<=...)', name: 'Positive Lookbehind', desc: 'Asserts preceding text matches without consuming chars', example: '(?<=\\$)\\d+', category: 'Groups' },
+  { token: '(?<!...)', name: 'Negative Lookbehind', desc: 'Asserts preceding text does NOT match', example: '(?<!\\\\)"', category: 'Groups' },
+  { token: '\\1', name: 'Backreference', desc: 'Matches the exact same text matched by group number 1', example: '([\'"])(.*?)\\1', category: 'Groups' },
+
+  // Flags
+  { token: 'g', name: 'Global Flag', desc: 'Matches all occurrences rather than returning on first match', example: '/pattern/g', category: 'Flags' },
+  { token: 'i', name: 'Ignore Case Flag', desc: 'Case-insensitive matching across uppercase and lowercase', example: '/test/i', category: 'Flags' },
+  { token: 'm', name: 'Multiline Flag', desc: '^ and $ anchors match start and end of every line (\\n)', example: '/^line/m', category: 'Flags' },
+  { token: 's', name: 'DotAll Flag', desc: 'Allows the dot wildcard (.) to match newline characters (\\n)', example: '/a.*b/s', category: 'Flags' },
+  { token: 'u', name: 'Unicode Flag', desc: 'Full Unicode code point support and surrogate pair handling', example: '/\\p{L}/u', category: 'Flags' },
+  { token: 'y', name: 'Sticky Flag', desc: 'Matches only at the exact index specified by lastIndex', example: '/\\w+/y', category: 'Flags' },
+  { token: 'd', name: 'Indices Flag', desc: 'Generates start and end indices for all capture groups', example: '/(\\d+)/d', category: 'Flags' },
+
+  // Replacements
+  { token: '$1, $2', name: 'Group Reference', desc: 'Inserts the nth parenthesized capture group', example: '[$1]', category: 'Replacements' },
+  { token: '$&', name: 'Full Match', desc: 'Inserts the entire matched substring', example: '**$&**', category: 'Replacements' },
+  { token: '$`', name: 'Preceding Text', desc: 'Inserts the portion of string preceding the match', example: '$`', category: 'Replacements' },
+  { token: '$\'', name: 'Following Text', desc: 'Inserts the portion of string following the match', example: '$\'', category: 'Replacements' },
+  { token: '$$', name: 'Escaped Dollar Sign', desc: 'Inserts a literal dollar sign ($)', example: '$$100', category: 'Replacements' },
+  { token: '$<name>', name: 'Named Group Reference', desc: 'Inserts the text of the named capture group', example: '$<id>', category: 'Replacements' },
 ];
 
 export function serializeJsString(str: string): string {
@@ -131,8 +210,8 @@ export function parseRegexSyntaxError(errorMsg: string, pattern: string): { mess
   const posMatch = errorMsg.match(/at (?:position|offset|index) (\d+)/i);
   if (posMatch) {
     const parsed = parseInt(posMatch[1], 10);
-    if (!isNaN(parsed) && parsed >= 0 && parsed <= pattern.length) {
-      position = parsed;
+    if (!isNaN(parsed) && parsed >= 0) {
+      position = Math.min(parsed, pattern.length);
     }
   }
   let pointer: string | null = null;
@@ -140,7 +219,7 @@ export function parseRegexSyntaxError(errorMsg: string, pattern: string): { mess
     const start = Math.max(0, position - 20);
     const end = Math.min(pattern.length, position + 20);
     const excerpt = pattern.slice(start, end);
-    const offsetInExcerpt = position - start;
+    const offsetInExcerpt = Math.min(position - start, excerpt.length);
     pointer = `${excerpt}\n${' '.repeat(offsetInExcerpt)}^`;
   }
   return { message: errorMsg, position, pointer };
@@ -302,7 +381,7 @@ export interface RiskFinding {
 }
 
 export interface CompatibilityFinding {
-  target: 'JavaScript' | 'Python' | 'Java';
+  target: 'JavaScript' | 'Python' | 'Java' | 'Go';
   level: 'ok' | 'warning' | 'note';
   detail: string;
 }
@@ -362,7 +441,7 @@ export function analyzeRegexRisk(pattern: string, flags: string): { score: numbe
     add(
       'low',
       'No high-risk pattern structure detected by this heuristic',
-      'This heuristic checks for known catastrophic backtracking shapes. It is NOT a mathematical proof that the regex is completely ReDoS-safe under arbitrary inputs.'
+      'This heuristic checks for known catastrophic backtracking shapes. It is an early-warning diagnostic, NOT a mathematical proof that the regex is completely ReDoS-safe under arbitrary inputs.'
     );
   }
 
@@ -373,7 +452,7 @@ export function analyzeCompatibility(pattern: string, flags: string): Compatibil
   const findings: CompatibilityFinding[] = [];
   const add = (target: CompatibilityFinding['target'], level: CompatibilityFinding['level'], detail: string) => findings.push({ target, level, detail });
 
-  add('JavaScript', 'ok', 'Native browser JavaScript RegExp engine. Full ECMAScript regex specification conformance.');
+  add('JavaScript', 'ok', 'Native browser JavaScript RegExp engine. Full ECMAScript 2024 regex specification conformance.');
 
   if (flags.includes('y')) add('Python', 'warning', 'Sticky flag (y) has no direct equivalent in Python re. Use pos argument in re.search() or anchor pattern with \\G/\\A.');
   if (flags.includes('d')) add('Python', 'warning', 'Indices flag (d) is not a Python flag. Use Match.span() or Match.start()/Match.end() to query match boundaries.');
@@ -391,6 +470,12 @@ export function analyzeCompatibility(pattern: string, flags: string): Compatibil
   if (/\(\?<([A-Za-z_$][\w$]*)>/.test(pattern)) add('Java', 'ok', 'Java 7+ Pattern supports (?<name>...) named capture groups natively.');
   if (/\\p\{/.test(pattern)) add('Java', 'note', 'Java Pattern supports Unicode properties (\\p{L}, \\p{IsLatin}), but some property names differ from ECMAScript.');
 
+  // Go RE2 engine compatibility
+  if (flags.includes('y') || flags.includes('d')) add('Go', 'warning', 'Sticky (y) and Indices (d) flags are not supported in Go regexp package.');
+  if (/\(\?[=!<]/.test(pattern)) add('Go', 'warning', 'Lookahead and lookbehind assertions are NOT supported by Go RE2 engine to guarantee linear-time execution.');
+  if (/\\(?:\d+|k<[^>]+>)/.test(pattern)) add('Go', 'warning', 'Backreferences are NOT supported in Go regexp (RE2 engine avoids exponential backtracking).');
+  if (!/\(\?[=!<]/.test(pattern) && !/\\(?:\d+|k<[^>]+>)/.test(pattern)) add('Go', 'ok', 'Pattern syntax is fully compatible with Go standard library regexp package.');
+
   return findings;
 }
 
@@ -400,93 +485,122 @@ function riskClass(level: RiskLevel) {
   return 'text-emerald-600 dark:text-emerald-400';
 }
 
-function createWorker() {
-  const source = `
-    self.onmessage = function(event) {
-      var data = event.data;
-      var requestId = data.requestId;
-      var pattern = data.pattern;
-      var flags = data.flags;
-      var text = data.text;
-      var maxMatches = data.maxMatches;
+function createWorker(): { worker: Worker | null; url: string | null } {
+  if (typeof window === 'undefined' || typeof Worker === 'undefined') {
+    return { worker: null, url: null };
+  }
+  try {
+    const source = `
+      self.onmessage = function(event) {
+        var data = event.data;
+        var requestId = data.requestId;
+        var pattern = data.pattern;
+        var flags = data.flags;
+        var text = data.text;
+        var replacement = data.replacement !== undefined ? String(data.replacement) : '';
+        var maxMatches = data.maxMatches;
 
-      try {
-        var regex = new RegExp(pattern, flags);
-        var started = performance.now();
-        var matches = [];
-        var matchLimitReached = false;
+        try {
+          var regex = new RegExp(pattern, flags);
+          var started = performance.now();
+          var matches = [];
+          var matchLimitReached = false;
 
-        if (regex.global || regex.sticky) {
-          var match;
-          while ((match = regex.exec(text)) !== null) {
-            var groups = Array.prototype.slice.call(match, 1);
-            var namedGroups = match.groups ? Object.assign({}, match.groups) : {};
-            var indices = match.indices ? Array.prototype.slice.call(match.indices) : undefined;
+          if (regex.global || regex.sticky) {
+            var match;
+            while ((match = regex.exec(text)) !== null) {
+              var groups = Array.prototype.slice.call(match, 1);
+              var namedGroups = match.groups ? Object.assign({}, match.groups) : {};
+              var indices = match.indices ? Array.prototype.slice.call(match.indices) : undefined;
 
-            matches.push({
-              match: match[0],
-              index: match.index,
-              end: match.index + match[0].length,
-              groups: groups,
-              namedGroups: namedGroups,
-              indices: indices
-            });
+              matches.push({
+                match: match[0],
+                index: match.index,
+                end: match.index + match[0].length,
+                groups: groups,
+                namedGroups: namedGroups,
+                indices: indices
+              });
 
-            if (matches.length >= maxMatches) {
-              matchLimitReached = true;
-              break;
-            }
-
-            // Guard against infinite loop on zero-width/empty matches
-            if (match[0] === '') {
-              var step = 1;
-              if (regex.unicode) {
-                var cp = text.codePointAt(regex.lastIndex);
-                if (cp !== undefined && cp > 0xffff) {
-                  step = 2;
-                }
-              }
-              regex.lastIndex += step;
-              if (regex.lastIndex > text.length) {
+              if (matches.length >= maxMatches) {
+                matchLimitReached = true;
                 break;
               }
+
+              // Guard against infinite loop on zero-width/empty matches
+              if (match[0] === '') {
+                var step = 1;
+                if (regex.unicode) {
+                  var cp = text.codePointAt(regex.lastIndex);
+                  if (cp !== undefined && cp > 0xffff) {
+                    step = 2;
+                  }
+                }
+                regex.lastIndex += step;
+                if (regex.lastIndex > text.length) {
+                  break;
+                }
+              }
+            }
+          } else {
+            var singleMatch = regex.exec(text);
+            if (singleMatch) {
+              matches.push({
+                match: singleMatch[0],
+                index: singleMatch.index,
+                end: singleMatch.index + singleMatch[0].length,
+                groups: Array.prototype.slice.call(singleMatch, 1),
+                namedGroups: singleMatch.groups ? Object.assign({}, singleMatch.groups) : {},
+                indices: singleMatch.indices ? Array.prototype.slice.call(singleMatch.indices) : undefined
+              });
             }
           }
-        } else {
-          var singleMatch = regex.exec(text);
-          if (singleMatch) {
-            matches.push({
-              match: singleMatch[0],
-              index: singleMatch.index,
-              end: singleMatch.index + singleMatch[0].length,
-              groups: Array.prototype.slice.call(singleMatch, 1),
-              namedGroups: singleMatch.groups ? Object.assign({}, singleMatch.groups) : {},
-              indices: singleMatch.indices ? Array.prototype.slice.call(singleMatch.indices) : undefined
-            });
-          }
-        }
 
-        self.postMessage({
-          type: 'result',
-          requestId: requestId,
-          matches: matches,
-          matchLimitReached: matchLimitReached,
-          durationMs: performance.now() - started
-        });
-      } catch (err) {
-        self.postMessage({
-          type: 'error',
-          requestId: requestId,
-          error: err && err.message ? err.message : String(err)
-        });
-      }
-    };
-    self.postMessage({ type: 'ready' });
-  `;
-  const blob = new Blob([source], { type: 'application/javascript' });
-  const url = URL.createObjectURL(blob);
-  const worker = new Worker(url);
-  return { worker, url };
+          // Evaluate replacement safely inside background worker thread
+          var replacedText = text;
+          try {
+            var replaceRegex = new RegExp(pattern, flags);
+            replacedText = text.replace(replaceRegex, replacement);
+          } catch (rErr) {
+            replacedText = text;
+          }
+
+          // Evaluate split safely inside background worker thread (capped to 500 items)
+          var splitResult = [text];
+          try {
+            var splitRegex = new RegExp(pattern, flags);
+            var rawSplit = text.split(splitRegex);
+            splitResult = rawSplit.length > 500 ? rawSplit.slice(0, 500) : rawSplit;
+          } catch (sErr) {
+            splitResult = [text];
+          }
+
+          self.postMessage({
+            type: 'result',
+            requestId: requestId,
+            matches: matches,
+            replacedText: replacedText,
+            splitResult: splitResult,
+            matchLimitReached: matchLimitReached,
+            durationMs: performance.now() - started
+          });
+        } catch (err) {
+          self.postMessage({
+            type: 'error',
+            requestId: requestId,
+            error: err && err.message ? err.message : String(err)
+          });
+        }
+      };
+      self.postMessage({ type: 'ready' });
+    `;
+    const blob = new Blob([source], { type: 'application/javascript' });
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    return { worker, url };
+  } catch {
+    return { worker: null, url: null };
+  }
 }
 
 export default function RegexTester() {
@@ -496,13 +610,24 @@ export default function RegexTester() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('breakdown');
   const [replacement, setReplacement] = useState('[$1] [$2]');
   const [copied, setCopied] = useState('');
-  const [workerResult, setWorkerResult] = useState<{ matches: MatchData[]; matchLimitReached: boolean; durationMs: number } | null>(null);
+  const [workerResult, setWorkerResult] = useState<{
+    matches: MatchData[];
+    replacedText: string;
+    splitResult: string[];
+    matchLimitReached: boolean;
+    durationMs: number;
+  } | null>(null);
   const [workerError, setWorkerError] = useState<string | null>(null);
   const [executionTimedOut, setExecutionTimedOut] = useState(false);
   const [running, setRunning] = useState(false);
   const [search, setSearch] = useState('');
+  const [cheatSearch, setCheatSearch] = useState('');
+  const [cheatCategory, setCheatCategory] = useState<string>('All');
+  const [extractTarget, setExtractTarget] = useState<'match' | 'group1' | 'group2' | 'named'>('match');
   const [currentPage, setCurrentPage] = useState(1);
   const [executionVersion, setExecutionVersion] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
 
   const backdropRef = useRef<HTMLDivElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
@@ -512,7 +637,38 @@ export default function RegexTester() {
   const executionTimeoutRef = useRef<number | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
 
-  // Terminate current worker and clean up its Object URL safely
+  // Restore state from URL hash via event listener / subscription
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleHash = () => {
+      try {
+        const hash = window.location.hash;
+        if (hash && hash.includes('state=')) {
+          const match = hash.match(/state=([^&]+)/);
+          if (match) {
+            const decoded = JSON.parse(decodeURIComponent(match[1]));
+            if (typeof decoded.p === 'string') setPattern(decoded.p);
+            if (typeof decoded.f === 'string') setFlags(decoded.f);
+            if (typeof decoded.t === 'string') setTestString(decoded.t);
+            if (typeof decoded.r === 'string') setReplacement(decoded.r);
+            if (typeof decoded.tab === 'string') setActiveTab(decoded.tab as ActiveTab);
+          }
+        }
+      } catch {
+        // Ignore malformed state
+      }
+    };
+
+    window.addEventListener('hashchange', handleHash);
+    const timer = window.setTimeout(handleHash, 0);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  // Terminate current worker and clean up Object URL
   const killCurrentWorker = useCallback(() => {
     if (executionTimeoutRef.current !== null) {
       window.clearTimeout(executionTimeoutRef.current);
@@ -529,18 +685,130 @@ export default function RegexTester() {
     runningRef.current = false;
   }, []);
 
-  // Initialize and bind a fresh worker
+  // Synchronous main-thread execution fallback
+  const runSynchronousFallback = useCallback(
+    (currentRequestId: number, p: string, f: string, t: string, r: string) => {
+      try {
+        const risk = analyzeRegexRisk(p, f);
+        if (risk.level === 'high') {
+          if (requestRef.current === currentRequestId) {
+            setWorkerResult(null);
+            setWorkerError(
+              'Web Worker thread is unavailable in this environment and a high-risk ReDoS pattern structure was detected. Execution was paused on the main thread to prevent the browser tab from freezing. (Notice: A watchdog timer cannot interrupt synchronous operations running on the main UI thread).'
+            );
+            setExecutionTimedOut(false);
+            setRunning(false);
+          }
+          return;
+        }
+
+        // Cap text length strictly on main-thread fallback
+        const safeText = t.length > 25_000 ? t.slice(0, 25_000) : t;
+        const regex = new RegExp(p, f);
+        const start = performance.now();
+        const matchesList: MatchData[] = [];
+        let limitReached = false;
+
+        if (regex.global || regex.sticky) {
+          let match: RegExpExecArray | null;
+          let iterations = 0;
+          while ((match = regex.exec(safeText)) !== null) {
+            matchesList.push({
+              match: match[0],
+              index: match.index,
+              end: match.index + match[0].length,
+              groups: Array.prototype.slice.call(match, 1),
+              namedGroups: match.groups ? { ...match.groups } : {},
+              indices: match.indices ? Array.prototype.slice.call(match.indices) : undefined,
+            });
+
+            if (matchesList.length >= MAX_MATCHES) {
+              limitReached = true;
+              break;
+            }
+
+            if (match[0] === '') {
+              let step = 1;
+              if (regex.unicode) {
+                const cp = safeText.codePointAt(regex.lastIndex);
+                if (cp !== undefined && cp > 0xffff) step = 2;
+              }
+              regex.lastIndex += step;
+              if (regex.lastIndex > safeText.length) break;
+            }
+
+            if (++iterations > 50_000) break;
+          }
+        } else {
+          const single = regex.exec(safeText);
+          if (single) {
+            matchesList.push({
+              match: single[0],
+              index: single.index,
+              end: single.index + single[0].length,
+              groups: Array.prototype.slice.call(single, 1),
+              namedGroups: single.groups ? { ...single.groups } : {},
+              indices: single.indices ? Array.prototype.slice.call(single.indices) : undefined,
+            });
+          }
+        }
+
+        let replacedText = safeText;
+        try {
+          const replaceRegex = new RegExp(p, f);
+          replacedText = safeText.replace(replaceRegex, r);
+        } catch {
+          replacedText = safeText;
+        }
+
+        let splitResult = [safeText];
+        try {
+          const splitRegex = new RegExp(p, f);
+          const raw = safeText.split(splitRegex);
+          splitResult = raw.length > 500 ? raw.slice(0, 500) : raw;
+        } catch {
+          splitResult = [safeText];
+        }
+
+        if (requestRef.current === currentRequestId) {
+          setWorkerResult({
+            matches: matchesList,
+            replacedText,
+            splitResult,
+            matchLimitReached: limitReached,
+            durationMs: performance.now() - start,
+          });
+          setWorkerError(null);
+          setExecutionTimedOut(false);
+          setRunning(false);
+        }
+      } catch (err) {
+        if (requestRef.current === currentRequestId) {
+          setWorkerResult(null);
+          setWorkerError(err && typeof err === 'object' && 'message' in err ? String(err.message) : String(err));
+          setExecutionTimedOut(false);
+          setRunning(false);
+        }
+      }
+    },
+    []
+  );
+
+  // Initialize and bind worker
   const initFreshWorker = useCallback(() => {
     killCurrentWorker();
     const created = createWorker();
     workerRef.current = created.worker;
     workerUrlRef.current = created.url;
 
+    if (!created.worker) {
+      return; // Will use fallback
+    }
+
     created.worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       const data = event.data;
       if (data.type === 'ready') return;
 
-      // Stale-result protection: ignore any result whose requestId does not match monotonic counter
       if (data.requestId !== requestRef.current) return;
 
       if (executionTimeoutRef.current !== null) {
@@ -551,7 +819,13 @@ export default function RegexTester() {
       setRunning(false);
 
       if (data.type === 'result') {
-        setWorkerResult({ matches: data.matches, matchLimitReached: data.matchLimitReached, durationMs: data.durationMs });
+        setWorkerResult({
+          matches: data.matches,
+          replacedText: data.replacedText,
+          splitResult: data.splitResult,
+          matchLimitReached: data.matchLimitReached,
+          durationMs: data.durationMs,
+        });
         setWorkerError(null);
         setExecutionTimedOut(false);
       } else if (data.type === 'error') {
@@ -562,7 +836,6 @@ export default function RegexTester() {
     };
   }, [killCurrentWorker]);
 
-  // Clean unmount lifecycle
   useEffect(() => {
     initFreshWorker();
     return () => {
@@ -574,7 +847,7 @@ export default function RegexTester() {
     };
   }, [initFreshWorker, killCurrentWorker]);
 
-  // Execute regex off the main UI thread with debounce, monotonic ID, and timeout protection
+  // Execute regex with debounce and timeout protection
   useEffect(() => {
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
@@ -592,7 +865,7 @@ export default function RegexTester() {
         }
         runningRef.current = false;
         setRunning(false);
-        setWorkerResult({ matches: [], matchLimitReached: false, durationMs: 0 });
+        setWorkerResult({ matches: [], replacedText: testString, splitResult: [testString], matchLimitReached: false, durationMs: 0 });
         setWorkerError(null);
         setExecutionTimedOut(false);
         return;
@@ -603,13 +876,16 @@ export default function RegexTester() {
         return;
       }
 
-      // True cancellation: if a worker is currently busy, terminate it immediately to free CPU
       if (runningRef.current) {
         initFreshWorker();
       }
 
       const activeWorker = workerRef.current;
-      if (!activeWorker) return;
+      if (!activeWorker) {
+        // Fallback to synchronous execution
+        runSynchronousFallback(currentRequestId, pattern, flags, testString, replacement);
+        return;
+      }
 
       runningRef.current = true;
       setRunning(true);
@@ -620,6 +896,7 @@ export default function RegexTester() {
         pattern,
         flags,
         text: testString,
+        replacement,
         maxMatches: MAX_MATCHES,
       });
 
@@ -631,11 +908,10 @@ export default function RegexTester() {
         executionTimeoutRef.current = null;
         if (requestRef.current !== currentRequestId) return;
 
-        // Hard timeout termination
         initFreshWorker();
         setRunning(false);
         setWorkerResult(null);
-        setWorkerError(`Execution timed out after ${EXECUTION_TIMEOUT_MS} ms. The worker process was terminated to prevent CPU lockup. This runtime guard protects the browser, but is not a static proof of ReDoS safety.`);
+        setWorkerError(`Execution timed out after ${EXECUTION_TIMEOUT_MS} ms. The background evaluation thread was terminated to prevent CPU lockup. This runtime guard protects the browser, but is not a static proof of ReDoS safety.`);
         setExecutionTimedOut(true);
       }, EXECUTION_TIMEOUT_MS);
     }, 60);
@@ -646,7 +922,7 @@ export default function RegexTester() {
         debounceTimerRef.current = null;
       }
     };
-  }, [pattern, flags, testString, executionVersion, initFreshWorker]);
+  }, [pattern, flags, testString, replacement, executionVersion, initFreshWorker, runSynchronousFallback]);
 
   const matches = useMemo(() => workerResult?.matches ?? [], [workerResult]);
   const matchLimitReached = workerResult?.matchLimitReached ?? false;
@@ -656,7 +932,7 @@ export default function RegexTester() {
     return parseRegexSyntaxError(workerError, pattern);
   }, [workerError, executionTimedOut, pattern]);
 
-  // Scalable backdrop highlight generator with character-level alignment and bounding
+  // Synchronized backdrop highlight generator
   const matchNodes = useMemo(() => {
     if (!pattern || workerError || testString.length > MAX_TEST_CHARS || pattern.length > MAX_PATTERN_CHARS) {
       return [testString];
@@ -672,7 +948,6 @@ export default function RegexTester() {
         nodes.push(<span key={`t-${cursor}-${index}`}>{testString.slice(cursor, m.index)}</span>);
       }
 
-      // Zero-width match indicator without character shift
       if (m.match === '') {
         nodes.push(
           <span key={`zw-${m.index}-${index}`} className="inline-block w-0 relative overflow-visible select-none" aria-hidden="true">
@@ -710,13 +985,15 @@ export default function RegexTester() {
     const patternLit = serializeJsString(pattern);
     const flagsLit = serializeJsString(flags);
     const textLit = serializeJsString(testString);
-    const header = `// JavaScript RegExp execution\nconst regex = new RegExp(${patternLit}, ${flagsLit});\nconst text = ${textLit};\n`;
+    const replLit = serializeJsString(replacement);
+    const header = `// JavaScript RegExp (ECMAScript)\nconst regex = new RegExp(${patternLit}, ${flagsLit});\nconst text = ${textLit};\n`;
+    const replSnippet = `\n// 2. Replacement example\nconst replaced = text.replace(regex, ${replLit});\nconsole.log("Replaced text:\\n", replaced);`;
 
     if (flags.includes('g') || flags.includes('y')) {
-      return `${header}\nconst matches = [];\nlet match;\nwhile ((match = regex.exec(text)) !== null) {\n  matches.push({\n    match: match[0],\n    index: match.index,\n    groups: match.slice(1),\n    namedGroups: match.groups ? { ...match.groups } : {}\n  });\n  // Advance on zero-width match\n  if (match[0] === '') {\n    regex.lastIndex += (regex.unicode ? ((text.codePointAt(regex.lastIndex) || 0) > 0xffff ? 2 : 1) : 1);\n  }\n}\nconsole.log(matches);`;
+      return `${header}\n// 1. Find all matches\nconst matches = [];\nlet match;\nwhile ((match = regex.exec(text)) !== null) {\n  matches.push({\n    match: match[0],\n    index: match.index,\n    groups: match.slice(1),\n    namedGroups: match.groups ? { ...match.groups } : {}\n  });\n  // Guard against zero-width loop\n  if (match[0] === '') {\n    regex.lastIndex += (regex.unicode ? ((text.codePointAt(regex.lastIndex) || 0) > 0xffff ? 2 : 1) : 1);\n  }\n}\nconsole.log(matches);${replSnippet}`;
     }
-    return `${header}\nconst match = regex.exec(text);\nconsole.log(match);`;
-  }, [pattern, flags, testString]);
+    return `${header}\n// 1. Find single match\nconst match = regex.exec(text);\nconsole.log(match);${replSnippet}`;
+  }, [pattern, flags, testString, replacement]);
 
   // Code generator: Python
   const pyCode = useMemo(() => {
@@ -736,9 +1013,10 @@ export default function RegexTester() {
     const warnBlock = warnings.length ? `${warnings.join('\n')}\n\n` : '';
     const patternLit = serializePythonString(pattern);
     const textLit = serializePythonString(testString);
+    const replLit = serializePythonString(replacement);
 
-    return `${warnBlock}import re\n\nregex = re.compile(${patternLit}${flagStr})\ntext = ${textLit}\n\nmatches = []\nfor match in regex.finditer(text):\n    matches.append({\n        "match": match.group(0),\n        "start": match.start(),\n        "end": match.end(),\n        "groups": match.groups(),\n        "named": match.groupdict()\n    })\n\nprint(f"Found {len(matches)} matches")`;
-  }, [pattern, flags, testString]);
+    return `${warnBlock}import re\n\nregex = re.compile(${patternLit}${flagStr})\ntext = ${textLit}\n\n# 1. Find all matches\nmatches = []\nfor match in regex.finditer(text):\n    matches.append({\n        "match": match.group(0),\n        "start": match.start(),\n        "end": match.end(),\n        "groups": match.groups(),\n        "named": match.groupdict()\n    })\n\nprint(f"Found {len(matches)} matches")\n\n# 2. Replacement example\nreplaced = regex.sub(${replLit}, text)\nprint(f"Replaced text:\\n{replaced}")`;
+  }, [pattern, flags, testString, replacement]);
 
   // Code generator: Java
   const javaCode = useMemo(() => {
@@ -751,20 +1029,71 @@ export default function RegexTester() {
     const modifier = javaFlags.length ? `, ${javaFlags.join(' | ')}` : '';
     const patternLit = serializeJavaString(pattern);
     const textLit = serializeJavaString(testString);
+    const replLit = serializeJavaString(replacement);
 
-    return `import java.util.regex.*;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class RegexRunner {\n    public static void main(String[] args) {\n        Pattern regex = Pattern.compile(${patternLit}${modifier});\n        String text = ${textLit};\n\n        Matcher matcher = regex.matcher(text);\n        List<String> matches = new ArrayList<>();\n        while (matcher.find()) {\n            matches.add(matcher.group());\n            System.out.println("Match: " + matcher.group() + " [" + matcher.start() + ".." + matcher.end() + "]");\n        }\n        System.out.println("Total: " + matches.size());\n    }\n}`;
-  }, [pattern, flags, testString]);
+    return `import java.util.regex.*;\nimport java.util.ArrayList;\nimport java.util.List;\n\npublic class RegexRunner {\n    public static void main(String[] args) {\n        Pattern regex = Pattern.compile(${patternLit}${modifier});\n        String text = ${textLit};\n\n        // 1. Find all matches\n        Matcher matcher = regex.matcher(text);\n        List<String> matches = new ArrayList<>();\n        while (matcher.find()) {\n            matches.add(matcher.group());\n            System.out.println("Match: " + matcher.group() + " [" + matcher.start() + ".." + matcher.end() + "]");\n        }\n        System.out.println("Total matches: " + matches.size());\n\n        // 2. Replacement example\n        String replaced = matcher.replaceAll(${replLit});\n        System.out.println("\\nReplaced text:\\n" + replaced);\n    }\n}`;
+  }, [pattern, flags, testString, replacement]);
 
-  // Replacement preview
+  // Code generator: Go
+  const goCode = useMemo(() => {
+    const warnings: string[] = [];
+    if (/\(\?[=!<]/.test(pattern)) warnings.push('// Warning: Go standard regexp uses RE2; lookaheads and lookbehinds are not supported.');
+    if (/\\(?:\d+|k<[^>]+>)/.test(pattern)) warnings.push('// Warning: Go RE2 does not support backreferences to prevent exponential backtracking.');
+    if (flags.includes('y') || flags.includes('d')) warnings.push('// Warning: Sticky (y) and Indices (d) flags are not supported in Go regexp.');
+
+    // Build Go inline flag prefix for RE2 (?ims)
+    let goInline = '';
+    if (flags.includes('i')) goInline += 'i';
+    if (flags.includes('m')) goInline += 'm';
+    if (flags.includes('s')) goInline += 's';
+    const effectivePattern = goInline ? `(?${goInline})${pattern}` : pattern;
+
+    const warnBlock = warnings.length ? `${warnings.join('\n')}\n\n` : '';
+    const patternLit = '`' + effectivePattern.replace(/`/g, '` + "`" + `') + '`';
+    const textLit = '`' + testString.replace(/`/g, '` + "`" + `') + '`';
+    const replLit = '`' + replacement.replace(/`/g, '` + "`" + `') + '`';
+
+    return `${warnBlock}package main\n\nimport (\n\t"fmt"\n\t"regexp"\n)\n\nfunc main() {\n\t// Go regexp uses RE2 syntax with inline flags: (?i) ignore case, (?m) multiline, (?s) dotAll\n\tre := regexp.MustCompile(${patternLit})\n\ttext := ${textLit}\n\n\t// 1. Find all matches and submatches\n\tmatches := re.FindAllStringSubmatch(text, -1)\n\tfmt.Printf("Total matches: %d\\n", len(matches))\n\tfor i, m := range matches {\n\t\tfmt.Printf("Match #%d: %s\\n", i+1, m[0])\n\t\tfor gi, g := range m[1:] {\n\t\t\tfmt.Printf("  Group %d: %s\\n", gi+1, g)\n\t\t}\n\t}\n\n\t// 2. Replacement example\n\treplaced := re.ReplaceAllString(text, ${replLit})\n\tfmt.Println("\\nReplacement output:\\n" + replaced)\n}`;
+  }, [pattern, flags, testString, replacement]);
+
+  // Replacement preview - reads from background worker result with zero main-thread RegExp execution
   const replacementPreview = useMemo(() => {
     if (!pattern || !testString) return testString;
-    try {
-      const activeRegex = new RegExp(pattern, flags);
-      return testString.replace(activeRegex, replacement);
-    } catch {
-      return testString;
+    if (workerResult?.replacedText !== undefined) {
+      return workerResult.replacedText;
     }
-  }, [pattern, flags, testString, replacement]);
+    return testString;
+  }, [pattern, testString, workerResult]);
+
+  // Split preview - reads from background worker result with zero main-thread RegExp execution
+  const splitResult = useMemo(() => {
+    if (!pattern || !testString) return [testString];
+    if (workerResult?.splitResult !== undefined) {
+      return workerResult.splitResult;
+    }
+    return [testString];
+  }, [pattern, testString, workerResult]);
+
+  // Extracted list preview
+  const extractedList = useMemo(() => {
+    if (matches.length === 0) return [];
+    if (extractTarget === 'match') {
+      return matches.map((m) => m.match);
+    }
+    if (extractTarget === 'group1') {
+      return matches.map((m) => m.groups[0] ?? '');
+    }
+    if (extractTarget === 'group2') {
+      return matches.map((m) => m.groups[1] ?? '');
+    }
+    if (extractTarget === 'named') {
+      return matches.map((m) => {
+        const entries = Object.entries(m.namedGroups);
+        return entries.map(([k, v]) => `${k}=${v ?? ''}`).join('; ');
+      });
+    }
+    return matches.map((m) => m.match);
+  }, [matches, extractTarget]);
 
   const riskAnalysis = useMemo(() => analyzeRegexRisk(pattern, flags), [pattern, flags]);
   const compatibility = useMemo(() => analyzeCompatibility(pattern, flags), [pattern, flags]);
@@ -801,6 +1130,24 @@ export default function RegexTester() {
     } catch {
       setCopied('copy-error');
     }
+  };
+
+  const handleGenerateShareUrl = () => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const state = {
+      p: pattern,
+      f: flags,
+      t: testString.slice(0, 5000),
+      r: replacement,
+      tab: activeTab,
+    };
+    const encoded = encodeURIComponent(JSON.stringify(state));
+    url.hash = `state=${encoded}`;
+    const generated = url.toString();
+    setShareUrl(generated);
+    setShowShareModal(true);
+    copyCode(generated, 'share-modal');
   };
 
   const downloadText = (filename: string, content: string, type = 'text/plain;charset=utf-8') => {
@@ -854,7 +1201,7 @@ export default function RegexTester() {
     setReplacement('');
     setWorkerError(null);
     setExecutionTimedOut(false);
-    setWorkerResult({ matches: [], matchLimitReached: false, durationMs: 0 });
+    setWorkerResult({ matches: [], replacedText: '', splitResult: [''], matchLimitReached: false, durationMs: 0 });
     setCurrentPage(1);
     setSearch('');
   };
@@ -872,7 +1219,7 @@ export default function RegexTester() {
     setExecutionVersion((v) => v + 1);
   };
 
-  // Filtered and windowed/paginated matches for virtualized, bounded React DOM
+  // Filtered and paginated matches
   const filteredMatches = useMemo(() => {
     if (!search.trim()) return matches;
     const q = search.toLowerCase();
@@ -895,9 +1242,19 @@ export default function RegexTester() {
 
   const explanation = useMemo(() => explainPattern(pattern), [pattern]);
 
+  // Filtered cheat sheet entries
+  const filteredCheatSheet = useMemo(() => {
+    return CHEAT_SHEET_DATA.filter((entry) => {
+      const matchCat = cheatCategory === 'All' || entry.category === cheatCategory;
+      if (!matchCat) return false;
+      if (!cheatSearch.trim()) return true;
+      const q = cheatSearch.toLowerCase();
+      return entry.token.toLowerCase().includes(q) || entry.name.toLowerCase().includes(q) || entry.desc.toLowerCase().includes(q);
+    });
+  }, [cheatCategory, cheatSearch]);
+
   const tabListRef = useRef<HTMLDivElement>(null);
 
-  // Wheel horizontal scrolling for desktop mouse users
   const handleTabWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.deltaY !== 0 && !e.deltaX) {
       e.currentTarget.scrollLeft += e.deltaY;
@@ -912,9 +1269,8 @@ export default function RegexTester() {
     }
   };
 
-  // Keyboard navigation for tablist conforming to WAI-ARIA
   const handleTabKeyDown = (e: ReactKeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
-    const tabs: ActiveTab[] = ['breakdown', 'replace', 'explain', 'analyze', 'code'];
+    const tabs: ActiveTab[] = ['breakdown', 'replace', 'split', 'cheatsheet', 'explain', 'analyze', 'code'];
     let nextIndex = currentIndex;
     if (e.key === 'ArrowRight') {
       nextIndex = (currentIndex + 1) % tabs.length;
@@ -934,15 +1290,42 @@ export default function RegexTester() {
   };
 
   return (
-    <div className="flex flex-col gap-6 bg-gray-50 dark:bg-[#0B1120] transition-colors -m-6 md:-m-8 p-6 md:p-8 rounded-3xl min-h-screen">
+    <div className="flex flex-col gap-6 bg-gray-50 dark:bg-[#0B1120] transition-colors -m-4 sm:-m-6 md:-m-8 p-4 sm:p-6 md:p-8 rounded-3xl min-h-screen">
       {/* Pattern Header & Flags Control */}
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-5 rounded-3xl shadow-sm flex flex-col gap-4">
+      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
             <Library className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Preset Patterns</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => copyCode(pattern, 'pattern')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none"
+              title="Copy pattern string only"
+              aria-label="Copy pattern string"
+            >
+              {copied === 'pattern' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied === 'pattern' ? 'Copied' : 'Copy Pattern'}</span>
+            </button>
+            <button
+              onClick={() => copyCode(`/${pattern}/${flags}`, 'literal')}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none"
+              title="Copy full /pattern/flags literal"
+              aria-label="Copy full regex literal"
+            >
+              {copied === 'literal' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied === 'literal' ? 'Copied' : 'Copy /p/flags'}</span>
+            </button>
+            <button
+              onClick={handleGenerateShareUrl}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none"
+              title="Create a shareable link with serialized state"
+              aria-label="Share regex pattern"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share</span>
+            </button>
             <button
               onClick={reset}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-gray-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 outline-none"
@@ -983,7 +1366,7 @@ export default function RegexTester() {
         {/* Regular Expression Pattern Input & Flags Selector */}
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div className="flex-grow w-full relative flex items-center bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-            <span className="px-4 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
+            <span className="px-3 sm:px-4 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
             <label htmlFor="regex-pattern-input" className="sr-only">Regular Expression Pattern</label>
             <input
               id="regex-pattern-input"
@@ -999,11 +1382,11 @@ export default function RegexTester() {
               spellCheck={false}
               autoComplete="off"
             />
-            <span className="px-4 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
+            <span className="px-3 sm:px-4 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
           </div>
 
           <div
-            className="flex bg-gray-50 dark:bg-[#0a0f1a] p-1.5 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0 justify-center gap-1"
+            className="flex bg-gray-50 dark:bg-[#0a0f1a] p-1.5 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0 justify-center gap-1 overflow-x-auto"
             role="toolbar"
             aria-label="Regular expression flags"
           >
@@ -1084,12 +1467,12 @@ export default function RegexTester() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto min-h-[640px]">
         {/* Test String Box with Synchronized Highlighter */}
         <div className="lg:col-span-7 flex flex-col bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm relative min-h-[460px] lg:min-h-0">
-          <div className="flex justify-between items-center bg-gray-50 dark:bg-[#0a0f1a] p-4 border-b border-gray-200 dark:border-slate-800 z-20">
+          <div className="flex justify-between items-center bg-gray-50 dark:bg-[#0a0f1a] p-4 border-b border-gray-200 dark:border-slate-800 z-20 flex-wrap gap-2">
             <h2 className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Terminal className="w-4 h-4 text-emerald-500" />
               <span>Test String</span>
             </h2>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {matches.length > MAX_HIGHLIGHT_MATCHES && (
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-gray-200 dark:border-slate-700" title="Backdrop highlighting is bounded to the first 300 matches for smooth scrolling">
                   Highlights: first {MAX_HIGHLIGHT_MATCHES}
@@ -1124,7 +1507,7 @@ export default function RegexTester() {
             />
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 dark:bg-[#0a0f1a] border-t border-gray-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 dark:bg-[#0a0f1a] border-t border-gray-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
             <span>{stats.chars.toLocaleString()} characters · {stats.lines.toLocaleString()} lines</span>
             <span>{stats.duration.toFixed(2)} ms execution time</span>
           </div>
@@ -1136,16 +1519,18 @@ export default function RegexTester() {
           <div
             ref={tabListRef}
             onWheel={handleTabWheel}
-            className="flex items-center gap-2.5 px-3 pt-3 pb-3.5 border-b border-gray-200 dark:border-slate-800 bg-gray-50/90 dark:bg-[#0a0f1a] overflow-x-auto whitespace-nowrap min-w-0 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full"
+            className="flex items-center gap-2 px-3 pt-3 pb-3 border-b border-gray-200 dark:border-slate-800 bg-gray-50/90 dark:bg-[#0a0f1a] overflow-x-auto whitespace-nowrap min-w-0 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full"
             role="tablist"
             aria-label="Regex tool inspection panels"
           >
             {[
-              { id: 'breakdown', label: 'Match Breakdown', icon: Rows },
+              { id: 'breakdown', label: 'Matches', icon: Rows },
               { id: 'replace', label: 'Replace', icon: Wand2 },
+              { id: 'split', label: 'Split & Extract', icon: Scissors },
+              { id: 'cheatsheet', label: 'Cheat Sheet', icon: BookOpen },
               { id: 'explain', label: 'Explain', icon: Braces },
               { id: 'analyze', label: 'Safety & Engine', icon: ShieldCheck },
-              { id: 'code', label: 'Export Code', icon: Code2 },
+              { id: 'code', label: 'Code', icon: Code2 },
             ].map((tab, idx) => {
               const TabIcon = tab.icon;
               const isSelected = activeTab === tab.id;
@@ -1159,13 +1544,13 @@ export default function RegexTester() {
                   tabIndex={isSelected ? 0 : -1}
                   onClick={() => handleTabClick(tab.id as ActiveTab)}
                   onKeyDown={(e) => handleTabKeyDown(e, idx)}
-                  className={`shrink-0 min-w-max flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 select-none ${
+                  className={`shrink-0 min-w-max flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 select-none ${
                     isSelected
                       ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold shadow-xs border border-blue-500 dark:border-blue-500 ring-1 ring-blue-500/30'
-                      : 'bg-gray-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-200/80 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-slate-600'
+                      : 'bg-gray-100/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-200/80 dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <TabIcon className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <TabIcon className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                   <span className="whitespace-nowrap">{tab.label}</span>
                 </button>
               );
@@ -1174,12 +1559,12 @@ export default function RegexTester() {
 
           {/* Tab Panels */}
           <div className="flex-grow overflow-auto p-4 md:p-6 [scrollbar-width:thin]">
-            {/* Panel: Match Breakdown with High-Performance Windowing */}
+            {/* Panel: Match Breakdown */}
             {activeTab === 'breakdown' && (
               <div id="panel-breakdown" role="tabpanel" aria-labelledby="tab-breakdown" className="space-y-4">
                 {/* Search Filter & Export Actions */}
                 <div className="flex flex-wrap gap-2 items-center">
-                  <div className="relative flex-1 min-w-[160px]">
+                  <div className="relative flex-1 min-w-[140px]">
                     <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <label htmlFor="regex-search-matches" className="sr-only">Search matches</label>
                     <input
@@ -1228,11 +1613,17 @@ export default function RegexTester() {
                   )}
                 </div>
 
-                {/* Windowed Match Cards: Maximum 50 cards in DOM */}
+                <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                  * Note: Match start and end offsets are zero-indexed UTF-16 code units (ECMAScript specification).
+                </div>
+
+                {/* Windowed Match Cards */}
                 {filteredMatches.length === 0 ? (
                   <div className="h-44 flex flex-col items-center justify-center text-slate-500 font-medium">
                     <Braces className="w-10 h-10 mb-2 opacity-25" />
-                    <p className="text-sm">No matches found.</p>
+                    <p className="text-sm">
+                      {!pattern ? 'Enter a regular expression pattern to test.' : 'No matches found in test string.'}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -1248,7 +1639,7 @@ export default function RegexTester() {
                               Match #{matchGlobalIndex}
                             </span>
                             <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700">
-                              Offset: {m.index}–{m.end}
+                              UTF-16 Offset: {m.index}–{m.end}
                             </span>
                           </div>
                           <div className="p-3">
@@ -1297,7 +1688,7 @@ export default function RegexTester() {
                   </div>
                 )}
 
-                {/* Pagination Controls for Large Result Sets */}
+                {/* Pagination Controls */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-slate-800 gap-2">
                     <button
@@ -1376,7 +1767,7 @@ export default function RegexTester() {
                 </div>
 
                 <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1">
-                  <p className="font-semibold text-slate-700 dark:text-slate-300">Supported JavaScript Replacement Tokens:</p>
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">Supported ECMAScript Replacement Tokens:</p>
                   <ul className="list-disc pl-5 space-y-0.5">
                     <li><code className="bg-gray-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">$1, $2</code>: Insert the nth parenthesized capture group.</li>
                     <li><code className="bg-gray-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono">$&amp;</code>: Insert the matched substring.</li>
@@ -1389,11 +1780,170 @@ export default function RegexTester() {
               </div>
             )}
 
+            {/* Panel: Split & Extract */}
+            {activeTab === 'split' && (
+              <div id="panel-split" role="tabpanel" aria-labelledby="tab-split" className="space-y-6">
+                {/* Mode 1: String.prototype.split() */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Text Split (`text.split(regex)`)
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {splitResult.length} segment{splitResult.length === 1 ? '' : 's'} produced
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => copyCode(JSON.stringify(splitResult, null, 2), 'split-json')}
+                        className="px-2.5 py-1 text-xs font-semibold border border-gray-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        aria-label="Copy split items as JSON array"
+                      >
+                        {copied === 'split-json' ? 'Copied JSON' : 'Copy JSON'}
+                      </button>
+                      <button
+                        onClick={() => copyCode(splitResult.join('\n'), 'split-lines')}
+                        className="px-2.5 py-1 text-xs font-semibold border border-gray-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        aria-label="Copy split items as lines"
+                      >
+                        {copied === 'split-lines' ? 'Copied Lines' : 'Copy Lines'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 bg-blue-50 dark:bg-blue-950/30 p-2.5 rounded-xl border border-blue-200 dark:border-blue-900/50">
+                    <strong>ECMAScript Split Behavior:</strong> If your pattern contains capturing parentheses <code>(...)</code>, the captured tokens are spliced into the output array. To split without retaining delimiters, use non-capturing groups <code>(?:...)</code>.
+                  </div>
+
+                  <div className="max-h-56 overflow-auto border border-gray-200 dark:border-slate-800 rounded-xl divide-y divide-gray-200 dark:divide-slate-800 font-mono text-xs [scrollbar-width:thin]">
+                    {splitResult.map((part, idx) => (
+                      <div key={idx} className="p-2.5 flex items-start gap-3 bg-gray-50/50 dark:bg-[#0a0f1a]/50">
+                        <span className="text-[10px] font-bold text-slate-400 shrink-0 w-8">#{idx}</span>
+                        <span className="text-slate-800 dark:text-slate-200 break-all select-all">
+                          {part === '' ? <span className="text-amber-500 italic">∅ empty string</span> : part}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mode 2: Targeted Extraction */}
+                <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Matched Extraction
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        {extractedList.length} item{extractedList.length === 1 ? '' : 's'} extracted
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={extractTarget}
+                        onChange={(e) => setExtractTarget(e.target.value as 'match' | 'group1' | 'group2' | 'named')}
+                        className="px-2.5 py-1 text-xs font-semibold bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 outline-none"
+                        aria-label="Select extraction target"
+                      >
+                        <option value="match">Full Match ($0)</option>
+                        <option value="group1">Group 1 ($1)</option>
+                        <option value="group2">Group 2 ($2)</option>
+                        <option value="named">All Named Groups</option>
+                      </select>
+                      <button
+                        onClick={() => copyCode(extractedList.join('\n'), 'extract-lines')}
+                        className="px-2.5 py-1 text-xs font-semibold border border-gray-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+                        aria-label="Copy extracted matches as lines"
+                      >
+                        {copied === 'extract-lines' ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <pre className="min-h-28 max-h-48 overflow-auto whitespace-pre-wrap break-words p-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed [scrollbar-width:thin]">
+                    {extractedList.length === 0 ? 'No items to extract.' : extractedList.join('\n')}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* Panel: Searchable Cheat Sheet */}
+            {activeTab === 'cheatsheet' && (
+              <div id="panel-cheatsheet" role="tabpanel" aria-labelledby="tab-cheatsheet" className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                    <label htmlFor="regex-search-cheatsheet" className="sr-only">Search regex syntax tokens</label>
+                    <input
+                      id="regex-search-cheatsheet"
+                      value={cheatSearch}
+                      onChange={(e) => setCheatSearch(e.target.value)}
+                      placeholder="Search tokens (e.g., lookaround, digit, boundary)..."
+                      className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl text-xs dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={cheatCategory}
+                    onChange={(e) => setCheatCategory(e.target.value)}
+                    className="px-3 py-2 text-xs font-semibold bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 outline-none"
+                    aria-label="Filter cheatsheet category"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Classes">Character Classes</option>
+                    <option value="Quantifiers">Quantifiers</option>
+                    <option value="Anchors">Anchors & Boundaries</option>
+                    <option value="Groups">Groups & Lookarounds</option>
+                    <option value="Flags">Flags</option>
+                    <option value="Replacements">Replacement Tokens</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2 max-h-[460px] overflow-auto [scrollbar-width:thin]">
+                  {filteredCheatSheet.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400">No matching syntax tokens found.</div>
+                  ) : (
+                    filteredCheatSheet.map((item) => (
+                      <div
+                        key={`${item.token}-${item.name}`}
+                        className="p-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl flex items-start justify-between gap-3"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
+                              {item.token}
+                            </code>
+                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">{item.name}</span>
+                            <span className="text-[10px] font-medium text-slate-400 px-1.5 py-0.5 rounded bg-gray-200/60 dark:bg-slate-800">
+                              {item.category}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
+                          <div className="text-[11px] font-mono text-slate-400">Ex: {item.example}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setPattern((p) => p + item.token);
+                            copyCode(item.token, `token-${item.token}`);
+                          }}
+                          className="shrink-0 px-2 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded border border-blue-200 dark:border-blue-800 transition-colors"
+                          title="Append this token into your regex pattern"
+                          aria-label={`Insert ${item.token} into pattern`}
+                        >
+                          + Insert
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Panel: Heuristic Explanation */}
             {activeTab === 'explain' && (
               <div id="panel-explain" role="tabpanel" aria-labelledby="tab-explain" className="space-y-4">
                 <div className="text-xs text-slate-500 dark:text-slate-400 bg-gray-50 dark:bg-[#0a0f1a] p-3 rounded-xl border border-gray-200 dark:border-slate-800 leading-relaxed">
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Pattern Explanation (Heuristic Token Analysis):</span> This breakdown provides token-level interpretation of common JavaScript regular expression constructs. It is an explanatory aid, not a compiler AST parser.
+                  <span className="font-bold text-slate-700 dark:text-slate-300">Pattern Explanation (Token Analysis):</span> This breakdown provides token-level interpretation of common JavaScript regular expression constructs. It is an explanatory aid, not a compiler AST parser.
                 </div>
 
                 {explanation.length === 0 ? (
@@ -1481,7 +2031,7 @@ export default function RegexTester() {
                 </div>
 
                 <div className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-2">
-                  Execution Safety: Runtime executions are aborted after {EXECUTION_TIMEOUT_MS} ms in an isolated Web Worker to safeguard the browser main thread against catastrophic backtracking.
+                  Execution Safety: Runtime evaluations are aborted after {EXECUTION_TIMEOUT_MS} ms in an isolated Web Worker to safeguard the browser main thread against catastrophic backtracking.
                 </div>
               </div>
             )}
@@ -1493,6 +2043,7 @@ export default function RegexTester() {
                   { name: 'JavaScript (ECMAScript)', code: jsCode, key: 'js', color: 'text-yellow-400', icon: Code2 },
                   { name: 'Python (re module)', code: pyCode, key: 'py', color: 'text-blue-400', icon: Terminal },
                   { name: 'Java (java.util.regex)', code: javaCode, key: 'java', color: 'text-orange-400', icon: Code2 },
+                  { name: 'Go (regexp / RE2)', code: goCode, key: 'go', color: 'text-cyan-400', icon: Terminal },
                 ].map((item) => {
                   const ItemIcon = item.icon;
                   return (
@@ -1539,8 +2090,60 @@ export default function RegexTester() {
         </div>
         <span>Zero Network Exfiltration · Private Sandbox</span>
       </div>
+
+      {/* Shareable Link Modal */}
+      {showShareModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="share-modal-title"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+        >
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 id="share-modal-title" className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-blue-600" />
+                <span>Shareable Regex Link</span>
+              </h3>
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg font-bold p-1"
+                aria-label="Close share dialog"
+              >
+                &times;
+              </button>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Your pattern, flags, test text, and active view have been encoded directly into the URL fragment hash below. This URL runs entirely on the client—no data is uploaded or stored on any server.
+            </p>
+            <div className="relative">
+              <input
+                readOnly
+                value={shareUrl}
+                className="w-full pr-20 pl-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl font-mono text-xs dark:text-blue-300 focus:outline-none"
+              />
+              <button
+                onClick={() => copyCode(shareUrl, 'modal-copy')}
+                className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1"
+              >
+                {copied === 'modal-copy' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied === 'modal-copy' ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
+            <div className="text-[11px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/50">
+              <strong>Privacy Notice:</strong> Because this link serializes your text into the URL hash, do not share links containing sensitive passwords, private keys, or personal identifying information.
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 text-xs font-bold rounded-xl transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-

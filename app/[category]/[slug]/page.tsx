@@ -24,7 +24,12 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { category, slug } = await params;
 
-  const resolvedCategory = category === 'image' ? 'media' : category;
+  const resolvedCategory =
+    category === 'image'
+      ? 'media'
+      : category === 'seo' && slug === 'regex-tester'
+      ? 'developer'
+      : category;
   const resolvedSlug =
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'
@@ -74,7 +79,12 @@ export async function generateMetadata({
 export default async function ToolPage({ params }: PageProps) {
   const { category, slug } = await params;
 
-  const resolvedCategory = category === 'image' ? 'media' : category;
+  const resolvedCategory =
+    category === 'image'
+      ? 'media'
+      : category === 'seo' && slug === 'regex-tester'
+      ? 'developer'
+      : category;
   const resolvedSlug =
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'

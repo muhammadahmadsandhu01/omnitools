@@ -72,6 +72,16 @@ const nextConfig: NextConfig = {
         destination: '/seo/meta-generator',
         permanent: true,
       },
+      {
+        source: '/seo/regex-tester',
+        destination: '/developer/regex-tester',
+        permanent: true,
+      },
+      {
+        source: '/regex-tester',
+        destination: '/developer/regex-tester',
+        permanent: true,
+      },
     ];
   },
 };
