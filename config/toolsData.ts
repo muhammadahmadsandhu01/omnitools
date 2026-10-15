@@ -300,8 +300,9 @@ export const tools: Tool[] = [
       'Format and clean SQL queries for improved readability and easier development.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SQL Query Formatter',
-    seoDescription: 'Beautify and format complex SQL queries with custom indentation, keyword casing, and dialect support for PostgreSQL, MySQL, SQLite, and T-SQL.',
+    seoTitle: 'SQL Formatter & Beautifier — Format, Clean & Minify SQL Online',
+    seoDescription:
+      'Format, beautify, and minify SQL queries client-side with support for 19 dialects including PostgreSQL, MySQL, BigQuery, Snowflake, and T-SQL. Custom casing, indentation, and query analysis in your browser.',
     relatedToolSlugs: ['json-formatter', 'regex-tester', 'json-converter', 'base64-encoder'],
   },
 
