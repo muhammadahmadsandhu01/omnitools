@@ -17,7 +17,8 @@
     "test:regex": "tsx scripts/test-regex-tester.ts",
     "test:sip": "tsx scripts/test-sip-calculator.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
-    "test:svg": "tsx scripts/test-svg-optimizer.ts"
+    "test:svg": "tsx scripts/test-svg-optimizer.ts",
+    "test:text-case": "tsx scripts/test-text-case-converter.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

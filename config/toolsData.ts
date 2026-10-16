@@ -426,12 +426,12 @@ export const tools: Tool[] = [
     slug: 'text-case-converter',
     categoryId: 'seo',
     description:
-      'Convert text between uppercase, lowercase, title case, camelCase, snake_case, PascalCase, and 14 developer and natural language formats.',
+      'Convert text between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, and 15 writing and developer naming formats.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Text Case Converter',
-    seoDescription: 'Convert text between uppercase, lowercase, title case, camelCase, snake_case, PascalCase, and 14 developer and natural language formats.',
-    relatedToolSlugs: ['text-analyzer', 'json-formatter', 'base64-encoder', 'qr-generator'],
+    seoTitle: 'Text Case Converter — Title Case, UPPERCASE, camelCase & snake_case',
+    seoDescription: 'Free online text case converter. Convert between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, and 15 writing and programming identifier formats with zero server uploads.',
+    relatedToolSlugs: ['text-analyzer', 'json-formatter', 'base64-encoder', 'regex-tester'],
   },
 
   {
