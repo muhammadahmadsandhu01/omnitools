@@ -18,7 +18,8 @@
     "test:sip": "tsx scripts/test-sip-calculator.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
     "test:svg": "tsx scripts/test-svg-optimizer.ts",
-    "test:text-case": "tsx scripts/test-text-case-converter.ts"
+    "test:text-case": "tsx scripts/test-text-case-converter.ts",
+    "test:webp": "tsx scripts/test-webp-to-jpg-png.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

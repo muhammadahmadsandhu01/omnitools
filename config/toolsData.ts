@@ -368,8 +368,9 @@ export const tools: Tool[] = [
       'Convert WebP images to JPG or PNG directly in your browser with adjustable quality and transparency background fill.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'WebP to JPG & PNG Converter',
-    seoDescription: 'Convert WebP images to JPG or PNG directly in your browser with adjustable quality and transparency background fill.',
+    seoTitle: 'WebP to JPG & PNG Converter — Free Batch Image Converter',
+    seoDescription:
+      'Convert WebP images to JPG or PNG online directly in your browser. Batch processing, customizable JPEG quality, transparency background fill, and instant ZIP download with 100% client-side privacy.',
     relatedToolSlugs: ['image-compressor', 'image-to-pdf', 'pdf-merge-split', 'svg-optimizer'],
   },
 

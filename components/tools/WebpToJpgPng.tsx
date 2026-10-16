@@ -100,6 +100,7 @@ export default function WebpToJpgPng() {
   const validItems = useMemo(() => items.filter((i) => i.isValid), [items]);
   const convertedItems = useMemo(() => items.filter((i) => i.status === 'success' && i.resultBlob), [items]);
   const totalSizeBytes = useMemo(() => items.reduce((acc, i) => acc + i.size, 0), [items]);
+  const hasAnimated = useMemo(() => items.some((i) => i.isAnimated), [items]);
 
   // Handle incoming files
   const processIncomingFiles = async (files: FileList | File[]) => {
@@ -159,6 +160,7 @@ export default function WebpToJpgPng() {
         width,
         height,
         isValid: validation.isValid,
+        isAnimated: validation.isAnimated,
         errorMessage: validation.errorMessage,
         status: 'idle',
       });
@@ -363,28 +365,19 @@ export default function WebpToJpgPng() {
         {ariaAnnouncement}
       </div>
 
-      {/* HEADER & HERO */}
-      <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 shadow-xs">
-          <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <span>Local processing: 100% browser-side • No files uploaded to any server</span>
+      {/* PRIVACY & FORMAT STATUS BANNER */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+        <div className="inline-flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="font-semibold text-slate-800 dark:text-slate-200">100% Client-Side Privacy:</span>
+          <span>Images never leave your browser • Zero server uploads</span>
         </div>
 
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          WebP to JPG & PNG Converter
-        </h2>
-
-        <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-600 dark:text-slate-300">
-          Convert next-generation WebP images to universal JPG or PNG files directly in your browser.
-          Adjust JPEG quality, fill transparency background, and download individually or in bulk.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
-          <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 font-mono font-medium">Input: .webp</span>
+        <div className="flex items-center gap-2 font-mono text-[11px]">
+          <span className="px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">.webp</span>
           <span>→</span>
-          <span className="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-mono font-medium">Output: .jpg (JPEG)</span>
-          <span>or</span>
-          <span className="px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono font-medium">.png (Lossless Alpha)</span>
+          <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">.jpg</span>
+          <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">.png</span>
         </div>
       </div>
 
@@ -439,9 +432,9 @@ export default function WebpToJpgPng() {
             <Upload className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+          <p className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
             Drag & Drop WebP Images Here
-          </h2>
+          </p>
 
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-md mx-auto">
             or <span className="text-blue-600 dark:text-blue-400 font-semibold underline underline-offset-2">browse files</span> from your computer or phone
@@ -538,6 +531,25 @@ export default function WebpToJpgPng() {
               </div>
             </div>
 
+            {/* ANIMATED WEBP WARNING BANNER */}
+            {hasAnimated && (
+              <div
+                role="note"
+                aria-label="Animated WebP notice"
+                className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 flex items-start gap-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200"
+              >
+                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-950 dark:text-amber-100">
+                    Animated WebP Detected in Queue
+                  </p>
+                  <p className="leading-relaxed text-xs">
+                    Standard JPG and PNG formats are single still images and cannot retain multi-frame animations. When converting animated WebP files, modern browser canvas decoders export the <strong>initial keyframe (poster frame)</strong> as a high-fidelity static image. For full animation retention or frame extraction, convert to GIF or WebM.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* QUEUE CARDS LIST */}
             <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
               {items.map((item, index) => {
@@ -577,6 +589,14 @@ export default function WebpToJpgPng() {
                             <span>{item.width > 0 && item.height > 0 ? `${item.width}×${item.height} px` : 'WebP'}</span>
                             <span>•</span>
                             <span>{formatBytes(item.size)}</span>
+                            {item.isAnimated && (
+                              <span
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                                title="Animated WebP detected: converted first frame as a still image (JPG and PNG do not support multi-frame animations)."
+                              >
+                                Animated (Still Frame)
+                              </span>
+                            )}
                             {item.status === 'success' && item.resultSize && (
                               <>
                                 <span>→</span>
