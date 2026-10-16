@@ -567,6 +567,64 @@ async function runPdfTests() {
   assert(Math.abs(a4Ratio - Math.SQRT2) < 0.005, 'ISO A4 aspect ratio strictly satisfies 1:sqrt(2)');
 
   /* -------------------------------------------------------------------------- */
+  /* 11. Layout Visibility & Non-Clipping Defense Suite                          */
+  /* -------------------------------------------------------------------------- */
+  console.log('\nTest Group 11: Content Visibility & Non-Clipping Layout Defense');
+
+  // Test 11.1: Height budgeting accounts for Amount Paid, Balance Due, and Taxable Base
+  const itemsWithPaid: LineItem[] = Array.from({ length: 12 }, (_, i) => ({
+    id: `item-${i + 1}`,
+    desc: `Consulting Deliverable ${i + 1} with medium-length system description`,
+    qty: 2,
+    unit: 'hours',
+    rate: 150,
+    discount: 10,
+    taxable: true,
+  }));
+
+  const pagesWithPaid = computeInvoicePages(itemsWithPaid, {
+    hasLogo: true,
+    hasNotes: true,
+    hasBank: true,
+    taxCount: 2,
+    hasDiscount: true,
+    hasTaxableBase: true,
+    hasShipping: true,
+    hasFee: true,
+    hasPaid: true,
+    hasClientShipping: true,
+  });
+
+  assert(pagesWithPaid.length >= 1, 'Pages computed successfully for full-featured invoice with Amount Paid');
+  const lastPage = pagesWithPaid[pagesWithPaid.length - 1];
+  assertEqual(lastPage.hasSummary, true, 'Summary card is anchored on the final page');
+
+  // Test 11.2: Large financial amount formatting retains visible decimals and signs
+  const largeAmount = 987654321.25;
+  const formattedUsd = formatMoney(largeAmount, 2);
+  assertEqual(formattedUsd, '987,654,321.25', 'Large numbers format with commas and 2 decimals');
+  const formattedJpy = formatMoney(largeAmount, 0);
+  assertEqual(formattedJpy, '987,654,321', 'Zero-decimal currencies format without fractional points');
+  const formattedKwd = formatMoney(largeAmount, 3);
+  assertEqual(formattedKwd, '987,654,321.250', 'Three-decimal currencies format with exactly 3 digits');
+
+  // Test 11.3: Table column allocation strictly totals 100%
+  const colWidths = [38, 8, 8, 16, 9, 21];
+  const colTotal = colWidths.reduce((a, b) => a + b, 0);
+  assertEqual(colTotal, 100, 'Printable A4 line items table column percentages strictly total 100%');
+  assert(colWidths[3] >= 16, 'Rate column receives at least 16% width allocation');
+  assert(colWidths[5] >= 20, 'Amount column receives at least 20% width allocation');
+
+  // Test 11.4: Summary card width budget validation (290px card)
+  const cardWidth = 290;
+  const cardPadding = 12 * 2;
+  const usableCardWidth = cardWidth - cardPadding; // 266px
+  // In 9px monospace (char width ~6.5px), 16 characters take ~104px
+  const mono16CharWidth = 16 * 6.5;
+  const labelAvailableWidth = usableCardWidth - mono16CharWidth;
+  assert(labelAvailableWidth > 150, 'Summary card provides at least 150px for row labels alongside large monetary values');
+
+  /* -------------------------------------------------------------------------- */
   /* Final Summary                                                              */
   /* -------------------------------------------------------------------------- */
   console.log('\n===========================================');

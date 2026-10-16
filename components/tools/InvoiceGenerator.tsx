@@ -272,6 +272,7 @@ export default function InvoiceGenerator() {
         bankLength: sender.bank?.length || 0,
         taxCount: computedTaxes.length,
         hasDiscount: discountAmount > 0,
+        hasTaxableBase: (discountAmount > 0 || computedTaxes.length > 0) && !isFreshEmpty,
         hasShipping: shippingAmount > 0,
         hasFee: feeAmount > 0,
         hasPaid: paidAmount > 0,
@@ -284,6 +285,7 @@ export default function InvoiceGenerator() {
       sender.bank,
       computedTaxes.length,
       discountAmount,
+      isFreshEmpty,
       shippingAmount,
       feeAmount,
       paidAmount,
@@ -895,6 +897,15 @@ export default function InvoiceGenerator() {
                 border-color: #cbd5e1;
                 outline-color: transparent;
                 text-decoration-color: currentColor;
+              }
+              .invoice-document {
+                overflow: visible !important;
+              }
+              .invoice-document * {
+                overflow: visible !important;
+              }
+              #omni-invoice-pdf-staging {
+                overflow: visible !important;
               }
             `;
             clonedDoc.head.appendChild(safeStyle);
@@ -2213,7 +2224,7 @@ export default function InvoiceGenerator() {
                     >
                       <div
                         className="flex h-[1123px] flex-col justify-between"
-                        style={{ padding: '24px 32px 20px 32px' }}
+                        style={{ padding: '24px 32px 24px 32px' }}
                       >
                         {/* PAGE CONTENT */}
                         <div className="min-w-0">
@@ -2264,7 +2275,7 @@ export default function InvoiceGenerator() {
                                   </div>
 
                                   {/* Seller Info */}
-                                  <div className="w-[240px] shrink-0 text-right">
+                                  <div className="w-[260px] shrink-0 text-right">
                                     <h2 className="text-[13px] font-black tracking-tight text-slate-950 leading-tight">
                                       {sender.name || (
                                         <span className="font-normal italic text-slate-400">
@@ -2273,25 +2284,25 @@ export default function InvoiceGenerator() {
                                       )}
                                     </h2>
                                     {sender.address && (
-                                      <p className="mt-0.5 whitespace-pre-line text-[9px] leading-tight text-slate-600">
+                                      <p className="mt-0.5 whitespace-pre-line text-[9px] leading-tight text-slate-600 break-words">
                                         {sender.address}
                                       </p>
                                     )}
                                     <div className="mt-1 space-y-0.5 text-[9px] text-slate-600 leading-tight">
-                                      {sender.email && <p>{sender.email}</p>}
-                                      {sender.phone && <p>{sender.phone}</p>}
+                                      {sender.email && <p className="break-words break-all">{sender.email}</p>}
+                                      {sender.phone && <p className="break-words">{sender.phone}</p>}
                                       {sender.taxId && (
-                                        <p className="font-semibold text-slate-700">
+                                        <p className="font-semibold text-slate-700 break-words">
                                           Tax ID: {sender.taxId}
                                         </p>
                                       )}
                                       {sender.regNumber && (
-                                        <p className="text-[8px] text-slate-500">
+                                        <p className="text-[8px] text-slate-500 break-words">
                                           Reg: {sender.regNumber}
                                         </p>
                                       )}
                                       {sender.website && (
-                                        <p className="text-[8px] text-slate-500">
+                                        <p className="text-[8px] text-slate-500 break-words break-all">
                                           {sender.website}
                                         </p>
                                       )}
@@ -2301,7 +2312,7 @@ export default function InvoiceGenerator() {
                               </header>
 
                               {/* Parties & Dates Grid */}
-                              <section className="invoice-row grid grid-cols-[minmax(0,1fr)_240px] gap-4 pb-2 mb-2 border-b border-slate-200">
+                              <section className="invoice-row grid grid-cols-[minmax(0,1fr)_260px] gap-4 pb-2 mb-2 border-b border-slate-200">
                                 <div className="min-w-0">
                                   <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
                                     BILLED TO
@@ -2314,15 +2325,15 @@ export default function InvoiceGenerator() {
                                     )}
                                   </h3>
                                   {client.address && (
-                                    <p className="mt-0.5 whitespace-pre-line text-[9px] leading-tight text-slate-600">
+                                    <p className="mt-0.5 whitespace-pre-line text-[9px] leading-tight text-slate-600 break-words">
                                       {client.address}
                                     </p>
                                   )}
                                   <div className="mt-0.5 space-y-0.5 text-[9px] text-slate-600 leading-tight">
-                                    {client.email && <p>{client.email}</p>}
-                                    {client.phone && <p>{client.phone}</p>}
+                                    {client.email && <p className="break-words break-all">{client.email}</p>}
+                                    {client.phone && <p className="break-words">{client.phone}</p>}
                                     {client.taxId && (
-                                      <p className="font-semibold text-slate-700">
+                                      <p className="font-semibold text-slate-700 break-words">
                                         Tax ID: {client.taxId}
                                       </p>
                                     )}
@@ -2332,7 +2343,7 @@ export default function InvoiceGenerator() {
                                       <span className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400">
                                         SHIP TO:
                                       </span>
-                                      <p className="mt-0.5 text-[9px] leading-tight text-slate-600 whitespace-pre-line">
+                                      <p className="mt-0.5 text-[9px] leading-tight text-slate-600 whitespace-pre-line break-words">
                                         {client.shippingAddress}
                                       </p>
                                     </div>
@@ -2340,36 +2351,36 @@ export default function InvoiceGenerator() {
                                 </div>
 
                                 {/* Meta Dates Box */}
-                                <div className="rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-1.5 text-[9px] space-y-1 self-start shadow-xs">
+                                <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-[9px] flex flex-col gap-1.5 self-start shadow-xs">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
                                       Issue Date:
                                     </span>
-                                    <span className="font-semibold text-slate-800">
+                                    <span className="font-semibold text-slate-800 tabular-nums text-right ml-2">
                                       {formatDisplayDate(meta.date)}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
                                       Due Date:
                                     </span>
-                                    <span className="font-semibold text-slate-800">
+                                    <span className="font-semibold text-slate-800 tabular-nums text-right ml-2">
                                       {formatDisplayDate(meta.dueDate)}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
                                       Terms:
                                     </span>
-                                    <span className="font-semibold text-slate-800">
+                                    <span className="font-semibold text-slate-800 text-right ml-2 whitespace-nowrap leading-normal">
                                       {meta.paymentTerms || 'Due on Receipt'}
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between border-t border-slate-200/80 pt-1 mt-0.5">
-                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
                                       Currency:
                                     </span>
-                                    <span className="font-bold text-slate-900">
+                                    <span className="font-bold text-slate-900 text-right ml-2">
                                       {currencyCode} ({currencySymbol})
                                     </span>
                                   </div>
@@ -2411,22 +2422,22 @@ export default function InvoiceGenerator() {
                               <table className="w-full table-fixed border-collapse">
                                 <thead className="invoice-table-head">
                                   <tr className="border-b border-slate-900 text-[8px] font-black uppercase tracking-[0.14em] text-slate-700 bg-slate-100/70">
-                                    <th className="w-[44%] text-left" style={{ padding: '4px 8px' }}>
+                                    <th className="w-[38%] text-left" style={{ padding: '5px 8px' }}>
                                       Product / Service
                                     </th>
-                                    <th className="w-[9%] text-center" style={{ padding: '4px 4px' }}>
+                                    <th className="w-[8%] text-center" style={{ padding: '5px 4px' }}>
                                       Qty
                                     </th>
-                                    <th className="w-[10%] text-center" style={{ padding: '4px 4px' }}>
+                                    <th className="w-[8%] text-center" style={{ padding: '5px 4px' }}>
                                       Unit
                                     </th>
-                                    <th className="w-[13%] text-right" style={{ padding: '4px 6px' }}>
+                                    <th className="w-[16%] text-right" style={{ padding: '5px 8px' }}>
                                       Rate
                                     </th>
-                                    <th className="w-[9%] text-center" style={{ padding: '4px 4px' }}>
+                                    <th className="w-[9%] text-center" style={{ padding: '5px 4px' }}>
                                       Tax
                                     </th>
-                                    <th className="w-[15%] text-right" style={{ padding: '4px 8px' }}>
+                                    <th className="w-[21%] text-right" style={{ padding: '5px 8px' }}>
                                       Amount
                                     </th>
                                   </tr>
@@ -2450,7 +2461,7 @@ export default function InvoiceGenerator() {
                                       >
                                         <td
                                           className="text-[9px] font-semibold text-slate-900 leading-snug break-words"
-                                          style={{ padding: '4px 8px' }}
+                                          style={{ padding: '5px 8px' }}
                                         >
                                           {item.desc ? (
                                             <div>{item.desc}</div>
@@ -2467,28 +2478,28 @@ export default function InvoiceGenerator() {
                                           )}
                                         </td>
                                         <td
-                                          className="text-center text-[9px] font-medium text-slate-700"
-                                          style={{ padding: '4px 4px' }}
+                                          className="text-center font-mono text-[9px] font-medium text-slate-700 tabular-nums"
+                                          style={{ padding: '5px 4px' }}
                                         >
                                           {qty}
                                         </td>
                                         <td
                                           className="text-center text-[9px] text-slate-500"
-                                          style={{ padding: '4px 4px' }}
+                                          style={{ padding: '5px 4px' }}
                                         >
                                           {item.unit || 'units'}
                                         </td>
                                         <td
-                                          className="text-right font-mono text-[9px] text-slate-700"
-                                          style={{ padding: '4px 6px' }}
+                                          className="text-right font-mono text-[9px] font-medium text-slate-700 tabular-nums whitespace-nowrap"
+                                          style={{ padding: '5px 8px' }}
                                         >
                                           {isItemBlank
                                             ? '—'
                                             : `${currencySymbol} ${formatMoney(rate, decimals)}`}
                                         </td>
                                         <td
-                                          className="text-center text-[8px] font-medium text-slate-600"
-                                          style={{ padding: '4px 4px' }}
+                                          className="text-center font-mono text-[8.5px] font-medium text-slate-600 tabular-nums"
+                                          style={{ padding: '5px 4px' }}
                                         >
                                           {(() => {
                                             if (isFreshEmpty || taxes.length === 0) return '—';
@@ -2502,8 +2513,8 @@ export default function InvoiceGenerator() {
                                           })()}
                                         </td>
                                         <td
-                                          className="text-right font-mono text-[9px] font-bold text-slate-950"
-                                          style={{ padding: '4px 8px' }}
+                                          className="text-right font-mono text-[9px] font-bold text-slate-950 tabular-nums whitespace-nowrap"
+                                          style={{ padding: '5px 8px' }}
                                         >
                                           {isItemBlank
                                             ? '—'
@@ -2521,13 +2532,13 @@ export default function InvoiceGenerator() {
                           {/* SUMMARY & FINANCIAL TOTALS                    */}
                           {/* ============================================= */}
                           {pageData.hasSummary && (
-                            <section className="invoice-summary mt-2.5 grid grid-cols-[minmax(0,1fr)_260px] gap-4 pt-1.5 border-t border-slate-200">
+                            <section className="invoice-summary mt-2.5 grid grid-cols-[minmax(0,1fr)_290px] gap-4 pt-2 border-t border-slate-200">
                               {/* Left: Payment details & Notes */}
                               <div className="min-w-0 pr-2">
                                 <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
                                   Payment Instructions
                                 </p>
-                                <p className="mt-0.5 whitespace-pre-line text-[9px] leading-snug text-slate-600 break-words">
+                                <p className="mt-0.5 whitespace-pre-line text-[9px] leading-snug text-slate-600 break-words break-all">
                                   {sender.bank || 'Please remit payment as per agreed terms.'}
                                 </p>
 
@@ -2544,10 +2555,10 @@ export default function InvoiceGenerator() {
                               </div>
 
                               {/* Right: Totals Card */}
-                              <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2 text-[9px] space-y-0.5 self-start shadow-xs">
-                                <div className="flex justify-between text-slate-600 py-0.5">
+                              <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-[9px] self-start shadow-xs flex flex-col gap-1">
+                                <div className="flex items-center justify-between text-slate-600 py-0.5">
                                   <span className="font-medium text-[9px]">Subtotal</span>
-                                  <span className="font-mono font-semibold text-slate-900">
+                                  <span className="font-mono font-semibold text-slate-900 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                     {isFreshEmpty
                                       ? '—'
                                       : `${currencySymbol} ${formatMoney(subtotal, decimals)}`}
@@ -2555,60 +2566,60 @@ export default function InvoiceGenerator() {
                                 </div>
 
                                 {discountAmount > 0 && (
-                                  <div className="flex justify-between text-emerald-700 py-0.5 font-medium">
-                                    <span className="text-[8px]">
+                                  <div className="flex items-center justify-between text-emerald-700 py-0.5 font-medium">
+                                    <span className="text-[8.5px] pr-1 leading-normal font-medium">
                                       Discount ({discountType === 'percent' ? `${discountValue}%` : 'Fixed'})
                                     </span>
-                                    <span className="font-mono">
+                                    <span className="font-mono tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       -{currencySymbol} {formatMoney(discountAmount, decimals)}
                                     </span>
                                   </div>
                                 )}
 
                                 {(discountAmount > 0 || computedTaxes.length > 0) && !isFreshEmpty && (
-                                  <div className="flex justify-between text-slate-500 py-0.5 text-[8px]">
-                                    <span>Taxable Base</span>
-                                    <span className="font-mono text-slate-700">
+                                  <div className="flex items-center justify-between text-slate-500 py-0.5 text-[8.5px]">
+                                    <span className="pr-1 leading-normal">Taxable Base</span>
+                                    <span className="font-mono text-slate-700 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       {currencySymbol} {formatMoney(taxableBase, decimals)}
                                     </span>
                                   </div>
                                 )}
 
                                 {computedTaxes.map((t) => (
-                                  <div key={t.id} className="flex justify-between text-slate-600 py-0.5 text-[9px]">
-                                    <span>
+                                  <div key={t.id} className="flex items-center justify-between text-slate-600 py-0.5 text-[9px]">
+                                    <span className="pr-1 leading-normal">
                                       {t.name} ({t.rate}%)
                                     </span>
-                                    <span className="font-mono font-medium text-slate-900">
+                                    <span className="font-mono font-medium text-slate-900 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       +{currencySymbol} {formatMoney(t.amount, decimals)}
                                     </span>
                                   </div>
                                 ))}
 
                                 {shippingAmount > 0 && (
-                                  <div className="flex justify-between text-slate-600 py-0.5 text-[9px]">
-                                    <span>Shipping</span>
-                                    <span className="font-mono font-medium text-slate-900">
+                                  <div className="flex items-center justify-between text-slate-600 py-0.5 text-[9px]">
+                                    <span className="pr-1 leading-normal">Shipping</span>
+                                    <span className="font-mono font-medium text-slate-900 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       +{currencySymbol} {formatMoney(shippingAmount, decimals)}
                                     </span>
                                   </div>
                                 )}
 
                                 {feeAmount > 0 && (
-                                  <div className="flex justify-between text-slate-600 py-0.5 text-[9px]">
-                                    <span>{additionalFeeLabel || 'Fee'}</span>
-                                    <span className="font-mono font-medium text-slate-900">
+                                  <div className="flex items-center justify-between text-slate-600 py-0.5 text-[9px]">
+                                    <span className="pr-1 leading-normal">{additionalFeeLabel || 'Fee'}</span>
+                                    <span className="font-mono font-medium text-slate-900 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       +{currencySymbol} {formatMoney(feeAmount, decimals)}
                                     </span>
                                   </div>
                                 )}
 
-                                <div className="border-t border-slate-900 pt-1 mt-0.5">
+                                <div className="border-t-2 border-slate-900 pt-1.5 pb-1 mt-0.5">
                                   <div className="flex items-baseline justify-between">
-                                    <span className="text-[9px] font-black uppercase tracking-wider text-slate-950">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-950">
                                       Total Due:
                                     </span>
-                                    <span className="font-mono text-[13px] font-black text-slate-950">
+                                    <span className="font-mono text-[13.5px] font-black text-slate-950 tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       {isFreshEmpty
                                         ? '—'
                                         : `${currencySymbol} ${formatMoney(grandTotal, decimals)}`}
@@ -2617,20 +2628,20 @@ export default function InvoiceGenerator() {
                                 </div>
 
                                 {paidAmount > 0 && (
-                                  <div className="flex justify-between text-blue-700 pt-0.5 font-medium text-[8px]">
-                                    <span>Amount Paid:</span>
-                                    <span className="font-mono">
+                                  <div className="flex items-center justify-between text-blue-800 py-1 font-semibold text-[9px]">
+                                    <span className="tracking-wide">Amount Paid:</span>
+                                    <span className="font-mono font-bold text-[9.5px] tabular-nums shrink-0 ml-2 text-right whitespace-nowrap">
                                       -{currencySymbol} {formatMoney(paidAmount, decimals)}
                                     </span>
                                   </div>
                                 )}
 
                                 {paidAmount > 0 && (
-                                  <div className="flex justify-between border-t border-slate-200 pt-0.5 font-bold text-amber-800 text-[9px]">
-                                    <span className="uppercase text-[8px] tracking-wider">
+                                  <div className="flex items-baseline justify-between border-t border-slate-300 pt-1.5 pb-0.5 mt-0.5 font-bold text-amber-900">
+                                    <span className="uppercase text-[8.5px] font-black tracking-wider">
                                       Balance Due:
                                     </span>
-                                    <span className="font-mono text-[11px]">
+                                    <span className="font-mono text-[12px] font-black tabular-nums shrink-0 ml-2 text-right text-amber-950 whitespace-nowrap">
                                       {isFreshEmpty
                                         ? '—'
                                         : `${currencySymbol} ${formatMoney(balanceDue, decimals)}`}
@@ -2799,7 +2810,8 @@ export default function InvoiceGenerator() {
           overflow: hidden;
           flex: 0 0 auto;
           font-size: 9px;
-          line-height: 1.3;
+          line-height: 1.35;
+          font-variant-numeric: tabular-nums;
         }
 
         .invoice-document * {
@@ -2808,12 +2820,12 @@ export default function InvoiceGenerator() {
 
         .invoice-table-head th {
           font-size: 8px !important;
-          line-height: 1.15 !important;
+          line-height: 1.25 !important;
         }
 
         .invoice-row td {
           font-size: 9px !important;
-          line-height: 1.25 !important;
+          line-height: 1.3 !important;
         }
 
         .invoice-row,

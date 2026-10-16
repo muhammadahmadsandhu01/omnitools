@@ -122,6 +122,7 @@ export interface PaginationOptions {
   bankLength?: number;
   taxCount?: number;
   hasDiscount?: boolean;
+  hasTaxableBase?: boolean;
   hasShipping?: boolean;
   hasFee?: boolean;
   hasPaid?: boolean;
@@ -490,11 +491,11 @@ export function calculateInvoiceTotals(input: InvoiceTotalsInput): InvoiceTotals
  */
 export function estimateItemRowHeight(item: LineItem): number {
   const desc = item.desc || '';
-  // In a ~320px column with ~9px font, approximately 46 characters fit per line.
-  const lines = Math.max(1, Math.ceil(desc.length / 46));
-  const base = 22;
-  const wrapExtra = (lines - 1) * 13;
-  const discExtra = item.discount > 0 ? 11 : 0;
+  // In a ~300px column with ~9px font, approximately 42 characters fit per line.
+  const lines = Math.max(1, Math.ceil(desc.length / 42));
+  const base = 24;
+  const wrapExtra = (lines - 1) * 14;
+  const discExtra = item.discount > 0 ? 14 : 0;
   return base + wrapExtra + discExtra;
 }
 
@@ -520,38 +521,39 @@ export function computeInvoicePages(
     ];
   }
 
-  // Standard A4: 1123px height. Top/bottom padding (44px) + footer (26px) + safety reserve (23px) = 1030px usable.
-  const USABLE_PAGE_HEIGHT = options.usablePageHeight || 1030;
+  // Standard A4: 1123px height. Top/bottom padding (48px) + footer (32px) + generous safety reserve (53px) = 990px usable.
+  const USABLE_PAGE_HEIGHT = options.usablePageHeight || 990;
 
-  // Page 1 Overhead: Header (logo ? 140 : 110) + Billed To (80 or 100) + Table Header (26)
+  // Page 1 Overhead: Header (logo ? 140 : 110) + Billed To (80 or 100) + Table Header (30)
   const page1HeaderOverhead =
     (options.hasLogo ? 140 : 110) +
     (options.hasClientShipping ? 100 : 80) +
-    26;
+    30;
 
-  // Continuation Page Overhead: Compact Header (24) + Table Header (24) + Margin (10) = 58px
-  const contHeaderOverhead = 58;
+  // Continuation Page Overhead: Compact Header (26) + Table Header (28) + Margin (10) = 64px
+  const contHeaderOverhead = 64;
 
   // Totals & Remittance Overhead:
-  const taxLines = (options.taxCount || 0) * 12;
-  const discLines = options.hasDiscount ? 22 : 0;
-  const shipLine = options.hasShipping ? 12 : 0;
-  const feeLine = options.hasFee ? 12 : 0;
-  const paidLines = options.hasPaid ? 24 : 0;
-  const totalsCardHeight = 54 + taxLines + discLines + shipLine + feeLine + paidLines;
+  const taxLines = (options.taxCount || 0) * 18;
+  const taxableBaseLine = options.hasTaxableBase || (options.hasDiscount && (options.taxCount || 0) > 0) ? 18 : 0;
+  const discLines = options.hasDiscount ? 20 : 0;
+  const shipLine = options.hasShipping ? 18 : 0;
+  const feeLine = options.hasFee ? 18 : 0;
+  const paidLines = options.hasPaid ? 44 : 0; // Amount Paid (~18px) + border and Balance Due (~26px)
+  const totalsCardHeight = 62 + taxableBaseLine + taxLines + discLines + shipLine + feeLine + paidLines;
 
   // Left column notes and bank routing height:
-  const bankLines = Math.max(1, Math.ceil((options.bankLength || 0) / 44));
-  const notesLines = options.hasNotes ? Math.max(1, Math.ceil((options.notesLength || 0) / 44)) : 0;
-  const leftSummaryHeight = 18 + bankLines * 11 + (options.hasNotes ? 16 + notesLines * 11 : 0);
+  const bankLines = Math.max(1, Math.ceil((options.bankLength || 0) / 40));
+  const notesLines = options.hasNotes ? Math.max(1, Math.ceil((options.notesLength || 0) / 40)) : 0;
+  const leftSummaryHeight = 22 + bankLines * 12 + (options.hasNotes ? 18 + notesLines * 12 : 0);
 
-  const summaryHeight = Math.max(totalsCardHeight, leftSummaryHeight) + 16;
+  const summaryHeight = Math.max(totalsCardHeight, leftSummaryHeight) + 20;
 
   // Available item budgets
   const PAGE1_WITH_SUMMARY_BUDGET = USABLE_PAGE_HEIGHT - page1HeaderOverhead - summaryHeight;
-  const PAGE1_WITHOUT_SUMMARY_BUDGET = Math.min(520, USABLE_PAGE_HEIGHT - page1HeaderOverhead);
+  const PAGE1_WITHOUT_SUMMARY_BUDGET = Math.min(480, USABLE_PAGE_HEIGHT - page1HeaderOverhead);
   const CONT_WITH_SUMMARY_BUDGET = USABLE_PAGE_HEIGHT - contHeaderOverhead - summaryHeight;
-  const CONT_WITHOUT_SUMMARY_BUDGET = Math.min(700, USABLE_PAGE_HEIGHT - contHeaderOverhead);
+  const CONT_WITHOUT_SUMMARY_BUDGET = Math.min(650, USABLE_PAGE_HEIGHT - contHeaderOverhead);
 
   const itemHeights = items.map(estimateItemRowHeight);
   const totalItemsHeight = itemHeights.reduce((a, b) => a + b, 0);
