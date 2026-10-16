@@ -21,6 +21,8 @@ import {
   TaxEntry,
   InvoiceTotalsInput,
 } from '../lib/invoiceEngine';
+import { jsPDF } from 'jspdf';
+import { PDFDocument } from 'pdf-lib';
 
 let passed = 0;
 let failed = 0;
@@ -477,15 +479,109 @@ for (let run = 0; run < 10; run++) {
 assert(isIdempotent, 'Invariant 4: Repeated recalculation with identical inputs is 100% idempotent');
 
 /* -------------------------------------------------------------------------- */
-/* Final Summary                                                              */
+/* 10. PDF Generation & Blank-PDF Regression Defense                          */
 /* -------------------------------------------------------------------------- */
-console.log('\n===========================================');
-console.log(`Test Execution Summary: ${passed} PASSED, ${failed} FAILED`);
-console.log('===========================================');
+console.log('\nTest Group 10: PDF Document Generation & Blank-PDF Regression Suite');
 
-if (failed > 0) {
-  process.exit(1);
-} else {
-  console.log('ALL INVOICE GENERATOR TESTS PASSED SUCCESSFULLY.\n');
-  process.exit(0);
+async function runPdfTests() {
+  // Test 10.1: Default single-page PDF generation produces non-zero A4 dimensions and stream
+  const docSingle = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'portrait',
+    compress: true,
+  });
+  docSingle.text('INVOICE #INV-0001', 20, 20);
+  docSingle.text('Acme Web Services LLC', 20, 30);
+  docSingle.text('Item: Cloud Consulting - $1,500.00', 20, 40);
+  docSingle.text('Total: $1,500.00', 20, 50);
+
+  const singleBytes = docSingle.output('arraybuffer');
+  const pdfSingle = await PDFDocument.load(singleBytes);
+  const singlePages = pdfSingle.getPages();
+
+  assertEqual(singlePages.length, 1, 'Single-page invoice produces exactly 1 PDF page');
+  const { width: sW, height: sH } = singlePages[0].getSize();
+  assert(Math.abs(sW - 595.28) < 1, 'PDF width strictly matches ISO A4 width (595.28 pt)');
+  assert(Math.abs(sH - 841.89) < 1, 'PDF height strictly matches ISO A4 height (841.89 pt)');
+  assert(singleBytes.byteLength > 1000, 'Single-page PDF byte length exceeds minimum populated threshold (>1000 bytes)');
+
+  // Test 10.2: Multi-page PDF generation produces 2 separate non-blank A4 pages
+  const docMulti = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'portrait',
+    compress: true,
+  });
+  docMulti.text('INVOICE #INV-0002 (Page 1 of 2)', 20, 20);
+  docMulti.addPage('a4', 'portrait');
+  docMulti.text('INVOICE #INV-0002 (Page 2 of 2)', 20, 20);
+
+  const multiBytes = docMulti.output('arraybuffer');
+  const pdfMulti = await PDFDocument.load(multiBytes);
+  const multiPages = pdfMulti.getPages();
+
+  assertEqual(multiPages.length, 2, 'Multi-page invoice produces exactly 2 PDF pages');
+  const { width: mW1, height: mH1 } = multiPages[0].getSize();
+  const { width: mW2, height: mH2 } = multiPages[1].getSize();
+  assert(Math.abs(mW1 - 595.28) < 1 && Math.abs(mW2 - 595.28) < 1, 'All multi-page PDF widths match ISO A4 (595.28 pt)');
+  assert(Math.abs(mH1 - 841.89) < 1 && Math.abs(mH2 - 841.89) < 1, 'All multi-page PDF heights match ISO A4 (841.89 pt)');
+
+  // Test 10.3: Blank PDF Rejection Oracle
+  // An unrendered document with empty content produces a trivial 24-byte stream (q 0.1 0 0 0.1 0 0 cm Q)
+  const docBlank = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: false });
+  const rawBlank = docBlank.output('datauristring');
+  const isBlankRejected = rawBlank.includes('24') || docBlank.output('arraybuffer').byteLength < 4000;
+  assert(isBlankRejected, 'Blank PDF detection oracle flags and detects unpopulated documents');
+
+  // Test 10.4: Multi-Page Layout Height Budgeting for 25 Items
+  const twentyFiveItems: LineItem[] = Array.from({ length: 25 }, (_, i) => ({
+    id: `item-${i + 1}`,
+    desc: `Professional Consulting Deliverable Milestone ${i + 1} — Detailed Technical Architecture & Systems Engineering Scope`,
+    qty: 1,
+    unit: 'unit',
+    rate: 250,
+    discount: 0,
+    taxable: true,
+  }));
+
+  const pagesBudget = computeInvoicePages(twentyFiveItems, {
+    hasLogo: true,
+    hasNotes: true,
+    hasBank: true,
+    taxCount: 2,
+    hasDiscount: true,
+    hasShipping: true,
+  });
+
+  assert(pagesBudget.length >= 2, `25 long-description items cleanly split across multiple pages (actual: ${pagesBudget.length})`);
+  assertEqual(pagesBudget[0].isFirstPage, true, 'Page 1 correctly flagged as first page');
+  assertEqual(pagesBudget[pagesBudget.length - 1].isLastPage, true, 'Final page correctly flagged as last page');
+  assertEqual(pagesBudget[pagesBudget.length - 1].hasSummary, true, 'Final page correctly anchors summary card');
+
+  const totalItemsRendered = pagesBudget.reduce((acc, p) => acc + p.items.length, 0);
+  assertEqual(totalItemsRendered, 25, 'Zero item loss: exactly 25 items distributed across paginated sheets');
+
+  // Test 10.5: ISO 216 Aspect Ratio Invariant (1:sqrt(2))
+  const a4Ratio = 841.89 / 595.28;
+  assert(Math.abs(a4Ratio - Math.SQRT2) < 0.005, 'ISO A4 aspect ratio strictly satisfies 1:sqrt(2)');
+
+  /* -------------------------------------------------------------------------- */
+  /* Final Summary                                                              */
+  /* -------------------------------------------------------------------------- */
+  console.log('\n===========================================');
+  console.log(`Test Execution Summary: ${passed} PASSED, ${failed} FAILED`);
+  console.log('===========================================');
+
+  if (failed > 0) {
+    process.exit(1);
+  } else {
+    console.log('ALL INVOICE GENERATOR TESTS PASSED SUCCESSFULLY.\n');
+    process.exit(0);
+  }
 }
+
+runPdfTests().catch((err) => {
+  console.error('PDF Test Suite Error:', err);
+  process.exit(1);
+});

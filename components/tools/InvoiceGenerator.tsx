@@ -769,149 +769,158 @@ export default function InvoiceGenerator() {
     if (!pages.length) return;
 
     setIsGenerating(true);
-    let wrapper: HTMLDivElement | null = null;
+    let staging: HTMLDivElement | null = null;
 
     try {
-      wrapper = document.createElement('div');
-      wrapper.id = 'omni-invoice-pdf-wrapper';
-      wrapper.style.position = 'fixed';
-      wrapper.style.left = '-100000px';
-      wrapper.style.top = '0';
-      wrapper.style.width = '794px';
-      wrapper.style.background = '#ffffff';
-      wrapper.style.zIndex = '-1';
+      staging = document.createElement('div');
+      staging.id = 'omni-invoice-pdf-staging';
+      staging.style.position = 'fixed';
+      staging.style.left = '0';
+      staging.style.top = '0';
+      staging.style.width = '794px';
+      staging.style.height = '1123px';
+      staging.style.zIndex = '-9999';
+      staging.style.pointerEvents = 'none';
+      staging.style.background = '#ffffff';
+      staging.style.overflow = 'hidden';
+      document.body.appendChild(staging);
 
-      pages.forEach((page, idx) => {
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait',
+        compress: true,
+      });
+
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
         const clone = page.cloneNode(true) as HTMLElement;
+
+        // Reset layout styles so it fills the 794x1123 A4 canvas without scaling or offsets
+        clone.style.position = 'relative';
+        clone.style.left = '0';
+        clone.style.top = '0';
         clone.style.transform = 'none';
         clone.style.zoom = '1';
         clone.style.width = '794px';
+        clone.style.height = '1123px';
         clone.style.minHeight = '1123px';
-        clone.style.aspectRatio = 'auto';
-        clone.style.boxShadow = 'none';
         clone.style.margin = '0';
+        clone.style.boxShadow = 'none';
 
-        if (idx < pages.length - 1) {
-          clone.style.pageBreakAfter = 'always';
-          clone.style.breakAfter = 'page';
-        } else {
-          clone.style.pageBreakAfter = 'auto';
-          clone.style.breakAfter = 'auto';
+        staging.innerHTML = '';
+        staging.appendChild(clone);
+
+        // Allow browser layout engine to paint clone
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+        const canvas = await html2canvas(clone, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          onclone: (clonedDoc: Document) => {
+            // Color sanitization canvas for modern CSS color formats (lab, oklch, color-mix)
+            const cvs = clonedDoc.createElement('canvas');
+            cvs.width = 1;
+            cvs.height = 1;
+            const ctx = cvs.getContext('2d', { willReadFrequently: true });
+            const colorCache = new Map<string, string>();
+
+            const toRgb = (colorVal: string): string => {
+              if (
+                !colorVal ||
+                (!colorVal.includes('lab') &&
+                  !colorVal.includes('oklch') &&
+                  !colorVal.includes('color(') &&
+                  !colorVal.includes('color-mix'))
+              ) {
+                return colorVal;
+              }
+              if (colorCache.has(colorVal)) return colorCache.get(colorVal)!;
+              if (!ctx) return colorVal;
+              try {
+                ctx.clearRect(0, 0, 1, 1);
+                ctx.fillStyle = colorVal;
+                ctx.fillRect(0, 0, 1, 1);
+                const d = ctx.getImageData(0, 0, 1, 1).data;
+                const res =
+                  d[3] === 255
+                    ? `rgb(${d[0]}, ${d[1]}, ${d[2]})`
+                    : `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${(d[3] / 255).toFixed(3)})`;
+                colorCache.set(colorVal, res);
+                return res;
+              } catch {
+                return colorVal;
+              }
+            };
+
+            const allElements = clonedDoc.querySelectorAll('*');
+            const colorProps = [
+              'color',
+              'backgroundColor',
+              'borderTopColor',
+              'borderRightColor',
+              'borderBottomColor',
+              'borderLeftColor',
+              'outlineColor',
+              'textDecorationColor',
+            ] as const;
+
+            const view = clonedDoc.defaultView || window;
+            allElements.forEach((el) => {
+              const htmlEl = el as HTMLElement;
+              if (!htmlEl.style) return;
+              const cs = view.getComputedStyle(htmlEl);
+              for (const prop of colorProps) {
+                const val = cs[prop];
+                if (
+                  val &&
+                  (val.includes('lab') ||
+                    val.includes('oklch') ||
+                    val.includes('color(') ||
+                    val.includes('color-mix'))
+                ) {
+                  htmlEl.style[prop] = toRgb(val);
+                }
+              }
+            });
+
+            const safeStyle = clonedDoc.createElement('style');
+            safeStyle.textContent = `
+              *, *::before, *::after {
+                border-color: #cbd5e1;
+                outline-color: transparent;
+                text-decoration-color: currentColor;
+              }
+            `;
+            clonedDoc.head.appendChild(safeStyle);
+
+            clonedDoc.documentElement.style.backgroundColor = '#ffffff';
+            clonedDoc.documentElement.style.color = '#000000';
+            clonedDoc.body.style.backgroundColor = '#ffffff';
+            clonedDoc.body.style.color = '#000000';
+          },
+        });
+
+        if (i > 0) {
+          pdf.addPage('a4', 'portrait');
         }
 
-        wrapper!.appendChild(clone);
-      });
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+      }
 
-      document.body.appendChild(wrapper);
-
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-
-      const html2pdf = (await import('html2pdf.js')).default;
       const cleanInvNum = (meta.invNum || 'INV-0001').replace(/[^a-zA-Z0-9_-]/g, '_');
-
-      await html2pdf()
-        .from(wrapper)
-        .set({
-          margin: 0,
-          filename: `Invoice_${cleanInvNum}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false,
-            onclone: (clonedDoc: Document) => {
-              const clonedWrapper = clonedDoc.getElementById('omni-invoice-pdf-wrapper');
-              if (clonedWrapper) {
-                clonedWrapper.style.position = 'static';
-                clonedWrapper.style.left = 'auto';
-                clonedWrapper.style.top = 'auto';
-                clonedWrapper.style.margin = '0';
-                clonedWrapper.style.padding = '0';
-              }
-
-              // Color sanitization canvas for modern CSS color formats (lab, oklch, color-mix)
-              const cvs = clonedDoc.createElement('canvas');
-              cvs.width = 1;
-              cvs.height = 1;
-              const ctx = cvs.getContext('2d', { willReadFrequently: true });
-              const colorCache = new Map<string, string>();
-
-              const toRgb = (colorVal: string): string => {
-                if (!colorVal || (!colorVal.includes('lab') && !colorVal.includes('oklch') && !colorVal.includes('color(') && !colorVal.includes('color-mix'))) {
-                  return colorVal;
-                }
-                if (colorCache.has(colorVal)) return colorCache.get(colorVal)!;
-                if (!ctx) return colorVal;
-                try {
-                  ctx.clearRect(0, 0, 1, 1);
-                  ctx.fillStyle = colorVal;
-                  ctx.fillRect(0, 0, 1, 1);
-                  const d = ctx.getImageData(0, 0, 1, 1).data;
-                  const res = d[3] === 255 
-                    ? `rgb(${d[0]}, ${d[1]}, ${d[2]})` 
-                    : `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${(d[3] / 255).toFixed(3)})`;
-                  colorCache.set(colorVal, res);
-                  return res;
-                } catch {
-                  return colorVal;
-                }
-              };
-
-              // Sanitize all elements inside clonedDoc
-              const allElements = clonedDoc.querySelectorAll('*');
-              const colorProps = [
-                'color',
-                'backgroundColor',
-                'borderTopColor',
-                'borderRightColor',
-                'borderBottomColor',
-                'borderLeftColor',
-                'outlineColor',
-                'textDecorationColor'
-              ] as const;
-
-              const view = clonedDoc.defaultView || window;
-              allElements.forEach((el) => {
-                const htmlEl = el as HTMLElement;
-                if (!htmlEl.style) return;
-                const cs = view.getComputedStyle(htmlEl);
-                for (const prop of colorProps) {
-                  const val = cs[prop];
-                  if (val && (val.includes('lab') || val.includes('oklch') || val.includes('color(') || val.includes('color-mix'))) {
-                    htmlEl.style[prop] = toRgb(val);
-                  }
-                }
-              });
-
-              const safeStyle = clonedDoc.createElement('style');
-              safeStyle.textContent = `
-                *, *::before, *::after {
-                  border-color: #cbd5e1;
-                  outline-color: transparent;
-                  text-decoration-color: currentColor;
-                }
-              `;
-              clonedDoc.head.appendChild(safeStyle);
-
-              clonedDoc.documentElement.style.backgroundColor = '#ffffff';
-              clonedDoc.documentElement.style.color = '#000000';
-              clonedDoc.body.style.backgroundColor = '#ffffff';
-              clonedDoc.body.style.color = '#000000';
-            },
-          },
-          jsPDF: {
-            unit: 'mm',
-            format: 'a4',
-            orientation: 'portrait',
-          },
-        })
-        .save();
+      pdf.save(`Invoice_${cleanInvNum}.pdf`);
     } catch (error) {
       console.error('PDF Generation Error:', error);
       alert('Could not generate the PDF. Please try using the Print button to Save as PDF.');
     } finally {
-      wrapper?.remove();
+      staging?.remove();
       setIsGenerating(false);
     }
   };
