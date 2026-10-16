@@ -29,81 +29,45 @@ import {
 } from 'lucide-react';
 
 /* -------------------------------------------------------------------------- */
-/* Types & Interfaces                                                         */
+/* Engine & Helper Imports                                                    */
 /* -------------------------------------------------------------------------- */
 
-export interface LineItem {
-  id: string;
-  desc: string;
-  qty: number;
-  unit: string;
-  rate: number;
-  discount: number;
-  taxable: boolean;
-}
+import {
+  type LineItem,
+  type TaxEntry,
+  type Sender,
+  type Client,
+  type InvoiceStatus,
+  type InvoiceMeta,
+  type CurrencyOption,
+  type PageData,
+  type PaginationOptions,
+  type InvoiceTotals,
+  getCurrencyDecimals,
+  roundMoney,
+  formatMoney,
+  getCurrencyOptions,
+  calculateLineItem,
+  calculateInvoiceTotals,
+  computeInvoicePages,
+  formatDisplayDate,
+  validateInvoiceDraft,
+  safeParseMoney,
+  escapeCsvCell,
+} from '@/lib/invoiceEngine';
 
-export interface TaxEntry {
-  id: string;
-  name: string;
-  rate: number;
-  enabled: boolean;
-}
-
-export interface Sender {
-  name: string;
-  address: string;
-  email: string;
-  phone: string;
-  website: string;
-  taxId: string;
-  regNumber: string;
-  bank: string;
-}
-
-export interface Client {
-  name: string;
-  address: string;
-  shippingAddress: string;
-  email: string;
-  phone: string;
-  taxId: string;
-}
-
-export type InvoiceStatus =
-  | 'Draft'
-  | 'Sent'
-  | 'Partially Paid'
-  | 'Paid'
-  | 'Overdue'
-  | 'Cancelled';
-
-export interface InvoiceMeta {
-  invNum: string;
-  date: string;
-  dueDate: string;
-  paymentTerms: string;
-  status: InvoiceStatus;
-  poNumber: string;
-  notes: string;
-  terms: string;
-}
-
-export interface CurrencyOption {
-  code: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-}
-
-export interface PageData {
-  pageNumber: number;
-  totalPages: number;
-  items: LineItem[];
-  isFirstPage: boolean;
-  isLastPage: boolean;
-  hasSummary: boolean;
-  startItemIndex: number;
-}
+export type {
+  LineItem,
+  TaxEntry,
+  Sender,
+  Client,
+  InvoiceStatus,
+  InvoiceMeta,
+  CurrencyOption,
+  PageData,
+  PaginationOptions,
+  InvoiceTotals,
+};
 
 const STORAGE_KEY = 'omni_invoice_draft_v4';
 
@@ -134,343 +98,6 @@ const defaultTax = (): TaxEntry => ({
   rate: 10,
   enabled: true,
 });
-
-function formatDisplayDate(isoDate: string): string {
-  if (!isoDate || typeof isoDate !== 'string') return '—';
-  try {
-    const parts = isoDate.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const d = new Date(Date.UTC(year, month, day));
-      if (!isNaN(d.getTime())) {
-        return new Intl.DateTimeFormat('en-US', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-          timeZone: 'UTC',
-        }).format(d);
-      }
-    }
-    return isoDate;
-  } catch {
-    return isoDate;
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Currency & Monetary Helpers                                                */
-/* -------------------------------------------------------------------------- */
-
-function getCurrencyDecimals(code: string): number {
-  const upper = (code || '').toUpperCase();
-  if (upper === 'PKR') return 2;
-  if (['JPY', 'KRW', 'VND', 'CLP', 'HUF', 'PYG', 'RWF', 'UGX'].includes(upper)) return 0;
-  if (['KWD', 'BHD', 'OMR', 'JOD', 'TND', 'LYD', 'IQD'].includes(upper)) return 3;
-
-  try {
-    const nf = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: upper,
-    });
-    const d = nf.resolvedOptions().maximumFractionDigits;
-    return typeof d === 'number' ? d : 2;
-  } catch {
-    return 2;
-  }
-}
-
-function roundMoney(value: number, decimals: number): number {
-  if (!Number.isFinite(value)) return 0;
-  const factor = 10 ** decimals;
-  return Math.round((value + Number.EPSILON) * factor) / factor;
-}
-
-function formatMoney(value: number, decimals: number): string {
-  if (!Number.isFinite(value)) return (0).toFixed(decimals);
-  try {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(value);
-  } catch {
-    return value.toFixed(decimals);
-  }
-}
-
-function getCurrencyOptions(): CurrencyOption[] {
-  try {
-    const codes =
-      typeof Intl !== 'undefined' && typeof Intl.supportedValuesOf === 'function'
-        ? Intl.supportedValuesOf('currency')
-        : [];
-
-    const displayNames =
-      typeof Intl !== 'undefined' && 'DisplayNames' in Intl
-        ? new Intl.DisplayNames(['en'], { type: 'currency' })
-        : null;
-
-    const formatterCache = new Map<string, string>();
-
-    const getSymbol = (code: string) => {
-      if (formatterCache.has(code)) return formatterCache.get(code)!;
-      try {
-        const parts = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: code,
-          currencyDisplay: 'narrowSymbol',
-        }).formatToParts(0);
-        const currencyPart = parts.find((part) => part.type === 'currency');
-        const symbol = currencyPart?.value || code;
-        formatterCache.set(code, symbol);
-        return symbol;
-      } catch {
-        return code;
-      }
-    };
-
-    const options = codes.map((code) => ({
-      code,
-      name: displayNames?.of(code) || code,
-      symbol: getSymbol(code),
-      decimals: getCurrencyDecimals(code),
-    }));
-
-    options.sort((a, b) => {
-      if (a.code === 'USD') return -1;
-      if (b.code === 'USD') return 1;
-      if (a.code === 'EUR') return -1;
-      if (b.code === 'EUR') return 1;
-      if (a.code === 'GBP') return -1;
-      if (b.code === 'GBP') return 1;
-      if (a.code === 'PKR') return -1;
-      if (b.code === 'PKR') return 1;
-      if (a.code === 'INR') return -1;
-      if (b.code === 'INR') return 1;
-      if (a.code === 'CAD') return -1;
-      if (b.code === 'CAD') return 1;
-      if (a.code === 'AUD') return -1;
-      if (b.code === 'AUD') return 1;
-      if (a.code === 'JPY') return -1;
-      if (b.code === 'JPY') return 1;
-      return a.name.localeCompare(b.name);
-    });
-
-    return options;
-  } catch {
-    return [
-      { code: 'USD', name: 'US Dollar', symbol: '$', decimals: 2 },
-      { code: 'EUR', name: 'Euro', symbol: '€', decimals: 2 },
-      { code: 'GBP', name: 'British Pound', symbol: '£', decimals: 2 },
-      { code: 'PKR', name: 'Pakistani Rupee', symbol: '₨', decimals: 2 },
-      { code: 'INR', name: 'Indian Rupee', symbol: '₹', decimals: 2 },
-      { code: 'AED', name: 'United Arab Emirates Dirham', symbol: 'د.إ', decimals: 2 },
-      { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼', decimals: 2 },
-      { code: 'JPY', name: 'Japanese Yen', symbol: '¥', decimals: 0 },
-      { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', decimals: 2 },
-      { code: 'CAD', name: 'Canadian Dollar', symbol: 'CA$', decimals: 2 },
-      { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', decimals: 2 },
-      { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', decimals: 2 },
-      { code: 'KWD', name: 'Kuwaiti Dinar', symbol: 'KD', decimals: 3 },
-      { code: 'BHD', name: 'Bahraini Dinar', symbol: 'BD', decimals: 3 },
-      { code: 'OMR', name: 'Omani Rial', symbol: 'OMR', decimals: 3 },
-      { code: 'KRW', name: 'South Korean Won', symbol: '₩', decimals: 0 },
-    ];
-  }
-}
-
-/* -------------------------------------------------------------------------- */
-/* Height-Aware Pagination Engine                                             */
-/* -------------------------------------------------------------------------- */
-
-function estimateItemRowHeight(item: LineItem): number {
-  const desc = item.desc || '';
-  // In a 320px column with ~9px font, approximately 46-50 characters fit per line.
-  const lines = Math.max(1, Math.ceil(desc.length / 46));
-  // Base row height: 5px top/bottom padding + 12px line-height + 1px border = 18px (target 22px)
-  const base = 22;
-  const wrapExtra = (lines - 1) * 13;
-  const discExtra = item.discount > 0 ? 11 : 0;
-  return base + wrapExtra + discExtra;
-}
-
-export interface PaginationOptions {
-  hasLogo?: boolean;
-  hasNotes?: boolean;
-  notesLength?: number;
-  hasBank?: boolean;
-  bankLength?: number;
-  taxCount?: number;
-  hasDiscount?: boolean;
-  hasShipping?: boolean;
-  hasFee?: boolean;
-  hasPaid?: boolean;
-  hasClientShipping?: boolean;
-}
-
-function computeInvoicePages(
-  items: LineItem[],
-  options: PaginationOptions = {},
-): PageData[] {
-  if (items.length === 0) {
-    return [
-      {
-        pageNumber: 1,
-        totalPages: 1,
-        items: [],
-        isFirstPage: true,
-        isLastPage: true,
-        hasSummary: true,
-        startItemIndex: 0,
-      },
-    ];
-  }
-
-  // A4 Total Height = 1123px.
-  // Page padding: 24px top + 20px bottom = 44px.
-  // Footer: 20px height + 6px border/padding = 26px.
-  // Net usable height between padding and footer: 1123 - 44 - 26 = 1053px.
-  // Safety reserve: 23px.
-  const USABLE_PAGE_HEIGHT = 1030;
-
-  // Page 1 Overhead:
-  // Header: logo ? 140px : 110px.
-  // Billed To + Meta Dates: ~80px (+20px if clientShipping).
-  // Table Header + margin: 26px.
-  const page1HeaderOverhead =
-    (options.hasLogo ? 140 : 110) +
-    (options.hasClientShipping ? 100 : 80) +
-    26;
-
-  // Continuation Page Overhead:
-  // Compact header (24px) + table header (24px) + margin (10px) = 58px.
-  const contHeaderOverhead = 58;
-
-  // Summary / Totals Overhead:
-  // Base totals card (Subtotal + Total Due + padding/borders): 54px.
-  const taxLines = (options.taxCount || 0) * 12;
-  const discLines = options.hasDiscount ? 22 : 0; // discount + taxable base
-  const shipLine = options.hasShipping ? 12 : 0;
-  const feeLine = options.hasFee ? 12 : 0;
-  const paidLines = options.hasPaid ? 24 : 0; // paid + balance due
-  const totalsCardHeight = 54 + taxLines + discLines + shipLine + feeLine + paidLines;
-
-  // Left column notes/bank height estimation:
-  const bankLines = Math.max(1, Math.ceil((options.bankLength || 0) / 44));
-  const notesLines = options.hasNotes ? Math.max(1, Math.ceil((options.notesLength || 0) / 44)) : 0;
-  const leftSummaryHeight = 18 + bankLines * 11 + (options.hasNotes ? 16 + notesLines * 11 : 0);
-
-  // Summary section height is the maximum of the two columns + top margin (16px):
-  const summaryHeight = Math.max(totalsCardHeight, leftSummaryHeight) + 16;
-
-  // Budgets:
-  const PAGE1_WITH_SUMMARY_BUDGET = USABLE_PAGE_HEIGHT - page1HeaderOverhead - summaryHeight;
-  const PAGE1_WITHOUT_SUMMARY_BUDGET = Math.min(520, USABLE_PAGE_HEIGHT - page1HeaderOverhead);
-  const CONT_WITH_SUMMARY_BUDGET = USABLE_PAGE_HEIGHT - contHeaderOverhead - summaryHeight;
-  const CONT_WITHOUT_SUMMARY_BUDGET = Math.min(700, USABLE_PAGE_HEIGHT - contHeaderOverhead);
-
-  const itemHeights = items.map(estimateItemRowHeight);
-  const totalItemsHeight = itemHeights.reduce((a, b) => a + b, 0);
-
-  // If items <= 15 and they fit within the budget, keep on 1 page!
-  if (items.length <= 15 && totalItemsHeight <= PAGE1_WITH_SUMMARY_BUDGET) {
-    return [
-      {
-        pageNumber: 1,
-        totalPages: 1,
-        items,
-        isFirstPage: true,
-        isLastPage: true,
-        hasSummary: true,
-        startItemIndex: 0,
-      },
-    ];
-  }
-
-  // Multi-page distribution
-  const pages: { items: LineItem[]; hasSummary: boolean; startItemIndex: number }[] = [];
-  let currentIndex = 0;
-  let isFirst = true;
-
-  while (currentIndex < items.length) {
-    const isFirstPage = isFirst;
-    isFirst = false;
-
-    // Remaining items height
-    let remainingHeight = 0;
-    for (let j = currentIndex; j < items.length; j++) {
-      remainingHeight += itemHeights[j];
-    }
-
-    const budgetWithSummary = isFirstPage
-      ? PAGE1_WITH_SUMMARY_BUDGET
-      : CONT_WITH_SUMMARY_BUDGET;
-    const budgetWithoutSummary = isFirstPage
-      ? PAGE1_WITHOUT_SUMMARY_BUDGET
-      : CONT_WITHOUT_SUMMARY_BUDGET;
-
-    // Check if ALL remaining items fit on this page WITH summary:
-    // (If on first page, only do this if total original items was <= 15)
-    if (remainingHeight <= budgetWithSummary && (!isFirstPage || items.length <= 15)) {
-      pages.push({
-        items: items.slice(currentIndex),
-        hasSummary: true,
-        startItemIndex: currentIndex,
-      });
-      currentIndex = items.length;
-      break;
-    }
-
-    // Otherwise, take as many items as fit without summary
-    let currentSum = 0;
-    let takeCount = 0;
-    while (
-      currentIndex + takeCount < items.length &&
-      currentSum + itemHeights[currentIndex + takeCount] <= budgetWithoutSummary
-    ) {
-      currentSum += itemHeights[currentIndex + takeCount];
-      takeCount++;
-    }
-
-    if (takeCount === 0) {
-      takeCount = 1;
-    }
-
-    // Ensure we don't leave 0 items for the final page with summary
-    if (currentIndex + takeCount === items.length && takeCount > 1) {
-      const leaveForNext = Math.min(Math.max(1, Math.floor(takeCount * 0.25)), 4);
-      takeCount = Math.max(1, takeCount - leaveForNext);
-    }
-
-    pages.push({
-      items: items.slice(currentIndex, currentIndex + takeCount),
-      hasSummary: false,
-      startItemIndex: currentIndex,
-    });
-    currentIndex += takeCount;
-  }
-
-  // Safety: If final page somehow doesn't have summary, append summary page
-  if (pages.length > 0 && !pages[pages.length - 1].hasSummary) {
-    pages.push({
-      items: [],
-      hasSummary: true,
-      startItemIndex: items.length,
-    });
-  }
-
-  const totalPages = pages.length;
-  return pages.map((p, idx) => ({
-    pageNumber: idx + 1,
-    totalPages,
-    items: p.items,
-    isFirstPage: idx === 0,
-    isLastPage: idx === totalPages - 1,
-    hasSummary: p.hasSummary,
-    startItemIndex: p.startItemIndex,
-  }));
-}
 
 function checkStoredDraftSnapshot(): boolean {
   if (typeof window === 'undefined') return false;
@@ -600,118 +227,39 @@ export default function InvoiceGenerator() {
   const decimals = selectedCurrency.decimals;
 
   /* ------------------------------------------------------------------------ */
-  /* Calculations (Pure Deterministic Financial Oracle)                       */
+  /* Calculations (Pure Deterministic Calculation Layer)                       */
   /* ------------------------------------------------------------------------ */
 
-  const computedItems = useMemo(() => {
-    return items.map((item) => {
-      const qty = Number.isFinite(item.qty) ? Math.max(0, item.qty) : 0;
-      const rate = Number.isFinite(item.rate) ? Math.max(0, item.rate) : 0;
-      const rawGross = qty * rate;
-      const lineDisc = Number.isFinite(item.discount)
-        ? Math.max(0, Math.min(rawGross, item.discount))
-        : 0;
-      const lineTotal = roundMoney(rawGross - lineDisc, decimals);
-      return {
-        ...item,
-        qty,
-        rate,
-        discount: lineDisc,
-        lineTotal,
-        taxable: item.taxable !== false,
-      };
-    });
-  }, [items, decimals]);
-
-  const subtotal = useMemo(() => {
-    const raw = computedItems.reduce((acc, it) => acc + it.lineTotal, 0);
-    return roundMoney(raw, decimals);
-  }, [computedItems, decimals]);
-
-  const isFreshEmpty = useMemo(() => {
-    return (
-      items.length === 1 &&
-      !items[0].desc &&
-      items[0].rate === 0 &&
-      subtotal === 0
-    );
-  }, [items, subtotal]);
-
-  const discountAmount = useMemo(() => {
-    if (discountType === 'percent') {
-      const p = Math.min(100, Math.max(0, Number(discountValue) || 0));
-      return roundMoney(subtotal * (p / 100), decimals);
-    }
-    const f = Math.max(0, Number(discountValue) || 0);
-    return roundMoney(Math.min(subtotal, f), decimals);
-  }, [discountType, discountValue, subtotal, decimals]);
-
-  const taxableSubtotal = useMemo(() => {
-    const raw = computedItems
-      .filter((it) => it.taxable)
-      .reduce((acc, it) => acc + it.lineTotal, 0);
-    return roundMoney(raw, decimals);
-  }, [computedItems, decimals]);
-
-  const effectiveTaxableDiscount = useMemo(() => {
-    if (subtotal <= 0) return 0;
-    return roundMoney((taxableSubtotal / subtotal) * discountAmount, decimals);
-  }, [subtotal, taxableSubtotal, discountAmount, decimals]);
-
-  const taxableBase = useMemo(() => {
-    return Math.max(0, roundMoney(taxableSubtotal - effectiveTaxableDiscount, decimals));
-  }, [taxableSubtotal, effectiveTaxableDiscount, decimals]);
-
-  const computedTaxes = useMemo(() => {
-    return taxes
-      .filter((t) => t.enabled && t.rate > 0)
-      .map((t) => {
-        const rate = Math.min(100, Math.max(0, Number(t.rate) || 0));
-        const amount = roundMoney(taxableBase * (rate / 100), decimals);
-        return {
-          ...t,
-          rate,
-          amount,
-        };
-      });
-  }, [taxes, taxableBase, decimals]);
-
-  const totalTax = useMemo(() => {
-    const raw = computedTaxes.reduce((acc, t) => acc + t.amount, 0);
-    return roundMoney(raw, decimals);
-  }, [computedTaxes, decimals]);
-
-  const shippingAmount = useMemo(
-    () => roundMoney(Math.max(0, Number(shipping) || 0), decimals),
-    [shipping, decimals],
-  );
-
-  const feeAmount = useMemo(
-    () => roundMoney(Math.max(0, Number(additionalFee) || 0), decimals),
-    [additionalFee, decimals],
-  );
-
-  const nonTaxableBase = useMemo(() => {
-    const nonTaxableSub = subtotal - taxableSubtotal;
-    const nonTaxableDisc = discountAmount - effectiveTaxableDiscount;
-    return Math.max(0, roundMoney(nonTaxableSub - nonTaxableDisc, decimals));
-  }, [subtotal, taxableSubtotal, discountAmount, effectiveTaxableDiscount, decimals]);
-
-  const grandTotal = useMemo(() => {
-    return roundMoney(
-      taxableBase + nonTaxableBase + totalTax + shippingAmount + feeAmount,
+  const totals = useMemo<InvoiceTotals>(() => {
+    return calculateInvoiceTotals({
+      items,
+      taxes,
+      discountType,
+      discountValue,
+      shipping,
+      additionalFee,
+      amountPaid,
       decimals,
-    );
-  }, [taxableBase, nonTaxableBase, totalTax, shippingAmount, feeAmount, decimals]);
+    });
+  }, [items, taxes, discountType, discountValue, shipping, additionalFee, amountPaid, decimals]);
 
-  const paidAmount = useMemo(
-    () => roundMoney(Math.max(0, Number(amountPaid) || 0), decimals),
-    [amountPaid, decimals],
-  );
-
-  const balanceDue = useMemo(() => {
-    return roundMoney(Math.max(0, grandTotal - paidAmount), decimals);
-  }, [grandTotal, paidAmount, decimals]);
+  const {
+    computedItems,
+    subtotal,
+    isFreshEmpty,
+    discountAmount,
+    taxableSubtotal,
+    effectiveTaxableDiscount,
+    taxableBase,
+    nonTaxableBase,
+    computedTaxes,
+    totalTax,
+    shippingAmount,
+    feeAmount,
+    grandTotal,
+    paidAmount,
+    balanceDue,
+  } = totals;
 
   /* Multi-page preview calculation */
   const previewPages = useMemo(
@@ -1040,15 +588,6 @@ export default function InvoiceGenerator() {
   /* ------------------------------------------------------------------------ */
 
   const exportCSV = () => {
-    const escapeCell = (val: unknown): string => {
-      if (val === null || val === undefined) return '""';
-      let s = String(val);
-      if (/^[=+\-@\t\r]/.test(s)) {
-        s = `'${s}`;
-      }
-      return `"${s.replace(/"/g, '""')}"`;
-    };
-
     const rows: string[][] = [
       ['INVOICE METADATA'],
       ['Invoice Number', meta.invNum],
@@ -1106,7 +645,7 @@ export default function InvoiceGenerator() {
       ['Terms & Conditions', meta.terms],
     ];
 
-    const csvContent = rows.map((r) => r.map(escapeCell).join(',')).join('\r\n');
+    const csvContent = rows.map((r) => r.map(escapeCsvCell).join(',')).join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -1183,39 +722,30 @@ export default function InvoiceGenerator() {
   const confirmJSONImport = () => {
     if (!pendingImportData) return;
     try {
-      const inv = (pendingImportData.invoice as Record<string, unknown>) || pendingImportData;
-      if (inv.meta) setMeta(inv.meta as InvoiceMeta);
-      if (inv.sender) setSender(inv.sender as Sender);
-      if (inv.client) setClient(inv.client as Client);
-      if (Array.isArray(inv.items) && inv.items.length) setItems(inv.items as LineItem[]);
-      if (Array.isArray(inv.taxes) && inv.taxes.length) setTaxes(inv.taxes as TaxEntry[]);
-      if (inv.discountType === 'percent' || inv.discountType === 'fixed') {
-        setDiscountType(inv.discountType);
+      const invRaw = (pendingImportData.invoice as Record<string, unknown>) || pendingImportData;
+      const { sanitized } = validateInvoiceDraft(invRaw);
+      if (sanitized) {
+        setMeta(sanitized.meta);
+        setSender(sanitized.sender);
+        setClient(sanitized.client);
+        setItems(sanitized.items);
+        setTaxes(sanitized.taxes);
+        setDiscountType(sanitized.discountType);
+        setDiscountValue(sanitized.discountValue);
+        setDiscountInput(String(sanitized.discountValue));
+        setShipping(sanitized.shipping);
+        setShippingInput(String(sanitized.shipping));
+        setAdditionalFee(sanitized.additionalFee);
+        setAdditionalFeeInput(String(sanitized.additionalFee));
+        setAdditionalFeeLabel(sanitized.additionalFeeLabel);
+        setAmountPaid(sanitized.amountPaid);
+        setAmountPaidInput(String(sanitized.amountPaid));
+        setCurrencyCode(sanitized.currencyCode);
+        if (sanitized.logo) setLogo(sanitized.logo);
       }
-      if (typeof inv.discountValue === 'number') {
-        setDiscountValue(inv.discountValue);
-        setDiscountInput(String(inv.discountValue));
-      }
-      if (typeof inv.shipping === 'number') {
-        setShipping(inv.shipping);
-        setShippingInput(String(inv.shipping));
-      }
-      if (typeof inv.additionalFee === 'number') {
-        setAdditionalFee(inv.additionalFee);
-        setAdditionalFeeInput(String(inv.additionalFee));
-      }
-      if (typeof inv.additionalFeeLabel === 'string') {
-        setAdditionalFeeLabel(inv.additionalFeeLabel);
-      }
-      if (typeof inv.amountPaid === 'number') {
-        setAmountPaid(inv.amountPaid);
-        setAmountPaidInput(String(inv.amountPaid));
-      }
-      if (typeof inv.currencyCode === 'string') setCurrencyCode(inv.currencyCode);
-      if (typeof inv.logo === 'string') setLogo(inv.logo);
 
       setPendingImportData(null);
-      setSaveStatusMessage('Invoice imported successfully.');
+      setSaveStatusMessage('Invoice imported and validated successfully.');
       setTimeout(() => setSaveStatusMessage(null), 3000);
     } catch {
       alert('Failed to apply imported invoice data.');
@@ -1386,7 +916,27 @@ export default function InvoiceGenerator() {
     }
   };
 
-  if (!isClient) return null;
+  if (!isClient) {
+    return (
+      <div
+        className="mx-auto w-full max-w-[1360px] min-w-0 rounded-[28px] border border-slate-800 bg-[#070b14] p-3 shadow-2xl sm:p-5 lg:p-6 animate-pulse"
+        aria-busy="true"
+        aria-label="Loading Invoice Generator Workspace"
+      >
+        <div className="h-16 w-full rounded-2xl bg-slate-900/80 mb-6" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-6 space-y-4">
+            <div className="h-48 rounded-2xl bg-slate-900/60" />
+            <div className="h-64 rounded-2xl bg-slate-900/60" />
+            <div className="h-48 rounded-2xl bg-slate-900/60" />
+          </div>
+          <div className="lg:col-span-6">
+            <div className="h-[800px] rounded-2xl bg-slate-900/60" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-[1360px] min-w-0 rounded-[28px] border border-slate-800 bg-[#070b14] p-3 shadow-2xl sm:p-5 lg:p-6">

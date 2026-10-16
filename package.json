@@ -19,7 +19,8 @@
     "test:sql": "tsx scripts/test-sql-formatter.ts",
     "test:svg": "tsx scripts/test-svg-optimizer.ts",
     "test:text-case": "tsx scripts/test-text-case-converter.ts",
-    "test:webp": "tsx scripts/test-webp-to-jpg-png.ts"
+    "test:webp": "tsx scripts/test-webp-to-jpg-png.ts",
+    "test:invoice": "tsx scripts/test-invoice-generator.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",

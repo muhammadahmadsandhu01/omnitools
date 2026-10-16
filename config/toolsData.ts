@@ -125,9 +125,10 @@ export const tools: Tool[] = [
       'Create professional, print-ready PDF invoices with automatic calculations and browser-based editing.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Pro Invoice Generator (PDF)',
-    seoDescription: 'Create professional, print-ready PDF invoices with automatic tax, discount, and currency calculations directly in your browser. No signup required.',
-    relatedToolSlugs: ['emi-calculator', 'mortgage-calculator', 'salary-calculator', 'crypto-converter'],
+    seoTitle: 'Free Invoice Generator — Create & Download PDF Invoices',
+    seoDescription:
+      'Free online invoice generator for freelancers and businesses. Create, calculate, and download print-ready PDF invoices with multi-currency, tax, and discount support directly in your browser. No signup required.',
+    relatedToolSlugs: ['salary-calculator', 'crypto-converter', 'emi-calculator', 'compound-interest'],
   },
 
   {

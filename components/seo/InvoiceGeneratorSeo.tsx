@@ -9,27 +9,62 @@ export const INVOICE_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How does client-side invoice generation protect confidential business data?',
     answer:
-      'OmniTools Invoice Generator executes entirely within your browser session using local JavaScript memory. Client billing details, proprietary unit rates, company registration codes, and banking instructions are never transmitted to our servers or stored in remote databases. Your draft is automatically saved to your browser local storage so you can resume editing later.',
+      'OmniTools Invoice Generator executes 100% in your local web browser session using modern JavaScript and HTML5 Canvas APIs. Client billing addresses, proprietary hourly rates, registration numbers, line items, and banking instructions (IBAN/SWIFT) never transmit across the network to our servers or any third-party databases. Your draft is automatically saved to your browser local storage so you can safely resume editing later.',
   },
   {
     question: 'How does the automatic multi-page pagination algorithm prevent table cut-offs?',
     answer:
-      'The generator includes an intelligent A4 page budget calculator (computeInvoicePages). It estimates exact pixel heights for every line item, logo header, and totals block. If your invoice exceeds standard A4 printable height (1,030 pt usable), it splits items cleanly across multiple numbered pages with continuation headers, ensuring summary blocks and payment details never overlap table rows.',
+      'The generator includes a deterministic A4 page budgeting algorithm (computeInvoicePages in lib/invoiceEngine.ts). It measures vertical pixel heights for headers, logo graphics, multi-line item wrap lengths, and totals cards. When an invoice exceeds the standard A4 printable budget (1,030 pt usable height), items are cleanly partitioned across numbered continuation pages with synchronized column headers, guaranteeing that totals and bank remittance notes never collide with or truncate line items.',
   },
   {
     question: 'How are sub-unit decimals formatted across different international currencies?',
     answer:
-      'Currency formatting dynamically aligns with ISO 4217 specifications: zero decimals for zero-fraction currencies (such as Japanese Yen JPY and Korean Won KRW), two decimals for standard currencies (such as USD, EUR, GBP, PKR, and INR), and three decimals for Middle Eastern currencies (such as Kuwaiti Dinar KWD, Bahraini Dinar BHD, and Omani Rial OMR).',
+      'Monetary calculations dynamically respect ISO 4217 specifications: zero decimals for zero-fraction currencies (such as Japanese Yen JPY and South Korean Won KRW), two decimals for standard currencies (such as USD, EUR, GBP, PKR, INR, AED, and SAR), and three decimals for Middle Eastern currencies (such as Kuwaiti Dinar KWD, Bahraini Dinar BHD, and Omani Rial OMR). All arithmetic uses decimal-safe half-up rounding to prevent binary floating-point discrepancies.',
   },
   {
     question: 'Can you include multiple customizable tax lines and discounts on a single invoice?',
     answer:
-      'Yes. You can add multiple independent tax entries (such as State Sales Tax, Federal VAT, or GST) with custom percentage rates. Line items can be marked as taxable or tax-exempt individually, and discounts can be applied per line item or across the total invoice balance.',
+      'Yes. You can add multiple independent tax entries (such as State Sales Tax, Federal VAT, GST, or Municipal Surcharges) with custom percentage rates. Each line item can be toggled as taxable or tax-exempt. When a global discount is applied, our calculation engine proportionally allocates the discount between taxable and non-taxable subtotals, ensuring tax is calculated strictly on the net taxable balance.',
   },
   {
-    question: 'Can you export or backup invoices for bookkeeping records?',
+    question: 'Which file formats can I export my invoice to?',
     answer:
-      'Yes. In addition to high-resolution print-to-PDF export, you can download a complete JSON backup of your invoice draft to import later, or export a structured CSV spreadsheet of all line items for spreadsheet accounting software.',
+      'OmniTools supports four versatile export pipelines: (1) Vector-rendered print-ready A4 PDF download via client-side PDF rendering; (2) Browser-native print formatting (@media print) allowing direct printing or Save as PDF; (3) Full JSON draft backup for re-importing and editing on any computer; and (4) Structured RFC 4180 CSV spreadsheet export of all line items for accounting ledgers like Excel or QuickBooks.',
+  },
+  {
+    question: 'What are standard commercial payment terms (such as Net 30), and which should I choose?',
+    answer:
+      'Commercial payment terms define the credit window extended to the buyer before an invoice becomes overdue. Common terms include: "Due on Receipt" (immediate payment upon delivery), "Net 15" (payment due within 15 calendar days), "Net 30" (industry standard for B2B contracts, due within 30 days), "Net 60" (common for corporate or enterprise procurement), and "EOM" (End of Month). Shorter payment terms improve contractor cash flow, while longer terms are standard for large corporate clients.',
+  },
+  {
+    question: 'Does this invoice generator fulfill government legal e-invoicing compliance requirements?',
+    answer:
+      'No standalone web document generator can replace official government-regulated e-invoicing portals. While OmniTools generates commercially valid PDF invoices containing all standard commercial fields (Tax ID, registration numbers, itemized taxes, and remittance data), certain jurisdictions legally mandate cryptographically signed XML/UBL files routed through centralized tax authorities (such as Peppol in Europe, ZATCA in Saudi Arabia, Factur-X in France, or GSTN e-Invoicing in India). Always verify local statutory regulations.',
+  },
+  {
+    question: 'What is the fundamental difference between an invoice, a receipt, and a quotation?',
+    answer:
+      'A quotation (estimate) is a pre-sale proposal outlining anticipated costs before work begins. An invoice is a formal commercial payment demand issued upon or during delivery of goods or services, creating a legal accounts receivable obligation. A receipt is an acknowledgment document issued strictly after payment has been completed, serving as proof of remittance.',
+  },
+  {
+    question: 'How should sequential invoice numbers be structured for accounting audits?',
+    answer:
+      'Tax authorities (including IRS and HMRC) require sequential, non-repeating invoice numbering without gaps. Best practices include incorporating the fiscal year and a zero-padded integer, such as INV-2026-0001, or client-prefixed numbering like CLI-2026-042. Consistent numbering simplifies bank reconciliation and prevents audit penalties.',
+  },
+  {
+    question: 'What image formats and dimensions are recommended for business logos?',
+    answer:
+      'Upload high-resolution PNG, JPG, or WebP images up to 2 MB. PNG files with transparent backgrounds are ideal for seamless rendering on white invoice paper. For security and cross-platform PDF consistency, SVG vector files are restricted to prevent embedded script execution.',
+  },
+  {
+    question: 'How does the local draft recovery and auto-save feature work?',
+    answer:
+      'Every time you modify an invoice field, the state is synchronized in browser memory. Clicking "Save Draft" writes an encrypted snapshot to your browser localStorage. When returning to OmniTools, a restoration banner allows you to resume your draft with one click or discard it to start fresh.',
+  },
+  {
+    question: 'How are partial payments, deposits, and retainers reflected on the invoice?',
+    answer:
+      'You can record upfront deposits or partial payments using the "Amount Paid" field. The calculation engine subtracts this figure from the Grand Total to clearly display the remaining "Balance Due", giving both you and your client transparent visibility into outstanding balances.',
   },
 ];
 
@@ -47,12 +82,41 @@ export default function InvoiceGeneratorSeo() {
     })),
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://omnitools-navy.vercel.app',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Finance',
+        item: 'https://omnitools-navy.vercel.app/finance',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: 'Pro Invoice Generator (PDF)',
+        item: 'https://omnitools-navy.vercel.app/finance/invoice-generator',
+      },
+    ],
+  };
+
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* FAQ Schema */}
+      {/* Structured Data (JSON-LD: FAQPage & BreadcrumbList; SoftwareApplication is emitted by page shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
@@ -65,6 +129,7 @@ export default function InvoiceGeneratorSeo() {
         automatic multi-page pagination—with zero subscription fees, watermarks, or remote server uploads.
       </p>
 
+      {/* 1. Structural Elements Table */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Invoice Structure &amp; Mandatory Commercial Elements
       </h3>
@@ -111,6 +176,103 @@ export default function InvoiceGeneratorSeo() {
         </table>
       </div>
 
+      {/* 2. Payment Terms Guide */}
+      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        Standard Commercial Payment Terms: Cash Flow &amp; Enforcement
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        Selecting appropriate payment terms directly affects your company cash flow and defines when late fees may legally apply:
+      </p>
+      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
+        <li>
+          <strong>Due on Receipt:</strong> Payment is expected immediately upon delivery of the invoice. Recommended for freelancers, one-off digital assets, and milestone completion handoffs.
+        </li>
+        <li>
+          <strong>Net 15:</strong> Payment must be remitted within 15 calendar days from the invoice date. Commonly used by agencies and small contractors to maintain tight 2-week receivables cycles.
+        </li>
+        <li>
+          <strong>Net 30:</strong> The corporate standard for B2B billing. Grants the client 30 calendar days to process invoices through their internal accounts payable department.
+        </li>
+        <li>
+          <strong>Net 60:</strong> Extended 60-day terms customary in enterprise supply chain procurement and government contracts.
+        </li>
+        <li>
+          <strong>End of Month (EOM):</strong> Payment is due on the final calendar day of the month in which the invoice was issued.
+        </li>
+      </ul>
+
+      {/* 3. Document Comparison Table */}
+      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        Invoice vs. Receipt vs. Quotation: Key Differences
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        Using the correct commercial document prevents bookkeeping disputes and preserves audit integrity:
+      </p>
+      <div className="overflow-x-auto mb-6">
+        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Document Type</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Issuance Timing</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Legal &amp; Accounting Function</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Payment Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Quotation / Estimate</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Prior to project kickoff or delivery</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Commercial offer specifying expected scope and pricing. Not a debt demand.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Unpaid (No debt created)</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Commercial Invoice</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Upon or during fulfillment of goods/services</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Formal legal payment demand; establishes accounts receivable &amp; payable.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Outstanding (Payment demanded)</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Payment Receipt</th>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Strictly after funds are received</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Irrevocable proof that financial obligation has been settled.</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700">Settled (Funds cleared)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* 4. Calculation Order & Proportional Allocation */}
+      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        Mathematical Calculation Order &amp; Proportional Tax Allocation
+      </h3>
+      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+        To prevent floating-point calculation anomalies and ensure financial precision, OmniTools employs a deterministic 7-step mathematical model:
+      </p>
+      <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
+        <li>
+          <strong>Line Item Totals:</strong> <code>Line Total = round((Quantity × Rate) − Line Discount)</code>, with negative discounts clamped to zero.
+        </li>
+        <li>
+          <strong>Subtotal:</strong> Sum of all line item totals rounded to the currency&apos;s ISO minor unit.
+        </li>
+        <li>
+          <strong>Taxable vs. Non-Taxable Subtotals:</strong> Items marked tax-exempt are isolated from the taxable subtotal pool.
+        </li>
+        <li>
+          <strong>Proportional Global Discount Allocation:</strong> If an invoice-level discount is applied, it is proportionally distributed between taxable and exempt pools: <code>Effective Taxable Discount = (Taxable Subtotal / Subtotal) × Discount Amount</code>.
+        </li>
+        <li>
+          <strong>Tax Calculation:</strong> Each enabled tax rate applies strictly to the net taxable base: <code>Tax Amount = round(Taxable Base × Rate%)</code>.
+        </li>
+        <li>
+          <strong>Grand Total:</strong> <code>Grand Total = Taxable Base + Non-Taxable Base + Sum(Taxes) + Shipping + Additional Fees</code>.
+        </li>
+        <li>
+          <strong>Balance Due:</strong> <code>Balance Due = max(0, Grand Total − Amount Paid)</code>.
+        </li>
+      </ol>
+
+      {/* 5. A4 Pagination Engine */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Automatic Multi-Page A4 Pagination Engine
       </h3>
@@ -129,8 +291,9 @@ export default function InvoiceGeneratorSeo() {
         </li>
       </ul>
 
+      {/* 6. Step-by-Step Guide */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How to Create &amp; Download Your Invoice
+        How to Create &amp; Export Your Invoice
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
@@ -150,6 +313,26 @@ export default function InvoiceGeneratorSeo() {
         </li>
       </ol>
 
+      {/* 7. Pitfalls Checklist */}
+      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        Common Invoicing Pitfalls &amp; Pre-Flight Quality Checklist
+      </h3>
+      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
+        <li>
+          <strong>Missing Tax Identification:</strong> In B2B cross-border commerce, omitting your VAT, GST, or Tax ID can disqualify the buyer from claiming input tax deductions.
+        </li>
+        <li>
+          <strong>Ambiguous Line Descriptions:</strong> Descriptions like &quot;Consulting&quot; invite payment delays. Use clear, deliverable-based descriptions like &quot;Full-Stack Application Development — Sprint 12 (40 hrs)&quot;.
+        </li>
+        <li>
+          <strong>Omitted Bank Remittance Routing:</strong> Ensure your IBAN, BIC/SWIFT, or domestic routing numbers are clearly stated in the Bank Details section to prevent wire routing errors.
+        </li>
+        <li>
+          <strong>Duplicate Invoice Numbers:</strong> Ensure every invoice has a strictly unique sequential number to maintain tax audit compliance.
+        </li>
+      </ul>
+
+      {/* 8. FAQs */}
       <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
@@ -166,6 +349,7 @@ export default function InvoiceGeneratorSeo() {
         ))}
       </dl>
 
+      {/* 9. Internal Linking Silo */}
       <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
         <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
           Related Financial &amp; Document Utilities
@@ -183,6 +367,20 @@ export default function InvoiceGeneratorSeo() {
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             Crypto &amp; Currency Converter &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/finance/emi-calculator"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Loan EMI &amp; Amortization Calculator &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/finance/compound-interest"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Compound Interest Calculator &rarr;
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
