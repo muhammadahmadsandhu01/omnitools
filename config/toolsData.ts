@@ -414,11 +414,12 @@ export const tools: Tool[] = [
     slug: 'text-analyzer',
     categoryId: 'seo',
     description:
-      'Analyze word count, character count, readability, keyword usage, and other text metrics.',
+      'Analyze word count, character count, readability, keyword density, speaking duration, and sentence metrics client-side in real time.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Word Counter & Text Analyzer',
-    seoDescription: 'Analyze character count, word count, sentence metrics, estimated reading time, keyword density, and Flesch reading ease scores client-side.',
+    seoTitle: 'Word Counter & Text Analyzer — Readability, Characters & Pacing',
+    seoDescription:
+      'Free online text analyzer and word counter. Measure words, characters, sentences, readability scores (Flesch, FK), speaking pace, and keyword density client-side.',
     relatedToolSlugs: ['text-case-converter', 'qr-generator', 'regex-tester', 'json-formatter'],
   },
 

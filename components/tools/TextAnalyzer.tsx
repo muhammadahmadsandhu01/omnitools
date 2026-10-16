@@ -4,8 +4,16 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlignLeft, BarChart2, BookOpen, Check, Clock, Copy, Download,
   FileDiff, Hash, Play, Search, Scissors, Square, Trash2,
-  Upload, Wand2, X, CheckCircle2, AlertCircle, Info, Sparkles
+  Upload, Wand2, X, CheckCircle2, AlertCircle, Info, Sparkles, Target, FileSpreadsheet
 } from 'lucide-react';
+
+export const SAMPLE_TEXT = `Clear writing shares ideas simply, directly, and with good rhythm. When drafting an article or business report, knowing your audience is the most useful step toward engagement.
+
+The Flesch Reading Ease score measures text clarity on a zero to one hundred scale. Plain English content targets a score between sixty and seventy. This range matches an eighth-grade reading level. Short sentences, everyday words, and active verbs reduce fatigue. They also allow readers to absorb information without extra effort.
+
+In contrast, very long sentences with too many clauses often hide your central point. Complex topics may need precise words. Still, skilled writers replace wordy phrases with direct verbs in order to maximize clarity.
+
+By tracking word count, reading pace, keyword density, and sentence structure in real time, you can polish your drafts with confidence before publication.`;
 
 export type Tone = 'Positive' | 'Negative' | 'Neutral' | 'Mixed';
 
@@ -42,10 +50,12 @@ export type ScoreFactor = {
 export type Analysis = {
   chars: number;
   charsNoSpaces: number;
+  graphemes: number;
   words: number;
   uniqueWords: number;
   sentences: number;
   paragraphs: number;
+  lines: number;
   syllables: number;
   avgWordLength: number;
   avgSentenceWords: number;
@@ -113,13 +123,32 @@ const ABBREVIATIONS = [
   'B.A.', 'M.A.', 'B.S.', 'M.S.'
 ];
 
-function metric(label: string, value: string | number) {
+function metric(label: string, value: string | number, subtext?: string) {
   return (
     <div className="bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 rounded-2xl">
       <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
       <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 mt-1">{value}</div>
+      {subtext && <div className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{subtext}</div>}
     </div>
   );
+}
+
+export function countGraphemes(text: string): number {
+  if (!text) return 0;
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    let count = 0;
+    for (const _ of segmenter.segment(text)) {
+      count++;
+    }
+    return count;
+  }
+  return [...text].length;
+}
+
+export function countLines(text: string): number {
+  if (!text) return 0;
+  return text.split(/\r\n|\r|\n/).length;
 }
 
 // Conservative passive-voice detector: require auxiliary + past-participle token
@@ -150,29 +179,32 @@ function hasUsefulPassive(sentence: string): boolean {
   return PASSIVE_RE.test(trimmed);
 }
 
-function wordsOf(s: string): string[] {
-  return s.toLowerCase().match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu) || [];
+export function wordsOf(s: string): string[] {
+  return s.toLowerCase().match(/(?:\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}]+(?:['’\-–][\p{L}\p{N}]+)*)/gu) || [];
 }
+
+const INTL_TERMINATORS = /[.!?。۔؟！？]/;
 
 function protectSentenceText(s: string): string {
   let res = s;
-  // Generic interior dots between alphanumeric/symbol characters (e.g. Node.js, React.js, Next.js, package.json, example.com, v2.5)
-  res = res.replace(/(?<=[a-zA-Z0-9_#+])\.(?=[a-zA-Z0-9_#+])/g, '\u0001');
-  // Generic leading dots on tokens (e.g. .NET, .env, .gitignore)
-  res = res.replace(/(?<=^|[\s"'({[/])\.([a-zA-Z0-9_#+]+)/g, '\u0001$1');
+  // 1. Dotted abbreviations FIRST
   for (const abbr of ABBREVIATIONS) {
     const escaped = abbr.replace(/\./g, '\\.');
     const re = new RegExp(`\\b${escaped}`, 'gi');
     res = res.replace(re, m => m.replace(/\./g, '\u0001'));
   }
-  // Initials like J. K. or A. Smith
+  // 2. Generic interior dots between alphanumeric/symbol characters (e.g. Node.js, React.js, Next.js, package.json, example.com, v2.5)
+  res = res.replace(/(?<=[a-zA-Z0-9_#+])\.(?=[a-zA-Z0-9_#+])/g, '\u0001');
+  // 3. Generic leading dots on tokens (e.g. .NET, .env, .gitignore)
+  res = res.replace(/(?<=^|[\s"'({[/])\.([a-zA-Z0-9_#+]+)/g, '\u0001$1');
+  // 4. Initials like J. K. or A. Smith
   res = res.replace(/\b([A-Z])\.\s+(?=[A-Z]\.|\b[A-Za-z])/g, '$1\u0001 ');
-  // Emails & URLs
+  // 5. Emails & URLs
   res = res.replace(/\b([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)\b/g, m => m.replace(/\./g, '\u0001'));
   res = res.replace(/(https?:\/\/[^\s]+)/g, m => m.replace(/\./g, '\u0001'));
-  // Versions and decimals
+  // 6. Versions and decimals
   res = res.replace(/\b([vV]?\d+)\.(\d+)(?:\.(\d+))?\b/g, m => m.replace(/\./g, '\u0001'));
-  // Ellipses
+  // 7. Ellipses
   res = res.replace(/\.{3}/g, '\u0004');
   return res;
 }
@@ -181,7 +213,7 @@ function restoreSentenceText(s: string): string {
   return s.replace(/\u0001/g, '.').replace(/\u0004/g, '...');
 }
 
-function sentencesOf(s: string): string[] {
+export function sentencesOf(s: string): string[] {
   if (!s || !s.trim()) return [];
   const protectedText = protectSentenceText(s);
   const out: string[] = [];
@@ -211,7 +243,7 @@ function sentencesOf(s: string): string[] {
       }
       continue;
     }
-    if (!/[.!?]/.test(ch)) continue;
+    if (!INTL_TERMINATORS.test(ch)) continue;
 
     if (ch === '.') {
       const lineStart = protectedText.lastIndexOf('\n', i) + 1;
@@ -227,7 +259,7 @@ function sentencesOf(s: string): string[] {
     }
 
     let end = i + 1;
-    while (end < protectedText.length && /[.!?]/.test(protectedText[end])) end++;
+    while (end < protectedText.length && INTL_TERMINATORS.test(protectedText[end])) end++;
     if (quote) {
       let q = end;
       while (q < protectedText.length && /[\t ]/.test(protectedText[q])) q++;
@@ -238,7 +270,7 @@ function sentencesOf(s: string): string[] {
       end = q;
       quote = '';
     } else {
-      while (end < protectedText.length && /[.!?]/.test(protectedText[end])) end++;
+      while (end < protectedText.length && INTL_TERMINATORS.test(protectedText[end])) end++;
       while (end < protectedText.length && /["”’»]/.test(protectedText[end])) {
         end++;
         while (end < protectedText.length && /[\t ]/.test(protectedText[end])) end++;
@@ -251,19 +283,19 @@ function sentencesOf(s: string): string[] {
       while (
         lines.length > 1 &&
         (/^[A-Z0-9][A-Z0-9 \-—–:]+$/.test(lines[0].trim()) ||
-         /^[^.!?]{1,80}:$/.test(lines[0].trim()) ||
-         (lines[0].trim().length <= 60 && !/[.!?]$/.test(lines[0].trim()) && /^[A-Z][a-zA-Z0-9 '’\-—–:]+$/.test(lines[0].trim()) && !/\b(?:and|but|or|so|yet|because|although|when|while|if|unless)\b/i.test(lines[0].trim())))
+         /^[^.!?。۔؟！？]{1,80}:$/.test(lines[0].trim()) ||
+         (lines[0].trim().length <= 60 && !/[.!?。۔؟！？]$/.test(lines[0].trim()) && /^[A-Z][a-zA-Z0-9 '’\-—–:]+$/.test(lines[0].trim()) && !/\b(?:and|but|or|so|yet|because|although|when|while|if|unless)\b/i.test(lines[0].trim())))
       ) {
         lines.shift();
       }
       value = lines.join(' ').trim();
     }
-    if (value) out.push(restoreSentenceText(value));
+    if (value && wordsOf(value).length > 0) out.push(restoreSentenceText(value));
     start = end;
     i = end - 1;
   }
   const tail = protectedText.slice(start).trim();
-  if (tail && !(/^[A-Z0-9][A-Z0-9 \-—–:]+$/.test(tail) || /^[^.!?]{1,80}:$/.test(tail))) {
+  if (tail && wordsOf(tail).length > 0 && !(/^[A-Z0-9][A-Z0-9 \-—–:]+$/.test(tail) || /^[^.!?。۔؟！？]{1,80}:$/.test(tail))) {
     out.push(restoreSentenceText(tail));
   }
   return out;
@@ -1186,10 +1218,12 @@ export function analyzeText(text: string, rate: number = 0, wpm: number = 150): 
   return {
     chars: text.length,
     charsNoSpaces: text.replace(/\s/g, '').length,
+    graphemes: countGraphemes(text),
     words: ws.length,
     uniqueWords: unique.size,
     sentences: sentences.length,
     paragraphs: paragraphs.length,
+    lines: countLines(text),
     syllables,
     avgWordLength: ws.length ? round1(ws.reduce((n, w) => n + w.length, 0) / ws.length) : 0,
     avgSentenceWords: sentences.length ? round1(ws.length / sentences.length) : 0,
@@ -1257,6 +1291,8 @@ export default function TextAnalyzer() {
   const [showCompare, setShowCompare] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'writing' | 'keywords' | 'sentences'>('overview');
   const [copied, setCopied] = useState(false);
+  const [statsCopied, setStatsCopied] = useState(false);
+  const [targetGoal, setTargetGoal] = useState<number | ''>('');
   const [fileError, setFileError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -1280,10 +1316,38 @@ export default function TextAnalyzer() {
     };
   }, [text, compare]);
 
+  const loadSampleText = () => {
+    setText(SAMPLE_TEXT);
+    setFileError('');
+  };
+
   const copy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
+  };
+
+  const copyStatsSummary = async () => {
+    const summary = [
+      'OmniTools Text Analysis Summary',
+      '==============================',
+      `Words: ${stats.words}`,
+      `Characters (with spaces): ${stats.chars}`,
+      `Characters (no spaces): ${stats.charsNoSpaces}`,
+      `Grapheme Clusters (visual glyphs): ${stats.graphemes}`,
+      `Sentences: ${stats.sentences}`,
+      `Paragraphs: ${stats.paragraphs}`,
+      `Lines: ${stats.lines}`,
+      `Reading Time (225 WPM): ${Math.floor(stats.readingTimeSec / 60)}m ${stats.readingTimeSec % 60}s`,
+      `Speaking Time (${wpm} WPM): ${Math.floor(stats.speakingTimeSec / 60)}m ${stats.speakingTimeSec % 60}s`,
+      `Flesch Reading Ease: ${stats.flesch ?? '—'} (${stats.gradeLabel})`,
+      `Flesch-Kincaid Grade: ${stats.fkGrade ?? '—'}`,
+      `Writing Quality Score: ${stats.writingScore}/100`,
+      `Tone: ${stats.tone.label}`,
+    ].join('\n');
+    await navigator.clipboard.writeText(summary);
+    setStatsCopied(true);
+    setTimeout(() => setStatsCopied(false), 1500);
   };
 
   const replaceAll = () => {
@@ -1416,10 +1480,11 @@ export default function TextAnalyzer() {
     setReplaceText('');
     setFileError('');
     setSelectedIssue(null);
+    setTargetGoal('');
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 items-stretch gap-8 bg-white dark:bg-[#0a0f1a] transition-colors">
+    <div id="text-analyzer-workspace" className="grid grid-cols-1 lg:grid-cols-3 items-stretch gap-8 bg-white dark:bg-[#0a0f1a] transition-colors">
       <div className="flex flex-col gap-4 lg:col-span-2 h-full min-h-0">
         <div className="flex flex-wrap items-center gap-2 bg-gray-50 dark:bg-[#111827] p-3 rounded-2xl border border-gray-200 dark:border-slate-800">
           <div className="flex items-center gap-1 border-r border-gray-300 dark:border-slate-700 pr-3">
@@ -1446,12 +1511,22 @@ export default function TextAnalyzer() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2 border-r border-gray-300 dark:border-slate-700 pr-3">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-r border-gray-300 dark:border-slate-700 pr-2 sm:pr-3">
+            <button
+              type="button"
+              onClick={loadSampleText}
+              title="Load Sample Text"
+              id="btn-load-sample"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors flex items-center gap-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Sample
+            </button>
             <button
               type="button"
               onClick={() => setText(text.toUpperCase())}
               id="btn-case-upper"
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
             >
               UPPER
             </button>
@@ -1459,7 +1534,7 @@ export default function TextAnalyzer() {
               type="button"
               onClick={() => setText(text.toLowerCase())}
               id="btn-case-lower"
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
             >
               lower
             </button>
@@ -1467,12 +1542,12 @@ export default function TextAnalyzer() {
               type="button"
               onClick={() => setText(text.replace(/\b\w/g, c => c.toUpperCase()))}
               id="btn-case-title"
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
+              className="px-2.5 sm:px-3 py-1.5 text-xs font-bold bg-white dark:bg-[#0a0f1a] text-slate-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-500 transition-colors"
             >
               Title
             </button>
           </div>
-          <div className="flex items-center gap-2 border-r border-gray-300 dark:border-slate-700 pr-3">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 border-r border-gray-300 dark:border-slate-700 pr-2 sm:pr-3">
             <button
               type="button"
               onClick={() => setText(text.replace(/[ \t]+/g, ' ').trim())}
@@ -1534,6 +1609,7 @@ export default function TextAnalyzer() {
               type="button"
               onClick={copy}
               disabled={!text}
+              title="Copy text to clipboard"
               id="btn-copy-text"
               className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
             >
@@ -1541,8 +1617,19 @@ export default function TextAnalyzer() {
             </button>
             <button
               type="button"
+              onClick={copyStatsSummary}
+              disabled={!text}
+              title="Copy statistics summary to clipboard"
+              id="btn-copy-stats"
+              className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
+            >
+              {statsCopied ? <Check className="w-4 h-4 text-green-600" /> : <FileSpreadsheet className="w-4 h-4" />}
+            </button>
+            <button
+              type="button"
               onClick={() => download('omnitools_text.txt', text)}
               disabled={!text}
+              title="Download text file"
               id="btn-download-text"
               className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors"
             >
@@ -1551,7 +1638,7 @@ export default function TextAnalyzer() {
             <button
               type="button"
               onClick={handleReset}
-              title="Clear all"
+              title="Clear all text and reset"
               id="btn-reset-text"
               className="p-2 bg-red-50 dark:bg-red-900/20 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
             >
@@ -1729,15 +1816,78 @@ export default function TextAnalyzer() {
       <div className="lg:col-span-1 flex flex-col gap-5 h-full">
         <div className="grid grid-cols-2 gap-3">
           {metric('Words', stats.words)}
-          {metric('Characters', stats.chars)}
+          {metric('Characters', stats.chars, `${stats.graphemes} visual glyphs`)}
           {metric('Unique Words', stats.uniqueWords)}
           {metric('Vocabulary', `${stats.vocabularyDiversity}%`)}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 text-xs text-slate-500 dark:text-slate-400 text-center">
-          <span>Sentences: {stats.sentences}</span>
-          <span>Paragraphs: {stats.paragraphs}</span>
-          <span>No spaces: {stats.charsNoSpaces}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs text-slate-500 dark:text-slate-400 text-center">
+          <div className="p-2 bg-gray-50 dark:bg-[#111827] rounded-xl border border-gray-200 dark:border-slate-800">
+            <span className="block text-[10px] text-slate-400">Sentences</span>
+            <b className="text-slate-700 dark:text-slate-200">{stats.sentences}</b>
+          </div>
+          <div className="p-2 bg-gray-50 dark:bg-[#111827] rounded-xl border border-gray-200 dark:border-slate-800">
+            <span className="block text-[10px] text-slate-400">Paragraphs</span>
+            <b className="text-slate-700 dark:text-slate-200">{stats.paragraphs}</b>
+          </div>
+          <div className="p-2 bg-gray-50 dark:bg-[#111827] rounded-xl border border-gray-200 dark:border-slate-800">
+            <span className="block text-[10px] text-slate-400">Lines</span>
+            <b className="text-slate-700 dark:text-slate-200">{stats.lines}</b>
+          </div>
+          <div className="p-2 bg-gray-50 dark:bg-[#111827] rounded-xl border border-gray-200 dark:border-slate-800">
+            <span className="block text-[10px] text-slate-400">No spaces</span>
+            <b className="text-slate-700 dark:text-slate-200">{stats.charsNoSpaces}</b>
+          </div>
+        </div>
+
+        {/* Word Count Target Goal Card */}
+        <div className="bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 rounded-2xl">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+            <span className="font-semibold flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <Target className="w-3.5 h-3.5 text-blue-600" /> Word Target Goal
+            </span>
+            {targetGoal ? (
+              <span className="font-bold text-slate-700 dark:text-slate-200">
+                {stats.words} / {targetGoal} ({Math.min(100, Math.round((stats.words / targetGoal) * 100))}%)
+              </span>
+            ) : (
+              <span className="text-slate-400">Optional goal</span>
+            )}
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden mb-2.5">
+            <div
+              className={`h-full transition-all duration-300 rounded-full ${
+                targetGoal && stats.words >= targetGoal ? 'bg-emerald-500' : 'bg-blue-600'
+              }`}
+              style={{ width: `${targetGoal ? Math.min(100, (stats.words / targetGoal) * 100) : 0}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[250, 500, 1000, 2500].map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setTargetGoal(targetGoal === g ? '' : g)}
+                className={`px-2 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                  targetGoal === g
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-[#0a0f1a] text-slate-600 dark:text-slate-300 border border-gray-200 dark:border-slate-700 hover:border-blue-400'
+                }`}
+              >
+                {g}w
+              </button>
+            ))}
+            <input
+              type="number"
+              min="10"
+              max="100000"
+              placeholder="Custom..."
+              value={targetGoal}
+              onChange={(e) => setTargetGoal(e.target.value ? Math.max(1, Number(e.target.value)) : '')}
+              id="input-target-goal"
+              className="w-20 px-2 py-1 text-xs bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-md dark:text-white"
+            />
+          </div>
         </div>
 
         <div className="bg-blue-600 dark:bg-blue-600/10 border border-transparent dark:border-blue-500/30 rounded-3xl p-6 text-white dark:text-slate-200 shadow-lg">

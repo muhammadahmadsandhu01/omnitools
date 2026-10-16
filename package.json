@@ -20,7 +20,8 @@
     "test:svg": "tsx scripts/test-svg-optimizer.ts",
     "test:text-case": "tsx scripts/test-text-case-converter.ts",
     "test:webp": "tsx scripts/test-webp-to-jpg-png.ts",
-    "test:invoice": "tsx scripts/test-invoice-generator.ts"
+    "test:invoice": "tsx scripts/test-invoice-generator.ts",
+    "test:text-analyzer": "tsx scripts/test-text-analyzer.ts"
   },
   "dependencies": {
     "browser-image-compression": "^2.0.2",
