@@ -185,6 +185,86 @@ export const IRREGULAR_PAST_PARTICIPLES: Record<string, string> = {
   rose: 'risen'
 };
 
+export const SINGULAR_VERB_TO_PLURAL: Record<string, string> = {
+  demonstrates: 'demonstrate',
+  explains: 'explain',
+  shows: 'show',
+  indicates: 'indicate',
+  requires: 'require',
+  contains: 'contain',
+  provides: 'provide',
+  represents: 'represent',
+  determines: 'determine',
+  causes: 'cause',
+  includes: 'include',
+  belongs: 'belong',
+  runs: 'run',
+  fails: 'fail',
+  works: 'work',
+  proves: 'prove',
+  identifies: 'identify',
+  describes: 'describe',
+  defines: 'define',
+  illustrates: 'illustrate',
+  supports: 'support',
+  leads: 'lead',
+  suggests: 'suggest',
+  confirms: 'confirm',
+  generates: 'generate',
+  reflects: 'reflect',
+  measures: 'measure',
+  produces: 'produce',
+  follows: 'follow',
+  handles: 'handle',
+  creates: 'create',
+  performs: 'perform',
+  governs: 'govern',
+  controls: 'control',
+  processes: 'process',
+  manages: 'manage',
+  executes: 'execute',
+  validates: 'validate',
+  computes: 'compute',
+  stores: 'store',
+  maintains: 'maintain',
+  enforces: 'enforce',
+  displays: 'display',
+  uses: 'use',
+  receives: 'receive',
+  sends: 'send',
+  delivers: 'deliver',
+  prevents: 'prevent',
+  ensures: 'ensure',
+  allows: 'allow',
+  enables: 'enable',
+  specifies: 'specify',
+  establishes: 'establish',
+  calculates: 'calculate',
+  affects: 'affect',
+  impacts: 'impact',
+  relates: 'relate',
+  applies: 'apply',
+  transforms: 'transform',
+  converts: 'convert',
+  monitors: 'monitor',
+  evaluates: 'evaluate',
+  verifies: 'verify',
+  improves: 'improve',
+  enhances: 'enhance',
+  reduces: 'reduce',
+  increases: 'increase',
+  separates: 'separate',
+  connects: 'connect',
+  binds: 'bind',
+  parses: 'parse',
+  renders: 'render',
+  compiles: 'compile',
+  resolves: 'resolve',
+  triggers: 'trigger',
+  modifies: 'modify',
+  updates: 'update'
+};
+
 export const MODAL_AUXILIARIES = new Set([
   'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must'
 ]);
@@ -365,8 +445,28 @@ const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until
 const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due to|because of|in spite of|despite|rather than|so that|according to|for example|in fact|furthermore|however|in addition|on the other hand|provided that|assuming that|given that|considering that)\b/i;
 const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
 const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
-const commaSpliceSubjects = /^(?:(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|who|what)\b|(?:the|a|an|some|several|many|few|no|each|every|any|another|additional|our|your|their|his|her|its|my)\s+[a-z][a-z'’-]*(?:\s+[a-z][a-z'’-]*){0,3}\b|(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b(?!\s+by\b)|(?:therefore|consequently|moreover|furthermore|meanwhile|instead)\s+(?:the|a|an|it|he|she|they|we|this|that|[a-z]+)\b)/i;
-const commaSpliceVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|should|must|may|might|needs?|requires?|remains?|seems?|looks?|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|shows?|begins?|ends?|works?|failed|fails?|proves?|identifies?|reviews?|sends?|discovers?|fixes?|contacts?|submits?|releases?|tests?|develops?|restarted|restarts?|launched|launches?|monitored|monitors?|reviewed|approved|designed|completed|recommended|recommends?|delayed|delays?|provided|provides?|completes|approves?|designs?|made|took|kept|worked|started|ended|verified|verifies?|crashed|sent|remained|fixed|resolved|updated|built|created|deployed|continued|continues?)\b/i;
+
+const finiteVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might|needs?|needed|requires?|required|remains?|remained|seems?|seemed|looks?|looked|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|contained|shows?|showed|shown|begins?|began|begun|ends?|ended|works?|worked|failed|fails?|proves?|proved|proven|identifies?|identified|reviews?|reviewed|sends?|sent|discovers?|discovered|fixes?|fixed|contacts?|contacted|submits?|submitted|releases?|released|tests?|tested|develops?|developed|restarted|restarts?|launched|launches?|monitored|monitors?|approved|approves?|designed|designs?|completed|completes|recommended|recommends?|delayed|delays?|provided|provides?|made|makes?|took|takes?|taken|kept|keeps?|started|starts?|verified|verifies?|crashed|crashes?|resolved|resolves?|updated|updates?|built|builds?|created|creates?|deployed|deploys?|continued|continues?|write|writes|wrote|written|investigate|investigates|investigated)\b/i;
+
+const pronounSubjects = /^(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone)\b/i;
+const determinerSubjects = /^(?:the|a|an|some|several|many|few|each|every|our|your|their|his|her|its|my|two|three|four)\s+[a-z][a-z'’-]*\b/i;
+const properNounSubjects = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}\b(?!\s+by\b)/;
+const transitionalAdverbSubjects = /^(?:therefore|consequently|moreover|furthermore|meanwhile|instead|however)\s*,\s*(?:[A-Z][a-z]+|the|a|an|it|he|she|they|we|this|that)\b/i;
+const barePluralWithVerb = /^(?!(?:is|as|us|was|has|this|its|thus|less|yes)\b)[a-z]{3,}s\s+(?:am|is|are|was|were|has|have|had|do|does|did|write|writes|wrote|verify|verifies|verified|review|reviews|reviewed|approve|approves|approved|investigate|investigates|investigated|check|checks|checked|run|runs|ran|fail|fails|failed|[a-z]+ed)\b/i;
+
+function matchesClauseSubject(text: string): boolean {
+  const trimmed = text.trim();
+  return (
+    pronounSubjects.test(trimmed) ||
+    determinerSubjects.test(trimmed) ||
+    properNounSubjects.test(trimmed) ||
+    transitionalAdverbSubjects.test(trimmed) ||
+    barePluralWithVerb.test(trimmed)
+  );
+}
+
+const incompleteClauseEndings = /\b(?:do|does|did|is|am|are|was|were|has|have|had|can|could|will|would|shall|should|may|might|must)(?:\s+not)?$/i;
+const prepositionEndings = /\b(?:of|in|for|with|on|at|to|from|by|about|into|through|between|among|as\s+well\s+as|together\s+with|along\s+with|such\s+as)$/i;
 
 export function findLikelyCommaSpliceInSentence(sentence: string): number {
   const protectedText = sentence.replace(QUOTE_REGEX, ' ');
@@ -379,30 +479,91 @@ export function findLikelyCommaSpliceInSentence(sentence: string): number {
     const left = protectedText.slice(0, comma).trim();
     const right = protectedText.slice(comma + 1).trim();
     if (!left || !right) continue;
+
+    // Coordinators or subordinators directly after comma
     if (coordinatingOpeners.test(right) || dependentOpeners.test(right)) continue;
     if (participialLeadIn.test(right)) continue;
 
-    const lastSep = Math.max(protectedText.lastIndexOf(';', comma), protectedText.lastIndexOf(':', comma));
-    const clauseLeft = (lastSep >= 0 ? protectedText.slice(lastSep + 1, comma) : left).trim();
-    const coreClause = (clauseLeft.includes(',') ? clauseLeft.slice(clauseLeft.lastIndexOf(',') + 1) : clauseLeft).trim();
+    // Scope to semicolon or colon boundary (both left and right!)
+    const prevSep = Math.max(protectedText.lastIndexOf(';', comma), protectedText.lastIndexOf(':', comma));
+    const clauseLeft = (prevSep >= 0 ? protectedText.slice(prevSep + 1, comma) : left).trim();
 
-    // Check introductory dependent phrases
-    if (prepositionalOpeners.test(coreClause) && !commaSpliceVerbs.test(coreClause)) continue;
+    const nextSemi = protectedText.indexOf(';', comma);
+    const nextColon = protectedText.indexOf(':', comma);
+    let nextSep = -1;
+    if (nextSemi >= 0 && nextColon >= 0) nextSep = Math.min(nextSemi, nextColon);
+    else if (nextSemi >= 0) nextSep = nextSemi;
+    else if (nextColon >= 0) nextSep = nextColon;
+
+    const clauseRight = (nextSep >= 0 ? protectedText.slice(comma + 1, nextSep) : right).trim();
+    if (!clauseLeft || !clauseRight) continue;
+
+    // Semicolons must NEVER be inserted between a subject and its predicate!
+    // If clauseRight starts with an auxiliary or finite verb, it is a predicate without subject.
+    if (/^(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might)\b/i.test(clauseRight)) {
+      continue;
+    }
+
+    // 1. Incomplete clause left: auxiliary or preposition at the end of clauseLeft
+    if (incompleteClauseEndings.test(clauseLeft) || prepositionEndings.test(clauseLeft)) {
+      continue;
+    }
+
+    // 2. Parenthetical interrupter: ", by itself, prove..." or ", in fact, is..."
+    const parentheticalMatch = clauseRight.match(/^([a-z0-9\s'’-]+?),\s+([a-z]+)\b/i);
+    if (parentheticalMatch) {
+      const postCommaWord = parentheticalMatch[2].toLowerCase();
+      if (finiteVerbs.test(postCommaWord) || /^(?:prove|proves|show|shows|mean|means|indicate|indicates|require|requires|make|makes)\b/i.test(postCommaWord)) {
+        continue;
+      }
+    }
+
+    // 3. Serial list / enumeration checks:
+    // If clauseRight contains a serial continuation ending in `, (?:and|or)\s+`
+    // where the immediate segment before the next comma does NOT have a finite verb
+    if (clauseRight.includes(',')) {
+      const firstSegment = clauseRight.slice(0, clauseRight.indexOf(',')).trim();
+      if (!finiteVerbs.test(firstSegment)) {
+        continue;
+      }
+    }
+
+    // 4. Coordinated compound predicates without subject:
+    // If clauseRight starts with a bare verb or coordinated verb ("maintain accurate character offsets...")
+    // where there is no subject noun phrase/pronoun
+    if (!matchesClauseSubject(clauseRight)) {
+      continue;
+    }
+
+    // 5. Check introductory dependent phrases on left (both full clauseLeft and coreClause)
+    if (dependentOpeners.test(clauseLeft) || dependentLeadIns.test(clauseLeft)) continue;
+    if (prepositionalOpeners.test(clauseLeft) && !finiteVerbs.test(clauseLeft)) continue;
+
+    const coreClause = (clauseLeft.includes(',') ? clauseLeft.slice(clauseLeft.lastIndexOf(',') + 1) : clauseLeft).trim();
+    if (prepositionalOpeners.test(coreClause) && !finiteVerbs.test(coreClause)) continue;
     if (dependentOpeners.test(coreClause) || dependentLeadIns.test(coreClause)) continue;
     if (/^to\s+[a-z]+/i.test(coreClause)) continue;
     if (/^(?:having|being|using|by|while)\s+[a-z]+/i.test(coreClause)) continue;
     if (/\b(?:although|though|because|when|while|if|unless|until|even though|even if|in order to|due to the fact that)\b/i.test(coreClause)) continue;
 
-    // Must have a subject on the left
-    if (!commaSpliceSubjects.test(coreClause) && !/(?:^|\s)(?:he|she|it|they|we|you|this|that|these|those|[A-Z][a-z]+)\b/i.test(coreClause)) {
+    // 6. Must have a subject on the left
+    if (!matchesClauseSubject(coreClause) && !/(?:^|\s)(?:he|she|it|they|we|you|this|that|these|those|[A-Z][a-z]+)\b/i.test(coreClause)) {
+      if (!matchesClauseSubject(clauseLeft)) {
+        continue;
+      }
+    }
+
+    // 7. Parallel clause series ending with ", and [actor] [verb] it"
+    if (/\b(?:[a-z]+ed|built|sent|left)\s+it\b/i.test(coreClause) && /\band\s+(?:the|a|an|[a-z]+)\s+[\s\S]*\bit\b/i.test(clauseRight)) {
       continue;
     }
-    // Parallel clause series ending with ", and [actor] [verb] it"
-    if (/\b(?:[a-z]+ed|built|sent|left)\s+it\b/i.test(coreClause) && /\band\s+(?:the|a|an|[a-z]+)\s+[\s\S]*\bit\b/i.test(right)) {
-      continue;
-    }
-    if (!commaSpliceSubjects.test(right) || !commaSpliceVerbs.test(coreClause) || !commaSpliceVerbs.test(right)) continue;
-    if (/^\w+[,:]\s+/.test(right) && !commaSpliceSubjects.test(right)) continue;
+
+    // 8. Both sides MUST have a finite verb in their matrix clause!
+    if (!finiteVerbs.test(clauseLeft)) continue;
+
+    // Strip relative clauses from clauseRight to ensure clauseRight has a MATRIX verb
+    const withoutRelClauses = clauseRight.replace(/\b(?:for\s+which|which|whose|that|who|whom|where|when)\s+[^,;]+(?=[,;]|$)/gi, ' ');
+    if (!finiteVerbs.test(withoutRelClauses)) continue;
 
     return comma;
   }
@@ -1357,7 +1518,110 @@ export function runGrammarEngine(
       }
     }
 
-    // 2.9 Subjunctive Mood: "If I was you" -> "If I were you"
+    // 2.9 Subject-Verb Agreement: Singular Head Noun with Quasi-Coordinators
+    // ("together with", "along with", "as well as", "in addition to", "accompanied by")
+    // e.g. "The list of exceptions, together with ..., are included" -> "is"
+    // e.g. "The documentation, along with ..., were published" -> "was"
+    const quasiRegex = /\b(the|this|that|a|an)\s+([a-z]+(?:\s+of\s+[a-z]+(?:s)?)?)\s*,\s*(?:together\s+with|along\s+with|as\s+well\s+as|in\s+addition\s+to|accompanied\s+by)\b[\s\S]*?,\s*(are|were|have\s+been)\b/gi;
+    let quasiMatch: RegExpExecArray | null;
+    while ((quasiMatch = quasiRegex.exec(sText)) !== null) {
+      const det = quasiMatch[1];
+      const headPhrase = quasiMatch[2].toLowerCase();
+      const headNoun = headPhrase.includes(' of ') ? headPhrase.slice(0, headPhrase.indexOf(' of ')).trim() : headPhrase.trim();
+      const verb = quasiMatch[3].toLowerCase();
+
+      // Check if head noun is singular
+      const isPluralHead = headNoun.endsWith('s') && !SINGULAR_S_NOUNS.has(headNoun) && !headNoun.endsWith('ss') && !headNoun.endsWith('us') && !headNoun.endsWith('is');
+      const isIrregPlural = IRREGULAR_PLURAL_NOUNS.has(headNoun);
+
+      if (!isPluralHead && !isIrregPlural) {
+        const verbOffset = quasiMatch.index + quasiMatch[0].lastIndexOf(quasiMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + quasiMatch[3].length;
+        const correctVerb = verb === 'are' ? 'is' : verb === 'were' ? 'was' : 'has been';
+        addFinding({
+          id: `agreement-quasi-coordinator-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 94,
+          ruleId: 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: singular subject “${det} ${headNoun}” with intervening parenthetical phrase takes singular verb “${correctVerb}”.`,
+          why: `Parenthetical phrases introduced by “together with”, “along with”, or “as well as” do not make a singular subject plural. The verb must agree with the singular head noun.`,
+          suggestion: `Change “${verb}” to “${correctVerb}”.`,
+          replacement: correctVerb,
+          replacements: [correctVerb]
+        });
+      }
+    }
+
+    // 2.10 Subject-Verb Agreement: Relative Clause with Plural Antecedent
+    // e.g. "the examples that demonstrates" -> "demonstrate"
+    // e.g. "the examples that clearly demonstrates" -> "demonstrate"
+    const relPluralRegex = /\b(the|these|those|our|their|its|two|three|several|many|few)\s+([a-z]+s|people|children|men|women|criteria|data)\s+(that|which|who)(?:\s+([a-z]+ly|often|always|never|seldom|already|still))?\s+([a-z]+s)\b/gi;
+    let relMatch: RegExpExecArray | null;
+    while ((relMatch = relPluralRegex.exec(sText)) !== null) {
+      const det = relMatch[1];
+      const noun = relMatch[2].toLowerCase();
+      const relPronoun = relMatch[3].toLowerCase();
+      const adverb = relMatch[4];
+      const verbWord = relMatch[5];
+      const verb = verbWord.toLowerCase();
+
+      if (SINGULAR_S_NOUNS.has(noun) || noun.endsWith('ss') || noun.endsWith('us') || noun.endsWith('is')) {
+        continue;
+      }
+
+      const baseVerb = SINGULAR_VERB_TO_PLURAL[verb];
+      if (!baseVerb) {
+        continue;
+      }
+
+      // Guard against object relative clauses where a plural noun is followed by an embedded verb
+      // e.g. "the features that users request"
+      const matchEnd = relMatch.index + relMatch[0].length;
+      const afterMatch = sText.slice(matchEnd).trim();
+      const nextWordMatch = afterMatch.match(/^[a-z]+/i);
+      if (nextWordMatch) {
+        const nextWord = nextWordMatch[0].toLowerCase();
+        if (finiteVerbs.test(nextWord) || /^(?:face|request|cite|read|answer|see|hear|want|need|have|know|take|make|find|give|use|feel)\b/i.test(nextWord)) {
+          continue;
+        }
+      }
+
+      if (baseVerb && baseVerb.length >= 3) {
+        const verbOffset = relMatch.index + (relMatch[0].length - verbWord.length);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + verbWord.length;
+        const issueText = adverb
+          ? `Subject–verb agreement mismatch: plural antecedent “${det} ${noun}” with relative pronoun “${relPronoun}” and adverb “${adverb}” requires plural verb “${baseVerb}”.`
+          : `Subject–verb agreement mismatch: plural antecedent “${det} ${noun}” with relative pronoun “${relPronoun}” requires plural verb “${baseVerb}”.`;
+
+        addFinding({
+          id: `agreement-rel-clause-plural-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 92,
+          ruleId: 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: issueText,
+          why: `In a relative clause modifying a plural noun, the verb must agree with the plural antecedent rather than taking a singular third-person form.`,
+          suggestion: `Change “${verbWord}” to “${baseVerb}”.`,
+          replacement: baseVerb,
+          replacements: [baseVerb]
+        });
+      }
+    }
+
+    // 2.11 Subjunctive Mood: "If I was you" -> "If I were you"
     const subjRegex = /\b(if\s+I)\s+(was)\b/gi;
     let sMatch: RegExpExecArray | null;
     while ((sMatch = subjRegex.exec(sText)) !== null) {
@@ -1398,6 +1662,9 @@ export function runGrammarEngine(
       if (/\b(?:and|or|both)\b/i.test(preceding)) continue;
       // Subjunctive mood: "if the manager were", "as though the system were", "wish that he were"
       if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|whether|suppose)\s+[a-z\s]+$/i.test(preceding)) continue;
+      // If preceded by a relative clause modifying a plural subject (e.g. "The examples that demonstrates the issue are useful"),
+      // the plural verb "are/were" belongs to the plural matrix subject, not the embedded singular object noun.
+      if (/\b(?:the|these|those|our|their|its|two|three|several|many|few)\s+(?:[a-z]+s|people|children|men|women|criteria|data)\s+(?:that|which|who)\s+[a-z]+/i.test(preceding)) continue;
       // Exclude nouns ending in 's', irregular plurals, collective nouns, or nouns in SINGULAR_S_NOUNS
       if (noun.endsWith('s') || IRREGULAR_PLURAL_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun) || SINGULAR_S_NOUNS.has(noun)) continue;
 

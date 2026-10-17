@@ -1366,6 +1366,228 @@ const expectedFixedDoc =
 assert(fixedDoc === expectedFixedDoc, 'Complex multi-error document repaired with 100% character offset fidelity');
 
 // ============================================================
+// 21. Critical False-Positive & False-Negative Linguistic Regression Suite
+// ============================================================
+console.log('\n• Testing Suite 21: Critical False-Positive & False-Negative Linguistic Regression Suite...');
+
+// 21.1 Confirmed False Positives (Must NEVER receive comma splice findings)
+const confirmedFPList = [
+  {
+    id: 'FP1',
+    text: 'However, automated systems may encounter names, abbreviations, dialectal pronunciations, and specialist terminology for which the correct article depends on how the expression is actually spoken.',
+    desc: 'Serial object enumeration with terminal relative clause'
+  },
+  {
+    id: 'FP2',
+    text: 'The presence of an unfamiliar word does not, by itself, prove that the surrounding sentence contains a grammatical error.',
+    desc: 'Parenthetical adverbial interrupter following auxiliary does not'
+  },
+  {
+    id: 'FP3',
+    text: 'Suppose a paragraph contains seven findings, three quoted statements, two em dashes, several contractions, and a sentence whose punctuation is already correct.',
+    desc: 'Imperative verb with serial direct object enumeration'
+  },
+  {
+    id: 'FP4',
+    text: 'If the user accepts the third suggestion, dismisses the fifth, and then restores a previously dismissed finding, the application must preserve the original text, maintain accurate character offsets, and ensure that no stale suggestion is applied to a different substring.',
+    desc: 'Introductory conditional clause with compound bare-verb predicate'
+  },
+  {
+    id: 'FP5',
+    text: 'The team should measure precision, recall, false-positive rates, correction safety, and the frequency of meaning-changing edits; a perfect score on a small collection of hand-picked examples is encouraging, but it is not proof of universal accuracy.',
+    desc: 'Serial enumeration bounded by semicolon and compound sentence'
+  }
+];
+
+for (const fp of confirmedFPList) {
+  const res = runGrammarEngine(fp.text);
+  const spliceFindings = res.findings.filter(f => f.ruleId === 'SENTENCE_COMMA_SPLICE');
+  assert(spliceFindings.length === 0, `False-positive control [${fp.id}] has 0 comma splice findings (${fp.desc})`, spliceFindings);
+}
+
+// 21.2 Subject-Verb Agreement: Long-Distance and Quasi-Coordinators (Case A)
+const agreementCaseA = 'The list of exceptions, together with the supplementary notes and the comments submitted by three external consultants, are included in the appendix.';
+const resCaseA = runGrammarEngine(agreementCaseA);
+const quasiFindingA = resCaseA.findings.find(f => f.ruleId === 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR');
+assert(!!quasiFindingA, 'Case A: Singular head noun with quasi-coordinator triggers AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR');
+if (quasiFindingA) {
+  assert(quasiFindingA.start === 120 && quasiFindingA.end === 123, 'Case A finding has exact character offsets [120, 123]');
+  assert(quasiFindingA.originalText === 'are', 'Case A original text is "are"');
+  assert(quasiFindingA.replacement === 'is', 'Case A suggests replacement "is"');
+  const correctedA = applyFindingCorrection(agreementCaseA, quasiFindingA);
+  assert(correctedA === 'The list of exceptions, together with the supplementary notes and the comments submitted by three external consultants, is included in the appendix.', 'Case A correction produces exact grammatical sentence');
+}
+
+// 21.3 Subject-Verb Agreement: Relative Clause & Quasi-Coordinator (Case B)
+const agreementCaseB = 'The documentation, along with the examples that demonstrates the expected behavior, were published before the final review had been completed.';
+const resCaseB = runGrammarEngine(agreementCaseB);
+const relFindingB = resCaseB.findings.find(f => f.ruleId === 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT');
+const quasiFindingB = resCaseB.findings.find(f => f.ruleId === 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR');
+
+assert(!!relFindingB, 'Case B: Plural antecedent with relative pronoun triggers AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT');
+if (relFindingB) {
+  assert(relFindingB.start === 48 && relFindingB.end === 60, 'Case B relative clause finding has exact character offsets [48, 60]');
+  assert(relFindingB.originalText === 'demonstrates', 'Case B relative verb original text is "demonstrates"');
+  assert(relFindingB.replacement === 'demonstrate', 'Case B relative verb replacement is "demonstrate"');
+}
+
+assert(!!quasiFindingB, 'Case B: Singular head documentation with quasi-coordinator triggers AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR');
+if (quasiFindingB) {
+  assert(quasiFindingB.start === 84 && quasiFindingB.end === 88, 'Case B matrix verb finding has exact character offsets [84, 88]');
+  assert(quasiFindingB.originalText === 'were', 'Case B matrix verb original text is "were"');
+  assert(quasiFindingB.replacement === 'was', 'Case B matrix verb replacement is "was"');
+}
+
+const correctedB = applyAllSafeFixes(agreementCaseB);
+assert(correctedB === 'The documentation, along with the examples that demonstrate the expected behavior, was published before the final review had been completed.', 'Case B applyAllSafeFixes produces exact grammatical sentence without offset corruption');
+
+// 21.4 Additional Positive and Negative Syntactic Variations
+const syntacticVariations = [
+  // True Comma Splices (Positive tests - MUST BE CAUGHT)
+  { text: 'The system works well, the results are reliable.', hasSplice: true, desc: 'Two simple independent clauses' },
+  { text: 'The telemetry looks stable, the deployment was successful.', hasSplice: true, desc: 'Technical prose independent clauses' },
+  { text: 'The project was expensive, the benefits were substantial.', hasSplice: true, desc: 'Evaluative independent clauses' },
+  { text: 'Developers write code, tests verify behavior.', hasSplice: true, desc: 'Bare plural subject comma splice' },
+  { text: 'Servers crashed during the migration, engineers investigated the incident.', hasSplice: true, desc: 'Capitalized plural subject comma splice' },
+
+  // Introductory Dependent Clauses (Negative controls - ZERO splice errors)
+  { text: 'Because the deadline was extended, the developers completed all tests.', hasSplice: false, desc: 'Introductory because clause' },
+  { text: 'When the audit was complete, the team published the results.', hasSplice: false, desc: 'Introductory when clause' },
+  { text: 'Having finalized the specifications, the architect scheduled the kickoff meeting.', hasSplice: false, desc: 'Introductory participial clause' },
+
+  // Parenthetical Phrases (Negative controls - ZERO splice errors)
+  { text: 'The committee does not, under any circumstances, approve unverified claims.', hasSplice: false, desc: 'Parenthetical after auxiliary' },
+  { text: 'The results will, in most cases, remain consistent across runs.', hasSplice: false, desc: 'Parenthetical after modal' },
+  { text: 'This feature is, without doubt, the most requested capability.', hasSplice: false, desc: 'Parenthetical after copula' },
+
+  // Coordinated Compound Predicates (Negative controls - ZERO splice errors)
+  { text: 'The engineer designed the module, tested the functions, and deployed the service.', hasSplice: false, desc: 'Coordinated past tense predicates' },
+  { text: 'We parsed the configuration, validated the schema, and applied the updates.', hasSplice: false, desc: 'Coordinated predicates with pronoun subject' },
+  { text: 'The tool detects formatting issues, suggests improvements, and fixes errors.', hasSplice: false, desc: 'Coordinated predicates with singular third-person verbs' },
+
+  // Enumerations / Coordinate Lists (Negative controls - ZERO splice errors)
+  { text: 'The report contains charts, tables, diagrams, and supplementary data.', hasSplice: false, desc: 'Serial noun phrase list' },
+  { text: 'The system monitors CPU utilization, memory pressure, disk I/O, and network throughput.', hasSplice: false, desc: 'Technical metric enumeration' },
+
+  // Semicolon Usage (Negative controls - ZERO errors)
+  { text: 'The architecture is scalable; the implementation is robust.', hasSplice: false, desc: 'Independent clauses separated by semicolon' },
+  { text: 'The engine parses input rapidly; however, large documents take longer.', hasSplice: false, desc: 'Semicolon with conjunctive adverb' },
+
+  // Long-Distance Agreement Variations
+  { text: 'The proposal, in addition to the revisions and feedback, were accepted.', hasSplice: false, hasQuasiAgreement: true, expectedQuasi: 'was', desc: 'Quasi-coordinator with plural noun objects' },
+  { text: 'The proposal, in addition to the revisions and feedback, was accepted.', hasSplice: false, hasQuasiAgreement: false, desc: 'Control: Correct singular verb was' },
+  { text: 'The guidelines that explains the process should be updated.', hasSplice: false, hasRelAgreement: true, expectedRel: 'explain', desc: 'Relative clause with plural guidelines and singular explains' },
+  { text: 'The guidelines that explain the process should be updated.', hasSplice: false, hasRelAgreement: false, desc: 'Control: Correct plural verb explain' }
+];
+
+for (const v of syntacticVariations) {
+  const res = runGrammarEngine(v.text);
+  const splice = res.findings.some(f => f.ruleId === 'SENTENCE_COMMA_SPLICE');
+  if (v.hasSplice) {
+    assert(splice, `Positive Comma Splice detected for: "${v.text}" (${v.desc})`);
+  } else {
+    assert(!splice, `Negative Comma Splice control verified clean for: "${v.text}" (${v.desc})`);
+  }
+
+  if (v.hasQuasiAgreement !== undefined) {
+    const qf = res.findings.find(f => f.ruleId === 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR');
+    if (v.hasQuasiAgreement) {
+      assert(!!qf && qf.replacement === v.expectedQuasi, `Quasi-coordinator agreement detected for: "${v.text}" (expected "${v.expectedQuasi}")`);
+    } else {
+      assert(!qf, `Quasi-coordinator control verified clean for: "${v.text}"`);
+    }
+  }
+
+  if (v.hasRelAgreement !== undefined) {
+    const rf = res.findings.find(f => f.ruleId === 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT');
+    if (v.hasRelAgreement) {
+      assert(!!rf && rf.replacement === v.expectedRel, `Relative clause agreement detected for: "${v.text}" (expected "${v.expectedRel}")`);
+    } else {
+      assert(!rf, `Relative clause control verified clean for: "${v.text}"`);
+    }
+  }
+}
+
+// 21.5 Object-Relative-Clause Negative Controls (Zero false positives, original text unchanged)
+const objectRelativeClauseControls = [
+  'The issues that developers face are complex.',
+  'The features that users request are prioritized.',
+  'The articles that researchers cite are influential.',
+  'The books that students read are classic.',
+  'The questions that candidates answer determine their score.',
+  'The examples that clearly demonstrate the issue are useful.',
+  'The guidelines that usually explain the process are clear.',
+  'The metrics that frequently indicate system health are monitored.',
+  'The issues that developers frequently face are complex.',
+  'The features that users usually request are prioritized.',
+  'The articles that researchers often cite are influential.'
+];
+
+for (const s of objectRelativeClauseControls) {
+  const res = runGrammarEngine(s);
+  const relFinding = res.findings.find(f => f.ruleId === 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT');
+  assert(!relFinding, `Object relative clause produces no AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT finding for: "${s}"`);
+  assert(res.findings.length === 0, `Valid object relative clause produces zero findings: "${s}"`);
+  const fixed = applyAllSafeFixes(s);
+  assert(fixed === s, `Original text remains completely unchanged for: "${s}"`);
+}
+
+// 21.6 Genuine Subject-Relative-Clause Agreement Errors (with and without intervening adverbs)
+const genuineSubjectRelativeErrors = [
+  {
+    text: 'The examples that demonstrates the issue are useful.',
+    expectedSpan: [18, 30] as [number, number],
+    originalWord: 'demonstrates',
+    expectedReplacement: 'demonstrate',
+    expectedFixed: 'The examples that demonstrate the issue are useful.'
+  },
+  {
+    text: 'The examples that clearly demonstrates the issue are useful.',
+    expectedSpan: [26, 38] as [number, number],
+    originalWord: 'demonstrates',
+    expectedReplacement: 'demonstrate',
+    expectedFixed: 'The examples that clearly demonstrate the issue are useful.'
+  },
+  {
+    text: 'The guidelines that explains the process are clear.',
+    expectedSpan: [20, 28] as [number, number],
+    originalWord: 'explains',
+    expectedReplacement: 'explain',
+    expectedFixed: 'The guidelines that explain the process are clear.'
+  },
+  {
+    text: 'The guidelines that usually explains the process are clear.',
+    expectedSpan: [28, 36] as [number, number],
+    originalWord: 'explains',
+    expectedReplacement: 'explain',
+    expectedFixed: 'The guidelines that usually explain the process are clear.'
+  },
+  {
+    text: 'The metrics that frequently indicates system health are monitored.',
+    expectedSpan: [28, 37] as [number, number],
+    originalWord: 'indicates',
+    expectedReplacement: 'indicate',
+    expectedFixed: 'The metrics that frequently indicate system health are monitored.'
+  }
+];
+
+for (const err of genuineSubjectRelativeErrors) {
+  const res = runGrammarEngine(err.text);
+  assert(res.findings.length === 1, `Exactly 1 finding flagged for: "${err.text}"`);
+  const relFinding = res.findings.find(f => f.ruleId === 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT');
+  assert(!!relFinding, `Genuine error triggers AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT for: "${err.text}"`);
+  if (relFinding) {
+    assert(relFinding.start === err.expectedSpan[0] && relFinding.end === err.expectedSpan[1], `Exact incorrect verb span [${err.expectedSpan[0]}, ${err.expectedSpan[1]}] for: "${err.text}"`);
+    assert(relFinding.originalText === err.originalWord, `Original text matches "${err.originalWord}"`);
+    assert(relFinding.replacement === err.expectedReplacement, `Replacement matches "${err.expectedReplacement}"`);
+  }
+  const fixed = applyAllSafeFixes(err.text);
+  assert(fixed === err.expectedFixed, `Applying fix does not alter unrelated text for: "${err.text}"`);
+  // Confirm the main-clause verb "are" is completely preserved
+  assert(/\bare\b/.test(fixed), `Main-clause verb "are" is preserved in: "${fixed}"`);
+}
+
+// ============================================================
 // Summary
 // ============================================================
 console.log('\n' + '='.repeat(50));
