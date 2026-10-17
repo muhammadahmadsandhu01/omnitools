@@ -161,6 +161,46 @@ assert(Boolean(topKw && topKw.count === 3), 'Keyword "strategy" counted exactly 
 assert(!kwAnalysis.keywords.some(k => k.word === 'is' || k.word === 'a'), 'Stop words "is" and "a" excluded from keyword table');
 
 // ============================================================
+// 9. Readability Boundary & Flesch Lower-Bound Regression Suite
+// ============================================================
+console.log('\n• Testing Suite 9: Extreme Readability & Flesch Lower-Bound Clamping...');
+
+// Exact 100-word, 4-sentence passage with 214 syllables and 30 complex words
+const exactPassage = [
+  "The academic research group was direct in that they investigate understanding of biological technologies and computational methodologies to design distributed processing architectures for this framework.",
+  "An expert report on global market policy can prioritize maintaining consistent regulatory standards for modern centers to develop innovative therapeutic strategies by collaborative scientific initiatives.",
+  "It was a truth that voluminous quantitative insights from sample records provide meaningful output for clinical researchers across diverse environments with experimental benchmark at length.",
+  "Which central metric will lead groups action and impact domain status as we track costs hazards timing workflow patterns robust base outcomes rules outlines goals?"
+].join(' ');
+
+const exactResult = analyzeText(exactPassage, 0.05, 150);
+assert(exactResult.words === 100, `Exact input passage has 100 words (got ${exactResult.words})`);
+assert(exactResult.sentences === 4, `Exact input passage has 4 sentences (got ${exactResult.sentences})`);
+assert(exactResult.syllables === 214, `Exact input passage has 214 syllables (got ${exactResult.syllables})`);
+assert(exactResult.fleschRaw !== null && Math.abs(exactResult.fleschRaw - 0.416) < 0.001, `Exact raw Flesch is unrounded calculation ~0.416 (got ${exactResult.fleschRaw})`);
+assert(exactResult.flesch === 0, `Exact Flesch score rounds/clamps to 0 (got ${exactResult.flesch})`);
+assert(exactResult.gradeLabel === 'Very Difficult', `Flesch score 0 assigns "Very Difficult" grade label (got "${exactResult.gradeLabel}")`);
+assert(exactResult.fkGrade === 19.4, `FK Grade is exactly 19.4 (got ${exactResult.fkGrade})`);
+assert(exactResult.fog === 22, `Gunning Fog index is exactly 22 (got ${exactResult.fog})`);
+assert(exactResult.smog === 18.8, `SMOG index is exactly 18.8 (got ${exactResult.smog})`);
+assert(exactResult.coleman === 21.8, `Coleman-Liau index is exactly 21.8 (got ${exactResult.coleman})`);
+assert(exactResult.ari === 22.2, `ARI index is exactly 22.2 (got ${exactResult.ari})`);
+assert(exactResult.estimatedEarnings === 5, `Estimated earnings for 100 words at $0.05 is $5.00 (got ${exactResult.estimatedEarnings})`);
+
+// Negative raw Flesch text clamping test (text so dense that raw Flesch < 0)
+const hyperDenseText = "Pseudopseudohypoparathyroidism and radioimmunoelectrophoresis characterize magnetohydrodynamical electroencephalography throughout counterrevolutionary spectrophotometries.";
+const hyperResult = analyzeText(hyperDenseText);
+assert(hyperResult.fleschRaw !== null && hyperResult.fleschRaw < 0, `Hyper-dense text produces negative raw Flesch (<0, got ${hyperResult.fleschRaw})`);
+assert(hyperResult.flesch === 0, `Negative raw Flesch cleanly clamps to 0 lower bound (got ${hyperResult.flesch})`);
+assert(hyperResult.gradeLabel === 'Very Difficult', 'Negative raw Flesch still maps to "Very Difficult"');
+
+// Ordinary text remains completely unaffected
+assert(sampleAnalysis.fleschRaw !== null && sampleAnalysis.fleschRaw >= 50 && sampleAnalysis.fleschRaw <= 75, `Ordinary sample text preserves raw Flesch within 50–75 band (got ${sampleAnalysis.fleschRaw})`);
+assert(sampleAnalysis.flesch !== null && sampleAnalysis.flesch >= 50 && sampleAnalysis.flesch <= 75, `Ordinary sample text preserves clamped Flesch within 50–75 band (got ${sampleAnalysis.flesch})`);
+assert(empty.fleschRaw === null, 'Empty text preserves null raw Flesch');
+assert(empty.flesch === null, 'Empty text preserves null clamped Flesch');
+
+// ============================================================
 // Summary
 // ============================================================
 console.log('\n' + '='.repeat(50));

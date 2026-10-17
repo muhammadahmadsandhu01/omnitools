@@ -66,6 +66,7 @@ export type Analysis = {
   speakingTimeSec: number;
   estimatedEarnings: number;
   flesch: number | null;
+  fleschRaw: number | null;
   fkGrade: number | null;
   fog: number | null;
   smog: number | null;
@@ -1234,6 +1235,7 @@ export function analyzeText(text: string, rate: number = 0, wpm: number = 150): 
     speakingTimeSec: ws.length ? Math.max(1, Math.round(ws.length / wpm * 60)) : 0,
     estimatedEarnings: ws.length * Math.max(0, rate),
     flesch: score,
+    fleschRaw: flesch,
     fkGrade: fkGrade == null ? null : round1(fkGrade),
     fog: fog == null ? null : round1(fog),
     smog: smog == null ? null : round1(smog),
@@ -1898,9 +1900,16 @@ export default function TextAnalyzer() {
             <span className="text-4xl font-extrabold">{stats.flesch ?? '—'}</span>
             <span className="text-blue-100 dark:text-blue-400 pb-1">/100</span>
           </div>
-          <p className="text-sm font-medium mt-2 mb-4 bg-black/20 dark:bg-blue-500/20 w-fit px-3 py-1 rounded-full">
-            {stats.gradeLabel}
-          </p>
+          <div className="mt-2 mb-4 space-y-2">
+            <p className="text-sm font-medium bg-black/20 dark:bg-blue-500/20 w-fit px-3 py-1 rounded-full">
+              {stats.gradeLabel}
+            </p>
+            {stats.flesch === 0 && text.trim().length > 0 && (
+              <p className="text-[11px] text-blue-100 dark:text-slate-300 leading-relaxed bg-black/15 dark:bg-blue-950/40 p-2.5 rounded-xl border border-blue-400/20 dark:border-blue-500/20">
+                Note: Flesch Reading Ease uses an inverse scale where higher scores mean easier reading. A score of 0 indicates the passage is extremely difficult to read and has rounded to zero or clamped at the lower bound.
+              </p>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-3 border-t border-blue-400/30 pt-4 text-sm">
             <div>
               Reading<br />
