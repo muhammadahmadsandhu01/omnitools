@@ -139,6 +139,7 @@ export function countGraphemes(text: string): number {
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
     const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
     let count = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _ of segmenter.segment(text)) {
       count++;
     }
@@ -158,7 +159,7 @@ const PASSIVE_EXCLUSIONS = [
   /^why\s+(?:is|are|was|were)\b/i,
   /^what\s+(?:is|are|was|were)\b/i,
   /^how\s+(?:is|are|was|were)\b/i,
-  /\b(?:should|could|would|might|may|must|can)\s+(?:\w+\s+){0,2}be\s+[a-z]+(?:ed|en|wn|lt|pt|nt|ft)\b/i,
+  /\b(?:should|could|would|might|may|must|can)\s+(?:\w+\s+){0,2}be\s+(?:\w+\s+){0,2}[a-z]+(?:ed|en|wn|lt|pt|nt|ft)\b/i,
   // Predicate adjectives of emotion, state, property, or condition (NOT passive voice)
   /\b(?:am|are|is|was|were)\s+(?:\w+\s+)*(?:excited|interested|pleased|tired|surprised|worried|scared|confused|bored|delighted|disappointed|annoyed|amazed|happy|ready|responsible|successful|glad|grateful|available|aware|upset|stable|incomplete|difficult|significant|important|different|consistent|evident|apparent|present|absent|confident)\b/i,
   // Progressive -ing active voice
@@ -312,7 +313,7 @@ function syllablesOf(word: string): number {
 
 function round1(n: number) { return Math.round(n * 10) / 10; }
 
-function gradeLabel(score: number | null) {
+export function gradeLabel(score: number | null) {
   if (score == null) return 'Not enough data';
   if (score >= 90) return 'Very Easy';
   if (score >= 80) return 'Easy';
@@ -377,8 +378,8 @@ function buildSentenceIssues(
   issues.push(...ranges.slice(0, 10));
 
   passiveCandidates.slice(0, 8).forEach(x => issues.push({
-    id: `passive-${x.index}`, kind: 'Passive candidate', severity: 'medium', sentenceIndex: x.index, sentence: x.sentence,
-    detail: 'This sentence may use passive voice. Review whether an active construction is clearer.'
+    id: `passive-${x.index}`, kind: 'Passive candidate', severity: 'low', sentenceIndex: x.index, sentence: x.sentence,
+    detail: 'Stylistic observation: this sentence uses passive voice. Passive voice is grammatically valid; review whether an active construction would be punchier.'
   }));
 
   if (exclamations > 3) {
@@ -464,10 +465,12 @@ function sentenceOpenings(sentences: string[]) {
 const coordinatingOpeners = /^(?:and|but|or|nor|for|so|yet)\b/i;
 const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if)\b/i;
 const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due to|because of|in spite of|despite|rather than|so that|according to|for example|in fact|furthermore|however|in addition|on the other hand|provided that|assuming that)\b/i;
+const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
 const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
 
 function isIntroductoryDependent(left: string): boolean {
   const l = left.trim();
+  if (prepositionalOpeners.test(l) && !commaSpliceVerbs.test(l)) return true;
   if (dependentOpeners.test(l) || dependentLeadIns.test(l)) return true;
   if (/^to\s+[a-z]+/i.test(l)) return true;
   if (/^(?:having|being|using|by|while)\s+[a-z]+/i.test(l)) return true;
@@ -475,17 +478,14 @@ function isIntroductoryDependent(left: string): boolean {
   return false;
 }
 
-const commaSpliceSubjects = /^(?:(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|who|what)\b|(?:the|a|an|some|several|many|few|no|each|every|any|another|additional|our|your|their|his|her|its|my)\s+[a-z][a-z'’-]*(?:\s+[a-z][a-z'’-]*){0,3}\b|(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b(?!\s+by\b)|(?:therefore|consequently|moreover|furthermore|meanwhile|instead)\s+(?:the|a|an|it|he|she|they|we|this|that|[a-z]+)\b)/;
-const commaSpliceVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|should|must|may|might|needs?|requires?|remains?|seems?|contains?|shows?|begins?|ends?|works?|fails?|proves?|identifies?|reviews?|sends?|discovers?|fixes?|contacts?|submits?|releases?|tests?|develops?|reviewed|approved|designed|completed|recommended|recommends?|delayed|delays?|provided|provides?|completes|approves?|designs?|made|took|kept|worked|started|ended|verified|verifies?|crashed|sent|remained|fixed|resolved|updated|built|created|deployed|continued|continues?)\b/i;
+const commaSpliceSubjects = /^(?:(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|who|what)\b|(?:the|a|an|some|several|many|few|no|each|every|any|another|additional|our|your|their|his|her|its|my)\s+[a-z][a-z'’-]*(?:\s+[a-z][a-z'’-]*){0,3}\b|(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b(?!\s+by\b)|(?:therefore|consequently|moreover|furthermore|meanwhile|instead)\s+(?:the|a|an|it|he|she|they|we|this|that|[a-z]+)\b)/i;
+const commaSpliceVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|should|must|may|might|needs?|requires?|remains?|seems?|contains?|shows?|begins?|ends?|works?|failed|fails?|proves?|identifies?|reviews?|sends?|discovers?|fixes?|contacts?|submits?|releases?|tests?|develops?|restarted|restarts?|launched|launches?|monitored|monitors?|reviewed|approved|designed|completed|recommended|recommends?|delayed|delays?|provided|provides?|completes|approves?|designs?|made|took|kept|worked|started|ended|verified|verifies?|crashed|sent|remained|fixed|resolved|updated|built|created|deployed|continued|continues?)\b/i;
+
+const QUOTE_REGEX = /"(?:[^"\\]|\\.)*"|“[^”]*”|«[^»]*»|‘(?:[^’\\]|’(?=[a-zA-Z]))*’(?=$|[\s)\]}>—–,;:!?.])|(?<=^|[\s(\[{<—–"“«])'(?:[^'\\]|'(?=[a-zA-Z]))*'(?=$|[\s)\]}>—–,;:!?.])/g;
 
 function findLikelyCommaSplice(sentence: string): number {
   // Strip quotations before checking comma splice to prevent dialogue false positives
-  const protectedText = sentence
-    .replace(/"(?:[^"\\]|\\.)*"/g, ' ')
-    .replace(/“[^”]*”/g, ' ')
-    .replace(/«[^»]*»/g, ' ')
-    .replace(/‘[^’]*’/g, ' ')
-    .replace(/'(?:[^'\\]|\\.)*'/g, ' ');
+  const protectedText = sentence.replace(QUOTE_REGEX, ' ');
 
   const commaPositions: number[] = [];
   for (let i = 0; i < protectedText.length; i++) if (protectedText[i] === ',') commaPositions.push(i);
@@ -500,17 +500,156 @@ function findLikelyCommaSplice(sentence: string): number {
     // Check the clause immediately preceding the comma (after any semicolon or colon)
     const lastSep = Math.max(protectedText.lastIndexOf(';', comma), protectedText.lastIndexOf(':', comma));
     const clauseLeft = (lastSep >= 0 ? protectedText.slice(lastSep + 1, comma) : left).trim();
+    const coreClause = (clauseLeft.includes(',') ? clauseLeft.slice(clauseLeft.lastIndexOf(',') + 1) : clauseLeft).trim();
 
-    if (isIntroductoryDependent(clauseLeft)) continue;
-    // Parallel clause series ending with ", and [actor] [verb] it"
-    if (/\b(?:[a-z]+ed|built|sent|left)\s+it\b/i.test(clauseLeft) && /\band\s+(?:the|a|an|[a-z]+)\s+[\s\S]*\bit\b/i.test(right)) {
+    if (isIntroductoryDependent(coreClause)) continue;
+    // An independent clause on the left must also contain a subject
+    if (!commaSpliceSubjects.test(coreClause) && !/(?:^|\s)(?:he|she|it|they|we|you|this|that|these|those|[A-Z][a-z]+)\b/i.test(coreClause)) {
       continue;
     }
-    if (!commaSpliceSubjects.test(right) || !commaSpliceVerbs.test(clauseLeft) || !commaSpliceVerbs.test(right)) continue;
+    // Parallel clause series ending with ", and [actor] [verb] it"
+    if (/\b(?:[a-z]+ed|built|sent|left)\s+it\b/i.test(coreClause) && /\band\s+(?:the|a|an|[a-z]+)\s+[\s\S]*\bit\b/i.test(right)) {
+      continue;
+    }
+    if (!commaSpliceSubjects.test(right) || !commaSpliceVerbs.test(coreClause) || !commaSpliceVerbs.test(right)) continue;
     if (/^\w+[,:]\s+/.test(right) && !commaSpliceSubjects.test(right)) continue;
     return comma;
   }
   return -1;
+}
+
+const PREPOSITIONS_RE = /\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during)(?:\s+(?:all|both|many|several|some|each)(?:\s+of)?)?\s+$/i;
+
+const SINGULAR_S_NOUNS = new Set([
+  'news', 'series', 'species', 'lens', 'analytics', 'logistics', 'operations',
+  'physics', 'economics', 'ethics', 'politics', 'headquarters', 'mathematics',
+  'crossroads', 'billiards', 'measles', 'diabetes', 'mechanics', 'tactics',
+  'corps', 'barracks'
+]);
+
+const COLLECTIVE_NOUNS = new Set([
+  'team', 'group', 'committee', 'board', 'department', 'staff', 'company',
+  'organization', 'division', 'management', 'panel', 'faculty', 'council',
+  'crew', 'crowd', 'firm', 'association', 'jury', 'army', 'class'
+]);
+
+interface GrammarIssue {
+  detail: string;
+  suggestion: string;
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+function findSubjectVerbMismatches(sentence: string): GrammarIssue[] {
+  // Mask direct quotations so dialogue/citations are never falsely flagged
+  const cleanSentence = sentence.replace(QUOTE_REGEX, ' ');
+  const issues: GrammarIssue[] = [];
+
+  // 1. Definite singular pronouns with plural verbs (HIGH confidence)
+  const singPronounMatch = cleanSentence.match(/\b(he|she|it|this|that)\s+(are|were|have)\b/i);
+  if (singPronounMatch && singPronounMatch.index !== undefined) {
+    const preceding = cleanSentence.slice(0, singPronounMatch.index);
+    const subj = singPronounMatch[1];
+    const verb = singPronounMatch[2].toLowerCase();
+    // Exclude auxiliary questions: "Did he have", "Does she have", "Could that have", etc.
+    const isAuxiliaryQuestion = verb === 'have' && /\b(?:did|does|doesn't|didn't|do|could|would|should|might|must|will|can|shall)\s+(?:not\s+)?$/i.test(preceding);
+    // Exclude subjunctive: "If he were", "I wish it were", "As if that were", etc.
+    const isSubjunctive = verb === 'were' && /\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|suppose|supposing|whether)\s+(?:[\w\s,]+?\s+)?$/i.test(preceding);
+    // Exclude prepositional objects for this/that: "In addition to this were..."
+    const isPrepObject = (subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding);
+
+    if (!isAuxiliaryQuestion && !isSubjunctive && !isPrepObject) {
+      const correctVerb = verb === 'were' ? 'was' : verb === 'have' ? 'has' : 'is';
+      issues.push({
+        detail: `Subject–verb agreement mismatch: singular subject “${subj}” does not agree with plural verb “${verb}”.`,
+        suggestion: `Use the singular verb “${correctVerb}”.`,
+        confidence: 'HIGH'
+      });
+    }
+  }
+
+  // 2. Plural pronouns with singular verbs (HIGH confidence)
+  const plurPronounMatch = cleanSentence.match(/\b(they|we)\s+(is|was|has)\b/i) || cleanSentence.match(/\b(you)\s+(was)\b/i);
+  if (plurPronounMatch) {
+    const subj = plurPronounMatch[1];
+    const verb = plurPronounMatch[2].toLowerCase();
+    const correctVerb = verb === 'was' ? 'were' : verb === 'has' ? 'have' : 'are';
+    issues.push({
+      detail: `Subject–verb agreement mismatch: plural subject “${subj}” does not agree with singular verb “${verb}”.`,
+      suggestion: `Use the plural verb “${correctVerb}”.`,
+      confidence: 'HIGH'
+    });
+  }
+
+  // 3. Demonstratives (HIGH confidence, strictly excluding prepositional objects & relative clauses)
+  const demMatch = cleanSentence.match(/\b(these|those)\s+(was|is|has)\b/i);
+  if (demMatch && demMatch.index !== undefined) {
+    const preceding = cleanSentence.slice(0, demMatch.index);
+    if (!PREPOSITIONS_RE.test(preceding) && !/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
+      const dem = demMatch[1];
+      const verb = demMatch[2].toLowerCase();
+      const correctVerb = verb === 'was' ? 'were' : verb === 'has' ? 'have' : 'are';
+      issues.push({
+        detail: `Subject–verb agreement mismatch: plural demonstrative “${dem}” does not agree with singular verb “${verb}”.`,
+        suggestion: `Use the plural verb “${correctVerb}”.`,
+        confidence: 'HIGH'
+      });
+    }
+  }
+
+  // 4. Quantifiers (HIGH confidence, excluding auxiliary questions)
+  const quantMatch = cleanSentence.match(/\b(each|every)\s+([a-z]+)\s+(have|were|are)\b/i);
+  if (quantMatch && quantMatch.index !== undefined) {
+    const preceding = cleanSentence.slice(0, quantMatch.index);
+    const verb = quantMatch[3].toLowerCase();
+    const isAuxiliaryQuestion = verb === 'have' && /\b(?:did|does|doesn't|didn't|do|could|would|should|might|must|will|can|shall)\s+(?:[a-z\s]+)?$/i.test(preceding);
+    if (!isAuxiliaryQuestion) {
+      const phrase = `${quantMatch[1]} ${quantMatch[2]}`;
+      const correctVerb = verb === 'have' ? 'has' : verb === 'were' ? 'was' : 'is';
+      issues.push({
+        detail: `Subject–verb agreement mismatch: singular quantifier phrase “${phrase}” uses plural verb “${verb}”.`,
+        suggestion: `Use the singular verb “${correctVerb}”.`,
+        confidence: 'HIGH'
+      });
+    }
+  }
+
+  // 5. Plural noun phrases directly with was/has been (MEDIUM confidence, strictly excluding prepositional objects)
+  const nounWasRegex = /\b(the|these|those)\s+(?:[a-z]+\s+)?([a-z]+s)\s+(was|has\s+been)\b/gi;
+  let match: RegExpExecArray | null;
+  while ((match = nounWasRegex.exec(cleanSentence)) !== null) {
+    const det = match[1];
+    const noun = match[2].toLowerCase();
+    const verb = match[3].toLowerCase();
+    const matchIdx = match.index;
+
+    // Check preceding context: is this noun phrase inside a prepositional phrase?
+    const preceding = cleanSentence.slice(0, matchIdx);
+    if (PREPOSITIONS_RE.test(preceding)) {
+      continue; // Prepositional phrase object (e.g. "impact of these changes was...") -> skip!
+    }
+
+    // Relative clause check (e.g. "that manages these servers was...")
+    if (/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
+      continue;
+    }
+
+    // Check exceptions
+    if (SINGULAR_S_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun)) {
+      continue;
+    }
+    if (noun.endsWith('ss') || noun.endsWith('us') || noun.endsWith('is')) {
+      continue;
+    }
+
+    const correctVerb = verb.includes('has') ? 'have been' : 'were';
+    issues.push({
+      detail: `Subject–verb agreement mismatch: plural subject phrase “${det} ${noun}” does not agree with singular verb “${verb}”.`,
+      suggestion: `Use the plural verb “${correctVerb}”.`,
+      confidence: 'MEDIUM'
+    });
+  }
+
+  return issues;
 }
 
 const GRAMMAR_RULES: { re: RegExp; detail: string; suggestion: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' }[] = [
@@ -518,15 +657,6 @@ const GRAMMAR_RULES: { re: RegExp; detail: string; suggestion: string; confidenc
   { re: /\b(a)\s+(?:apple|orange|egg|hour|honest|honor|elephant|idea|overview|error|urgent|issue|update)\b/i, detail: 'Article error: “a” used before a vowel sound.', suggestion: 'Use “an” before vowel sounds.', confidence: 'HIGH' },
   { re: /\b(an)\s+(?:car|table|book|problem|user|unique|university|report|manager|meeting)\b/i, detail: 'Article error: “an” used before a consonant sound.', suggestion: 'Use “a” before consonant sounds.', confidence: 'HIGH' },
   { re: /\b(?!that\s+that\b|had\s+had\b)(\b[a-zA-Z]{2,}\b)\s+\1\b/i, detail: 'Duplicated adjacent word detected.', suggestion: 'Remove the duplicate word unless intentional.', confidence: 'HIGH' },
-  { re: /\b(?:he|she|it|this|that)\s+(?:are|were|have)\b/i, detail: 'Subject–verb agreement mismatch: singular subject with plural verb.', suggestion: 'Use the singular verb (is/was/has).', confidence: 'HIGH' },
-  { re: /\b(?:they|we|you)\s+(?:is|was|has)\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular verb.', suggestion: 'Use the plural verb (are/were/have).', confidence: 'HIGH' },
-  { re: /(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+was\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular verb “was”.', suggestion: 'Use the plural verb “were”.', confidence: 'HIGH' },
-  { re: /(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(of\s+(?:the|a|an|this|that|our|their)\s+[a-z]+)\s+was\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular verb “was”.', suggestion: 'Use the plural verb “were”.', confidence: 'HIGH' },
-  { re: /(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+has\s+been\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular auxiliary “has been”.', suggestion: 'Use the plural auxiliary “have been”.', confidence: 'HIGH' },
-  { re: /(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+has\s+([a-z]+(?:ed|en|wn))\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular auxiliary “has”.', suggestion: 'Use the plural auxiliary “have”.', confidence: 'HIGH' },
-  { re: /(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:several|many|few|both|(?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(remains|requires|includes|contains|shows|seems|appears|needs|fails|works|starts|ends|indicates|suggests|leads|causes|provides)\b/i, detail: 'Subject–verb agreement mismatch: plural subject with singular verb.', suggestion: 'Use the base plural verb form.', confidence: 'HIGH' },
-  { re: /\b(each|every)\s+([a-z]+)\s+have\b/i, detail: 'Subject–verb agreement mismatch: singular subject (“each/every”) with plural verb “have”.', suggestion: 'Use the singular verb “has”.', confidence: 'HIGH' },
-  { re: /\b(each|neither|every\s+one)\s+of\s+(?:the|these|those|our|their)\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s\s+(were|are|have)\b/i, detail: 'Subject–verb agreement mismatch: singular subject (“each/neither”) with plural verb.', suggestion: 'Use the singular verb (was/is/has).', confidence: 'HIGH' },
   { re: /\b(the\s+list\s+of\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(include|require|contain|show)\b/i, detail: 'Subject–verb agreement mismatch: singular collective subject (“the list”) with plural verb.', suggestion: 'Use the singular verb (includes/requires/contains/shows).', confidence: 'HIGH' },
   { re: /\b((?:the|a|an)\s+[a-z]+)\s+(submit|approve|contact|deliver|complete)\s+([\s\S]*?(?:\byesterday\b|\bbefore\b[\s\S]+?\b[a-z]+ed\b|\bafter\b[\s\S]+?\b[a-z]+ed\b))/i, detail: 'Tense mismatch: past-time adverbial requires a past-tense verb.', suggestion: 'Use the past-tense verb form (submitted, approved, contacted).', confidence: 'HIGH' },
   { re: /\b(?:more|most)\s+(?:better|worse|faster|slower|bigger|smaller|greater|harder|easier|earlier|later|clearer|stronger|weaker)\b/i, detail: 'Double comparative or superlative detected.', suggestion: 'Use either the comparative form or “more”, not both.', confidence: 'HIGH' },
@@ -544,7 +674,7 @@ function contextualWritingAnalysis(text: string, sentences: string[]) {
     const trimmed = sentence.trim();
     if (!trimmed) return;
 
-    // Comma splice detection
+    // Comma splice detection (calibrated to MEDIUM confidence heuristic)
     const spliceIdx = findLikelyCommaSplice(trimmed);
     if (spliceIdx >= 0) {
       grammarCandidates.push({
@@ -552,7 +682,7 @@ function contextualWritingAnalysis(text: string, sentences: string[]) {
         index: i + 1,
         detail: 'Possible comma splice: two independent clauses joined only by a comma.',
         suggestion: 'Use a semicolon, period, or coordinating conjunction (and, but, so) to join the clauses.',
-        confidence: 'HIGH'
+        confidence: 'MEDIUM'
       });
     }
 
@@ -565,6 +695,18 @@ function contextualWritingAnalysis(text: string, sentences: string[]) {
         detail: 'Possible sentence fragment.',
         suggestion: 'Attach it to the surrounding sentence or provide a complete subject and verb.',
         confidence: 'MEDIUM'
+      });
+    }
+
+    // Subject-verb agreement mismatches with explicit subject & verb identification
+    const agreementIssues = findSubjectVerbMismatches(trimmed);
+    for (const issue of agreementIssues) {
+      grammarCandidates.push({
+        sentence: trimmed,
+        index: i + 1,
+        detail: issue.detail,
+        suggestion: issue.suggestion,
+        confidence: issue.confidence
       });
     }
 
@@ -645,8 +787,11 @@ function contextualWritingAnalysis(text: string, sentences: string[]) {
   });
 
   const hasText = text.trim().length > 0 && sentences.length > 0;
+  // Factor long sentence cognitive drag (>30 words) into clarityScore so dense prose is not artificially 100/100
+  const longSentenceCount = sentences.filter(s => wordsOf(s).length > 30).length;
+  const longSentenceClarityPenalty = Math.min(20, longSentenceCount * 4);
   const grammarPenalty = Math.min(45, grammarCandidates.length * 9);
-  const clarityPenalty = Math.min(35, clarityCandidates.length * 6);
+  const clarityPenalty = Math.min(35, clarityCandidates.length * 6 + longSentenceClarityPenalty);
   const consistencyPenalty = Math.min(40, consistencyCandidates.length * 8);
 
   const grammarScore = hasText ? Math.max(0, 100 - grammarPenalty) : null;
@@ -665,25 +810,93 @@ function contextualWritingAnalysis(text: string, sentences: string[]) {
   };
 }
 
-function applySafeGrammarFixes(s: string): string {
-  let out = s;
+export function applySafeGrammarFixes(s: string): string {
+  // 1. Mask direct quotations so dialogue/citations are never modified
+  const quotes: string[] = [];
+  let out = s.replace(QUOTE_REGEX, m => {
+    quotes.push(m);
+    return `\u0005QUOTE_${quotes.length - 1}\u0005`;
+  });
+
   let prev = '';
   // Run multiple passes until all fixes stabilize (handles multiple errors in the same sentence)
   for (let pass = 0; pass < 3 && prev !== out; pass++) {
     prev = out;
-    out = out.replace(/(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+was\b/gi, '$1 were');
-    out = out.replace(/(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(of\s+(?:the|a|an|this|that|our|their)\s+[a-z]+)\s+was\b/gi, '$1 $2 were');
-    out = out.replace(/(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+has\s+been\b/gi, '$1 have been');
-    out = out.replace(/(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+has\s+([a-z]+(?:ed|en|wn))\b/gi, '$1 have $2');
-    out = out.replace(/(?<!\b(?:each|neither|one|every\s+one)\s+of\s+)\b((?:several|many|few|both|(?:the|these|those)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(remains|requires|includes|contains|shows|seems|appears|needs|fails|works|starts|ends|indicates|suggests|leads|causes|provides)\b/gi, (m, subj, verb) => `${subj} ${verb.slice(0, -1)}`);
-    out = out.replace(/\b((?:each|every)\s+[a-z]+)\s+have\b/gi, '$1 has');
+    // Strictly protect prepositional phrase objects (e.g., "The impact of these changes was...") and relative clauses ("who manages these servers was...")
+    out = out.replace(/(?<!\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during)\s+)\b((?:the|these|those)\s+(?:[a-z]+\s+)?([a-z]+s))\s+was\b/gi, (match, subj, noun, offset, fullStr) => {
+      const n = noun.toLowerCase();
+      if (SINGULAR_S_NOUNS.has(n) || COLLECTIVE_NOUNS.has(n) || n.endsWith('ss') || n.endsWith('us') || n.endsWith('is')) {
+        return match;
+      }
+      const preceding = fullStr.slice(0, offset);
+      if (PREPOSITIONS_RE.test(preceding) || /\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
+        return match;
+      }
+      return `${subj} were`;
+    });
+    out = out.replace(/(?<!\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during)\s+)\b((?:the|these|those)\s+(?:[a-z]+\s+)?([a-z]+s))\s+has\s+been\b/gi, (match, subj, noun, offset, fullStr) => {
+      const n = noun.toLowerCase();
+      if (SINGULAR_S_NOUNS.has(n) || COLLECTIVE_NOUNS.has(n) || n.endsWith('ss') || n.endsWith('us') || n.endsWith('is')) {
+        return match;
+      }
+      const preceding = fullStr.slice(0, offset);
+      if (PREPOSITIONS_RE.test(preceding) || /\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
+        return match;
+      }
+      return `${subj} have been`;
+    });
+    // Demonstratives (these/those was/has/is) strictly excluding prepositional objects and relative clauses
+    out = out.replace(/\b(these|those)\s+(was|has|is)\b/gi, (match, dem, verb, offset, fullStr) => {
+      const preceding = fullStr.slice(0, offset);
+      if (PREPOSITIONS_RE.test(preceding) || /\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
+        return match;
+      }
+      const v = verb.toLowerCase();
+      const rep = v === 'was' ? 'were' : v === 'has' ? 'have' : 'are';
+      return `${dem} ${rep}`;
+    });
+    // Quantifiers: "each member have" -> "has", excluding auxiliary questions ("Did each member have")
+    out = out.replace(/\b((?:each|every)\s+[a-z]+)\s+have\b/gi, (match, subj, offset, fullStr) => {
+      const preceding = fullStr.slice(0, offset);
+      if (/\b(?:did|does|doesn't|didn't|do|could|would|should|might|must|will|can|shall)\s+(?:[a-z\s]+)?$/i.test(preceding)) {
+        return match;
+      }
+      return `${subj} has`;
+    });
     out = out.replace(/\b(they|we|you)\s+was\b/gi, '$1 were');
-    // Singular subject + plural verb: "He were" -> "He was"
-    out = out.replace(/\b(he|she|it|this|that)\s+were\b/gi, '$1 was');
-    out = out.replace(/\b(he|she|it|this|that)\s+have\b/gi, '$1 has');
+    // Singular subject + plural verb: "He were" -> "He was" (strictly excluding subjunctive "If he were", "I wish he were" and prepositional objects "to this were")
+    out = out.replace(/\b(he|she|it|this|that)\s+were\b/gi, (match, subj, offset, fullStr) => {
+      const preceding = fullStr.slice(0, offset);
+      if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|suppose|supposing|whether)\s+(?:[\w\s,]+?\s+)?$/i.test(preceding)) {
+        return match;
+      }
+      if ((subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding)) {
+        return match;
+      }
+      return `${subj} was`;
+    });
+    // Singular subject + have: "He have" -> "He has" (strictly excluding auxiliary questions "Did he have", "Does she have", "Could that have", etc.)
+    out = out.replace(/\b(he|she|it|this|that)\s+have\b/gi, (match, subj, offset, fullStr) => {
+      const preceding = fullStr.slice(0, offset);
+      if (/\b(?:did|does|doesn't|didn't|do|could|would|should|might|must|will|can|shall)\s+(?:not\s+)?$/i.test(preceding)) {
+        return match;
+      }
+      if ((subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding)) {
+        return match;
+      }
+      return `${subj} has`;
+    });
     out = out.replace(/\b(they|we|you)\s+has\b/gi, '$1 have');
-    out = out.replace(/\b(each|neither|every\s+one)\s+of\s+((?:the|these|those|our|their)\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+were\b/gi, '$1 of $2 was');
-    out = out.replace(/\b(the\s+list\s+of\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+include\b/gi, '$1 includes');
+    out = out.replace(/\b(each|neither|every\s+one)\s+of\s+((?:the|these|those|our|their)\s+(?:[a-z]+\s+)?([a-z]+s))\s+were\b/gi, (match, quant, obj, noun) => {
+      const n = noun.toLowerCase();
+      if (SINGULAR_S_NOUNS.has(n) || n.endsWith('ss') || n.endsWith('us') || n.endsWith('is')) return match;
+      return `${quant} of ${obj} was`;
+    });
+    out = out.replace(/\b(the\s+list\s+of\s+(?:[a-z]+\s+)?([a-z]+s))\s+include\b/gi, (match, subj, noun) => {
+      const n = noun.toLowerCase();
+      if (SINGULAR_S_NOUNS.has(n) || n.endsWith('ss') || n.endsWith('us') || n.endsWith('is')) return match;
+      return `${subj} includes`;
+    });
     out = out.replace(/\b((?:the|a|an)\s+[a-z]+)\s+submit\b([\s\S]*?(?:\byesterday\b|\bbefore\b[\s\S]+?\b[a-z]+ed\b|\bafter\b[\s\S]+?\b[a-z]+ed\b))/gi, '$1 submitted$2');
     out = out.replace(/\b((?:the|a|an)\s+[a-z]+)\s+approve\b([\s\S]*?(?:\byesterday\b|\bbefore\b[\s\S]+?\b[a-z]+ed\b|\bafter\b[\s\S]+?\b[a-z]+ed\b))/gi, '$1 approved$2');
     out = out.replace(/\b((?:the|a|an)\s+[a-z]+)\s+contact\b([\s\S]*?(?:\byesterday\b|\bbefore\b[\s\S]+?\b[a-z]+ed\b|\bafter\b[\s\S]+?\b[a-z]+ed\b))/gi, '$1 contacted$2');
@@ -692,7 +905,9 @@ function applySafeGrammarFixes(s: string): string {
     out = out.replace(/\b(a)\s+(apple|orange|egg|hour|honest|honor|elephant|idea|overview|error|urgent|issue|update)\b/gi, (m, art, word) => art === 'A' ? `An ${word}` : `an ${word}`);
     out = out.replace(/\b(an)\s+(car|table|book|problem|user|unique|university|report|manager|meeting)\b/gi, (m, art, word) => art === 'An' ? `A ${word}` : `a ${word}`);
   }
-  return out;
+
+  // Restore masked quotations
+  return out.replace(/\u0005QUOTE_(\d+)\u0005/g, (_, idx) => quotes[Number(idx)] || '');
 }
 
 function validateRewrite(original: string, rewrite: string | undefined): boolean {
@@ -1036,14 +1251,14 @@ function buildCoachFindings(
 
     add({
       category: 'Passive voice',
-      severity: 'medium',
-      confidence: 'HIGH',
-      confidenceScore: 92,
+      severity: 'low',
+      confidence: 'LOW',
+      confidenceScore: 70,
       sentenceIndex: x.index,
       sentence: x.sentence,
-      issue: 'Passive construction with identified actor.',
+      issue: 'Stylistic observation: passive construction with identified actor.',
       why: 'Passive voice can feel indirect or obscure responsibility; active voice is often punchier when the actor is significant.',
-      suggestion: 'Consider the active version to highlight who performed the action.',
+      suggestion: 'Consider the active version to highlight who performed the action, or keep the passive if the recipient is the focus.',
       rewrite: active
     });
   });
@@ -1106,7 +1321,7 @@ function calculateWritingScore(
   // Long sentences check
   if (longSentences > 0) {
     score -= Math.min(12, longSentences * 2.5);
-    factors.push({ type: 'improvement', text: `${longSentences} long sentence${longSentences === 1 ? '' : 's'} (>38 words) may slow reading pace.` });
+    factors.push({ type: 'improvement', text: `${longSentences} long sentence${longSentences === 1 ? '' : 's'} (>30 words) may slow reading pace.` });
   } else {
     factors.push({ type: 'positive', text: 'Good sentence length distribution.' });
   }
@@ -1142,7 +1357,7 @@ export function analyzeText(text: string, rate: number = 0, wpm: number = 150): 
 
   const longSentences = sentences
     .map((s, i) => ({ index: i + 1, text: s, words: wordsOf(s).length }))
-    .filter(x => x.words > 35)
+    .filter(x => x.words > 30)
     .sort((a, b) => b.words - a.words)
     .slice(0, 8);
 
@@ -1469,7 +1684,7 @@ export default function TextAnalyzer() {
         x.rewrite ? `   Suggested rewrite: ${x.rewrite}` : ''
       ].filter(Boolean).join('\n')),
       '',
-      'Passive candidates:',
+      'Passive voice candidates (stylistic observation, optional):',
       ...stats.passiveCandidates.slice(0, 8).map(x => `  • #${x.index}: ${x.sentence}`)
     ];
     download('omnitools-text-analysis.txt', lines.join('\n'));
@@ -1754,6 +1969,9 @@ export default function TextAnalyzer() {
                 <b className="text-sm">{stats.consistencyScore == null ? "—" : `${stats.consistencyScore}/100`}</b>
               </div>
             </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 text-center">
+              Heuristic scores indicate relative polish based on detectable patterns and sentence flow; they do not replace human editorial review.
+            </p>
 
             {stats.coachFindings.length > 0 ? (
               <div className="mt-3 space-y-2 max-h-56 overflow-y-auto pr-1">
