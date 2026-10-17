@@ -21,6 +21,9 @@ import {
   applySafeGrammarFixes,
   gradeLabel,
   SAMPLE_TEXT,
+  runGrammarEngine,
+  applyFindingCorrection,
+  applyAllSafeFixes,
 } from '../components/tools/TextAnalyzer';
 
 let passed = 0;
@@ -678,6 +681,689 @@ assert(Boolean(factorTwoLong && factorTwoLong.text.includes('2 long sentences'))
 const abbrevText = "Dr. Smith announced v2.5 yesterday. At 4:00 p.m., the team launched.";
 assert(sentencesOf(abbrevText).length === 2, 'Sentence splitter does not split on Dr., v2.5, or p.m.');
 
+
+// ============================================================
+// 15. Master Prompt Mandatory 21 Fixtures & Minimal Pairs
+// ============================================================
+console.log('\n• Testing Suite 15: Master Prompt 21 Mandatory Fixtures & Minimal Pairs...');
+
+// 1. Correct: “In 2025, artificial intelligence systems continued to improve.”
+const m1 = analyzeText('In 2025, artificial intelligence systems continued to improve.');
+assert(!m1.coachFindings.some(f => f.category === 'Grammar' && /comma splice/i.test(f.issue)), 'Fixture 1: "In 2025, artificial intelligence systems continued to improve." has NO comma splice error');
+
+// 2. Incorrect: “The system works well, the results are reliable.”
+const m2 = analyzeText('The system works well, the results are reliable.');
+const m2Finding = m2.coachFindings.find(f => /comma splice/i.test(f.issue));
+assert(Boolean(m2Finding), 'Fixture 2: "The system works well, the results are reliable." triggers comma splice finding');
+assert(Boolean(m2Finding?.replacement || m2Finding?.suggestion), 'Fixture 2 has valid replacement/suggestion for comma splice');
+
+// 3. Correct: “Each department was reviewed.”
+const m3 = analyzeText('Each department was reviewed.');
+assert(!m3.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 3: "Each department was reviewed." has NO agreement finding');
+
+// 4. Incorrect: “Each department were reviewed.”
+const m4 = analyzeText('Each department were reviewed.');
+const m4Finding = m4.coachFindings.find(f => f.category === 'Grammar' && /agreement/i.test(f.issue));
+assert(Boolean(m4Finding), 'Fixture 4: "Each department were reviewed." triggers agreement finding');
+assert(m4Finding?.replacement === 'was', 'Fixture 4 suggests "was"');
+
+// 5. Correct: “The series contains useful examples.”
+const m5 = analyzeText('The series contains useful examples.');
+assert(!m5.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 5: "The series contains useful examples." has NO agreement finding');
+
+// 6. Incorrect: “The list of items are missing.”
+const m6 = analyzeText('The list of items are missing.');
+const m6Finding = m6.coachFindings.find(f => f.category === 'Grammar' && /agreement/i.test(f.issue));
+assert(Boolean(m6Finding), 'Fixture 6: "The list of items are missing." triggers agreement finding');
+assert(m6Finding?.replacement === 'is', 'Fixture 6 suggests "is"');
+
+// 7. Correct: “The analysts were reviewing the reports.”
+const m7 = analyzeText('The analysts were reviewing the reports.');
+assert(!m7.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 7: "The analysts were reviewing the reports." has NO agreement finding');
+
+// 8. Correct: “The project would take six years, assuming annual savings remain constant.”
+const m8 = analyzeText('The project would take six years, assuming annual savings remain constant.');
+assert(!m8.coachFindings.some(f => f.category === 'Grammar' && /comma splice/i.test(f.issue)), 'Fixture 8: Participial clause with "assuming" has NO comma splice error');
+
+// 9. Correct: “The project was expensive; however, it was effective.”
+const m9 = analyzeText('The project was expensive; however, it was effective.');
+assert(!m9.coachFindings.some(f => f.category === 'Grammar' || f.category === 'Punctuation'), 'Fixture 9: Semicolon with transitional adverb has NO punctuation or grammar error');
+
+// 10. Correct: “The system's performance improved after the update.”
+const m10 = analyzeText("The system's performance improved after the update.");
+assert(!m10.coachFindings.some(f => f.category === 'Grammar'), 'Fixture 10: Possessive apostrophe has NO grammar finding');
+
+// 11. Correct: “They haven't finished the analysis.”
+const m11 = analyzeText("They haven't finished the analysis.");
+assert(!m11.coachFindings.some(f => f.category === 'Grammar' || f.category === 'Spelling'), 'Fixture 11: Contraction "haven\'t" has NO false grammar or spelling finding');
+
+// 12. Dialect sensitivity: “The data are incomplete.” and “The data is incomplete.”
+const m12a = analyzeText('The data are incomplete.');
+const m12b = analyzeText('The data is incomplete.');
+assert(!m12a.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 12a: "The data are incomplete." is accepted');
+assert(!m12b.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 12b: "The data is incomplete." is accepted');
+
+// 13. Incorrect: “The recommendations was accepted.”
+const m13 = analyzeText('The recommendations was accepted.');
+const m13Finding = m13.coachFindings.find(f => f.category === 'Grammar' && /agreement/i.test(f.issue));
+assert(Boolean(m13Finding), 'Fixture 13: "The recommendations was accepted." triggers agreement finding');
+assert(m13Finding?.replacement === 'were', 'Fixture 13 suggests "were"');
+
+// 14. Correct: “The recommendations were accepted.”
+const m14 = analyzeText('The recommendations were accepted.');
+assert(!m14.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 14: "The recommendations were accepted." has NO agreement finding');
+
+// 15. Correct: Complex sentence with relative plural that:
+const m15 = analyzeText('The software is functioning as designed; the problem is that its design reflects limitations in the data and assumptions that were never adequately challenged.');
+assert(!m15.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 15: Relative plural "assumptions that were" has NO false agreement finding');
+
+// 16. Correct: “The challenge, therefore, is to build reliable systems.”
+const m16 = analyzeText('The challenge, therefore, is to build reliable systems.');
+assert(!m16.coachFindings.some(f => f.category === 'Grammar' || f.category === 'Punctuation'), 'Fixture 16: Parenthetical "therefore" has NO punctuation or agreement finding');
+
+// 17. Correct: “Neither the manager nor the analysts were available.”
+const m17 = analyzeText('Neither the manager nor the analysts were available.');
+assert(!m17.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 17: Nearest-subject agreement with plural analysts is respected');
+
+// 18. Correct: “The report was reviewed by the team.”
+const m18 = analyzeText('The report was reviewed by the team.');
+assert(!m18.coachFindings.some(f => f.category === 'Grammar'), 'Fixture 18: Passive voice is NOT marked as a high-confidence grammar error');
+
+// 19. Dialogue mode behavior on deliberate error inside quotes:
+const m19Text = '"He don\'t know the answer," she said.';
+const m19Normal = analyzeText(m19Text, 0, 150, { dialogueMode: 'normal' });
+const m19Analyze = analyzeText(m19Text, 0, 150, { dialogueMode: 'analyze-dialogue' });
+assert(!m19Normal.coachFindings.some(f => /don't/i.test(f.originalText || '') || /don't/i.test(f.issue)), 'Fixture 19 (Normal mode): Deliberate error inside quotes is protected');
+assert(m19Analyze.coachFindings.some(f => /don't/i.test(f.originalText || '') || /don't/i.test(f.issue)), 'Fixture 19 (Analyze Dialogue mode): Error inside quotes is detected');
+
+// 20. Narration error immediately adjoining quotes:
+const m20 = analyzeText('"We are ready," the manager were saying.');
+assert(m20.coachFindings.some(f => f.category === 'Grammar' && /agreement/i.test(f.issue)), 'Fixture 20: Narration agreement error "the manager were saying" is detected even with quotes');
+
+// 21. Automatic fix application:
+const m21Fix = applySafeGrammarFixes('The recommendations was accepted.');
+assert(m21Fix.includes('The recommendations were accepted.'), 'Fixture 21: Safe fix corrects "was accepted" to "were accepted"');
+
+// ============================================================
+// 16. Additional Linguistic Rule Families
+// ============================================================
+console.log('\n• Testing Suite 16: Additional Linguistic Rule Families...');
+
+// Modal verbs
+const modalErr = analyzeText('We could of planned this better.');
+const modalF = modalErr.coachFindings.find(f => f.ruleId === 'VERB_MODAL_OF');
+assert(Boolean(modalF), 'Modal error "could of" is detected');
+assert(modalF?.replacement === 'have', 'Modal error suggests "have"');
+
+// Bare infinitives after modals
+const modalBare = analyzeText('They must to finish the audit.');
+const modalBareF = modalBare.coachFindings.find(f => f.ruleId === 'VERB_MODAL_BARE_INFINITIVE');
+assert(Boolean(modalBareF), 'Modal bare infinitive "must to finish" is detected');
+assert(modalBareF?.replacement === 'finish', 'Modal bare infinitive suggests "finish"');
+
+// Pronoun case in prepositional complement
+const pronounErr = analyzeText('Between you and I, the decision is final.');
+const pronounF = pronounErr.coachFindings.find(f => f.ruleId === 'PRONOUN_OBJECTIVE_CASE_PREPOSITION');
+assert(Boolean(pronounF), 'Pronoun case "between you and I" is detected');
+assert(pronounF?.replacement === 'me', 'Pronoun case suggests "me"');
+
+// Irregular past participles
+const partErr = analyzeText('The team had went to the conference.');
+const partF = partErr.coachFindings.find(f => f.ruleId === 'VERB_PAST_PARTICIPLE_MISMATCH');
+assert(Boolean(partF), 'Irregular participle "had went" is detected');
+assert(partF?.replacement === 'gone', 'Irregular participle suggests "gone"');
+
+// Phonetic a/an
+const aAnErr1 = analyzeText('He attended an university in London.');
+const aAnF1 = aAnErr1.coachFindings.find(f => f.ruleId === 'ARTICLE_AN_BEFORE_CONSONANT_SOUND');
+assert(Boolean(aAnF1), 'Phonetic article "an university" is detected');
+assert(aAnF1?.replacement === 'a', 'Phonetic article suggests "a"');
+
+const aAnErr2 = analyzeText('It was a honest mistake.');
+const aAnF2 = aAnErr2.coachFindings.find(f => f.ruleId === 'ARTICLE_A_BEFORE_VOWEL_SOUND');
+assert(Boolean(aAnF2), 'Phonetic article "a honest" is detected');
+assert(aAnF2?.replacement === 'an', 'Phonetic article suggests "an"');
+
+// Commonly confused words
+const confErr = analyzeText('Take care not to loose the keys.');
+const confF = confErr.coachFindings.find(f => f.ruleId === 'WORD_CHOICE_LOSE_NOT_LOOSE');
+assert(Boolean(confF), 'Confused word "loose the keys" is detected');
+assert(confF?.replacement === 'lose', 'Confused word suggests "lose"');
+
+// ============================================================
+// 17. Source Span Accuracy & Character Offset Precision
+// ============================================================
+console.log('\n• Testing Suite 17: Source Span Accuracy & Character Offset Precision...');
+
+const spanDoc = 'First, each department were reviewed. Then, the list of items are missing from inventory.';
+const spanResults = runGrammarEngine(spanDoc).findings;
+assert(spanResults.length >= 2, `Engine found multiple issues for span verification (found ${spanResults.length})`);
+
+for (const finding of spanResults) {
+  const actualSlice = spanDoc.slice(finding.start, finding.end);
+  assert(
+    actualSlice === finding.originalText,
+    `Exact slice matches finding.originalText at [${finding.start}, ${finding.end}]: "${actualSlice}" === "${finding.originalText}"`
+  );
+}
+
+// ============================================================
+// 18. 1-Click Correction & Deduplication Integrity
+// ============================================================
+console.log('\n• Testing Suite 18: 1-Click Correction & Deduplication Integrity...');
+
+const originalSentence = 'The list of items are missing from the report.';
+const targetFindings = runGrammarEngine(originalSentence).findings;
+const targetF = targetFindings.find(f => f.ruleId === 'AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE');
+assert(Boolean(targetF), 'Target finding exists for 1-click correction test');
+
+if (targetF) {
+  const corrected = applyFindingCorrection(originalSentence, targetF);
+  assert(corrected === 'The list of items is missing from the report.', `applyFindingCorrection produces exact correction: "${corrected}"`);
+  assert(!corrected.includes('are'), 'Replaced text does not contain old verb');
+}
+
+// Deduplication: ensure no overlapping finding spans
+const dupDoc = 'The list of items are missing. The team had went home.';
+const dupFindings = runGrammarEngine(dupDoc).findings;
+let hasOverlap = false;
+for (let i = 0; i < dupFindings.length; i++) {
+  for (let j = i + 1; j < dupFindings.length; j++) {
+    const a = dupFindings[i];
+    const b = dupFindings[j];
+    if (Math.max(a.start, b.start) < Math.min(a.end, b.end)) {
+      hasOverlap = true;
+    }
+  }
+}
+assert(!hasOverlap, 'Deduplication guarantees zero overlapping finding spans in engine output');
+
+// applyAllSafeFixes verification
+const safeMulti = applyAllSafeFixes('Each department were reviewed. The list of items are missing.');
+assert(safeMulti === 'Each department was reviewed. The list of items is missing.', 'applyAllSafeFixes corrects multiple issues cleanly in reverse offset order');
+
+// ============================================================
+// 19. Labeled Golden Corpus Precision & Recall Benchmark
+// ============================================================
+console.log('\n• Testing Suite 19: Labeled Golden Corpus Precision & Recall Benchmark...');
+
+type CorpusItem = { text: string; hasError: boolean; label: string };
+
+const goldenCorpus: CorpusItem[] = [
+  // Genuine Error Sentences (Positive Cases)
+  { text: 'Each department were reviewed thoroughly.', hasError: true, label: 'Indefinite pronoun agreement (were -> was)' },
+  { text: 'The list of items are missing from the audit.', hasError: true, label: 'Intervening prep agreement (are -> is)' },
+  { text: 'The recommendations was accepted by leadership.', hasError: true, label: 'Plural subject agreement (was -> were)' },
+  { text: 'The system works well, the results are reliable.', hasError: true, label: 'Comma splice' },
+  { text: 'We could of planned the deployment better.', hasError: true, label: 'Modal auxiliary (could of -> could have)' },
+  { text: 'You should of informed the supervisor.', hasError: true, label: 'Modal auxiliary (should of -> should have)' },
+  { text: 'They must to update the records promptly.', hasError: true, label: 'Modal bare infinitive' },
+  { text: 'Between you and I, this plan will succeed.', hasError: true, label: 'Pronoun case' },
+  { text: 'The engineer had went to the client site.', hasError: true, label: 'Irregular participle (had went -> had gone)' },
+  { text: 'She has saw this error code before.', hasError: true, label: 'Irregular participle (has saw -> has seen)' },
+  { text: 'The company built an university partnership.', hasError: true, label: 'Phonetic article (an university -> a university)' },
+  { text: 'It was a honest mistake during data entry.', hasError: true, label: 'Phonetic article (a honest -> an honest)' },
+  { text: 'Make sure not to loose your badge.', hasError: true, label: 'Confused word (loose -> lose)' },
+  { text: 'Neither the manager nor the supervisor were present.', hasError: true, label: 'Neither/nor singular agreement' },
+  { text: 'Every student and teacher were invited.', hasError: true, label: 'Quantifier every agreement' },
+  { text: 'A series of tests was conducted, the findings was unexpected.', hasError: true, label: 'Plural findings was' },
+  { text: 'She would of delivered the package yesterday.', hasError: true, label: 'Modal auxiliary (would of -> would have)' },
+  { text: 'Between him and I, there are no secrets.', hasError: true, label: 'Pronoun case complement' },
+  { text: 'The team has went through three iterations.', hasError: true, label: 'Participle error' },
+  { text: 'They should of known the requirements.', hasError: true, label: 'Modal auxiliary' },
+
+  // Clean Sentences / Negative Controls
+  { text: 'In 2025, artificial intelligence systems continued to improve.', hasError: false, label: 'Introductory prepositional phrase' },
+  { text: 'The project was expensive; however, it was effective.', hasError: false, label: 'Semicolon with conjunctive adverb' },
+  { text: 'The series contains useful examples for our engineers.', hasError: false, label: 'Singular noun ending in -s' },
+  { text: 'The analysts were reviewing the quarterly reports.', hasError: false, label: 'Plural subject with were' },
+  { text: 'The project would take six years, assuming annual savings remain constant.', hasError: false, label: 'Participial clause with assuming' },
+  { text: "The system's performance improved after the update.", hasError: false, label: 'Possessive apostrophe' },
+  { text: "They haven't finished the comprehensive analysis yet.", hasError: false, label: 'Contraction haven\'t' },
+  { text: 'The data are incomplete for the final quarter.', hasError: false, label: 'Dialect plural data' },
+  { text: 'The data is incomplete for the final quarter.', hasError: false, label: 'Dialect singular data' },
+  { text: 'The challenge, therefore, is to build reliable systems.', hasError: false, label: 'Parenthetical therefore' },
+  { text: 'Neither the manager nor the analysts were available.', hasError: false, label: 'Nearest subject plural agreement' },
+  { text: 'The report was reviewed by the compliance team.', hasError: false, label: 'Passive voice valid sentence' },
+  { text: 'The software is functioning as designed; the problem is that its design reflects limitations.', hasError: false, label: 'Compound complex with semicolon' },
+  { text: 'Assumptions that were never adequately challenged led to the delay.', hasError: false, label: 'Relative plural assumptions that were' },
+  { text: 'Both the system and the database were restored successfully.', hasError: false, label: 'Compound subject with both' },
+  { text: 'The jury was sequestered until a verdict was reached.', hasError: false, label: 'Collective noun singular' },
+  { text: 'The executive committee has approved the proposed budget.', hasError: false, label: 'Collective noun committee has' },
+  { text: 'Did each member have sufficient time to review the proposal?', hasError: false, label: 'Auxiliary question did... have' },
+  { text: 'Clear writing shares ideas simply, directly, and with good rhythm.', hasError: false, label: 'Sample text opening' },
+  { text: 'By tracking word count and sentence structure, you can polish drafts with confidence.', hasError: false, label: 'Sample text closing' }
+];
+
+let tp = 0;
+let fp = 0;
+let tn = 0;
+let fn = 0;
+
+for (const item of goldenCorpus) {
+  const findings = runGrammarEngine(item.text).findings;
+  const detected = findings.length > 0;
+
+  if (item.hasError && detected) {
+    tp++;
+  } else if (!item.hasError && detected) {
+    fp++;
+    console.warn(`    ⚠️ FALSE POSITIVE on: "${item.text}" (${findings.map(f => f.ruleId).join(', ')})`);
+  } else if (!item.hasError && !detected) {
+    tn++;
+  } else if (item.hasError && !detected) {
+    fn++;
+    console.warn(`    ⚠️ FALSE NEGATIVE on: "${item.text}" (${item.label})`);
+  }
+}
+
+const precision = tp / (tp + fp);
+const recall = tp / (tp + fn);
+const f1 = (2 * precision * recall) / (precision + recall);
+
+console.log(`\n  📊 GOLDEN CORPUS BENCHMARK RESULTS (N = ${goldenCorpus.length}):`);
+console.log(`     True Positives (TP):  ${tp} / 20`);
+console.log(`     True Negatives (TN):  ${tn} / 20`);
+console.log(`     False Positives (FP): ${fp} / 20`);
+console.log(`     False Negatives (FN): ${fn} / 20`);
+console.log(`     Precision:            ${(precision * 100).toFixed(1)}%`);
+console.log(`     Recall:               ${(recall * 100).toFixed(1)}%`);
+console.log(`     F1-Score:             ${(f1 * 100).toFixed(1)}%`);
+
+assert(fp === 0, `Zero false positives on clean control corpus (FP = ${fp})`);
+assert(fn === 0, `Zero false negatives on error corpus (FN = ${fn})`);
+assert(precision === 1.0, `Precision is 100% on golden corpus (got ${(precision * 100).toFixed(1)}%)`);
+assert(recall === 1.0, `Recall is 100% on golden corpus (got ${(recall * 100).toFixed(1)}%)`);
+
+
+
+// ============================================================
+// 20. Held-Out Corpus & Per-Rule-Family Precision / Recall Evaluation
+// ============================================================
+console.log('\n• Testing Suite 20: Held-Out Corpus & Per-Rule-Family Precision / Recall Evaluation...');
+
+interface HeldOutTestCase {
+  family: 'AGREEMENT' | 'VERB_FORM' | 'ARTICLE' | 'PRONOUN' | 'CONFUSED_WORD' | 'PUNCTUATION_SPLICE' | 'TYPO_SPELLING' | 'STYLE_CLARITY';
+  text: string;
+  hasError: boolean;
+  expectedRule?: string;
+  expectedReplacement?: string;
+  description: string;
+}
+
+const heldOutCases: HeldOutTestCase[] = [
+  // --- AGREEMENT ---
+  {
+    family: 'AGREEMENT',
+    text: 'Everyone were delighted with the announcement.',
+    hasError: true,
+    expectedRule: 'AGREEMENT_SINGULAR_PRONOUN_PLURAL_VERB',
+    expectedReplacement: 'was',
+    description: 'Indefinite pronoun everyone with plural verb were'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'Everyone was delighted with the announcement.',
+    hasError: false,
+    description: 'Control: Indefinite pronoun everyone with was'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The quality of these materials are exceptional.',
+    hasError: true,
+    expectedRule: 'AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE',
+    expectedReplacement: 'is',
+    description: 'Head noun quality with intervening prep phrase'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The quality of these materials is exceptional.',
+    hasError: false,
+    description: 'Control: Head noun quality with is'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The box of old tools were misplaced yesterday.',
+    hasError: true,
+    expectedRule: 'AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE',
+    expectedReplacement: 'was',
+    description: 'Head noun box with intervening prep phrase'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The boxes of old tools were misplaced yesterday.',
+    hasError: false,
+    description: 'Control: Plural head noun boxes with were'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'Someone have left their notebook in the conference room.',
+    hasError: true,
+    expectedRule: 'AGREEMENT_SINGULAR_PRONOUN_PLURAL_VERB',
+    expectedReplacement: 'has',
+    description: 'Indefinite pronoun someone with have'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'Someone has left their notebook in the conference room.',
+    hasError: false,
+    description: 'Control: Indefinite pronoun someone with has'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The criteria were established before the project began.',
+    hasError: false,
+    description: 'Control: Irregular plural criteria with were'
+  },
+  {
+    family: 'AGREEMENT',
+    text: 'The committee has finalized the schedule.',
+    hasError: false,
+    description: 'Control: Collective noun committee with has'
+  },
+
+  // --- VERB_FORM ---
+  {
+    family: 'VERB_FORM',
+    text: 'The architect could of prevented the structural flaw.',
+    hasError: true,
+    expectedRule: 'VERB_MODAL_OF',
+    expectedReplacement: 'have',
+    description: 'Modal auxiliary could of -> could have'
+  },
+  {
+    family: 'VERB_FORM',
+    text: 'The architect could have prevented the structural flaw.',
+    hasError: false,
+    description: 'Control: Modal auxiliary could have'
+  },
+  {
+    family: 'VERB_FORM',
+    text: 'The witness had saw the vehicle speeding away.',
+    hasError: true,
+    expectedRule: 'VERB_PAST_PARTICIPLE_MISMATCH',
+    expectedReplacement: 'seen',
+    description: 'Past participle mismatch: had saw -> had seen'
+  },
+  {
+    family: 'VERB_FORM',
+    text: 'The witness had seen the vehicle speeding away.',
+    hasError: false,
+    description: 'Control: Valid past participle had seen'
+  },
+  {
+    family: 'VERB_FORM',
+    text: 'The contractor must to complete the inspection today.',
+    hasError: true,
+    expectedRule: 'VERB_MODAL_BARE_INFINITIVE',
+    expectedReplacement: 'complete',
+    description: 'Modal with infinitive to complete -> complete'
+  },
+  {
+    family: 'VERB_FORM',
+    text: 'The contractor must complete the inspection today.',
+    hasError: false,
+    description: 'Control: Modal with bare infinitive must complete'
+  },
+
+  // --- ARTICLE ---
+  {
+    family: 'ARTICLE',
+    text: 'We arrived a hour before the keynote presentation.',
+    hasError: true,
+    expectedRule: 'ARTICLE_A_BEFORE_VOWEL_SOUND',
+    expectedReplacement: 'an',
+    description: 'Article a before silent h vowel sound hour'
+  },
+  {
+    family: 'ARTICLE',
+    text: 'We arrived an hour before the keynote presentation.',
+    hasError: false,
+    description: 'Control: Article an before hour'
+  },
+  {
+    family: 'ARTICLE',
+    text: 'The university offers a unique curriculum in robotics.',
+    hasError: false,
+    description: 'Control: Article a before unique (/j/ glide)'
+  },
+  {
+    family: 'ARTICLE',
+    text: 'The delegation signed an European accord on carbon emissions.',
+    hasError: true,
+    expectedRule: 'ARTICLE_AN_BEFORE_CONSONANT_SOUND',
+    expectedReplacement: 'a',
+    description: 'Article an before consonant glide European'
+  },
+
+  // --- PRONOUN ---
+  {
+    family: 'PRONOUN',
+    text: 'The confidential report was shared between you and I.',
+    hasError: true,
+    expectedRule: 'PRONOUN_OBJECTIVE_CASE_PREPOSITION',
+    expectedReplacement: 'me',
+    description: 'Prepositional object pronoun between you and I'
+  },
+  {
+    family: 'PRONOUN',
+    text: 'The confidential report was shared between you and me.',
+    hasError: false,
+    description: 'Control: Prepositional object pronoun between you and me'
+  },
+  {
+    family: 'PRONOUN',
+    text: 'Him and I conducted the initial survey.',
+    hasError: true,
+    expectedRule: 'PRONOUN_SUBJECTIVE_CASE_COORDINATION',
+    expectedReplacement: 'He and I',
+    description: 'Objective pronoun Him as coordinate subject'
+  },
+  {
+    family: 'PRONOUN',
+    text: 'He and I conducted the initial survey.',
+    hasError: false,
+    description: 'Control: Coordinate subjective pronoun He and I'
+  },
+
+  // --- CONFUSED_WORD ---
+  {
+    family: 'CONFUSED_WORD',
+    text: 'The database cluster lost its primary replica.',
+    hasError: false,
+    description: 'Control: Possessive pronoun its'
+  },
+  {
+    family: 'CONFUSED_WORD',
+    text: 'Its essential to verify checksums after migration.',
+    hasError: true,
+    expectedRule: 'HOMOPHONE_ITS_CONTRACTION',
+    expectedReplacement: "It's",
+    description: 'Possessive its where contraction It\'s is required'
+  },
+  {
+    family: 'CONFUSED_WORD',
+    text: 'The new algorithm executes much faster then the legacy service.',
+    hasError: true,
+    expectedRule: 'WORD_CHOICE_THAN_COMPARISON',
+    expectedReplacement: 'than',
+    description: 'Comparative adverb then -> than'
+  },
+  {
+    family: 'CONFUSED_WORD',
+    text: 'The new algorithm executes much faster than the legacy service.',
+    hasError: false,
+    description: 'Control: Comparative adverb than'
+  },
+  {
+    family: 'CONFUSED_WORD',
+    text: 'Be careful not to loose access to your backup keys.',
+    hasError: true,
+    expectedRule: 'WORD_CHOICE_LOSE_NOT_LOOSE',
+    expectedReplacement: 'lose',
+    description: 'Confused adjective loose where verb lose is required'
+  },
+  {
+    family: 'CONFUSED_WORD',
+    text: 'Be careful not to lose access to your backup keys.',
+    hasError: false,
+    description: 'Control: Verb lose'
+  },
+
+  // --- PUNCTUATION_SPLICE ---
+  {
+    family: 'PUNCTUATION_SPLICE',
+    text: 'The telemetry looks stable, the deployment was successful.',
+    hasError: true,
+    expectedRule: 'SENTENCE_COMMA_SPLICE',
+    expectedReplacement: ';',
+    description: 'Comma splice joining two independent clauses'
+  },
+  {
+    family: 'PUNCTUATION_SPLICE',
+    text: 'The telemetry looks stable; the deployment was successful.',
+    hasError: false,
+    description: 'Control: Semicolon joining two independent clauses'
+  },
+  {
+    family: 'PUNCTUATION_SPLICE',
+    text: 'Because the telemetry looks stable, the deployment was successful.',
+    hasError: false,
+    description: 'Control: Subordinate dependent clause with comma'
+  },
+  {
+    family: 'PUNCTUATION_SPLICE',
+    text: 'The team completed the upgrade, provided that testing continues tomorrow.',
+    hasError: false,
+    description: 'Control: Conditional clause with provided that'
+  },
+
+  // --- TYPO_SPELLING ---
+  {
+    family: 'TYPO_SPELLING',
+    text: 'We must recieve approval from the security team.',
+    hasError: true,
+    expectedRule: 'SPELL_COMMON_TYPO',
+    expectedReplacement: 'receive',
+    description: 'Common typo recieve -> receive'
+  },
+  {
+    family: 'TYPO_SPELLING',
+    text: 'We must receive approval from the security team.',
+    hasError: false,
+    description: 'Control: Correct spelling receive'
+  },
+  {
+    family: 'TYPO_SPELLING',
+    text: 'The microservices operate on a seperate cluster.',
+    hasError: true,
+    expectedRule: 'SPELL_COMMON_TYPO',
+    expectedReplacement: 'separate',
+    description: 'Common typo seperate -> separate'
+  },
+  {
+    family: 'TYPO_SPELLING',
+    text: 'The microservices operate on a separate cluster.',
+    hasError: false,
+    description: 'Control: Correct spelling separate'
+  },
+
+  // --- STYLE_CLARITY ---
+  {
+    family: 'STYLE_CLARITY',
+    text: 'We scheduled a meeting in order to resolve the blocker.',
+    hasError: true,
+    expectedRule: 'CLARITY_CONCISE_WORDING',
+    expectedReplacement: 'to',
+    description: 'Wordy phrase in order to -> to'
+  },
+  {
+    family: 'STYLE_CLARITY',
+    text: 'We scheduled a meeting to resolve the blocker.',
+    hasError: false,
+    description: 'Control: Concise phrasing with to'
+  }
+];
+
+let heldOutTP = 0;
+let heldOutFP = 0;
+let heldOutTN = 0;
+let heldOutFN = 0;
+const familyMetrics: Record<string, { tp: number; fp: number; tn: number; fn: number }> = {};
+
+for (const c of heldOutCases) {
+  if (!familyMetrics[c.family]) {
+    familyMetrics[c.family] = { tp: 0, fp: 0, tn: 0, fn: 0 };
+  }
+  const res = runGrammarEngine(c.text);
+  const detected = res.findings.length > 0;
+  const fStats = familyMetrics[c.family];
+
+  if (c.hasError && detected) {
+    heldOutTP++;
+    fStats.tp++;
+    if (c.expectedReplacement) {
+      const matchFound = res.findings.some(f => f.replacement === c.expectedReplacement || f.ruleId === c.expectedRule);
+      assert(matchFound, `Held-out case replacement verified for: "${c.text}" (expected "${c.expectedReplacement}")`);
+    }
+  } else if (!c.hasError && detected) {
+    heldOutFP++;
+    fStats.fp++;
+    assert(false, `Unexpected false positive in held-out corpus on: "${c.text}" (rules: ${res.findings.map(f => f.ruleId).join(', ')})`);
+  } else if (!c.hasError && !detected) {
+    heldOutTN++;
+    fStats.tn++;
+  } else if (c.hasError && !detected) {
+    heldOutFN++;
+    fStats.fn++;
+    assert(false, `Unexpected false negative in held-out corpus on: "${c.text}" (${c.description})`);
+  }
+}
+
+console.log(`\n  📊 HELD-OUT PER-RULE-FAMILY BENCHMARK (N = ${heldOutCases.length}):`);
+for (const [fam, s] of Object.entries(familyMetrics)) {
+  const p = s.tp + s.fp > 0 ? (s.tp / (s.tp + s.fp)) * 100 : 100;
+  const r = s.tp + s.fn > 0 ? (s.tp / (s.tp + s.fn)) * 100 : 100;
+  const f1 = p + r > 0 ? (2 * p * r) / (p + r) : 0;
+  console.log(`     ${fam.padEnd(20)} | TP: ${s.tp} | FP: ${s.fp} | TN: ${s.tn} | FN: ${s.fn} | P: ${p.toFixed(1)}% | R: ${r.toFixed(1)}% | F1: ${f1.toFixed(1)}%`);
+}
+
+const hoPrecision = heldOutTP / (heldOutTP + heldOutFP);
+const hoRecall = heldOutTP / (heldOutTP + heldOutFN);
+const hoF1 = (2 * hoPrecision * hoRecall) / (hoPrecision + hoRecall);
+
+console.log(`     Held-Out TP: ${heldOutTP} | FP: ${heldOutFP} | TN: ${heldOutTN} | FN: ${heldOutFN}`);
+console.log(`     Overall Held-Out Precision: ${(hoPrecision * 100).toFixed(1)}%`);
+console.log(`     Overall Held-Out Recall:    ${(hoRecall * 100).toFixed(1)}%`);
+console.log(`     Overall Held-Out F1:        ${(hoF1 * 100).toFixed(1)}%`);
+
+assert(heldOutTN > 0, `Held-out true negatives verified (TN = ${heldOutTN})`);
+assert(heldOutFP === 0, `Zero false positives on held-out control corpus (FP = ${heldOutFP})`);
+assert(heldOutFN === 0, `Zero false negatives on held-out error corpus (FN = ${heldOutFN})`);
+assert(hoPrecision === 1.0, `Held-out precision is 100% (got ${(hoPrecision * 100).toFixed(1)}%)`);
+assert(hoRecall === 1.0, `Held-out recall is 100% (got ${(hoRecall * 100).toFixed(1)}%)`);
+
+// Multi-Error Complex Paragraph Verification
+const complexDoc = 
+  'The quality of these materials are exceptional, but we arrived a hour before the keynote. ' +
+  'Everyone were delighted with the announcement; however, the architect could of prevented the defect. ' +
+  'Between you and I, its essential to verify checksums before we loose access to the logs.';
+
+const complexRes = runGrammarEngine(complexDoc);
+assert(complexRes.findings.length === 7, `Complex paragraph yields exactly 7 findings (got ${complexRes.findings.length})`);
+
+for (const f of complexRes.findings) {
+  const actualSlice = complexDoc.slice(f.start, f.end);
+  assert(actualSlice === f.originalText, `Span matches exactly at [${f.start}, ${f.end}]: "${actualSlice}" === "${f.originalText}"`);
+}
+
+const fixedDoc = applyAllSafeFixes(complexDoc);
+const expectedFixedDoc = 
+  'The quality of these materials is exceptional, but we arrived an hour before the keynote. ' +
+  'Everyone was delighted with the announcement; however, the architect could have prevented the defect. ' +
+  'Between you and me, it\'s essential to verify checksums before we lose access to the logs.';
+
+assert(fixedDoc === expectedFixedDoc, 'Complex multi-error document repaired with 100% character offset fidelity');
 
 // ============================================================
 // Summary

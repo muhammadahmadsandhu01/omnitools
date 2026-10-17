@@ -4,8 +4,27 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlignLeft, BarChart2, BookOpen, Check, Clock, Copy, Download,
   FileDiff, Hash, Play, Search, Scissors, Square, Trash2,
-  Upload, Wand2, X, CheckCircle2, AlertCircle, Info, Sparkles, Target, FileSpreadsheet
+  Upload, Wand2, X, CheckCircle2, AlertCircle, Info, Sparkles, Target, FileSpreadsheet,
+  ChevronLeft, ChevronRight, Eye, Edit3
 } from 'lucide-react';
+
+import {
+  runGrammarEngine,
+  applyFindingCorrection,
+  applyAllSafeFixes,
+  type GrammarFinding,
+  type IssueCategory,
+  type DialogueMode
+} from '@/lib/grammarEngine';
+
+export {
+  runGrammarEngine,
+  applyFindingCorrection,
+  applyAllSafeFixes,
+  type GrammarFinding,
+  type IssueCategory,
+  type DialogueMode
+};
 
 export const SAMPLE_TEXT = `Clear writing shares ideas simply, directly, and with good rhythm. When drafting an article or business report, knowing your audience is the most useful step toward engagement.
 
@@ -19,10 +38,16 @@ export type Tone = 'Positive' | 'Negative' | 'Neutral' | 'Mixed';
 
 export type CoachFinding = {
   id: string;
-  category: 'Grammar' | 'Clarity' | 'Consistency' | 'Passive voice';
+  category: 'Grammar' | 'Spelling' | 'Punctuation' | 'Clarity' | 'Consistency' | 'Passive voice' | 'Style';
   severity: 'high' | 'medium' | 'low';
   confidence: 'HIGH' | 'MEDIUM' | 'LOW';
   confidenceScore: number;
+  ruleId?: string;
+  start?: number;
+  end?: number;
+  originalText?: string;
+  replacement?: string;
+  replacements?: string[];
   sentenceIndex?: number;
   sentence?: string;
   issue: string;
@@ -463,7 +488,7 @@ function sentenceOpenings(sentences: string[]) {
 }
 
 const coordinatingOpeners = /^(?:and|but|or|nor|for|so|yet)\b/i;
-const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if)\b/i;
+const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if|assuming|assuming that|provided that|providing that|given that|considering that)\b/i;
 const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due to|because of|in spite of|despite|rather than|so that|according to|for example|in fact|furthermore|however|in addition|on the other hand|provided that|assuming that)\b/i;
 const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
 const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
@@ -545,7 +570,7 @@ function findSubjectVerbMismatches(sentence: string): GrammarIssue[] {
   const issues: GrammarIssue[] = [];
 
   // 1. Definite singular pronouns with plural verbs (HIGH confidence)
-  const singPronounMatch = cleanSentence.match(/\b(he|she|it|this|that)\s+(are|were|have)\b/i);
+  const singPronounMatch = cleanSentence.match(/\b(he|she|it|this|that)\s+(are|were|have|do|don't)\b/i);
   if (singPronounMatch && singPronounMatch.index !== undefined) {
     const preceding = cleanSentence.slice(0, singPronounMatch.index);
     const subj = singPronounMatch[1];
@@ -556,9 +581,11 @@ function findSubjectVerbMismatches(sentence: string): GrammarIssue[] {
     const isSubjunctive = verb === 'were' && /\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|suppose|supposing|whether)\s+(?:[\w\s,]+?\s+)?$/i.test(preceding);
     // Exclude prepositional objects for this/that: "In addition to this were..."
     const isPrepObject = (subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding);
+    // Relative pronoun 'that' referring to a plural antecedent: e.g. "assumptions that were never adequately challenged"
+    const isRelativePluralThat = subj.toLowerCase() === 'that' && /(?:[a-z]+s|data|criteria|phenomena|people|children|men|women|teeth|feet)$/i.test(preceding.trim());
 
-    if (!isAuxiliaryQuestion && !isSubjunctive && !isPrepObject) {
-      const correctVerb = verb === 'were' ? 'was' : verb === 'have' ? 'has' : 'is';
+    if (!isAuxiliaryQuestion && !isSubjunctive && !isPrepObject && !isRelativePluralThat) {
+      const correctVerb = verb === 'were' ? 'was' : verb === 'have' ? 'has' : verb === 'are' ? 'is' : verb === 'do' ? 'does' : "doesn't";
       issues.push({
         detail: `Subject–verb agreement mismatch: singular subject “${subj}” does not agree with plural verb “${verb}”.`,
         suggestion: `Use the singular verb “${correctVerb}”.`,
@@ -657,7 +684,7 @@ const GRAMMAR_RULES: { re: RegExp; detail: string; suggestion: string; confidenc
   { re: /\b(a)\s+(?:apple|orange|egg|hour|honest|honor|elephant|idea|overview|error|urgent|issue|update)\b/i, detail: 'Article error: “a” used before a vowel sound.', suggestion: 'Use “an” before vowel sounds.', confidence: 'HIGH' },
   { re: /\b(an)\s+(?:car|table|book|problem|user|unique|university|report|manager|meeting)\b/i, detail: 'Article error: “an” used before a consonant sound.', suggestion: 'Use “a” before consonant sounds.', confidence: 'HIGH' },
   { re: /\b(?!that\s+that\b|had\s+had\b)(\b[a-zA-Z]{2,}\b)\s+\1\b/i, detail: 'Duplicated adjacent word detected.', suggestion: 'Remove the duplicate word unless intentional.', confidence: 'HIGH' },
-  { re: /\b(the\s+list\s+of\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(include|require|contain|show)\b/i, detail: 'Subject–verb agreement mismatch: singular collective subject (“the list”) with plural verb.', suggestion: 'Use the singular verb (includes/requires/contains/shows).', confidence: 'HIGH' },
+  { re: /\b(the\s+list\s+of\s+(?:[a-z]+\s+)?(?!(?:[a-z]+(?:ss|us|is)|series|species|lens|news)\b)[a-z]+s)\s+(include|require|contain|show|are|were)\b/i, detail: 'Subject–verb agreement mismatch: singular collective subject (“the list”) with plural verb.', suggestion: 'Use the singular verb (includes/requires/contains/shows/is/was).', confidence: 'HIGH' },
   { re: /\b((?:the|a|an)\s+[a-z]+)\s+(submit|approve|contact|deliver|complete)\s+([\s\S]*?(?:\byesterday\b|\bbefore\b[\s\S]+?\b[a-z]+ed\b|\bafter\b[\s\S]+?\b[a-z]+ed\b))/i, detail: 'Tense mismatch: past-time adverbial requires a past-tense verb.', suggestion: 'Use the past-tense verb form (submitted, approved, contacted).', confidence: 'HIGH' },
   { re: /\b(?:more|most)\s+(?:better|worse|faster|slower|bigger|smaller|greater|harder|easier|earlier|later|clearer|stronger|weaker)\b/i, detail: 'Double comparative or superlative detected.', suggestion: 'Use either the comparative form or “more”, not both.', confidence: 'HIGH' },
   { re: /\b(?:have\s+have|will\s+will|is\s+is|was\s+was|are\s+are)\b/i, detail: 'Duplicated auxiliary verb detected.', suggestion: 'Remove the redundant auxiliary verb.', confidence: 'HIGH' },
@@ -817,6 +844,9 @@ export function applySafeGrammarFixes(s: string): string {
     quotes.push(m);
     return `\u0005QUOTE_${quotes.length - 1}\u0005`;
   });
+
+  // 2. Run high-precision offset-based safe fixes from grammar engine on masked text
+  out = applyAllSafeFixes(out);
 
   let prev = '';
   // Run multiple passes until all fixes stabilize (handles multiple errors in the same sentence)
@@ -1159,16 +1189,32 @@ function buildCoachFindings(
   text: string,
   sentences: string[],
   contextual: ReturnType<typeof contextualWritingAnalysis>,
-  passiveCandidates: { sentence: string; index: number }[]
+  passiveCandidates: { sentence: string; index: number }[],
+  dialogueMode: DialogueMode = 'normal'
 ): CoachFinding[] {
   const findings: CoachFinding[] = [];
   const grouped = new Map<string, CoachFinding>();
+
+  const engineResult = runGrammarEngine(text, { dialogueMode });
+  const sentenceR = sentenceRanges(text);
+
+  const engineBySentence = new Map<number, GrammarFinding[]>();
+  for (const ef of engineResult.findings) {
+    const list = engineBySentence.get(ef.sentenceIndex || 0) || [];
+    list.push(ef);
+    engineBySentence.set(ef.sentenceIndex || 0, list);
+  }
 
   // Collect indices of sentences with HIGH-severity grammar issues (BUG 5 deduplication)
   const highGrammarIndices = new Set<number>();
   contextual.grammarCandidates.forEach(x => {
     if (x.confidence === 'HIGH') {
       highGrammarIndices.add(x.index);
+    }
+  });
+  engineResult.findings.forEach(x => {
+    if (x.severity === 'high' && x.sentenceIndex) {
+      highGrammarIndices.add(x.sentenceIndex);
     }
   });
 
@@ -1179,11 +1225,19 @@ function buildCoachFindings(
       if (!existing.issue.toLowerCase().includes(f.issue.toLowerCase())) existing.issue += ` ${f.issue}`;
       if (f.suggestion && !existing.suggestion?.includes(f.suggestion)) existing.suggestion = [existing.suggestion, f.suggestion].filter(Boolean).join(' ');
       if (!existing.rewrite && f.rewrite) existing.rewrite = f.rewrite;
+      if (existing.start === undefined && f.start !== undefined) {
+        existing.start = f.start;
+        existing.end = f.end;
+        existing.originalText = f.originalText;
+        existing.replacement = f.replacement;
+        existing.replacements = f.replacements;
+        existing.ruleId = f.ruleId;
+      }
       if (f.severity === 'high') existing.severity = 'high';
       else if (f.severity === 'medium' && existing.severity === 'low') existing.severity = 'medium';
       return;
     }
-    const finding = { ...f, id: `${f.category}-${f.sentenceIndex ?? 'global'}-${grouped.size}` };
+    const finding: CoachFinding = { ...f, id: `${f.category}-${f.sentenceIndex ?? 'global'}-${grouped.size}` };
     grouped.set(key, finding);
   };
 
@@ -1198,27 +1252,114 @@ function buildCoachFindings(
     return undefined;
   };
 
-  contextual.grammarCandidates.forEach(x => add({
-    category: 'Grammar',
-    severity: severityFor(x.detail),
-    confidence: x.confidence,
-    confidenceScore: x.confidence === 'HIGH' ? 95 : x.confidence === 'MEDIUM' ? 80 : 65,
-    sentenceIndex: x.index,
-    sentence: x.sentence,
-    issue: x.detail,
-    why: 'Grammar and punctuation integrity ensures your writing is clear, credible, and effortless to read.',
-    suggestion: x.suggestion,
-    rewrite: rewriteFor(x.sentence, x.detail)
-  }));
+  contextual.grammarCandidates.forEach(x => {
+    const eList = engineBySentence.get(x.index) || [];
+    const ef = eList.find(e =>
+      e.issue.toLowerCase().includes(x.detail.toLowerCase()) ||
+      x.detail.toLowerCase().includes(e.issue.toLowerCase()) ||
+      (/comma splice/i.test(x.detail) && e.ruleId === 'SENTENCE_COMMA_SPLICE') ||
+      (/agreement/i.test(x.detail) && e.ruleId.startsWith('AGREEMENT_'))
+    ) || eList[0];
+
+    const sOffset = sentenceR.find(sr => sr.index === x.index);
+    let start = ef?.start;
+    let end = ef?.end;
+    let replacement = ef?.replacement;
+    let replacements = ef?.replacements;
+    let ruleId = ef?.ruleId || 'GRAMMAR_CONTEXTUAL_RULE';
+
+    if (start === undefined && sOffset) {
+      if (/comma splice/i.test(x.detail)) {
+        const cIdx = findLikelyCommaSplice(x.sentence);
+        if (cIdx >= 0) {
+          start = sOffset.start + cIdx;
+          end = start + 1;
+          replacement = ';';
+          replacements = [';', '. ', ', and '];
+          ruleId = 'SENTENCE_COMMA_SPLICE';
+        }
+      }
+    }
+
+    add({
+      category: 'Grammar',
+      severity: severityFor(x.detail),
+      confidence: x.confidence,
+      confidenceScore: x.confidence === 'HIGH' ? 95 : x.confidence === 'MEDIUM' ? 80 : 65,
+      ruleId,
+      start,
+      end,
+      originalText: start !== undefined && end !== undefined ? text.slice(start, end) : undefined,
+      replacement,
+      replacements,
+      sentenceIndex: x.index,
+      sentence: x.sentence,
+      issue: x.detail,
+      why: ef?.why || 'Grammar and punctuation integrity ensures your writing is clear, credible, and effortless to read.',
+      suggestion: x.suggestion || ef?.suggestion,
+      rewrite: rewriteFor(x.sentence, x.detail) || ef?.rewrite
+    });
+  });
+
+  // Include any extra high/medium confidence engine findings
+  engineResult.findings.forEach(ef => {
+    const key = `${ef.category}|${ef.sentenceIndex ?? `global:${ef.issue.toLowerCase()}`}`;
+    if (!grouped.has(key)) {
+      add({
+        category: ef.category as CoachFinding['category'],
+        severity: ef.severity,
+        confidence: ef.confidence,
+        confidenceScore: ef.confidenceScore,
+        ruleId: ef.ruleId,
+        start: ef.start,
+        end: ef.end,
+        originalText: ef.originalText,
+        replacement: ef.replacement,
+        replacements: ef.replacements,
+        sentenceIndex: ef.sentenceIndex,
+        sentence: ef.sentence,
+        issue: ef.issue,
+        why: ef.why,
+        suggestion: ef.suggestion,
+        rewrite: ef.rewrite || (ef.sentence && ef.originalText && ef.replacement ? ef.sentence.replace(ef.originalText, ef.replacement) : undefined)
+      });
+    }
+  });
 
   contextual.clarityCandidates.forEach(x => {
-    // If this sentence has a high-severity grammar error, suppress lower-value clarity warnings
     if (highGrammarIndices.has(x.index)) return;
+    const sOffset = sentenceR.find(sr => sr.index === x.index);
+    let start: number | undefined;
+    let end: number | undefined;
+    let replacement: string | undefined;
+
+    for (const item of [
+      { phrase: 'in order to', rep: 'to' },
+      { phrase: 'due to the fact that', rep: 'because' },
+      { phrase: 'at this point in time', rep: 'now' },
+      { phrase: 'has the ability to', rep: 'can' },
+      { phrase: 'is able to', rep: 'can' }
+    ]) {
+      const idx = x.sentence.toLowerCase().indexOf(item.phrase);
+      if (idx >= 0 && sOffset) {
+        start = sOffset.start + idx;
+        end = start + item.phrase.length;
+        replacement = item.rep;
+        break;
+      }
+    }
+
     add({
       category: 'Clarity',
       severity: severityFor(x.detail),
       confidence: x.confidence,
       confidenceScore: x.confidence === 'HIGH' ? 92 : x.confidence === 'MEDIUM' ? 78 : 65,
+      ruleId: 'CLARITY_CONCISE_WORDING',
+      start,
+      end,
+      originalText: start !== undefined && end !== undefined ? text.slice(start, end) : undefined,
+      replacement,
+      replacements: replacement ? [replacement] : undefined,
       sentenceIndex: x.index,
       sentence: x.sentence,
       issue: x.detail,
@@ -1233,20 +1374,18 @@ function buildCoachFindings(
     severity: /exact sentence|mixed spelling/i.test(x.detail) ? 'medium' : 'low',
     confidence: x.confidence,
     confidenceScore: x.confidence === 'HIGH' ? 90 : 75,
+    ruleId: 'CONSISTENCY_STYLE_OR_SPELLING',
     issue: x.detail,
     why: 'Consistent spelling, terminology, and sentence openings create a polished, professional cadence.',
     suggestion: x.suggestion
   }));
 
   passiveCandidates.slice(0, 12).forEach(x => {
-    // BUG 5: If sentence has a high-confidence grammar error, DO NOT also report passive voice
     if (highGrammarIndices.has(x.index)) return;
 
     const rawActive = suggestActiveVoice(x.sentence);
     const active = rawActive && validateRewrite(x.sentence, rawActive) ? rawActive : undefined;
 
-    // Passive UX calibration: Reduce low-value passive warnings when actor is unknown or passive is natural/technical/quoted
-    // Only surface user-facing passive coach findings when a high-confidence, actionable active rewrite exists
     if (!active) return;
 
     add({
@@ -1254,6 +1393,7 @@ function buildCoachFindings(
       severity: 'low',
       confidence: 'LOW',
       confidenceScore: 70,
+      ruleId: 'STYLE_PASSIVE_WITH_ACTOR',
       sentenceIndex: x.index,
       sentence: x.sentence,
       issue: 'Stylistic observation: passive construction with identified actor.',
@@ -1347,7 +1487,17 @@ function calculateWritingScore(
   return { score: finalScore, factors: factors.slice(0, 5) };
 }
 
-export function analyzeText(text: string, rate: number = 0, wpm: number = 150): Analysis {
+export interface TextAnalyzerOptions {
+  dialogueMode?: DialogueMode;
+  dialect?: 'US' | 'UK' | 'auto';
+}
+
+export function analyzeText(
+  text: string,
+  rate: number = 0,
+  wpm: number = 150,
+  options?: TextAnalyzerOptions
+): Analysis {
   const ws = wordsOf(text);
   const sentences = sentencesOf(text);
   const paragraphs = text.trim() ? text.split(/\n\s*\n+/).map(x => x.trim()).filter(Boolean) : [];
@@ -1407,7 +1557,7 @@ export function analyzeText(text: string, rate: number = 0, wpm: number = 150): 
   const questions = (text.match(/\?/g) || []).length;
 
   const issues = buildSentenceIssues(text, sentences, [...fillerMap].map(([phrase, count]) => ({ phrase, count })), passiveCandidates, longSentences, exclamations, capsRatio);
-  const coachFindings = buildCoachFindings(text, sentences, contextual, passiveCandidates);
+  const coachFindings = buildCoachFindings(text, sentences, contextual, passiveCandidates, options?.dialogueMode);
 
   const vocabDiversity = ws.length ? round1(unique.size / ws.length * 100) : 0;
   const fillerCount = [...fillerMap.values()].reduce((a, b) => a + b, 0);
@@ -1496,6 +1646,40 @@ function download(name: string, content: string, type = 'text/plain') {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function getCategoryBadgeStyle(category: CoachFinding['category']): string {
+  switch (category) {
+    case 'Grammar':
+      return 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 border-red-200 dark:border-red-800';
+    case 'Spelling':
+      return 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+    case 'Punctuation':
+      return 'bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400 border-sky-200 dark:border-sky-800';
+    case 'Clarity':
+      return 'bg-teal-50 text-teal-600 dark:bg-teal-950/40 dark:text-teal-400 border-teal-200 dark:border-teal-800';
+    case 'Consistency':
+      return 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400 border-purple-200 dark:border-purple-800';
+    default:
+      return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+  }
+}
+
+function getSpanDecorationStyle(category: CoachFinding['category']): string {
+  switch (category) {
+    case 'Grammar':
+      return 'underline decoration-wavy decoration-red-500 bg-red-500/10 hover:bg-red-500/20 text-red-900 dark:text-red-200';
+    case 'Spelling':
+      return 'underline decoration-wavy decoration-amber-500 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200';
+    case 'Punctuation':
+      return 'underline decoration-wavy decoration-sky-500 bg-sky-500/10 hover:bg-sky-500/20 text-sky-900 dark:text-sky-200';
+    case 'Clarity':
+      return 'underline decoration-wavy decoration-teal-500 bg-teal-500/10 hover:bg-teal-500/20 text-teal-900 dark:text-teal-200';
+    case 'Consistency':
+      return 'underline decoration-wavy decoration-purple-500 bg-purple-500/10 hover:bg-purple-500/20 text-purple-900 dark:text-purple-200';
+    default:
+      return 'underline decoration-dotted decoration-slate-400 bg-slate-400/10 hover:bg-slate-400/20 text-slate-900 dark:text-slate-200';
+  }
+}
+
 export default function TextAnalyzer() {
   const [text, setText] = useState('');
   const [compare, setCompare] = useState('');
@@ -1516,9 +1700,130 @@ export default function TextAnalyzer() {
   const [selectedIssue, setSelectedIssue] = useState<string | null>(null);
   const [showCoach, setShowCoach] = useState(true);
 
+  // Premium Writing Assistant State
+  const [editorMode, setEditorMode] = useState<'edit' | 'proofread'>('edit');
+  const [dialogueMode, setDialogueMode] = useState<DialogueMode>('normal');
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  const [fixedIds, setFixedIds] = useState<string[]>([]);
+  const [activeFindingIndex, setActiveFindingIndex] = useState(0);
+
   useEffect(() => () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }, []);
-  const stats = useMemo(() => analyzeText(text, Number(rate) || 0, wpm), [text, rate, wpm]);
+  const stats = useMemo(() => analyzeText(text, Number(rate) || 0, wpm, { dialogueMode }), [text, rate, wpm, dialogueMode]);
   const activeSelectedIssue = selectedIssue && stats.coachFindings.some(f => f.id === selectedIssue) ? selectedIssue : null;
+
+  const activeFindings = useMemo(
+    () => stats.coachFindings.filter(f => !dismissedIds.includes(f.id)),
+    [stats.coachFindings, dismissedIds]
+  );
+
+  const activeFinding = activeFindings[Math.min(activeFindingIndex, Math.max(0, activeFindings.length - 1))] || null;
+
+  const handleAcceptFix = (finding: CoachFinding, chosenReplacement?: string) => {
+    if (finding.start !== undefined && finding.end !== undefined && (chosenReplacement || finding.replacement)) {
+      const rep = chosenReplacement || finding.replacement!;
+      if (finding.start >= 0 && finding.end <= text.length) {
+        const next = text.slice(0, finding.start) + rep + text.slice(finding.end);
+        setText(next);
+        setFixedIds(prev => (prev.includes(finding.id) ? prev : [...prev, finding.id]));
+        return;
+      }
+    }
+    if (finding.rewrite && finding.sentence && text.includes(finding.sentence)) {
+      const next = text.replace(finding.sentence, finding.rewrite);
+      setText(next);
+      setFixedIds(prev => (prev.includes(finding.id) ? prev : [...prev, finding.id]));
+      return;
+    }
+  };
+
+  const handleDismiss = (id: string) => {
+    setDismissedIds(prev => (prev.includes(id) ? prev : [...prev, id]));
+  };
+
+  const handleUndoDismiss = (id: string) => {
+    setDismissedIds(prev => prev.filter(x => x !== id));
+  };
+
+  const handleNextIssue = () => {
+    if (activeFindingIndex < activeFindings.length - 1) {
+      setActiveFindingIndex(activeFindingIndex + 1);
+    }
+  };
+
+  const handlePrevIssue = () => {
+    if (activeFindingIndex > 0) {
+      setActiveFindingIndex(activeFindingIndex - 1);
+    }
+  };
+
+  const handleInspectFinding = (finding: CoachFinding) => {
+    const idx = activeFindings.findIndex(f => f.id === finding.id);
+    if (idx >= 0) setActiveFindingIndex(idx);
+    setEditorMode('proofread');
+  };
+
+  const renderAnnotatedContent = () => {
+    if (!text) {
+      return (
+        <span className="text-slate-400 italic">
+          No text entered yet. Switch to Edit Mode to type or paste text.
+        </span>
+      );
+    }
+
+    const spansWithRanges = activeFindings
+      .filter(f => f.start !== undefined && f.end !== undefined && f.start < f.end && f.end <= text.length)
+      .sort((a, b) => a.start! - b.start!);
+
+    const nonOverlapping: CoachFinding[] = [];
+    for (const f of spansWithRanges) {
+      const overlap = nonOverlapping.find(ex => Math.max(ex.start!, f.start!) < Math.min(ex.end!, f.end!));
+      if (!overlap) {
+        nonOverlapping.push(f);
+      }
+    }
+
+    if (nonOverlapping.length === 0) {
+      return <span>{text}</span>;
+    }
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    nonOverlapping.forEach((f, idx) => {
+      if (f.start! > lastIndex) {
+        elements.push(<span key={`text-${lastIndex}`}>{text.slice(lastIndex, f.start!)}</span>);
+      }
+
+      const isActive = activeFinding?.id === f.id;
+      elements.push(
+        <button
+          key={`finding-${f.id}-${idx}`}
+          type="button"
+          data-issue-id={f.id}
+          data-issue-category={f.category}
+          onClick={() => {
+            const findIdx = activeFindings.findIndex(item => item.id === f.id);
+            if (findIdx >= 0) setActiveFindingIndex(findIdx);
+          }}
+          className={`inline text-left text-inherit cursor-pointer font-inherit p-0 m-0 border-0 bg-transparent rounded transition-all ${
+            getSpanDecorationStyle(f.category)
+          } ${isActive ? 'ring-2 ring-blue-500 rounded px-0.5' : ''}`}
+          title={`${f.category}: ${f.issue} (Click to inspect)`}
+        >
+          {text.slice(f.start!, f.end!)}
+        </button>
+      );
+
+      lastIndex = f.end!;
+    });
+
+    if (lastIndex < text.length) {
+      elements.push(<span key={`tail-${lastIndex}`}>{text.slice(lastIndex)}</span>);
+    }
+
+    return elements;
+  };
 
   const comparison = useMemo(() => {
     if (!compare) return null;
@@ -1698,6 +2003,9 @@ export default function TextAnalyzer() {
     setFileError('');
     setSelectedIssue(null);
     setTargetGoal('');
+    setDismissedIds([]);
+    setFixedIds([]);
+    setActiveFindingIndex(0);
   };
 
   return (
@@ -1982,12 +2290,7 @@ export default function TextAnalyzer() {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
-                          finding.category === 'Grammar' ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400' :
-                          finding.category === 'Clarity' ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400' :
-                          finding.category === 'Consistency' ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400' :
-                          'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400'
-                        }`}>
+                        <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${getCategoryBadgeStyle(finding.category)}`}>
                           {finding.category}
                         </span>
                         {finding.sentenceIndex && (
@@ -2011,6 +2314,41 @@ export default function TextAnalyzer() {
                         <b>Safe rewrite:</b> {finding.rewrite}
                       </div>
                     )}
+
+                    <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-slate-800">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleInspectFinding(finding)}
+                          className="px-2 py-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-1"
+                          title="Highlight in text"
+                        >
+                          <Eye className="w-3 h-3" /> Locate
+                        </button>
+                        {(finding.replacement || finding.rewrite) && !fixedIds.includes(finding.id) && (
+                          <button
+                            type="button"
+                            onClick={() => handleAcceptFix(finding)}
+                            className="px-2 py-1 text-[11px] font-bold text-white bg-green-600 hover:bg-green-500 rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3" /> Apply Fix
+                          </button>
+                        )}
+                        {fixedIds.includes(finding.id) && (
+                          <span className="text-[11px] font-bold text-green-600 flex items-center gap-0.5">
+                            <CheckCircle2 className="w-3 h-3" /> Applied
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDismiss(finding.id)}
+                        className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                        title="Dismiss this finding"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2022,15 +2360,205 @@ export default function TextAnalyzer() {
           </div>
         )}
 
-        <textarea
-          ref={textRef}
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Start typing or paste your document here to analyze..."
-          id="editor-textarea"
-          className="w-full flex-1 min-h-[430px] lg:min-h-0 h-full p-6 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-3xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-slate-300 text-slate-800 text-lg leading-relaxed resize-none shadow-inner"
-          spellCheck
-        />
+        {/* Editor Mode & Dialogue Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+          <div className="inline-flex p-1 bg-gray-100 dark:bg-slate-800/80 rounded-xl border border-gray-200 dark:border-slate-700">
+            <button
+              type="button"
+              onClick={() => setEditorMode('edit')}
+              id="btn-mode-edit"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                editorMode === 'edit'
+                  ? 'bg-white dark:bg-[#0a0f1a] text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              Edit Text
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditorMode('proofread')}
+              id="btn-mode-proofread"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                editorMode === 'proofread'
+                  ? 'bg-white dark:bg-[#0a0f1a] text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Eye className="w-3.5 h-3.5" />
+              Interactive Proofread
+              {activeFindings.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400 text-[10px] font-black">
+                  {activeFindings.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            <label htmlFor="dialogue-mode-select" className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+              Mode:
+            </label>
+            <select
+              id="dialogue-mode-select"
+              value={dialogueMode}
+              onChange={e => setDialogueMode(e.target.value as DialogueMode)}
+              className="px-2.5 py-1.5 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              title="Quotation and dialogue processing mode"
+            >
+              <option value="normal">Normal Prose (Dialogue Protected)</option>
+              <option value="analyze-dialogue">Analyze Quoted Dialogue</option>
+              <option value="preserve-quotes">Strict Quote Preservation</option>
+            </select>
+
+            {dismissedIds.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleUndoDismiss(dismissedIds[dismissedIds.length - 1])}
+                  className="px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 underline"
+                  title="Undo last dismissed issue"
+                >
+                  Undo dismiss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDismissedIds([])}
+                  className="px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 underline"
+                >
+                  Restore ({dismissedIds.length})
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Contextual Action Card */}
+        {activeFinding && (
+          <div
+            id="contextual-issue-card"
+            className="p-3.5 rounded-2xl bg-white dark:bg-[#111827] border-2 border-blue-200 dark:border-blue-900/60 shadow-md transition-all"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${getCategoryBadgeStyle(activeFinding.category)}`}>
+                  {activeFinding.category}
+                </span>
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                  Issue {activeFindingIndex + 1} of {activeFindings.length}
+                </span>
+                {activeFinding.ruleId && (
+                  <span className="text-[10px] text-slate-400 font-mono hidden md:inline">
+                    [{activeFinding.ruleId}]
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handlePrevIssue}
+                  disabled={activeFindingIndex === 0}
+                  id="btn-issue-prev"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
+                  title="Previous issue"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextIssue}
+                  disabled={activeFindingIndex >= activeFindings.length - 1}
+                  id="btn-issue-next"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
+                  title="Next issue"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDismiss(activeFinding.id)}
+                  id="btn-issue-dismiss"
+                  className="ml-2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-0.5 rounded transition-colors"
+                  title="Dismiss issue"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 text-xs">
+              <div className="font-semibold text-slate-800 dark:text-slate-200">{activeFinding.issue}</div>
+              <div className="text-slate-500 dark:text-slate-400 mt-1">{activeFinding.why}</div>
+
+              {/* Replacements / Corrections */}
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                {activeFinding.replacement && (
+                  <button
+                    type="button"
+                    onClick={() => handleAcceptFix(activeFinding)}
+                    id="btn-issue-accept"
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Accept: <span className="underline decoration-white/60">{activeFinding.replacement}</span>
+                  </button>
+                )}
+
+                {activeFinding.replacements && activeFinding.replacements.length > 1 && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 font-medium">Or:</span>
+                    {activeFinding.replacements.slice(1).map((alt, i) => (
+                      <button
+                        key={`alt-${i}`}
+                        type="button"
+                        onClick={() => handleAcceptFix(activeFinding, alt)}
+                        className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors"
+                      >
+                        {alt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {activeFinding.rewrite && !activeFinding.replacement && (
+                  <button
+                    type="button"
+                    onClick={() => handleAcceptFix(activeFinding)}
+                    id="btn-issue-accept-rewrite"
+                    className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    Apply Safe Rewrite
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Editor View: Native Textarea for typing vs Proofread view for inspecting squigglies */}
+        {editorMode === 'edit' ? (
+          <textarea
+            ref={textRef}
+            value={text}
+            onChange={e => setText(e.target.value)}
+            placeholder="Start typing or paste your document here to analyze..."
+            id="editor-textarea"
+            className="w-full flex-1 min-h-[430px] lg:min-h-0 h-full p-6 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-3xl focus:ring-2 focus:ring-blue-600 focus:outline-none dark:text-slate-300 text-slate-800 text-lg leading-relaxed resize-none shadow-inner"
+            spellCheck
+          />
+        ) : (
+          <div
+            id="editor-proofread-view"
+            className="w-full flex-1 min-h-[430px] lg:min-h-0 h-full p-6 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 rounded-3xl dark:text-slate-300 text-slate-800 text-lg leading-relaxed overflow-y-auto whitespace-pre-wrap select-text font-sans shadow-inner focus:outline-none"
+            tabIndex={0}
+            role="region"
+            aria-label="Interactive proofread view with contextual grammar squigglies"
+          >
+            {renderAnnotatedContent()}
+          </div>
+        )}
       </div>
 
       <div className="lg:col-span-1 flex flex-col gap-5 h-full">
