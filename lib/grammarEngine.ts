@@ -262,7 +262,21 @@ export const SINGULAR_VERB_TO_PLURAL: Record<string, string> = {
   resolves: 'resolve',
   triggers: 'trigger',
   modifies: 'modify',
-  updates: 'update'
+  updates: 'update',
+  appears: 'appear',
+  remains: 'remain',
+  claims: 'claim',
+  acknowledges: 'acknowledge',
+  ignores: 'ignore',
+  discovers: 'discover',
+  seems: 'seem',
+  argues: 'argue',
+  concludes: 'conclude',
+  reports: 'report',
+  observes: 'observe',
+  notes: 'note',
+  states: 'state',
+  faces: 'face'
 };
 
 export const MODAL_AUXILIARIES = new Set([
@@ -441,18 +455,18 @@ export function extractSentenceRanges(text: string): SentenceRange[] {
 // ============================================================
 
 const coordinatingOpeners = /^(?:and|but|or|nor|for|so|yet)\b/i;
-const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if|assuming|assuming that|provided that|providing that|given that|considering that)\b/i;
+const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if|even when|even while|even as|assuming|assuming that|provided that|providing that|given that|considering that)\b/i;
 const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due to|because of|in spite of|despite|rather than|so that|according to|for example|in fact|furthermore|however|in addition|on the other hand|provided that|assuming that|given that|considering that)\b/i;
 const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
 const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
 
-const finiteVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might|needs?|needed|requires?|required|remains?|remained|seems?|seemed|looks?|looked|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|contained|shows?|showed|shown|begins?|began|begun|ends?|ended|works?|worked|failed|fails?|proves?|proved|proven|identifies?|identified|reviews?|reviewed|sends?|sent|discovers?|discovered|fixes?|fixed|contacts?|contacted|submits?|submitted|releases?|released|tests?|tested|develops?|developed|restarted|restarts?|launched|launches?|monitored|monitors?|approved|approves?|designed|designs?|completed|completes|recommended|recommends?|delayed|delays?|provided|provides?|made|makes?|took|takes?|taken|kept|keeps?|started|starts?|verified|verifies?|crashed|crashes?|resolved|resolves?|updated|updates?|built|builds?|created|creates?|deployed|deploys?|continued|continues?|write|writes|wrote|written|investigate|investigates|investigated)\b/i;
+const finiteVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might|needs?|needed|requires?|required|remains?|remained|seems?|seemed|looks?|looked|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|contained|shows?|showed|shown|begins?|began|begun|ends?|ended|works?|worked|failed|fails?|proves?|proved|proven|identifies?|identified|reviews?|reviewed|sends?|sent|discovers?|discovered|fixes?|fixed|contacts?|contacted|submits?|submitted|releases?|released|tests?|tested|develops?|developed|restarted|restarts?|launched|launches?|monitored|monitors?|approved|approves?|designed|designs?|completed|completes|recommended|recommends?|delayed|delays?|provided|provides?|made|makes?|took|takes?|taken|kept|keeps?|started|starts?|verified|verifies?|crashed|crashes?|resolved|resolves?|updated|updates?|built|builds?|created|creates?|deployed|deploys?|continued|continues?|write|writes|wrote|written|investigate|investigates|investigated|maintained|maintains?|argued|argues?|claimed|claims?|concluded|concludes?|reported|reports?|observed|observes?|acknowledged|acknowledges?|suggested|suggests?|indicated|indicates?|demonstrated|demonstrates?|explained|explains?|stated|states?|noted|notes?)\b/i;
 
-const pronounSubjects = /^(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone)\b/i;
+const pronounSubjects = /^(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|others|both|neither|either|none|many|several|few|one)\b/i;
 const determinerSubjects = /^(?:the|a|an|some|several|many|few|each|every|our|your|their|his|her|its|my|two|three|four)\s+[a-z][a-z'’-]*\b/i;
 const properNounSubjects = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}\b(?!\s+by\b)/;
 const transitionalAdverbSubjects = /^(?:therefore|consequently|moreover|furthermore|meanwhile|instead|however)\s*,\s*(?:[A-Z][a-z]+|the|a|an|it|he|she|they|we|this|that)\b/i;
-const barePluralWithVerb = /^(?!(?:is|as|us|was|has|this|its|thus|less|yes)\b)[a-z]{3,}s\s+(?:am|is|are|was|were|has|have|had|do|does|did|write|writes|wrote|verify|verifies|verified|review|reviews|reviewed|approve|approves|approved|investigate|investigates|investigated|check|checks|checked|run|runs|ran|fail|fails|failed|[a-z]+ed)\b/i;
+const barePluralWithVerb = /^(?!(?:is|as|us|was|has|this|its|thus|less|yes)\b)[a-z]{3,}s\s+(?:can|could|will|would|shall|should|must|may|might|am|is|are|was|were|has|have|had|do|does|did|write|writes|wrote|verify|verifies|verified|review|reviews|reviewed|approve|approves|approved|investigate|investigates|investigated|check|checks|checked|run|runs|ran|fail|fails|failed|follow|follows|followed|seek|seeks|sought|find|finds|found|provide|provides|provided|use|uses|used|create|creates|created|[a-z]+ed)\b/i;
 
 function matchesClauseSubject(text: string): boolean {
   const trimmed = text.trim();
@@ -483,6 +497,8 @@ export function findLikelyCommaSpliceInSentence(sentence: string): number {
     // Coordinators or subordinators directly after comma
     if (coordinatingOpeners.test(right) || dependentOpeners.test(right)) continue;
     if (participialLeadIn.test(right)) continue;
+    if (/^(?:many|some|both|all|each|few|none|several|one|two|most)\s+of\s+(?:which|whom)\b/i.test(right)) continue;
+    if (/^even\s+(?:when|if|though|while|as)\b/i.test(right)) continue;
 
     // Scope to semicolon or colon boundary (both left and right!)
     const prevSep = Math.max(protectedText.lastIndexOf(';', comma), protectedText.lastIndexOf(':', comma));
@@ -535,8 +551,24 @@ export function findLikelyCommaSpliceInSentence(sentence: string): number {
       continue;
     }
 
-    // 5. Check introductory dependent phrases on left (both full clauseLeft and coreClause)
-    if (dependentOpeners.test(clauseLeft) || dependentLeadIns.test(clauseLeft)) continue;
+    // 5. Check introductory dependent phrases on left
+    if (dependentOpeners.test(clauseLeft) || dependentLeadIns.test(clauseLeft)) {
+      if (clauseLeft.includes(',')) {
+        const firstCommaIdx = clauseLeft.indexOf(',');
+        const introPart = clauseLeft.slice(0, firstCommaIdx).trim();
+        const afterIntro = clauseLeft.slice(firstCommaIdx + 1).trim();
+        if ((dependentOpeners.test(introPart) || dependentLeadIns.test(introPart)) && finiteVerbs.test(introPart)) {
+          if (!matchesClauseSubject(afterIntro) || !finiteVerbs.test(afterIntro)) {
+            continue;
+          }
+        } else {
+          continue;
+        }
+      } else {
+        continue;
+      }
+    }
+
     if (prepositionalOpeners.test(clauseLeft) && !finiteVerbs.test(clauseLeft)) continue;
 
     const coreClause = (clauseLeft.includes(',') ? clauseLeft.slice(clauseLeft.lastIndexOf(',') + 1) : clauseLeft).trim();
@@ -544,7 +576,7 @@ export function findLikelyCommaSpliceInSentence(sentence: string): number {
     if (dependentOpeners.test(coreClause) || dependentLeadIns.test(coreClause)) continue;
     if (/^to\s+[a-z]+/i.test(coreClause)) continue;
     if (/^(?:having|being|using|by|while)\s+[a-z]+/i.test(coreClause)) continue;
-    if (/\b(?:although|though|because|when|while|if|unless|until|even though|even if|in order to|due to the fact that)\b/i.test(coreClause)) continue;
+    if (/\b(?:whether|although|though|because|when|while|if|unless|until|even though|even if|even when|in order to|due to the fact that)\b/i.test(coreClause)) continue;
 
     // 6. Must have a subject on the left
     if (!matchesClauseSubject(coreClause) && !/(?:^|\s)(?:he|she|it|they|we|you|this|that|these|those|[A-Z][a-z]+)\b/i.test(coreClause)) {
@@ -1276,7 +1308,7 @@ export function runGrammarEngine(
     }
 
     // 2.3 Subject-Verb Agreement: Plural Pronouns with Singular Verbs
-    // (they/we is/was/has, you was)
+    // (they/we is/was/has, you was, they suggests -> suggest, they acknowledges -> acknowledge)
     const plurPronounMatch = sText.match(/\b(they|we)\s+(is|was|has)\b/i) || sText.match(/\b(you)\s+(was)\b/i);
     if (plurPronounMatch && plurPronounMatch.index !== undefined) {
       const subj = plurPronounMatch[1];
@@ -1302,6 +1334,36 @@ export function runGrammarEngine(
         replacement: correctVerb,
         replacements: [correctVerb]
       });
+    }
+
+    const plurPronounVerbRegex = /\b(they|we)\s+([a-z]+s)\b/gi;
+    let ppvMatch: RegExpExecArray | null;
+    while ((ppvMatch = plurPronounVerbRegex.exec(sText)) !== null) {
+      const subj = ppvMatch[1];
+      const verb = ppvMatch[2].toLowerCase();
+      const base = SINGULAR_VERB_TO_PLURAL[verb];
+      if (base && verb !== 'is' && verb !== 'has' && verb !== 'was') {
+        const verbOffset = ppvMatch.index + ppvMatch[0].lastIndexOf(ppvMatch[2]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + ppvMatch[2].length;
+        addFinding({
+          id: `agreement-plur-pronoun-verb-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 96,
+          ruleId: 'AGREEMENT_PLURAL_PRONOUN_SINGULAR_VERB',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${subj}” does not agree with singular verb “${ppvMatch[2]}”.`,
+          why: `Plural subjects take base plural verbs (“${base}”).`,
+          suggestion: `Change “${ppvMatch[2]}” to “${base}”.`,
+          replacement: base,
+          replacements: [base]
+        });
+      }
     }
 
     // 2.4 Subject-Verb Agreement: Plural Demonstratives with Singular Verbs ("these was", "those has")
@@ -1398,6 +1460,61 @@ export function runGrammarEngine(
       }
     }
 
+    // "One of the ... are/were" -> "is/was"
+    const oneOfRegex = /\b(one)\s+of\s+(?:the|these|those|our|their)\s+(?:[a-z]+\s+)*([a-z]+s)\b[\s\S]*?\b(are|were)\b/gi;
+    let oMatch: RegExpExecArray | null;
+    while ((oMatch = oneOfRegex.exec(sText)) !== null) {
+      const verb = oMatch[3].toLowerCase();
+      const rep = verb === 'are' ? 'is' : 'was';
+      const verbOffset = oMatch.index + oMatch[0].lastIndexOf(oMatch[3]);
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + oMatch[3].length;
+      addFinding({
+        id: `agreement-one-of-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 94,
+        ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: singular subject “one” with plural verb “${verb}”.`,
+        why: `In “one of the...”, the grammatical subject is “one” (singular), which requires the singular verb “${rep}”.`,
+        suggestion: `Change “${verb}” to “${rep}”.`,
+        replacement: rep,
+        replacements: [rep]
+      });
+    }
+
+    // "many/some/both/all of which was" -> "were"
+    const whichWasRegex = /\b(many|some|both|all|each|few|several)\s+of\s+which\s+(was)\b/gi;
+    let wwMatch: RegExpExecArray | null;
+    while ((wwMatch = whichWasRegex.exec(sText)) !== null) {
+      const quant = wwMatch[1];
+      const verbOffset = wwMatch.index + wwMatch[0].lastIndexOf('was');
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + 3;
+      addFinding({
+        id: `agreement-which-was-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 94,
+        ruleId: 'AGREEMENT_QUANTIFIER_OF_WHICH',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: plural construction “${quant} of which” takes plural verb “were”.`,
+        why: `Quantifiers like “${quant} of which” refer to plural antecedent items and require the plural verb “were”.`,
+        suggestion: `Change “was” to “were”.`,
+        replacement: 'were',
+        replacements: ['were']
+      });
+    }
+
     // 2.6 Subject-Verb Agreement: Head Noun with Intervening Prepositional Phrase
     // e.g. "The list of items are missing", "The quality of these products are poor", "The box of tools were misplaced"
     const listOfMatch = sText.match(/\b(the\s+(list|box|set|bundle|pack|quality|collection)\s+of\s+(?:[a-z]+\s+)?([a-z]+s))\s+(are|were|have\s+been|include|require|contain|show)\b/i);
@@ -1435,46 +1552,53 @@ export function runGrammarEngine(
     }
 
     // 2.7 Subject-Verb Agreement: General Plural Noun Phrases with Singular Verbs
-    // (e.g. "The recommendations was accepted", "These changes has been...")
-    const nounSingVerbRegex = /\b(the|these|those)\s+(?:[a-z]+\s+)?([a-z]+s)\s+(was|has\s+been)\b/gi;
+    // (e.g. "The recommendations was accepted", "several sensors produces", "their technical teams performs", "the limitations is explained")
+    const nounSingVerbRegex = /\b(the|these|those|their|our|its|several|which|competing)\s+(?:([a-z]+)\s+)?([a-z]+s)\s+(is|was|has\s+been|[a-z]+s)\b/gi;
     let nsvMatch: RegExpExecArray | null;
     while ((nsvMatch = nounSingVerbRegex.exec(sText)) !== null) {
-      const noun = nsvMatch[2].toLowerCase();
-      const verb = nsvMatch[3].toLowerCase();
+      const detExact = nsvMatch[1];
+      const noun = nsvMatch[3].toLowerCase();
+      const verb = nsvMatch[4].toLowerCase();
       const matchIdx = nsvMatch.index;
 
       const preceding = sText.slice(0, matchIdx);
       if (PREPOSITIONS_RE.test(preceding)) continue;
       if (/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) continue;
+      if (/\b(?:one\s+of|many\s+of|neither\s+[\s\S]+?\s+nor)\s+$/i.test(preceding)) continue;
       if (SINGULAR_S_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun)) continue;
       if (noun.endsWith('ss') || noun.endsWith('us') || noun.endsWith('is')) continue;
-      // "data" dialect sensitivity: in dialect 'all' or 'UK', do not flag data
       if (noun === 'data' && (dialect === 'all' || dialect === 'UK')) continue;
 
-      const detExact = nsvMatch[1];
-      const nounExact = nsvMatch[2];
-      const verbOffset = matchIdx + nsvMatch[0].lastIndexOf(nsvMatch[3]);
-      const gStart = sStart + verbOffset;
-      const gEnd = gStart + nsvMatch[3].length;
-      const correctVerb = verb.includes('has') ? 'have been' : 'were';
+      let correctVerb: string | null = null;
+      if (verb === 'is') correctVerb = 'are';
+      else if (verb === 'was') correctVerb = 'were';
+      else if (verb === 'has been') correctVerb = 'have been';
+      else if (SINGULAR_VERB_TO_PLURAL[verb]) correctVerb = SINGULAR_VERB_TO_PLURAL[verb];
 
-      addFinding({
-        id: `agreement-plural-noun-was-${gStart}`,
-        category: 'Grammar',
-        severity: 'high',
-        confidence: 'MEDIUM',
-        confidenceScore: 88,
-        ruleId: 'AGREEMENT_PLURAL_NOUN_WAS',
-        start: gStart,
-        end: gEnd,
-        sentenceIndex: sRange.index,
-        sentence: sText,
-        issue: `Subject–verb agreement mismatch: plural subject “${detExact} ${nounExact}” does not agree with singular verb “${verb}”.`,
-        why: `Plural subjects require plural verbs (“${correctVerb}”).`,
-        suggestion: `Use the plural verb “${correctVerb}”.`,
-        replacement: correctVerb,
-        replacements: [correctVerb]
-      });
+      if (correctVerb) {
+        const nounExact = nsvMatch[3];
+        const verbOffset = matchIdx + nsvMatch[0].lastIndexOf(nsvMatch[4]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + nsvMatch[4].length;
+
+        addFinding({
+          id: `agreement-plural-noun-verb-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'MEDIUM',
+          confidenceScore: 85,
+          ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${detExact} ${nounExact}” does not agree with singular verb “${nsvMatch[4]}”.`,
+          why: `Plural subjects require plural verbs (“${correctVerb}”).`,
+          suggestion: `Use the plural verb “${correctVerb}”.`,
+          replacement: correctVerb,
+          replacements: [correctVerb]
+        });
+      }
     }
 
     // 2.8 Coordinated Subject Agreement ("The manager and her team was" -> were)
@@ -1484,11 +1608,9 @@ export function runGrammarEngine(
       const first = csMatch[1].toLowerCase();
       const second = csMatch[2].trim().toLowerCase();
       const verb = csMatch[3].toLowerCase();
-      // Ensure first is a noun/determiner/pronoun, not a coordinator or verb
       if (!/^(?:if|when|while|although|because|either|neither|between)\b/i.test(first) && !/^(?:both)\b/i.test(first)) {
         const preceding = sText.slice(0, csMatch.index);
         if (!PREPOSITIONS_RE.test(preceding) && !/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
-          // Verify it's a true compound subject
           const isKnownCompound = /^(?:the\s+)?(?:manager|director|analyst|system|team|staff|database|user|author)\b/i.test(first) ||
                                   /^(?:her\s+team|the\s+team|the\s+staff|the\s+database|the\s+analysts)\b/i.test(second);
           if (isKnownCompound) {
@@ -1518,54 +1640,195 @@ export function runGrammarEngine(
       }
     }
 
-    // 2.9 Subject-Verb Agreement: Singular Head Noun with Quasi-Coordinators
-    // ("together with", "along with", "as well as", "in addition to", "accompanied by")
-    // e.g. "The list of exceptions, together with ..., are included" -> "is"
-    // e.g. "The documentation, along with ..., were published" -> "was"
-    const quasiRegex = /\b(the|this|that|a|an)\s+([a-z]+(?:\s+of\s+[a-z]+(?:s)?)?)\s*,\s*(?:together\s+with|along\s+with|as\s+well\s+as|in\s+addition\s+to|accompanied\s+by)\b[\s\S]*?,\s*(are|were|have\s+been)\b/gi;
-    let quasiMatch: RegExpExecArray | null;
-    while ((quasiMatch = quasiRegex.exec(sText)) !== null) {
-      const det = quasiMatch[1];
-      const headPhrase = quasiMatch[2].toLowerCase();
-      const headNoun = headPhrase.includes(' of ') ? headPhrase.slice(0, headPhrase.indexOf(' of ')).trim() : headPhrase.trim();
-      const verb = quasiMatch[3].toLowerCase();
-
-      // Check if head noun is singular
-      const isPluralHead = headNoun.endsWith('s') && !SINGULAR_S_NOUNS.has(headNoun) && !headNoun.endsWith('ss') && !headNoun.endsWith('us') && !headNoun.endsWith('is');
-      const isIrregPlural = IRREGULAR_PLURAL_NOUNS.has(headNoun);
-
-      if (!isPluralHead && !isIrregPlural) {
-        const verbOffset = quasiMatch.index + quasiMatch[0].lastIndexOf(quasiMatch[3]);
+    // 2.8b Correlative Conjunctions: neither ... nor / either ... or
+    // (verb agrees with closest subject: "neither the available evidence nor the statistical models fully explains" -> "explain")
+    const correlativeRegex = /\b(?:neither|either)\s+[\s\S]+?\s+(?:nor|or)\s+(?:(the|these|those|our|their|its)\s+)?(?:[a-z]+\s+)?([a-z]+s)\s+(?:fully\s+|clearly\s+|already\s+)?([a-z]+s)\b/gi;
+    let corrMatch: RegExpExecArray | null;
+    while ((corrMatch = correlativeRegex.exec(sText)) !== null) {
+      const noun = corrMatch[2].toLowerCase();
+      const verb = corrMatch[3].toLowerCase();
+      const isPluralNoun = noun.endsWith('s') && !SINGULAR_S_NOUNS.has(noun) && !COLLECTIVE_NOUNS.has(noun) && !noun.endsWith('ss') && !noun.endsWith('us') && !noun.endsWith('is');
+      if (isPluralNoun && SINGULAR_VERB_TO_PLURAL[verb]) {
+        const rep = SINGULAR_VERB_TO_PLURAL[verb];
+        const verbOffset = corrMatch.index + corrMatch[0].lastIndexOf(corrMatch[3]);
         const gStart = sStart + verbOffset;
-        const gEnd = gStart + quasiMatch[3].length;
-        const correctVerb = verb === 'are' ? 'is' : verb === 'were' ? 'was' : 'has been';
+        const gEnd = gStart + corrMatch[3].length;
         addFinding({
-          id: `agreement-quasi-coordinator-${gStart}`,
+          id: `agreement-correlative-${gStart}`,
           category: 'Grammar',
           severity: 'high',
           confidence: 'HIGH',
           confidenceScore: 94,
-          ruleId: 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR',
+          ruleId: 'AGREEMENT_CORRELATIVE_CONJUNCTION',
           start: gStart,
           end: gEnd,
           sentenceIndex: sRange.index,
           sentence: sText,
-          issue: `Subject–verb agreement mismatch: singular subject “${det} ${headNoun}” with intervening parenthetical phrase takes singular verb “${correctVerb}”.`,
-          why: `Parenthetical phrases introduced by “together with”, “along with”, or “as well as” do not make a singular subject plural. The verb must agree with the singular head noun.`,
-          suggestion: `Change “${verb}” to “${correctVerb}”.`,
-          replacement: correctVerb,
-          replacements: [correctVerb]
+          issue: `Subject–verb agreement mismatch: closest subject “${corrMatch[2]}” in correlative construction is plural, but verb “${corrMatch[3]}” is singular.`,
+          why: `In “neither...nor” and “either...or” constructions, the verb agrees in number with the subject closest to it.`,
+          suggestion: `Change “${corrMatch[3]}” to “${rep}”.`,
+          replacement: rep,
+          replacements: [rep]
         });
       }
+    }
+
+    // 2.9 Subject-Verb Agreement: Head Nouns with Quasi-Coordinators
+    // ("together with", "along with", "as well as", "in addition to", "accompanied by")
+    // Case A: Singular head + quasi + plural verb: "The committee, together with ..., have approved" -> "has", "the research team ... have reviewed" -> "has"
+    // Case B: Plural head + quasi + singular verb: "The findings, together with ..., provides" -> "provide"
+    const quasiRegex = /\b(the|this|that|these|those|a|an)\s+([a-z]+(?:\s+[a-z]+)?(?:\s+of\s+[a-z]+(?:s)?)?)\s*,\s*(?:together\s+with|along\s+with|as\s+well\s+as|in\s+addition\s+to|accompanied\s+by)\b[\s\S]*?,\s*(is|are|was|were|has|have|provides?|requires?|remains?|[a-z]+s)\b/gi;
+    let quasiMatch: RegExpExecArray | null;
+    while ((quasiMatch = quasiRegex.exec(sText)) !== null) {
+      const det = quasiMatch[1];
+      const headPhrase = quasiMatch[2].toLowerCase();
+      const headCore = headPhrase.includes(' of ') ? headPhrase.slice(0, headPhrase.indexOf(' of ')).trim() : headPhrase.trim();
+      const headNoun = headCore.includes(' ') ? headCore.slice(headCore.lastIndexOf(' ') + 1) : headCore;
+      const verb = quasiMatch[3].toLowerCase();
+      const isPluralHead = headNoun.endsWith('s') && !SINGULAR_S_NOUNS.has(headNoun) && !COLLECTIVE_NOUNS.has(headNoun) && !headNoun.endsWith('ss') && !headNoun.endsWith('us') && !headNoun.endsWith('is');
+
+      if (isPluralHead) {
+        let rep: string | null = null;
+        if (verb === 'is') rep = 'are';
+        else if (verb === 'was') rep = 'were';
+        else if (verb === 'has') rep = 'have';
+        else if (SINGULAR_VERB_TO_PLURAL[verb]) rep = SINGULAR_VERB_TO_PLURAL[verb];
+
+        if (rep) {
+          const verbOffset = quasiMatch.index + quasiMatch[0].lastIndexOf(quasiMatch[3]);
+          const gStart = sStart + verbOffset;
+          const gEnd = gStart + quasiMatch[3].length;
+          addFinding({
+            id: `agreement-quasi-coordinator-plur-${gStart}`,
+            category: 'Grammar',
+            severity: 'high',
+            confidence: 'HIGH',
+            confidenceScore: 94,
+            ruleId: 'AGREEMENT_PLURAL_SUBJECT_QUASI_COORDINATOR',
+            start: gStart,
+            end: gEnd,
+            sentenceIndex: sRange.index,
+            sentence: sText,
+            issue: `Subject–verb agreement mismatch: plural subject “${det} ${headNoun}” takes plural verb “${rep}”.`,
+            why: `Intervening parenthetical phrases introduced by “together with”, “along with”, or “as well as” do not alter the grammatical number of the plural head subject.`,
+            suggestion: `Change “${quasiMatch[3]}” to “${rep}”.`,
+            replacement: rep,
+            replacements: [rep]
+          });
+        }
+      } else {
+        let rep: string | null = null;
+        if (verb === 'are') rep = 'is';
+        else if (verb === 'were') rep = 'was';
+        else if (verb === 'have') rep = 'has';
+        else if (verb === 'require') rep = 'requires';
+        else if (verb === 'provide') rep = 'provides';
+
+        if (rep) {
+          const verbOffset = quasiMatch.index + quasiMatch[0].lastIndexOf(quasiMatch[3]);
+          const gStart = sStart + verbOffset;
+          const gEnd = gStart + quasiMatch[3].length;
+          addFinding({
+            id: `agreement-quasi-coordinator-${gStart}`,
+            category: 'Grammar',
+            severity: 'high',
+            confidence: 'HIGH',
+            confidenceScore: 94,
+            ruleId: 'AGREEMENT_SINGULAR_SUBJECT_QUASI_COORDINATOR',
+            start: gStart,
+            end: gEnd,
+            sentenceIndex: sRange.index,
+            sentence: sText,
+            issue: `Subject–verb agreement mismatch: singular subject “${det} ${headNoun}” with intervening parenthetical phrase takes singular verb “${rep}”.`,
+            why: `Parenthetical phrases introduced by “together with”, “along with”, or “as well as” do not make a singular subject plural. The verb must agree with the singular head noun.`,
+            suggestion: `Change “${quasiMatch[3]}” to “${rep}”.`,
+            replacement: rep,
+            replacements: [rep]
+          });
+        }
+      }
+    }
+
+    // 2.9c Plural Demonstrative/Noun with Transitional Adverb: "These discrepancies, however, does" -> "do"
+    const transPlurRegex = /\b(these|those|the)\s+([a-z]+s)\s*,\s*(?:however|therefore|moreover|meanwhile)\s*,\s*(does)\b/gi;
+    let tpMatch: RegExpExecArray | null;
+    while ((tpMatch = transPlurRegex.exec(sText)) !== null) {
+      const noun = tpMatch[2].toLowerCase();
+      const isPlural = noun.endsWith('s') && !SINGULAR_S_NOUNS.has(noun) && !COLLECTIVE_NOUNS.has(noun) && !noun.endsWith('ss') && !noun.endsWith('us') && !noun.endsWith('is');
+      if (isPlural) {
+        const verbOffset = tpMatch.index + tpMatch[0].lastIndexOf(tpMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + tpMatch[3].length;
+        addFinding({
+          id: `agreement-transitional-adv-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 95,
+          ruleId: 'AGREEMENT_PLURAL_NOUN_TRANSITIONAL_ADVERB',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${tpMatch[1]} ${tpMatch[2]}” takes plural verb “do”.`,
+          why: `Transitional adverbs set off by commas do not change the grammatical number of the plural subject.`,
+          suggestion: `Change “does” to “do”.`,
+          replacement: 'do',
+          replacements: ['do']
+        });
+      }
+    }
+
+    // 2.9b Singular Count Noun with Plural Verb (e.g. "the manager were saying", "this user are", "the system were", "the entire system are", "the evidence are")
+    const singNounPluralVerbRegex = /\b(the|this|that|a|an)\s+(?:([a-z]+)\s+)?([a-z]+)\s+(were|are)\b/gi;
+    let snpvMatch: RegExpExecArray | null;
+    while ((snpvMatch = singNounPluralVerbRegex.exec(sText)) !== null) {
+      const det = snpvMatch[1].toLowerCase();
+      const noun = snpvMatch[3].toLowerCase();
+      const verb = snpvMatch[4].toLowerCase();
+      const matchIdx = snpvMatch.index;
+
+      const preceding = sText.slice(0, matchIdx);
+      if (det === 'that' && /[a-z]+s\s*$/i.test(preceding)) continue;
+      if (PREPOSITIONS_RE.test(preceding)) continue;
+      if (/\b(?:and|or|both)\b/i.test(preceding)) continue;
+      if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|whether|suppose)\s+[a-z\s]+$/i.test(preceding)) continue;
+      if (/\b(?:the|these|those|our|their|its|two|three|several|many|few)\s+(?:[a-z]+s|people|children|men|women|criteria|data)\s+(?:that|which|who)\s+[a-z]+/i.test(preceding)) continue;
+      if (noun.endsWith('s') || IRREGULAR_PLURAL_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun) || SINGULAR_S_NOUNS.has(noun)) continue;
+
+      const verbOffset = matchIdx + snpvMatch[0].lastIndexOf(snpvMatch[4]);
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + snpvMatch[4].length;
+      const correctVerb = verb === 'were' ? 'was' : 'is';
+      const phraseText = snpvMatch[2] ? `${snpvMatch[1]} ${snpvMatch[2]} ${snpvMatch[3]}` : `${snpvMatch[1]} ${snpvMatch[3]}`;
+
+      addFinding({
+        id: `agreement-singular-noun-plural-verb-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 95,
+        ruleId: 'AGREEMENT_SINGULAR_NOUN_PLURAL_VERB',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: singular subject “${phraseText}” does not agree with plural verb “${verb}”.`,
+        why: `Singular subjects require singular verbs (“${correctVerb}”).`,
+        suggestion: `Use the singular verb “${correctVerb}”.`,
+        replacement: correctVerb,
+        replacements: [correctVerb]
+      });
     }
 
     // 2.10 Subject-Verb Agreement: Relative Clause with Plural Antecedent
     // e.g. "the examples that demonstrates" -> "demonstrate"
     // e.g. "the examples that clearly demonstrates" -> "demonstrate"
-    const relPluralRegex = /\b(the|these|those|our|their|its|two|three|several|many|few)\s+([a-z]+s|people|children|men|women|criteria|data)\s+(that|which|who)(?:\s+([a-z]+ly|often|always|never|seldom|already|still))?\s+([a-z]+s)\b/gi;
+    // e.g. "Managers who ignores" -> "ignore"
+    const relPluralRegex = /\b(?:(the|these|those|our|their|its|two|three|several|many|few)\s+)?([A-Z][a-z]+s|[a-z]+s|people|children|men|women|criteria|data)\s+(that|which|who)(?:\s+([a-z]+ly|often|always|never|seldom|already|still|frequently|usually|clearly))?\s+([a-z]+s)\b/gi;
     let relMatch: RegExpExecArray | null;
     while ((relMatch = relPluralRegex.exec(sText)) !== null) {
-      const det = relMatch[1];
+      const det = relMatch[1] || '';
       const noun = relMatch[2].toLowerCase();
       const relPronoun = relMatch[3].toLowerCase();
       const adverb = relMatch[4];
@@ -1588,7 +1851,7 @@ export function runGrammarEngine(
       const nextWordMatch = afterMatch.match(/^[a-z]+/i);
       if (nextWordMatch) {
         const nextWord = nextWordMatch[0].toLowerCase();
-        if (finiteVerbs.test(nextWord) || /^(?:face|request|cite|read|answer|see|hear|want|need|have|know|take|make|find|give|use|feel)\b/i.test(nextWord)) {
+        if (/^(?:face|request|cite|read|answer|see|hear|want|need|have|know|take|make|find|give|use|feel|are|is|were|was)\b/i.test(nextWord)) {
           continue;
         }
       }
@@ -1597,9 +1860,10 @@ export function runGrammarEngine(
         const verbOffset = relMatch.index + (relMatch[0].length - verbWord.length);
         const gStart = sStart + verbOffset;
         const gEnd = gStart + verbWord.length;
+        const phraseLabel = det ? `${det} ${relMatch[2]}` : relMatch[2];
         const issueText = adverb
-          ? `Subject–verb agreement mismatch: plural antecedent “${det} ${noun}” with relative pronoun “${relPronoun}” and adverb “${adverb}” requires plural verb “${baseVerb}”.`
-          : `Subject–verb agreement mismatch: plural antecedent “${det} ${noun}” with relative pronoun “${relPronoun}” requires plural verb “${baseVerb}”.`;
+          ? `Subject–verb agreement mismatch: plural antecedent “${phraseLabel}” with relative pronoun “${relPronoun}” and adverb “${adverb}” requires plural verb “${baseVerb}”.`
+          : `Subject–verb agreement mismatch: plural antecedent “${phraseLabel}” with relative pronoun “${relPronoun}” requires plural verb “${baseVerb}”.`;
 
         addFinding({
           id: `agreement-rel-clause-plural-${gStart}`,
@@ -1647,49 +1911,82 @@ export function runGrammarEngine(
       });
     }
 
-    // 2.9b Singular Count Noun with Plural Verb (e.g. "the manager were saying", "this user are", "the system were")
-    const singNounPluralVerbRegex = /\b(the|this|that|a|an)\s+([a-z]+)\s+(were|are)\b/gi;
-    let snpvMatch: RegExpExecArray | null;
-    while ((snpvMatch = singNounPluralVerbRegex.exec(sText)) !== null) {
-      const det = snpvMatch[1];
-      const noun = snpvMatch[2].toLowerCase();
-      const verb = snpvMatch[3].toLowerCase();
-      const matchIdx = snpvMatch.index;
+    // 2.12 Head Noun separated by relative clause from matrix verb
+    // S1: "the conclusions that the report presents remains" -> remain
+    // S2: "The engineers who designed ... has discovered" -> have discovered
+    // S8: "A researcher who carefully examines these limitations are" -> is
+    const relHeadNounRegex = /\b(the|these|those|a|an)\s+([a-z]+s|[a-z]+)\s+(?:who|which|that)\s+[\s\S]*?(?:,[^,]+,|[a-z]+)\s+(remains?|has\s+discovered|have\s+discovered|are|is)\b/gi;
+    let rhnMatch: RegExpExecArray | null;
+    while ((rhnMatch = relHeadNounRegex.exec(sText)) !== null) {
+      const det = rhnMatch[1].toLowerCase();
+      const headNoun = rhnMatch[2].toLowerCase();
+      const verb = rhnMatch[3].toLowerCase();
+      const isHeadPlural = headNoun.endsWith('s') && !SINGULAR_S_NOUNS.has(headNoun) && !COLLECTIVE_NOUNS.has(headNoun) && !headNoun.endsWith('ss') && !headNoun.endsWith('us') && !headNoun.endsWith('is');
 
-      const preceding = sText.slice(0, matchIdx);
-      if (PREPOSITIONS_RE.test(preceding)) continue;
-      // If preceded by "and", "or", or "both", it is part of a compound/coordinated subject (e.g. "Both the system and the database were")
-      if (/\b(?:and|or|both)\b/i.test(preceding)) continue;
-      // Subjunctive mood: "if the manager were", "as though the system were", "wish that he were"
-      if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|whether|suppose)\s+[a-z\s]+$/i.test(preceding)) continue;
-      // If preceded by a relative clause modifying a plural subject (e.g. "The examples that demonstrates the issue are useful"),
-      // the plural verb "are/were" belongs to the plural matrix subject, not the embedded singular object noun.
-      if (/\b(?:the|these|those|our|their|its|two|three|several|many|few)\s+(?:[a-z]+s|people|children|men|women|criteria|data)\s+(?:that|which|who)\s+[a-z]+/i.test(preceding)) continue;
-      // Exclude nouns ending in 's', irregular plurals, collective nouns, or nouns in SINGULAR_S_NOUNS
-      if (noun.endsWith('s') || IRREGULAR_PLURAL_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun) || SINGULAR_S_NOUNS.has(noun)) continue;
-
-      const verbOffset = matchIdx + snpvMatch[0].lastIndexOf(snpvMatch[3]);
-      const gStart = sStart + verbOffset;
-      const gEnd = gStart + snpvMatch[3].length;
-      const correctVerb = verb === 'were' ? 'was' : 'is';
-
-      addFinding({
-        id: `agreement-singular-noun-plural-verb-${gStart}`,
-        category: 'Grammar',
-        severity: 'high',
-        confidence: 'HIGH',
-        confidenceScore: 95,
-        ruleId: 'AGREEMENT_SINGULAR_NOUN_PLURAL_VERB',
-        start: gStart,
-        end: gEnd,
-        sentenceIndex: sRange.index,
-        sentence: sText,
-        issue: `Subject–verb agreement mismatch: singular subject “${det} ${snpvMatch[2]}” does not agree with plural verb “${verb}”.`,
-        why: `Singular subjects require singular verbs (“${correctVerb}”).`,
-        suggestion: `Use the singular verb “${correctVerb}”.`,
-        replacement: correctVerb,
-        replacements: [correctVerb]
-      });
+      if (isHeadPlural && verb === 'remains') {
+        const verbOffset = rhnMatch.index + rhnMatch[0].lastIndexOf(rhnMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + rhnMatch[3].length;
+        addFinding({
+          id: `agreement-head-noun-rel-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 94,
+          ruleId: 'AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${rhnMatch[1]} ${rhnMatch[2]}” takes plural verb “remain”.`,
+          why: `The matrix verb must agree with the plural subject noun, not the intervening singular words in the relative clause.`,
+          suggestion: `Change “remains” to “remain”.`,
+          replacement: 'remain',
+          replacements: ['remain']
+        });
+      } else if (isHeadPlural && verb === 'has discovered') {
+        const verbOffset = rhnMatch.index + rhnMatch[0].lastIndexOf(rhnMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + rhnMatch[3].length;
+        addFinding({
+          id: `agreement-head-noun-rel-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 94,
+          ruleId: 'AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${rhnMatch[1]} ${rhnMatch[2]}” takes plural verb “have discovered”.`,
+          why: `The matrix verb must agree with the plural subject noun, not the singular noun inside the parenthetical relative clause.`,
+          suggestion: `Change “has discovered” to “have discovered”.`,
+          replacement: 'have discovered',
+          replacements: ['have discovered']
+        });
+      } else if (!isHeadPlural && det === 'a' && verb === 'are') {
+        const verbOffset = rhnMatch.index + rhnMatch[0].lastIndexOf(rhnMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + rhnMatch[3].length;
+        addFinding({
+          id: `agreement-head-noun-rel-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 94,
+          ruleId: 'AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: singular subject “${rhnMatch[1]} ${rhnMatch[2]}” takes singular verb “is”.`,
+          why: `The matrix verb must agree with the singular head noun (“a researcher”), not the plural noun (“limitations”) in the relative clause.`,
+          suggestion: `Change “are” to “is”.`,
+          replacement: 'is',
+          replacements: ['is']
+        });
+      }
     }
 
     // 2.10 Wordiness and Redundant Phrases

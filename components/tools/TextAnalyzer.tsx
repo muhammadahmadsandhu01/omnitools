@@ -12,6 +12,7 @@ import {
   runGrammarEngine,
   applyFindingCorrection,
   applyAllSafeFixes,
+  findLikelyCommaSpliceInSentence,
   type GrammarFinding,
   type IssueCategory,
   type DialogueMode
@@ -21,6 +22,7 @@ export {
   runGrammarEngine,
   applyFindingCorrection,
   applyAllSafeFixes,
+  findLikelyCommaSpliceInSentence,
   type GrammarFinding,
   type IssueCategory,
   type DialogueMode
@@ -487,60 +489,11 @@ function sentenceOpenings(sentences: string[]) {
   return [...m.entries()].filter(([,c]) => c >= 3).sort((a,b) => b[1]-a[1]).slice(0, 8).map(([phrase,count]) => ({phrase,count}));
 }
 
-const coordinatingOpeners = /^(?:and|but|or|nor|for|so|yet)\b/i;
-const dependentOpeners = /^(?:when|while|although|though|because|if|unless|until|before|after|since|as|once|whereas|wherever|whether|which|who|whom|whose|that|even though|even if|assuming|assuming that|provided that|providing that|given that|considering that)\b/i;
-const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due to|because of|in spite of|despite|rather than|so that|according to|for example|in fact|furthermore|however|in addition|on the other hand|provided that|assuming that)\b/i;
-const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
-const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
-
-function isIntroductoryDependent(left: string): boolean {
-  const l = left.trim();
-  if (prepositionalOpeners.test(l) && !commaSpliceVerbs.test(l)) return true;
-  if (dependentOpeners.test(l) || dependentLeadIns.test(l)) return true;
-  if (/^to\s+[a-z]+/i.test(l)) return true;
-  if (/^(?:having|being|using|by|while)\s+[a-z]+/i.test(l)) return true;
-  if (/\b(?:although|though|because|when|while|if|unless|until|even though|even if|in order to|due to the fact that)\b/i.test(l)) return true;
-  return false;
-}
-
-const commaSpliceSubjects = /^(?:(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|who|what)\b|(?:the|a|an|some|several|many|few|no|each|every|any|another|additional|our|your|their|his|her|its|my)\s+[a-z][a-z'’-]*(?:\s+[a-z][a-z'’-]*){0,3}\b|(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b(?!\s+by\b)|(?:therefore|consequently|moreover|furthermore|meanwhile|instead)\s+(?:the|a|an|it|he|she|they|we|this|that|[a-z]+)\b)/i;
-const commaSpliceVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|should|must|may|might|needs?|requires?|remains?|seems?|contains?|shows?|begins?|ends?|works?|failed|fails?|proves?|identifies?|reviews?|sends?|discovers?|fixes?|contacts?|submits?|releases?|tests?|develops?|restarted|restarts?|launched|launches?|monitored|monitors?|reviewed|approved|designed|completed|recommended|recommends?|delayed|delays?|provided|provides?|completes|approves?|designs?|made|took|kept|worked|started|ended|verified|verifies?|crashed|sent|remained|fixed|resolved|updated|built|created|deployed|continued|continues?)\b/i;
 
 const QUOTE_REGEX = /"(?:[^"\\]|\\.)*"|“[^”]*”|«[^»]*»|‘(?:[^’\\]|’(?=[a-zA-Z]))*’(?=$|[\s)\]}>—–,;:!?.])|(?<=^|[\s(\[{<—–"“«])'(?:[^'\\]|'(?=[a-zA-Z]))*'(?=$|[\s)\]}>—–,;:!?.])/g;
 
 function findLikelyCommaSplice(sentence: string): number {
-  // Strip quotations before checking comma splice to prevent dialogue false positives
-  const protectedText = sentence.replace(QUOTE_REGEX, ' ');
-
-  const commaPositions: number[] = [];
-  for (let i = 0; i < protectedText.length; i++) if (protectedText[i] === ',') commaPositions.push(i);
-
-  for (const comma of commaPositions) {
-    const left = protectedText.slice(0, comma).trim();
-    const right = protectedText.slice(comma + 1).trim();
-    if (!left || !right) continue;
-    if (coordinatingOpeners.test(right) || dependentOpeners.test(right)) continue;
-    if (participialLeadIn.test(right)) continue;
-
-    // Check the clause immediately preceding the comma (after any semicolon or colon)
-    const lastSep = Math.max(protectedText.lastIndexOf(';', comma), protectedText.lastIndexOf(':', comma));
-    const clauseLeft = (lastSep >= 0 ? protectedText.slice(lastSep + 1, comma) : left).trim();
-    const coreClause = (clauseLeft.includes(',') ? clauseLeft.slice(clauseLeft.lastIndexOf(',') + 1) : clauseLeft).trim();
-
-    if (isIntroductoryDependent(coreClause)) continue;
-    // An independent clause on the left must also contain a subject
-    if (!commaSpliceSubjects.test(coreClause) && !/(?:^|\s)(?:he|she|it|they|we|you|this|that|these|those|[A-Z][a-z]+)\b/i.test(coreClause)) {
-      continue;
-    }
-    // Parallel clause series ending with ", and [actor] [verb] it"
-    if (/\b(?:[a-z]+ed|built|sent|left)\s+it\b/i.test(coreClause) && /\band\s+(?:the|a|an|[a-z]+)\s+[\s\S]*\bit\b/i.test(right)) {
-      continue;
-    }
-    if (!commaSpliceSubjects.test(right) || !commaSpliceVerbs.test(coreClause) || !commaSpliceVerbs.test(right)) continue;
-    if (/^\w+[,:]\s+/.test(right) && !commaSpliceSubjects.test(right)) continue;
-    return comma;
-  }
-  return -1;
+  return findLikelyCommaSpliceInSentence(sentence);
 }
 
 const PREPOSITIONS_RE = /\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during)(?:\s+(?:all|both|many|several|some|each)(?:\s+of)?)?\s+$/i;
@@ -951,6 +904,21 @@ function validateRewrite(original: string, rewrite: string | undefined): boolean
     return false;
   }
 
+  // 1b. Reject semicolon following introductory dependent clauses (Invalid pattern A)
+  if (/^(?:Although|Because|If|When|While|Unless|Since|Even\s+(?:though|if|when)|Whereas)\b[^,;]+;/i.test(trimmedRew)) {
+    return false;
+  }
+
+  // 1c. Reject semicolon breaking list items or immediately before coordinating conjunctions (Invalid pattern B)
+  if (/;\s*(?:and|but|or|nor|so|yet)\b/i.test(trimmedRew)) {
+    return false;
+  }
+
+  // 1d. Reject semicolon splitting relative clauses from antecedent (Invalid pattern C)
+  if (/;\s*(?:many|some|several|few|both|all|each|none|one)\s+of\s+which\b/i.test(trimmedRew)) {
+    return false;
+  }
+
   // 2. Clauses after semicolon must be independent
   const semiParts = trimmedRew.split(/\s*;\s*/);
   if (semiParts.length > 1) {
@@ -1169,7 +1137,12 @@ function smartClarityPass(text: string): string {
   out = out.replace(/[ \t]{2,}/g, ' ');
   out = out.replace(/\s+([,.;!?])/g, '$1');
   out = out.replace(/^[\s,;:]+/, '');
-  out = out.replace(/\b([A-Za-z]+)\s*,\s*(?=(?:needs|need|is|are|was|were|has|have|had|should|must|can|could|will|would|requires|require)\b)/gi, '$1 ');
+  out = out.replace(/(^|[.;!?]\s+)([^,.;!?]+),\s+(?=(?:needs|need|is|are|was|were|has|have|had|should|must|can|could|will|would|requires|require)\b)/gi, (m, boundary, subj) => {
+    if (/\b(?:which|who|whom|that|whose|where|when|although|because|if|while|since)\b/i.test(subj)) {
+      return m;
+    }
+    return `${boundary}${subj} `;
+  });
   out = out.replace(/([,.;!?])([A-Za-z])/g, '$1 $2');
 
   // Sentence-start capitalization only if not all-caps
@@ -1190,28 +1163,17 @@ function buildCoachFindings(
   sentences: string[],
   contextual: ReturnType<typeof contextualWritingAnalysis>,
   passiveCandidates: { sentence: string; index: number }[],
-  dialogueMode: DialogueMode = 'normal'
+  dialogueMode: DialogueMode = 'normal',
+  passedEngineResult?: ReturnType<typeof runGrammarEngine>
 ): CoachFinding[] {
   const findings: CoachFinding[] = [];
   const grouped = new Map<string, CoachFinding>();
 
-  const engineResult = runGrammarEngine(text, { dialogueMode });
+  const engineResult = passedEngineResult || runGrammarEngine(text, { dialogueMode });
   const sentenceR = sentenceRanges(text);
-
-  const engineBySentence = new Map<number, GrammarFinding[]>();
-  for (const ef of engineResult.findings) {
-    const list = engineBySentence.get(ef.sentenceIndex || 0) || [];
-    list.push(ef);
-    engineBySentence.set(ef.sentenceIndex || 0, list);
-  }
 
   // Collect indices of sentences with HIGH-severity grammar issues (BUG 5 deduplication)
   const highGrammarIndices = new Set<number>();
-  contextual.grammarCandidates.forEach(x => {
-    if (x.confidence === 'HIGH') {
-      highGrammarIndices.add(x.index);
-    }
-  });
   engineResult.findings.forEach(x => {
     if (x.severity === 'high' && x.sentenceIndex) {
       highGrammarIndices.add(x.sentenceIndex);
@@ -1219,24 +1181,8 @@ function buildCoachFindings(
   });
 
   const add = (f: Omit<CoachFinding, 'id'>) => {
-    const key = `${f.category}|${f.sentenceIndex ?? `global:${f.issue.toLowerCase()}`}`;
-    const existing = grouped.get(key);
-    if (existing) {
-      if (!existing.issue.toLowerCase().includes(f.issue.toLowerCase())) existing.issue += ` ${f.issue}`;
-      if (f.suggestion && !existing.suggestion?.includes(f.suggestion)) existing.suggestion = [existing.suggestion, f.suggestion].filter(Boolean).join(' ');
-      if (!existing.rewrite && f.rewrite) existing.rewrite = f.rewrite;
-      if (existing.start === undefined && f.start !== undefined) {
-        existing.start = f.start;
-        existing.end = f.end;
-        existing.originalText = f.originalText;
-        existing.replacement = f.replacement;
-        existing.replacements = f.replacements;
-        existing.ruleId = f.ruleId;
-      }
-      if (f.severity === 'high') existing.severity = 'high';
-      else if (f.severity === 'medium' && existing.severity === 'low') existing.severity = 'medium';
-      return;
-    }
+    const key = `${f.category}|${f.sentenceIndex ?? 'global'}|${f.ruleId ?? ''}|${f.start ?? f.issue}`;
+    if (grouped.has(key)) return;
     const finding: CoachFinding = { ...f, id: `${f.category}-${f.sentenceIndex ?? 'global'}-${grouped.size}` };
     grouped.set(key, finding);
   };
@@ -1252,76 +1198,58 @@ function buildCoachFindings(
     return undefined;
   };
 
-  contextual.grammarCandidates.forEach(x => {
-    const eList = engineBySentence.get(x.index) || [];
-    const ef = eList.find(e =>
-      e.issue.toLowerCase().includes(x.detail.toLowerCase()) ||
-      x.detail.toLowerCase().includes(e.issue.toLowerCase()) ||
-      (/comma splice/i.test(x.detail) && e.ruleId === 'SENTENCE_COMMA_SPLICE') ||
-      (/agreement/i.test(x.detail) && e.ruleId.startsWith('AGREEMENT_'))
-    ) || eList[0];
-
-    const sOffset = sentenceR.find(sr => sr.index === x.index);
-    let start = ef?.start;
-    let end = ef?.end;
-    let replacement = ef?.replacement;
-    let replacements = ef?.replacements;
-    let ruleId = ef?.ruleId || 'GRAMMAR_CONTEXTUAL_RULE';
-
-    if (start === undefined && sOffset) {
-      if (/comma splice/i.test(x.detail)) {
-        const cIdx = findLikelyCommaSplice(x.sentence);
-        if (cIdx >= 0) {
-          start = sOffset.start + cIdx;
-          end = start + 1;
-          replacement = ';';
-          replacements = [';', '. ', ', and '];
-          ruleId = 'SENTENCE_COMMA_SPLICE';
+  // 1. Add all engine findings directly (Grammar, Spelling, Punctuation, Consistency)
+  engineResult.findings.forEach(ef => {
+    let rewrite: string | undefined = ef.rewrite;
+    if (!rewrite && ef.sentence && ef.originalText && ef.replacement !== undefined && ef.start !== undefined && ef.end !== undefined) {
+      const sOffset = sentenceR.find(sr => sr.index === ef.sentenceIndex);
+      if (sOffset) {
+        const relStart = ef.start - sOffset.start;
+        const relEnd = ef.end - sOffset.start;
+        if (relStart >= 0 && relEnd <= ef.sentence.length && ef.sentence.slice(relStart, relEnd) === ef.originalText) {
+          const candidate = ef.sentence.slice(0, relStart) + ef.replacement + ef.sentence.slice(relEnd);
+          if (validateRewrite(ef.sentence, candidate)) {
+            rewrite = candidate;
+          }
         }
       }
     }
 
     add({
-      category: 'Grammar',
-      severity: severityFor(x.detail),
-      confidence: x.confidence,
-      confidenceScore: x.confidence === 'HIGH' ? 95 : x.confidence === 'MEDIUM' ? 80 : 65,
-      ruleId,
-      start,
-      end,
-      originalText: start !== undefined && end !== undefined ? text.slice(start, end) : undefined,
-      replacement,
-      replacements,
-      sentenceIndex: x.index,
-      sentence: x.sentence,
-      issue: x.detail,
-      why: ef?.why || 'Grammar and punctuation integrity ensures your writing is clear, credible, and effortless to read.',
-      suggestion: x.suggestion || ef?.suggestion,
-      rewrite: rewriteFor(x.sentence, x.detail) || ef?.rewrite
+      category: ef.category as CoachFinding['category'],
+      severity: ef.severity,
+      confidence: ef.confidence,
+      confidenceScore: ef.confidenceScore,
+      ruleId: ef.ruleId,
+      start: ef.start,
+      end: ef.end,
+      originalText: ef.originalText,
+      replacement: ef.replacement,
+      replacements: ef.replacements,
+      sentenceIndex: ef.sentenceIndex,
+      sentence: ef.sentence,
+      issue: ef.issue,
+      why: ef.why,
+      suggestion: ef.suggestion,
+      rewrite
     });
   });
 
-  // Include any extra high/medium confidence engine findings
-  engineResult.findings.forEach(ef => {
-    const key = `${ef.category}|${ef.sentenceIndex ?? `global:${ef.issue.toLowerCase()}`}`;
-    if (!grouped.has(key)) {
+  // 2. Add contextual sentence fragments if any
+  contextual.grammarCandidates.forEach(x => {
+    if (/fragment/i.test(x.detail)) {
       add({
-        category: ef.category as CoachFinding['category'],
-        severity: ef.severity,
-        confidence: ef.confidence,
-        confidenceScore: ef.confidenceScore,
-        ruleId: ef.ruleId,
-        start: ef.start,
-        end: ef.end,
-        originalText: ef.originalText,
-        replacement: ef.replacement,
-        replacements: ef.replacements,
-        sentenceIndex: ef.sentenceIndex,
-        sentence: ef.sentence,
-        issue: ef.issue,
-        why: ef.why,
-        suggestion: ef.suggestion,
-        rewrite: ef.rewrite || (ef.sentence && ef.originalText && ef.replacement ? ef.sentence.replace(ef.originalText, ef.replacement) : undefined)
+        category: 'Grammar',
+        severity: 'medium',
+        confidence: x.confidence,
+        confidenceScore: 80,
+        ruleId: 'GRAMMAR_SENTENCE_FRAGMENT',
+        sentenceIndex: x.index,
+        sentence: x.sentence,
+        issue: x.detail,
+        why: 'Complete sentences require both a subject and a verb to express a complete thought.',
+        suggestion: x.suggestion,
+        rewrite: rewriteFor(x.sentence, x.detail)
       });
     }
   });
@@ -1531,8 +1459,20 @@ export function analyzeText(
     if (c) fillerMap.set(f, c);
   }
 
+  const engineResult = runGrammarEngine(text, { dialogueMode: options?.dialogueMode });
   const contextual = contextualWritingAnalysis(text, sentences);
-  const highGrammarIndices = new Set(contextual.grammarCandidates.filter(x => x.confidence === 'HIGH').map(x => x.index));
+
+  const grammarCandidates = engineResult.findings
+    .filter(f => f.category === 'Grammar' || f.category === 'Spelling' || f.category === 'Punctuation')
+    .map(f => ({
+      sentence: f.sentence || '',
+      index: f.sentenceIndex || 1,
+      detail: f.issue,
+      suggestion: f.suggestion,
+      confidence: f.confidence
+    }));
+
+  const highGrammarIndices = new Set(engineResult.findings.filter(x => x.severity === 'high' && x.sentenceIndex).map(x => x.sentenceIndex!));
 
   // Grammar dominates passive UX: sentences with high-confidence grammar errors do not create competing passive candidates
   const allPassive = sentences
@@ -1557,7 +1497,7 @@ export function analyzeText(
   const questions = (text.match(/\?/g) || []).length;
 
   const issues = buildSentenceIssues(text, sentences, [...fillerMap].map(([phrase, count]) => ({ phrase, count })), passiveCandidates, longSentences, exclamations, capsRatio);
-  const coachFindings = buildCoachFindings(text, sentences, contextual, passiveCandidates, options?.dialogueMode);
+  const coachFindings = buildCoachFindings(text, sentences, contextual, passiveCandidates, options?.dialogueMode, engineResult);
 
   const vocabDiversity = ws.length ? round1(unique.size / ws.length * 100) : 0;
   const fillerCount = [...fillerMap.values()].reduce((a, b) => a + b, 0);
@@ -1569,14 +1509,14 @@ export function analyzeText(
     fillerCount,
     passiveCandidates.length,
     exclamations,
-    contextual.grammarScore,
-    contextual.clarityScore,
-    contextual.consistencyScore,
+    engineResult.grammarScore,
+    engineResult.clarityScore,
+    engineResult.consistencyScore,
     vocabDiversity
   );
 
   const contextIssues: WritingIssue[] = [
-    ...contextual.grammarCandidates.slice(0, 6).map(x => ({ id: `grammar-${x.index}-${x.detail}`, kind: 'Grammar candidate' as const, severity: 'medium' as const, sentenceIndex: x.index, sentence: x.sentence, detail: x.detail })),
+    ...grammarCandidates.slice(0, 6).map(x => ({ id: `grammar-${x.index}-${x.detail}`, kind: 'Grammar candidate' as const, severity: 'medium' as const, sentenceIndex: x.index, sentence: x.sentence, detail: x.detail })),
     ...contextual.clarityCandidates.slice(0, 6).map(x => ({ id: `clarity-${x.index}-${x.detail}`, kind: 'Clarity candidate' as const, severity: 'low' as const, sentenceIndex: x.index, sentence: x.sentence, detail: x.detail })),
     ...contextual.consistencyCandidates.slice(0, 4).map((x, i) => ({ id: `consistency-${i}-${x.detail}`, kind: 'Consistency candidate' as const, severity: 'low' as const, detail: x.detail }))
   ];
@@ -1622,14 +1562,14 @@ export function analyzeText(
     longestSentence: maxSentence?.s || '',
     longestSentenceWords: maxSentence?.w || 0,
     issues: [...contextIssues.slice(0, 12), ...issues].slice(0, 36),
-    grammarCandidates: contextual.grammarCandidates,
+    grammarCandidates,
     clarityCandidates: contextual.clarityCandidates,
     consistencyCandidates: contextual.consistencyCandidates,
     repeatedOpenings: contextual.repeatedOpenings,
     repeatedSentences: contextual.repeatedSentences,
-    clarityScore: contextual.clarityScore,
-    grammarScore: contextual.grammarScore,
-    consistencyScore: contextual.consistencyScore,
+    clarityScore: engineResult.clarityScore,
+    grammarScore: engineResult.grammarScore,
+    consistencyScore: engineResult.consistencyScore,
     writingScore,
     scoreFactors,
     coachFindings
@@ -1967,7 +1907,7 @@ export default function TextAnalyzer() {
       `Automated Readability Index (ARI): ${stats.ari ?? '—'}`,
       `Vocabulary diversity: ${stats.vocabularyDiversity}%`,
       `Lexical density: ${stats.lexicalDensity}%`,
-      `Estimated earnings: $${stats.estimatedEarnings.toFixed(2)}`,
+      `Estimated earnings (freelance @ $${Number(rate || 0).toFixed(2)}/word): $${stats.estimatedEarnings.toFixed(2)}`,
       `Writing quality score: ${stats.writingScore}/100`,
       `Tone: ${stats.tone.label} (${stats.tone.score})`,
       `Grammar score: ${stats.grammarScore == null ? "N/A" : `${stats.grammarScore}/100`}`,
@@ -2671,7 +2611,7 @@ export default function TextAnalyzer() {
         <div className="grid grid-cols-2 gap-3">
           {metric('Writing Quality', `${stats.writingScore}/100`)}
           {metric('Tone', stats.tone.label)}
-          {metric('Estimated Earnings', `$${stats.estimatedEarnings.toFixed(2)}`)}
+          {metric('Estimated Earnings', `$${stats.estimatedEarnings.toFixed(2)}`, `@ $${Number(rate || 0).toFixed(2)}/word (freelance)`)}
           {metric('Lexical Density', `${stats.lexicalDensity}%`)}
         </div>
 

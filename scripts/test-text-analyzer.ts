@@ -1588,6 +1588,291 @@ for (const err of genuineSubjectRelativeErrors) {
 }
 
 // ============================================================
+// 22. One-Pass Comprehensive Regression Suite (425-Word Stress Test & Section 4/5 Requirements)
+// ============================================================
+console.log('\n• Testing Suite 22: Comprehensive 425-Word Stress Test & Pipeline Audit...');
+
+// 22.1 Section 4 Specific Regression Cases
+console.log('  -> Checking Section 4 subject-verb agreement regressions...');
+const s4Cases = [
+  {
+    id: 'S4-1',
+    text: 'The examples that clearly demonstrates the issue are useful.',
+    expectError: true,
+    expectedFixed: 'The examples that clearly demonstrate the issue are useful.',
+    desc: 'Relative clause with clearly demonstrates -> demonstrate; preserve are'
+  },
+  {
+    id: 'S4-2',
+    text: 'The examples that usually demonstrates the issue are useful.',
+    expectError: true,
+    expectedFixed: 'The examples that usually demonstrate the issue are useful.',
+    desc: 'Relative clause with usually demonstrates -> demonstrate; preserve are'
+  },
+  {
+    id: 'S4-3',
+    text: 'The guidelines that frequently explains the process are clear.',
+    expectError: true,
+    expectedFixed: 'The guidelines that frequently explain the process are clear.',
+    desc: 'Relative clause with frequently explains -> explain'
+  },
+  {
+    id: 'S4-4',
+    text: 'The issues that developers face are complex.',
+    expectError: false,
+    desc: 'Object relative clause developers face - zero false positives'
+  },
+  {
+    id: 'S4-5',
+    text: 'The features that users usually request are prioritized.',
+    expectError: false,
+    desc: 'Object relative clause users usually request - zero false positives'
+  },
+  {
+    id: 'S4-6',
+    text: 'The committee, together with its advisers, has approved the proposal.',
+    expectError: false,
+    desc: 'Singular subject with together with its advisers takes singular has approved - zero false positives'
+  },
+  {
+    id: 'S4-7',
+    text: 'The committee, together with its advisers, have approved the proposal.',
+    expectError: true,
+    expectedFixed: 'The committee, together with its advisers, has approved the proposal.',
+    desc: 'Singular subject with together with taking have approved -> has approved'
+  },
+  {
+    id: 'S4-8',
+    text: 'The engineers who designed the system have discovered a defect.',
+    expectError: false,
+    desc: 'Plural subject engineers who designed takes plural have discovered - zero false positives'
+  },
+  {
+    id: 'S4-9',
+    text: 'The engineer who designed the system has discovered a defect.',
+    expectError: false,
+    desc: 'Singular subject engineer who designed takes singular has discovered - zero false positives'
+  },
+  {
+    id: 'S4-10',
+    text: 'Neither the authors nor the external reviewers claim that the analysis resolves every question.',
+    expectError: false,
+    desc: 'Correlative neither nor with plural closest subject reviewers claim - zero false positives'
+  },
+  {
+    id: 'S4-11',
+    text: 'The findings, together with the limitations, provide a useful starting point.',
+    expectError: false,
+    desc: 'Plural subject findings together with limitations takes provide - zero false positives'
+  },
+  {
+    id: 'S4-12',
+    text: 'The findings, together with the limitations, provides a useful starting point.',
+    expectError: true,
+    expectedFixed: 'The findings, together with the limitations, provide a useful starting point.',
+    desc: 'Plural subject findings together with limitations taking provides -> provide'
+  },
+  {
+    id: 'S4-13',
+    text: 'One of the principal challenges is distinguishing genuine correlations.',
+    expectError: false,
+    desc: 'One of the principal challenges is - zero false positives'
+  },
+  {
+    id: 'S4-14',
+    text: 'Many of the observations were collected under different conditions.',
+    expectError: false,
+    desc: 'Many of the observations were collected - zero false positives'
+  }
+];
+
+for (const tc of s4Cases) {
+  const res = runGrammarEngine(tc.text);
+  const agrFindings = res.findings.filter(f => f.ruleId.startsWith('AGREEMENT_'));
+  if (tc.expectError) {
+    assert(agrFindings.length >= 1, `[${tc.id}] Genuine agreement error detected for "${tc.text}" (${tc.desc})`);
+    if (tc.expectedFixed) {
+      const fixed = applyAllSafeFixes(tc.text);
+      assert(fixed === tc.expectedFixed, `[${tc.id}] Safe fix yields expected text "${tc.expectedFixed}" (got "${fixed}")`);
+    }
+  } else {
+    assert(agrFindings.length === 0, `[${tc.id}] Zero false-positive agreement errors for "${tc.text}" (${tc.desc})`, agrFindings);
+  }
+}
+
+// 22.2 Individual Sentence Audit for the 17 Stress-Test Sentences
+console.log('  -> Auditing all 17 individual stress-test sentences...');
+const stressSentences = [
+  {
+    num: 1,
+    text: "Although the research team, together with several external consultants, have reviewed the preliminary findings, the conclusions that the report presents remains controversial because neither the available evidence nor the statistical models fully explains the observed pattern.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // remains -> remain, explains -> explain, have -> has
+  },
+  {
+    num: 2,
+    text: "The engineers who designed the monitoring system, which was originally intended to detect minor fluctuations in temperature, has discovered that several sensors produces inconsistent readings whenever the surrounding humidity increases unexpectedly.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // has discovered -> have discovered, produces -> produce
+  },
+  {
+    num: 3,
+    text: "These discrepancies, however, does not necessarily indicate that the entire system are unreliable; rather, they suggests that the calibration procedure, along with the assumptions underlying the original experiment, require further investigation.",
+    hasCommaSplice: false,
+    minAgrErrors: 3 // does -> do, system are -> is, they suggests -> suggest, require -> requires
+  },
+  {
+    num: 4,
+    text: "The committee reviewed the proposals, compared the projected costs, and consulted independent specialists, it subsequently approved a revised implementation plan that includes additional safeguards, clearer reporting requirements, and more frequent inspections.",
+    hasCommaSplice: true, // genuine comma splice between specialists, it
+    minAgrErrors: 0
+  },
+  {
+    num: 5,
+    text: "Several participants argued that the changes were unnecessary, others maintained that the earlier procedure had overlooked risks that experienced analysts would have identified.",
+    hasCommaSplice: true, // genuine comma splice between unnecessary, others
+    minAgrErrors: 0
+  },
+  {
+    num: 6,
+    text: "One of the principal challenges in evaluating the results are distinguishing genuine correlations from coincidental relationships.",
+    hasCommaSplice: false,
+    minAgrErrors: 1 // are -> is
+  },
+  {
+    num: 7,
+    text: "The dataset contains thousands of observations, many of which was collected under different environmental conditions, and the analysts must determine whether the apparent differences reflects meaningful variation or measurement error.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // was -> were, reflects -> reflect
+  },
+  {
+    num: 8,
+    text: "A researcher who carefully examines these limitations are more likely to produce conclusions that withstand independent scrutiny.",
+    hasCommaSplice: false,
+    minAgrErrors: 1 // are -> is
+  },
+  {
+    num: 9,
+    text: "Furthermore, the report emphasizes that organizations should establish transparent procedures, document every significant decision, and communicate uncertainty honestly.",
+    hasCommaSplice: false,
+    minAgrErrors: 0 // clean sentence
+  },
+  {
+    num: 10,
+    text: "Managers who ignores these responsibilities can undermine public confidence, even when their technical teams performs their work competently.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // ignores -> ignore, performs -> perform
+  },
+  {
+    num: 11,
+    text: "In complex investigations, accuracy is not achieved merely by collecting more data; it also depends on how carefully the evidence are interpreted, how clearly the limitations is explained, and whether competing interpretations receives fair consideration.",
+    hasCommaSplice: false,
+    minAgrErrors: 3 // evidence are -> is, limitations is -> are, interpretations receives -> receive
+  },
+  {
+    num: 12,
+    text: "Although the final recommendations appears reasonable at first glance, their practical implications remains uncertain.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // appears -> appear, remains -> remain
+  },
+  {
+    num: 13,
+    text: "If the proposed safeguards is implemented without adequate training, employees may follow the new procedures inconsistently, this could create additional problems rather than resolving the original ones.",
+    hasCommaSplice: true, // genuine comma splice between inconsistently, this
+    minAgrErrors: 1 // safeguards is -> are
+  },
+  {
+    num: 14,
+    text: "Consequently, decision-makers should evaluate not only whether a policy sounds persuasive, but also whether its assumptions are supported by evidence, its costs are proportionate to its benefits, and its outcomes can be measured reliably.",
+    hasCommaSplice: false,
+    minAgrErrors: 0 // clean sentence
+  },
+  {
+    num: 15,
+    text: "The findings, together with the methodological limitations described in the appendix, provides a useful starting point for future research.",
+    hasCommaSplice: false,
+    minAgrErrors: 1 // provides -> provide
+  },
+  {
+    num: 16,
+    text: "Neither the authors nor the external reviewers claims that the analysis resolves every outstanding question; instead, they acknowledges that further experiments are needed.",
+    hasCommaSplice: false,
+    minAgrErrors: 2 // claims -> claim, acknowledges -> acknowledge
+  },
+  {
+    num: 17,
+    text: "A comprehensive review should identify which conclusions are well supported, which assumptions requires additional testing, and which uncertainties cannot yet be eliminated.",
+    hasCommaSplice: false,
+    minAgrErrors: 1 // requires -> require
+  }
+];
+
+for (const s of stressSentences) {
+  const analysis = analyzeText(s.text);
+  const splices = analysis.coachFindings.filter(f => f.ruleId === 'SENTENCE_COMMA_SPLICE' || /comma splice/i.test(f.issue));
+  const agrFindings = analysis.coachFindings.filter(f => f.ruleId?.startsWith('AGREEMENT_'));
+
+  if (s.hasCommaSplice) {
+    assert(splices.length >= 1, `Sentence ${s.num}: Comma splice correctly detected`);
+  } else {
+    assert(splices.length === 0, `Sentence ${s.num}: Zero false-positive comma splices (got ${splices.length})`, splices);
+  }
+
+  if (s.minAgrErrors > 0) {
+    assert(agrFindings.length >= s.minAgrErrors, `Sentence ${s.num}: Detected at least ${s.minAgrErrors} agreement errors (found ${agrFindings.length})`);
+  } else {
+    assert(agrFindings.length === 0, `Sentence ${s.num}: Correct agreement has 0 false positives (found ${agrFindings.length})`);
+  }
+
+  // Safe rewrite validation: no invalid semicolon insertion
+  for (const cf of analysis.coachFindings) {
+    if (cf.rewrite) {
+      assert(!/^(?:Although|Because|If|When|While|Unless|Since)\b[^,;]+;/i.test(cf.rewrite), `Sentence ${s.num}: Rewrite does NOT insert semicolon after introductory clause (Pattern A guard)`);
+      assert(!/;\s*(?:and|but|or|nor|so|yet)\b/i.test(cf.rewrite), `Sentence ${s.num}: Rewrite does NOT replace coordinating or list conjunction with semicolon (Pattern B guard)`);
+      assert(!/;\s*(?:many|some|several)\s+of\s+which\b/i.test(cf.rewrite), `Sentence ${s.num}: Rewrite does NOT split relative clause with semicolon (Pattern C guard)`);
+    }
+    // Finding integrity: ruleId, category, and issue must match
+    if (cf.ruleId === 'SENTENCE_COMMA_SPLICE') {
+      assert(/comma splice/i.test(cf.issue), `Sentence ${s.num}: Comma splice finding issue text matches ruleId`);
+      assert(cf.replacement === ';' || cf.replacement === '. ', `Sentence ${s.num}: Comma splice replacement is punctuation`);
+    }
+    if (cf.ruleId?.startsWith('AGREEMENT_')) {
+      assert(/agreement|mismatch/i.test(cf.issue), `Sentence ${s.num}: Agreement finding issue text matches ruleId`);
+      assert(!/comma splice/i.test(cf.issue), `Sentence ${s.num}: Agreement finding does NOT contain comma-splice issue text`);
+    }
+  }
+}
+
+// 22.3 Full 425-Word Stress Test Paragraph Corpus
+console.log('  -> Testing full combined 425-word stress-test passage...');
+const fullPassage = stressSentences.map(s => s.text).join('\n\n');
+const fullAnalysis = analyzeText(fullPassage, 0.05, 150);
+
+// Basic stats verification
+assert(fullAnalysis.sentences === 17, `Sentence count is exactly 17 (got ${fullAnalysis.sentences})`);
+assert(fullAnalysis.words === 425, `Word count is exactly 425 (got ${fullAnalysis.words})`);
+assert(fullAnalysis.paragraphs === 17, `Paragraph count is 17 when double-newline separated`);
+assert(fullAnalysis.estimatedEarnings === 21.25, `Estimated earnings for 425 words @ $0.05/word is exactly $21.25 (got $${fullAnalysis.estimatedEarnings.toFixed(2)})`);
+
+// Comma-splice audit on full passage
+const fullSplices = fullAnalysis.coachFindings.filter(f => f.ruleId === 'SENTENCE_COMMA_SPLICE' || /comma splice/i.test(f.issue));
+assert(fullSplices.length === 3, `Full passage detects exactly 3 genuine comma splices (on S4, S5, S13), got ${fullSplices.length}`);
+const spliceSentences = fullSplices.map(f => f.sentenceIndex).sort((a, b) => (a || 0) - (b || 0));
+assert(spliceSentences.includes(4), 'Comma splice detected on Sentence 4');
+assert(spliceSentences.includes(5), 'Comma splice detected on Sentence 5');
+assert(spliceSentences.includes(13), 'Comma splice detected on Sentence 13');
+
+// Safe fix idempotence & non-destructive application
+const fullFixedPass1 = applyAllSafeFixes(fullPassage);
+const fullFixedPass2 = applyAllSafeFixes(fullFixedPass1);
+assert(fullFixedPass1 === fullFixedPass2, 'Safe fix application is 100% idempotent: Pass 2 produces identical output to Pass 1');
+
+// Readability metrics sanity
+assert(fullAnalysis.flesch != null && fullAnalysis.flesch >= 0 && fullAnalysis.flesch <= 100, `Flesch score is valid range [0, 100] (got ${fullAnalysis.flesch})`);
+assert(fullAnalysis.fkGrade != null && fullAnalysis.fkGrade > 15, `Flesch-Kincaid Grade reflects college-level density (>15, got ${fullAnalysis.fkGrade})`);
+assert(fullAnalysis.fog != null && fullAnalysis.fog > 15, `Gunning Fog reflects advanced academic prose (>15, got ${fullAnalysis.fog})`);
+
+// ============================================================
 // Summary
 // ============================================================
 console.log('\n' + '='.repeat(50));
