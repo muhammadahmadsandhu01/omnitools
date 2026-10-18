@@ -396,6 +396,10 @@ assert(applySafeGrammarFixes("Could that have been prevented?") === "Could that 
 assert(applySafeGrammarFixes("Did each member have a copy?") === "Did each member have a copy?", 'applySafeGrammarFixes preserves auxiliary question "Did each member have"');
 assert(applySafeGrammarFixes("These results was unexpected.") === "These results were unexpected.", 'applySafeGrammarFixes corrects genuine error "These results was"');
 assert(applySafeGrammarFixes("He were late.") === "He was late.", 'applySafeGrammarFixes corrects genuine error "He were"');
+assert(applySafeGrammarFixes("These discrepancies occurs in the data.") === "These discrepancies occur in the data.", 'Plural head with lexical singular verb is corrected');
+assert(applySafeGrammarFixes("Other investigations relies on this result.") === "Other investigations rely on this result.", 'Plural head with consonant-change verb is corrected');
+assert(applySafeGrammarFixes("Each of the explanations appear valid.") === "Each of the explanations appears valid.", 'Each-of quantifier takes a singular verb');
+assert(applySafeGrammarFixes("Additional testing are necessary.") === "Additional testing is necessary.", 'Mass-noun testing takes a singular verb');
 
 // Contractions and possessives must NOT be corrupted or masked as quotes
 assert(applySafeGrammarFixes("It's the company's objective to complete the project.") === "It's the company's objective to complete the project.", 'Contractions and possessives are not treated as quotes');

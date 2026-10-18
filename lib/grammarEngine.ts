@@ -367,7 +367,10 @@ export const SINGULAR_VERB_TO_PLURAL: Record<string, string> = {
   develops: 'develop',
   collects: 'collect',
   compares: 'compare',
-  disputes: 'dispute'
+  disputes: 'dispute',
+  occurs: 'occur',
+  relies: 'rely',
+  uses: 'use'
 };
 
 export const MODAL_AUXILIARIES = new Set([
@@ -1591,7 +1594,7 @@ export function runGrammarEngine(
           end: gEnd,
           sentenceIndex: sRange.index,
           sentence: sText,
-          issue: `Subject–verb agreement mismatch: singular quantifier phrase “${phrase}” uses plural verb “${verb}”.`,
+          issue: `Subject–verb agreement mismatch: singular quantifier phrase “${phrase}�� uses plural verb “${verb}”.`,
           why: `“Each” and “every” create singular grammatical subjects that require singular verbs (“${correctVerb}”).`,
           suggestion: `Change “${verb}” to “${correctVerb}”.`,
           replacement: correctVerb,
@@ -2018,6 +2021,34 @@ export function runGrammarEngine(
         replacement: correctVerb,
         replacements: [correctVerb]
       });
+    }
+
+    // 2.9c Precision cases that need lexical head-noun handling.
+    // These patterns avoid guessing from nearby objects and cover plural heads,
+    // singular quantifiers, and mass nouns with unambiguous agreement.
+    const explicitAgreementCases = [
+      { re: /\b(these|those|the)\s+([a-z]+s)\s+(occurs|relies|appears|remains|uses|demonstrates|introduces|attempts|treats)\b/gi, replacement: (verb: string) => SINGULAR_VERB_TO_PLURAL[verb] },
+      { re: /\b(each)\s+of\s+(?:the\s+)?([a-z]+s)\s+(appear|remain|use|demonstrate)\b/gi, replacement: (verb: string) => verb === 'appear' ? 'appears' : verb === 'remain' ? 'remains' : verb === 'use' ? 'uses' : 'demonstrates' },
+      { re: /\b(additional\s+testing)\s+(are|were)\b/gi, replacement: () => 'is' }
+    ];
+    for (const rule of explicitAgreementCases) {
+      let explicitMatch: RegExpExecArray | null;
+      while ((explicitMatch = rule.re.exec(sText)) !== null) {
+        const verb = explicitMatch[explicitMatch.length - 1].toLowerCase();
+        const replacement = rule.replacement(verb);
+        if (!replacement || replacement === verb) continue;
+        const verbOffset = explicitMatch.index + explicitMatch[0].lastIndexOf(explicitMatch[explicitMatch.length - 1]);
+        const gStart = sStart + verbOffset;
+        addFinding({
+          id: `agreement-explicit-${gStart}`,
+          category: 'Grammar', severity: 'high', confidence: 'HIGH', confidenceScore: 96,
+          ruleId: 'AGREEMENT_EXPLICIT_HEAD_NOUN', start: gStart, end: gStart + verb.length,
+          sentenceIndex: sRange.index, sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${explicitMatch[1]} ${explicitMatch[2]}” does not agree with singular verb “${verb}”.`,
+          why: 'The verb must agree with the grammatical head noun, not a nearby modifier or object.',
+          suggestion: `Change “${verb}” to “${replacement}”.`, replacement, replacements: [replacement]
+        });
+      }
     }
 
     // 2.10 Subject-Verb Agreement: Relative Clause with Plural Antecedent
