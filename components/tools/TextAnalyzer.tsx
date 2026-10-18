@@ -12,20 +12,24 @@ import {
   runGrammarEngine,
   applyFindingCorrection,
   applyAllSafeFixes,
+  buildCompleteSentenceRewrite,
   findLikelyCommaSpliceInSentence,
   type GrammarFinding,
   type IssueCategory,
-  type DialogueMode
+  type DialogueMode,
+  type ContentType
 } from '@/lib/grammarEngine';
 
 export {
   runGrammarEngine,
   applyFindingCorrection,
   applyAllSafeFixes,
+  buildCompleteSentenceRewrite,
   findLikelyCommaSpliceInSentence,
   type GrammarFinding,
   type IssueCategory,
-  type DialogueMode
+  type DialogueMode,
+  type ContentType
 };
 
 export const SAMPLE_TEXT = `Clear writing shares ideas simply, directly, and with good rhythm. When drafting an article or business report, knowing your audience is the most useful step toward engagement.
@@ -496,7 +500,7 @@ function findLikelyCommaSplice(sentence: string): number {
   return findLikelyCommaSpliceInSentence(sentence);
 }
 
-const PREPOSITIONS_RE = /\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during)(?:\s+(?:all|both|many|several|some|each)(?:\s+of)?)?\s+$/i;
+const PREPOSITIONS_RE = /\b(?:of|in|for|with|on|at|to|from|by|about|under|through|between|among|across|into|upon|toward|towards|against|within|during|without)(?:\s+(?:all|both|many|several|some|each)(?:\s+of)?)?(?:\s+[a-z]+ing)?\s+$/i;
 
 const SINGULAR_S_NOUNS = new Set([
   'news', 'series', 'species', 'lens', 'analytics', 'logistics', 'operations',
@@ -847,7 +851,7 @@ export function applySafeGrammarFixes(s: string): string {
       return `${subj} has`;
     });
     out = out.replace(/\b(they|we|you)\s+was\b/gi, '$1 were');
-    // Singular subject + plural verb: "He were" -> "He was" (strictly excluding subjunctive "If he were", "I wish he were" and prepositional objects "to this were")
+    // Singular subject + plural verb: "He were" -> "He was" (strictly excluding subjunctive "If he were", "I wish he were", prepositional objects "to this were", and relative plural 'that were')
     out = out.replace(/\b(he|she|it|this|that)\s+were\b/gi, (match, subj, offset, fullStr) => {
       const preceding = fullStr.slice(0, offset);
       if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|suppose|supposing|whether)\s+(?:[\w\s,]+?\s+)?$/i.test(preceding)) {
@@ -856,15 +860,21 @@ export function applySafeGrammarFixes(s: string): string {
       if ((subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding)) {
         return match;
       }
+      if (subj.toLowerCase() === 'that' && /(?:[a-z]+s|data|criteria|phenomena|people|children|men|women|teeth|feet)$/i.test(preceding.trim())) {
+        return match;
+      }
       return `${subj} was`;
     });
-    // Singular subject + have: "He have" -> "He has" (strictly excluding auxiliary questions "Did he have", "Does she have", "Could that have", etc.)
+    // Singular subject + have: "He have" -> "He has" (strictly excluding auxiliary questions "Did he have", prepositional objects, and relative plural 'that have')
     out = out.replace(/\b(he|she|it|this|that)\s+have\b/gi, (match, subj, offset, fullStr) => {
       const preceding = fullStr.slice(0, offset);
       if (/\b(?:did|does|doesn't|didn't|do|could|would|should|might|must|will|can|shall)\s+(?:not\s+)?$/i.test(preceding)) {
         return match;
       }
       if ((subj.toLowerCase() === 'this' || subj.toLowerCase() === 'that') && PREPOSITIONS_RE.test(preceding)) {
+        return match;
+      }
+      if (subj.toLowerCase() === 'that' && /(?:[a-z]+s|data|criteria|phenomena|people|children|men|women|teeth|feet)$/i.test(preceding.trim())) {
         return match;
       }
       return `${subj} has`;
@@ -993,10 +1003,10 @@ function grammarRewrite(sentence: string, detail: string): string | undefined {
     const comma = findLikelyCommaSplice(sentence);
     if (comma >= 0) {
       const fixedPunct = sentence.slice(0, comma) + ';' + sentence.slice(comma + 1);
-      rewritten = applySafeGrammarFixes(fixedPunct);
+      rewritten = buildCompleteSentenceRewrite(applySafeGrammarFixes(fixedPunct));
     }
   } else if (/agreement|mismatch|article|duplicated|tense/i.test(detail)) {
-    const fixed = applySafeGrammarFixes(sentence);
+    const fixed = buildCompleteSentenceRewrite(sentence);
     if (fixed !== sentence) rewritten = fixed;
   }
   if (rewritten && validateRewrite(sentence, rewritten)) {
@@ -1164,12 +1174,13 @@ function buildCoachFindings(
   contextual: ReturnType<typeof contextualWritingAnalysis>,
   passiveCandidates: { sentence: string; index: number }[],
   dialogueMode: DialogueMode = 'normal',
-  passedEngineResult?: ReturnType<typeof runGrammarEngine>
+  passedEngineResult?: ReturnType<typeof runGrammarEngine>,
+  contentType: ContentType = 'general'
 ): CoachFinding[] {
   const findings: CoachFinding[] = [];
   const grouped = new Map<string, CoachFinding>();
 
-  const engineResult = passedEngineResult || runGrammarEngine(text, { dialogueMode });
+  const engineResult = passedEngineResult || runGrammarEngine(text, { dialogueMode, contentType });
   const sentenceR = sentenceRanges(text);
 
   // Collect indices of sentences with HIGH-severity grammar issues (BUG 5 deduplication)
@@ -1198,10 +1209,40 @@ function buildCoachFindings(
     return undefined;
   };
 
+  // Precompute complete sentence-level rewrites (all safe non-overlapping fixes + re-analysis)
+  const sentenceRewriteCache = new Map<number, string>();
+  const grammarEngineFindings = engineResult.findings.filter(
+    f => f.category === 'Grammar' || f.category === 'Spelling' || f.category === 'Punctuation'
+  );
+  for (const sr of sentenceR) {
+    const sentenceFindings = grammarEngineFindings.filter(
+      f => f.sentenceIndex === sr.index || (f.start >= sr.start && f.end <= sr.end)
+    );
+    if (sentenceFindings.length === 0) continue;
+    const complete = buildCompleteSentenceRewrite(sr.text, { dialogueMode });
+    if (complete !== sr.text && validateRewrite(sr.text, complete)) {
+      // Re-analyze: no remaining instances of the corrected agreement/spelling spans' original errors
+      const residual = runGrammarEngine(complete, { dialogueMode }).findings.filter(
+        f =>
+          (f.category === 'Grammar' || f.category === 'Spelling' || f.category === 'Punctuation') &&
+          sentenceFindings.some(orig => orig.ruleId === f.ruleId && orig.originalText === f.originalText)
+      );
+      if (residual.length === 0) {
+        sentenceRewriteCache.set(sr.index, complete);
+      } else if (validateRewrite(sr.text, complete)) {
+        // Still prefer the multi-fix sentence when it improves detectable errors
+        sentenceRewriteCache.set(sr.index, complete);
+      }
+    }
+  }
+
   // 1. Add all engine findings directly (Grammar, Spelling, Punctuation, Consistency)
   engineResult.findings.forEach(ef => {
     let rewrite: string | undefined = ef.rewrite;
-    if (!rewrite && ef.sentence && ef.originalText && ef.replacement !== undefined && ef.start !== undefined && ef.end !== undefined) {
+    // Prefer complete sentence rewrite when multiple safe fixes apply
+    if (ef.sentenceIndex !== undefined && sentenceRewriteCache.has(ef.sentenceIndex)) {
+      rewrite = sentenceRewriteCache.get(ef.sentenceIndex);
+    } else if (!rewrite && ef.sentence && ef.originalText && ef.replacement !== undefined && ef.start !== undefined && ef.end !== undefined) {
       const sOffset = sentenceR.find(sr => sr.index === ef.sentenceIndex);
       if (sOffset) {
         const relStart = ef.start - sOffset.start;
@@ -1333,7 +1374,7 @@ function buildCoachFindings(
 
   findings.push(...grouped.values());
   const rank: Record<CoachFinding['severity'], number> = { high: 0, medium: 1, low: 2 };
-  return findings.sort((a,b) => rank[a.severity] - rank[b.severity] || (a.sentenceIndex ?? 999) - (b.sentenceIndex ?? 999)).slice(0, 24);
+  return findings.sort((a,b) => rank[a.severity] - rank[b.severity] || (a.sentenceIndex ?? 999) - (b.sentenceIndex ?? 999)).slice(0, 48);
 }
 
 function calculateWritingScore(
@@ -1418,6 +1459,7 @@ function calculateWritingScore(
 export interface TextAnalyzerOptions {
   dialogueMode?: DialogueMode;
   dialect?: 'US' | 'UK' | 'auto';
+  contentType?: ContentType;
 }
 
 export function analyzeText(
@@ -1459,7 +1501,13 @@ export function analyzeText(
     if (c) fillerMap.set(f, c);
   }
 
-  const engineResult = runGrammarEngine(text, { dialogueMode: options?.dialogueMode });
+  const engineDialect =
+    options?.dialect === 'US' || options?.dialect === 'UK' ? options.dialect : 'all';
+  const engineResult = runGrammarEngine(text, {
+    dialogueMode: options?.dialogueMode,
+    dialect: engineDialect,
+    contentType: options?.contentType || 'general'
+  });
   const contextual = contextualWritingAnalysis(text, sentences);
 
   const grammarCandidates = engineResult.findings
@@ -1497,7 +1545,15 @@ export function analyzeText(
   const questions = (text.match(/\?/g) || []).length;
 
   const issues = buildSentenceIssues(text, sentences, [...fillerMap].map(([phrase, count]) => ({ phrase, count })), passiveCandidates, longSentences, exclamations, capsRatio);
-  const coachFindings = buildCoachFindings(text, sentences, contextual, passiveCandidates, options?.dialogueMode, engineResult);
+  const coachFindings = buildCoachFindings(
+    text,
+    sentences,
+    contextual,
+    passiveCandidates,
+    options?.dialogueMode,
+    engineResult,
+    options?.contentType || 'general'
+  );
 
   const vocabDiversity = ws.length ? round1(unique.size / ws.length * 100) : 0;
   const fillerCount = [...fillerMap.values()].reduce((a, b) => a + b, 0);
@@ -1643,12 +1699,16 @@ export default function TextAnalyzer() {
   // Premium Writing Assistant State
   const [editorMode, setEditorMode] = useState<'edit' | 'proofread'>('edit');
   const [dialogueMode, setDialogueMode] = useState<DialogueMode>('normal');
+  const [contentType, setContentType] = useState<ContentType>('general');
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const [fixedIds, setFixedIds] = useState<string[]>([]);
   const [activeFindingIndex, setActiveFindingIndex] = useState(0);
 
   useEffect(() => () => { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }, []);
-  const stats = useMemo(() => analyzeText(text, Number(rate) || 0, wpm, { dialogueMode }), [text, rate, wpm, dialogueMode]);
+  const stats = useMemo(
+    () => analyzeText(text, Number(rate) || 0, wpm, { dialogueMode, contentType }),
+    [text, rate, wpm, dialogueMode, contentType]
+  );
   const activeSelectedIssue = selectedIssue && stats.coachFindings.some(f => f.id === selectedIssue) ? selectedIssue : null;
 
   const activeFindings = useMemo(
@@ -2336,7 +2396,7 @@ export default function TextAnalyzer() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap">
             <label htmlFor="dialogue-mode-select" className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
               Mode:
             </label>
@@ -2350,6 +2410,25 @@ export default function TextAnalyzer() {
               <option value="normal">Normal Prose (Dialogue Protected)</option>
               <option value="analyze-dialogue">Analyze Quoted Dialogue</option>
               <option value="preserve-quotes">Strict Quote Preservation</option>
+            </select>
+
+            <label htmlFor="content-type-select" className="text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+              Content:
+            </label>
+            <select
+              id="content-type-select"
+              value={contentType}
+              onChange={e => setContentType(e.target.value as ContentType)}
+              className="px-2.5 py-1.5 bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              title="Document type for tone and style sensitivity"
+            >
+              <option value="general">General</option>
+              <option value="business">Business</option>
+              <option value="academic">Academic</option>
+              <option value="email">Email</option>
+              <option value="technical">Technical</option>
+              <option value="creative">Creative</option>
+              <option value="social">Social</option>
             </select>
 
             {dismissedIds.length > 0 && (

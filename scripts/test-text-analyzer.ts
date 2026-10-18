@@ -1873,6 +1873,190 @@ assert(fullAnalysis.fkGrade != null && fullAnalysis.fkGrade > 15, `Flesch-Kincai
 assert(fullAnalysis.fog != null && fullAnalysis.fog > 15, `Gunning Fog reflects advanced academic prose (>15, got ${fullAnalysis.fog})`);
 
 // ============================================================
+// 24. Targeted Positive Grammar Defect & Negative Control Verifications
+// ============================================================
+console.log('\n• Testing Suite 24: Targeted Positive Grammar Defects & Negative Controls...');
+
+const targetPositiveCases = [
+  {
+    id: 1,
+    name: 'Subordinate clause bare plural subject with singular verb (attempts -> attempt)',
+    input: 'A further complication arises when researchers attempts to compare datasets.',
+    expected: 'A further complication arises when researchers attempt to compare datasets.',
+    expectedRules: ['AGREEMENT_PLURAL_NOUN_SINGULAR_VERB']
+  },
+  {
+    id: 2,
+    name: 'Plural antecedent with past singular auxiliary (datasets that was -> were)',
+    input: 'Researchers compare datasets that was collected under different conditions.',
+    expected: 'Researchers compare datasets that were collected under different conditions.',
+    expectedRules: ['AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT']
+  },
+  {
+    id: 3,
+    name: 'Multi-error demonstrative plural + irregular aux + 3rd singular verb (these discrepancies does not... system are... they suggests)',
+    input: 'These discrepancies does not prove that the entire system are unreliable; rather, they suggests that further validation is required.',
+    expected: 'These discrepancies do not prove that the entire system is unreliable; rather, they suggest that further validation is required.',
+    expectedRules: ['AGREEMENT_PLURAL_NOUN_SINGULAR_VERB', 'AGREEMENT_SINGULAR_NOUN_PLURAL_VERB', 'AGREEMENT_PLURAL_PRONOUN_SINGULAR_VERB']
+  },
+  {
+    id: 4,
+    name: 'Compound subject with intervening phrases + introductory subordinator (samples appears... differences in... introduces)',
+    input: 'Although the samples appears similar, differences in recruitment procedures and participant characteristics introduces uncertainty.',
+    expected: 'Although the samples appear similar, differences in recruitment procedures and participant characteristics introduce uncertainty.',
+    expectedRules: ['AGREEMENT_PLURAL_NOUN_SINGULAR_VERB']
+  },
+  {
+    id: 5,
+    name: 'Neither/nor compound subject with adverb + prepositional postmodifier (neither... nor... fully explains... assumptions used... requires)',
+    input: 'Neither the available observations nor the statistical models fully explains the discrepancy, and the assumptions used during analysis requires examination.',
+    expected: 'Neither the available observations nor the statistical models fully explain the discrepancy, and the assumptions used during analysis require examination.',
+    expectedRules: ['AGREEMENT_CORRELATIVE_CONJUNCTION', 'AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE']
+  },
+  {
+    id: 6,
+    name: 'Multiple which-clauses with plural subjects (which interpretations depends... which questions remains)',
+    input: 'The report should identify which interpretations depends on assumptions and which questions remains unresolved.',
+    expected: 'The report should identify which interpretations depend on assumptions and which questions remain unresolved.',
+    expectedRules: ['AGREEMENT_PLURAL_NOUN_SINGULAR_VERB']
+  },
+  {
+    id: 7,
+    name: 'Plural head with relative clause + matrix verb + subordinate subject (Recommendations that ignores... risks... decision-makers treats)',
+    input: 'Recommendations that ignores these distinctions risks misleading readers when decision-makers treats scores as conclusive proof.',
+    expected: 'Recommendations that ignore these distinctions risk misleading readers when decision-makers treat scores as conclusive proof.',
+    expectedRules: ['AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT', 'AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE', 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB']
+  },
+  {
+    id: 8,
+    name: 'Compound coordination subject with singular verb (Accuracy, clarity, and justified confidence matters -> matter)',
+    input: 'Accuracy, clarity, and justified confidence matters more than the number of corrections.',
+    expected: 'Accuracy, clarity, and justified confidence matter more than the number of corrections.',
+    expectedRules: ['AGREEMENT_COMPOUND_SUBJECT_CONJUNCTION']
+  },
+  {
+    id: 9,
+    name: 'Plural head with who-relative clause + perfect auxiliary + plural antecedent (engineers who... has discovered... results that appears)',
+    input: 'The engineers who developed the original evaluation framework has discovered several limitations, including results that appears inconsistent.',
+    expected: 'The engineers who developed the original evaluation framework have discovered several limitations, including results that appear inconsistent.',
+    expectedRules: ['AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE', 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT']
+  },
+  {
+    id: 10,
+    name: 'Comma splice between two independent clauses with other researchers (improvements, other researchers disputed)',
+    input: 'Several studies reported improvements, other researchers disputed the conclusion.',
+    expected: 'Several studies reported improvements; other researchers disputed the conclusion.',
+    expectedRules: ['SENTENCE_COMMA_SPLICE']
+  }
+];
+
+const targetNegativeControls = [
+  {
+    id: 'N1',
+    input: 'The issues that developers face are complex.',
+    description: 'Object relative clause: plural noun + that + subject + verb'
+  },
+  {
+    id: 'N2',
+    input: 'The features that users request are prioritized.',
+    description: 'Object relative clause'
+  },
+  {
+    id: 'N3',
+    input: 'The report contains charts, tables, diagrams, and supplementary data.',
+    description: 'Serial noun list (not a comma splice)'
+  },
+  {
+    id: 'N4',
+    input: 'Because the deadline was extended, the developers completed all tests.',
+    description: 'Introductory subordinate clause'
+  },
+  {
+    id: 'N5',
+    input: 'When the audit was complete, the team published the results.',
+    description: 'Introductory subordinate clause'
+  },
+  {
+    id: 'N6',
+    input: 'The engineer designed the module, tested the functions, and deployed the service.',
+    description: 'Coordinated compound predicates'
+  },
+  {
+    id: 'N7',
+    input: 'We parsed the configuration, validated the schema, and applied the updates.',
+    description: 'Coordinated compound predicates with pronoun subject'
+  },
+  {
+    id: 'N8',
+    input: 'The guidelines that explain the process should be updated.',
+    description: 'Correct plural relative-clause agreement'
+  },
+  {
+    id: 'N9',
+    input: 'Assumptions that were never adequately challenged led to the delay.',
+    description: 'Plural antecedent + that + were'
+  },
+  {
+    id: 'N10',
+    input: 'The architecture is scalable; the implementation is robust.',
+    description: 'Valid semicolon between independent clauses'
+  }
+];
+
+for (const tc of targetPositiveCases) {
+  const engineResult = runGrammarEngine(tc.input);
+  const engineFindings = engineResult.findings;
+  assert(engineFindings.length > 0, `Target Positive Case ${tc.id}: Engine detected at least one error`);
+
+  // Verify expected rule triggers
+  for (const expRule of tc.expectedRules) {
+    const matched = engineFindings.some(f => f.ruleId === expRule || f.ruleId.startsWith(expRule));
+    assert(matched, `Target Positive Case ${tc.id}: Engine triggered rule ${expRule}`);
+  }
+
+  // Exact engine applyAllSafeFixes matches expected
+  const fixedByEngine = applyAllSafeFixes(tc.input);
+  assert(fixedByEngine === tc.expected, `Target Positive Case ${tc.id}: applyAllSafeFixes produces exact expected output`, { got: fixedByEngine, expected: tc.expected });
+
+  // Coach findings and coach rewrite
+  const analysis = analyzeText(tc.input);
+  const relevantCoachFindings = analysis.coachFindings.filter(f => f.ruleId?.startsWith('AGREEMENT_') || f.ruleId === 'SENTENCE_COMMA_SPLICE');
+  assert(relevantCoachFindings.length > 0, `Target Positive Case ${tc.id}: Coach findings identified target errors`);
+
+  // Test full-sentence rewrite coherence on coach findings
+  for (const cf of relevantCoachFindings) {
+    if (cf.rewrite) {
+      assert(cf.rewrite === tc.expected, `Target Positive Case ${tc.id}: Coach finding rewrite matches complete sentence correction`, { got: cf.rewrite, expected: tc.expected });
+    }
+  }
+
+  // applySafeGrammarFixes matches expected
+  const fixedByCoach = applySafeGrammarFixes(tc.input);
+  assert(fixedByCoach === tc.expected, `Target Positive Case ${tc.id}: applySafeGrammarFixes produces exact expected output`, { got: fixedByCoach, expected: tc.expected });
+
+  // Idempotence: applying fixes again to expected output produces identical text
+  const pass2 = applyAllSafeFixes(fixedByCoach);
+  assert(pass2 === tc.expected, `Target Positive Case ${tc.id}: Repeated fix application is idempotent`);
+
+  // Re-analysis has 0 remaining agreement errors or comma splices
+  const reAnalysis = analyzeText(tc.expected);
+  const remainingErrors = reAnalysis.coachFindings.filter(f => f.ruleId?.startsWith('AGREEMENT_') || f.ruleId === 'SENTENCE_COMMA_SPLICE');
+  assert(remainingErrors.length === 0, `Target Positive Case ${tc.id}: Re-analysis yields 0 remaining agreement/splice errors (got ${remainingErrors.length})`, remainingErrors);
+}
+
+for (const nc of targetNegativeControls) {
+  const engineFindings = runGrammarEngine(nc.input).findings;
+  assert(engineFindings.length === 0, `Negative Control ${nc.id} (${nc.description}): Zero engine findings (got ${engineFindings.length})`, engineFindings);
+
+  const analysis = analyzeText(nc.input);
+  const coachErrors = analysis.coachFindings.filter(f => f.ruleId?.startsWith('AGREEMENT_') || f.ruleId === 'SENTENCE_COMMA_SPLICE');
+  assert(coachErrors.length === 0, `Negative Control ${nc.id}: Zero coach grammar/splice findings (got ${coachErrors.length})`, coachErrors);
+
+  const unchanged = applyAllSafeFixes(nc.input);
+  assert(unchanged === nc.input, `Negative Control ${nc.id}: applyAllSafeFixes preserves input unchanged`);
+}
+
+// ============================================================
 // Summary
 // ============================================================
 console.log('\n' + '='.repeat(50));
