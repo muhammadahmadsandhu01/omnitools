@@ -1,0 +1,7 @@
+# Non-production directories
+scratch/
+test-results/
+docs/
+.git
+.next
+node_modules
