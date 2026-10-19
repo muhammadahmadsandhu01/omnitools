@@ -1851,7 +1851,7 @@ export default function TextAnalyzer() {
 
   const copyStatsSummary = async () => {
     const summary = [
-      'OmniTools Text Analysis Summary',
+      'KivaroTools Text Analysis Summary',
       '==============================',
       `Words: ${stats.words}`,
       `Characters (with spaces): ${stats.chars}`,
@@ -1925,7 +1925,7 @@ export default function TextAnalyzer() {
 
   const exportCoachReport = () => {
     const lines = [
-      'OmniTools Contextual Writing Coach — Premium Analysis Report',
+      'KivaroTools Contextual Writing Coach — Premium Analysis Report',
       '===========================================================',
       '',
       `Overall Writing Quality: ${stats.writingScore}/100`,
@@ -1947,12 +1947,12 @@ export default function TextAnalyzer() {
         x.rewrite ? `   Suggested rewrite: ${x.rewrite}` : ''
       ].filter(Boolean).join('\n')),
     ];
-    download('omnitools-writing-coach.txt', lines.join('\n'));
+    download('kivarotools-writing-coach.txt', lines.join('\n'));
   };
 
   const report = () => {
     const lines = [
-      'OmniTools Text Analyzer Pro Report — Contextual Coach',
+      'KivaroTools Text Analyzer Pro Report — Contextual Coach',
       '=====================================================',
       '',
       `Words: ${stats.words}`,
@@ -1993,7 +1993,7 @@ export default function TextAnalyzer() {
       'Passive voice candidates (stylistic observation, optional):',
       ...stats.passiveCandidates.slice(0, 8).map(x => `  • #${x.index}: ${x.sentence}`)
     ];
-    download('omnitools-text-analysis.txt', lines.join('\n'));
+    download('kivarotools-text-analysis.txt', lines.join('\n'));
   };
 
   const handleReset = () => {
@@ -2153,7 +2153,7 @@ export default function TextAnalyzer() {
             </button>
             <button
               type="button"
-              onClick={() => download('omnitools_text.txt', text)}
+              onClick={() => download('kivarotools_text.txt', text)}
               disabled={!text}
               title="Download text file"
               id="btn-download-text"

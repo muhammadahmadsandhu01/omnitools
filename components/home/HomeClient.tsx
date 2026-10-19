@@ -314,12 +314,12 @@ export default function HomeClient() {
         </div>
       )}
 
-      {/* Why OmniTools */}
+      {/* Why KivaroTools */}
       <section className="border-y border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-              Why OmniTools
+              Why KivaroTools
             </p>
 
             <h2 className="mt-2 text-3xl font-bold tracking-tight">
@@ -327,7 +327,7 @@ export default function HomeClient() {
             </h2>
 
             <p className="mt-4 text-slate-600 dark:text-slate-400">
-              OmniTools is built around straightforward tools that are
+              KivaroTools is built around straightforward tools that are
               easy to access and simple to use.
             </p>
           </div>
@@ -409,8 +409,8 @@ export default function HomeClient() {
 
           <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
             <FaqItem
-              question="Are OmniTools free to use?"
-              answer="The tools currently provided on OmniTools are intended to be available without registration or a paid account."
+              question="Are KivaroTools free to use?"
+              answer="The tools currently provided on KivaroTools are intended to be available without registration or a paid account."
             />
 
             <FaqItem

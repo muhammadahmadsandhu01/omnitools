@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -29,7 +30,7 @@ export const REGEX_TESTER_FAQS: FaqItem[] = [
   {
     question: 'Why do named capture groups written in JavaScript fail when ported to Python?',
     answer:
-      'JavaScript conforms to ECMAScript syntax (?<name>...) and backreferences \\k<name>. Standard Python re uses PCRE-style syntax (?P<name>...) and backreferences (?P=name) or \\g<name> in replacements. OmniTools provides an automated code generation tab that exports your expression into Python syntax with these conversions applied.',
+      'JavaScript conforms to ECMAScript syntax (?<name>...) and backreferences \\k<name>. Standard Python re uses PCRE-style syntax (?P<name>...) and backreferences (?P=name) or \\g<name> in replacements. KivaroTools provides an automated code generation tab that exports your expression into Python syntax with these conversions applied.',
   },
   {
     question: 'How does String.prototype.split() behave when the regex contains capturing parentheses?',
@@ -57,19 +58,19 @@ export default function RegexTesterSeo() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://omnitools-navy.vercel.app',
+        item: `${SITE_URL}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Developer Tools',
-        item: 'https://omnitools-navy.vercel.app/developer',
+        item: `${SITE_URL}/developer`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'Regex Tester & Code Generator',
-        item: 'https://omnitools-navy.vercel.app/developer/regex-tester',
+        item: `${SITE_URL}/developer/regex-tester`,
       },
     ],
   };
@@ -114,7 +115,7 @@ export default function RegexTesterSeo() {
         Execution Architecture &amp; Client-Side Safeguards
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools executes regular expressions with multiple client-side safety measures:
+        KivaroTools executes regular expressions with multiple client-side safety measures:
       </p>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>

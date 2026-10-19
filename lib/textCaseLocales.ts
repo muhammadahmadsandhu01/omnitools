@@ -1,5 +1,5 @@
 /**
- * OmniTools — ISO 639 Language & Locale Registry
+ * KivaroTools — ISO 639 Language & Locale Registry
  *
  * Dataset Source:
  * - Authoritative IANA Language Subtag Registry (RFC 5646, Registry Date: 2024-03-07)

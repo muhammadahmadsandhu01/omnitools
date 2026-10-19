@@ -1,5 +1,5 @@
 /**
- * OmniTools Cryptographic Password & Secret Generation Engine
+ * KivaroTools Cryptographic Password & Secret Generation Engine
  *
  * Implements browser-native CSPRNG random generation using the Web Cryptography API.
  * Uses strict rejection sampling to eliminate modulo bias.

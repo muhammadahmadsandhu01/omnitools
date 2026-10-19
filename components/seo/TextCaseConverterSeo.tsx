@@ -15,12 +15,12 @@ export const TEXT_CASE_FAQS: FaqItem[] = [
   {
     question: 'How does the converter handle complex developer acronyms like XMLHttpRequest or parseJSONResponse?',
     answer:
-      'OmniTools utilizes an intelligent identifier tokenizer that recognizes transitions between multi-character uppercase acronyms, camelCase humps, and numeric version markers. For example, "XMLHttpRequest" decomposes cleanly into ["XML", "Http", "Request"] to produce proper camelCase ("xmlHttpRequest") or snake_case ("xml_http_request") without clumping acronym boundaries together.',
+      'KivaroTools utilizes an intelligent identifier tokenizer that recognizes transitions between multi-character uppercase acronyms, camelCase humps, and numeric version markers. For example, "XMLHttpRequest" decomposes cleanly into ["XML", "Http", "Request"] to produce proper camelCase ("xmlHttpRequest") or snake_case ("xml_http_request") without clumping acronym boundaries together.',
   },
   {
     question: 'Is my text uploaded or stored on any server during case conversion?',
     answer:
-      'No. OmniTools Text Case Converter executes 100% locally in your web browser using client-side JavaScript memory. No user text, confidential prose, API keys, database column names, or code snippets are ever transmitted across the network, sent to external servers, or persisted in remote databases.',
+      'No. KivaroTools Text Case Converter executes 100% locally in your web browser using client-side JavaScript memory. No user text, confidential prose, API keys, database column names, or code snippets are ever transmitted across the network, sent to external servers, or persisted in remote databases.',
   },
   {
     question: 'How does Sentence case handle punctuation, decimal numbers, and abbreviations?',
@@ -35,7 +35,7 @@ export const TEXT_CASE_FAQS: FaqItem[] = [
   {
     question: 'Does the tool support Dutch IJ digraph capitalization?',
     answer:
-      'Yes. In the Dutch language (nl), the letter pair "IJ" functions as a single ligature digraph. When capitalizing Dutch titles or words at sentence starts (such as "ijsberg" or "ijsselmeer"), both letters must be capitalized together ("IJsberg", "IJsselmeer"). When the Dutch locale is active, OmniTools respects this official orthographic rule.',
+      'Yes. In the Dutch language (nl), the letter pair "IJ" functions as a single ligature digraph. When capitalizing Dutch titles or words at sentence starts (such as "ijsberg" or "ijsselmeer"), both letters must be capitalized together ("IJsberg", "IJsselmeer"). When the Dutch locale is active, KivaroTools respects this official orthographic rule.',
   },
   {
     question: 'How are German umlauts and the sharp S (ß / eszett) handled?',
@@ -76,7 +76,7 @@ export default function TextCaseConverterSeo() {
   const softwareAppSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'OmniTools Text Case Converter',
+    name: 'KivaroTools Text Case Converter',
     operatingSystem: 'Any (Web Browser)',
     applicationCategory: 'UtilityApplication',
     url: canonicalUrl,
@@ -167,7 +167,7 @@ export default function TextCaseConverterSeo() {
           Changing the capitalization and naming format of text is a fundamental daily requirement across modern digital disciplines. Writers and book editors routinely need to format headlines and essay titles in compliance with standard editorial styles. Software developers, database architects, and API designers continuously refactor variable names, database column schemas, and URL slugs between disparate casing paradigms like <code>camelCase</code>, <code>PascalCase</code>, <code>snake_case</code>, and <code>kebab-case</code>.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-          OmniTools <strong>Text Case Converter</strong> delivers a zero-latency, client-side text transformation studio. Featuring 15 specialized conversion modes, intelligent acronym decomposition, a multiline line-preservation engine, quick whitespace cleanup tools, and a comprehensive 191-language ISO locale registry, it handles everything from accidental Caps Lock text to complex multilingual programming payloads entirely inside your browser.
+          KivaroTools <strong>Text Case Converter</strong> delivers a zero-latency, client-side text transformation studio. Featuring 15 specialized conversion modes, intelligent acronym decomposition, a multiline line-preservation engine, quick whitespace cleanup tools, and a comprehensive 191-language ISO locale registry, it handles everything from accidental Caps Lock text to complex multilingual programming payloads entirely inside your browser.
         </p>
       </section>
 
@@ -371,7 +371,7 @@ export default function TextCaseConverterSeo() {
         </p>
 
         <h3 className="text-lg font-bold mb-2 text-slate-800 dark:text-slate-200">
-          How OmniTools Tokenizes Complex Identifiers:
+          How KivaroTools Tokenizes Complex Identifiers:
         </h3>
         <ul className="list-disc pl-6 space-y-2 text-sm text-slate-600 dark:text-slate-300 mb-4">
           <li>
@@ -395,7 +395,7 @@ export default function TextCaseConverterSeo() {
           Internationalization & Unicode Casing: Turkish, German, Dutch & Greek Rules
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
-          Text capitalization is not language-neutral. In many European and Mediterranean languages, standard ASCII uppercase and lowercase transformations produce grammatically incorrect and offensive results. OmniTools includes dedicated linguistic handlers for key international scripts:
+          Text capitalization is not language-neutral. In many European and Mediterranean languages, standard ASCII uppercase and lowercase transformations produce grammatically incorrect and offensive results. KivaroTools includes dedicated linguistic handlers for key international scripts:
         </p>
 
         <div className="space-y-3 mb-6">
@@ -446,7 +446,7 @@ export default function TextCaseConverterSeo() {
           Online text tools represent a significant data leak vector for developers and enterprise teams. Pasting proprietary source code, confidential customer lists, private database column names, or draft manuscripts into server-backed web tools transmits sensitive payloads across third-party networks, where they may be logged in web server access logs, cached in proxies, or stored in remote databases.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
-          OmniTools operates under a strict <strong>Zero-Transmission Architecture</strong>. All casing logic, text cleanup filters, and linguistic parsing execute 100% in-browser inside client-side JavaScript memory:
+          KivaroTools operates under a strict <strong>Zero-Transmission Architecture</strong>. All casing logic, text cleanup filters, and linguistic parsing execute 100% in-browser inside client-side JavaScript memory:
         </p>
         <ul className="list-disc pl-6 space-y-1.5 text-sm text-slate-600 dark:text-slate-300">
           <li><strong>No Server Uploads:</strong> Text entered into the editor is never sent to any remote API endpoint.</li>
@@ -498,13 +498,13 @@ export default function TextCaseConverterSeo() {
         </div>
       </section>
 
-      {/* SECTION 10: RELATED OMNITOOLS UTILITIES */}
+      {/* SECTION 10: RELATED KivaroTools UTILITIES */}
       <section className="pt-6 border-t border-slate-200 dark:border-slate-800">
         <h2 className="text-lg sm:text-xl font-bold mb-3 text-slate-900 dark:text-white">
-          Related OmniTools Utilities
+          Related KivaroTools Utilities
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
-          Enhance your productivity with these related free, browser-based utilities in the OmniTools workspace:
+          Enhance your productivity with these related free, browser-based utilities in the KivaroTools workspace:
         </p>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">

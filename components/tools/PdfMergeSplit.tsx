@@ -758,8 +758,8 @@ export default function PdfMergeSplit() {
       if (!isCurrent()) return;
 
       const mergedPdf = await PDFDocument.create();
-      mergedPdf.setProducer('OmniTools PDF Utility (Client-Side)');
-      mergedPdf.setCreator('OmniTools');
+      mergedPdf.setProducer('KivaroTools PDF Utility (Client-Side)');
+      mergedPdf.setCreator('KivaroTools');
       mergedPdf.setModificationDate(new Date());
 
       let totalPagesCopied = 0;
@@ -868,7 +868,7 @@ export default function PdfMergeSplit() {
 
       if (!isCurrent()) return;
 
-      const baseName = sanitizeFilename(customFilename || 'OmniTools_Merged', 'OmniTools_Merged');
+      const baseName = sanitizeFilename(customFilename || 'KivaroTools_Merged', 'KivaroTools_Merged');
       downloadBlob(pdfBytes, `${baseName}.pdf`);
 
       setProgress({
@@ -962,8 +962,8 @@ export default function PdfMergeSplit() {
 
       if (!isCurrent()) return;
 
-      const defaultBase = `OmniTools_Split_${splitFile.name}`;
-      const safeBase = sanitizeFilename(customFilename || defaultBase, 'OmniTools_Split');
+      const defaultBase = `KivaroTools_Split_${splitFile.name}`;
+      const safeBase = sanitizeFilename(customFilename || defaultBase, 'KivaroTools_Split');
 
       // MODE 1: EXTRACT SELECTED PAGES (SINGLE PDF)
       if (splitMethod === 'extract') {
@@ -987,8 +987,8 @@ export default function PdfMergeSplit() {
         if (!isCurrent()) return;
 
         const newPdf = await PDFDocument.create();
-        newPdf.setProducer('OmniTools PDF Utility (Client-Side)');
-        newPdf.setCreator('OmniTools');
+        newPdf.setProducer('KivaroTools PDF Utility (Client-Side)');
+        newPdf.setCreator('KivaroTools');
         newPdf.setModificationDate(new Date());
 
         const copiedPages = await newPdf.copyPages(sourcePdf, parsed.pagesZeroBased);
@@ -1067,8 +1067,8 @@ export default function PdfMergeSplit() {
           if (!isCurrent()) return;
 
           const pageDoc = await PDFDocument.create();
-          pageDoc.setProducer('OmniTools PDF Utility (Client-Side)');
-          pageDoc.setCreator('OmniTools');
+          pageDoc.setProducer('KivaroTools PDF Utility (Client-Side)');
+          pageDoc.setCreator('KivaroTools');
           pageDoc.setModificationDate(new Date());
 
           const [copiedPage] = await pageDoc.copyPages(sourcePdf, [i]);
@@ -1158,8 +1158,8 @@ export default function PdfMergeSplit() {
           if (!isCurrent()) return;
 
           const partDoc = await PDFDocument.create();
-          partDoc.setProducer('OmniTools PDF Utility (Client-Side)');
-          partDoc.setCreator('OmniTools');
+          partDoc.setProducer('KivaroTools PDF Utility (Client-Side)');
+          partDoc.setCreator('KivaroTools');
           partDoc.setModificationDate(new Date());
 
           const copiedPages = await partDoc.copyPages(sourcePdf, group.pagesZeroBased);
@@ -1620,7 +1620,7 @@ export default function PdfMergeSplit() {
                       type="text"
                       value={customFilename}
                       onChange={(e) => setCustomFilename(e.target.value)}
-                      placeholder="OmniTools_Merged"
+                      placeholder="KivaroTools_Merged"
                       className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-l-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-xs sm:text-sm"
                     />
                     <span className="px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-mono border border-l-0 border-gray-200 dark:border-slate-800 rounded-r-xl select-none">
@@ -1925,7 +1925,7 @@ export default function PdfMergeSplit() {
                       type="text"
                       value={customFilename}
                       onChange={(e) => setCustomFilename(e.target.value)}
-                      placeholder={`OmniTools_Split_${splitFile.name}`}
+                      placeholder={`KivaroTools_Split_${splitFile.name}`}
                       className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-l-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 dark:text-white font-mono text-xs sm:text-sm"
                     />
                     <span className="px-3.5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-mono border border-l-0 border-gray-200 dark:border-slate-800 rounded-r-xl select-none">

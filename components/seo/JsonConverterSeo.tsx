@@ -7,29 +7,29 @@ export interface FaqItem {
 
 export const JSON_CONVERTER_FAQS: FaqItem[] = [
   {
-    question: 'How does OmniTools convert nested JSON objects into flat spreadsheet rows?',
+    question: 'How does KivaroTools convert nested JSON objects into flat spreadsheet rows?',
     answer:
-      'OmniTools uses a deterministic recursive flattening engine. When an object contains child objects, nested keys are joined using your configured separator (such as an underscore or dot, yielding headers like "user_address_city"). Leaf primitive values become individual columns. If property names collide after flattening, the engine appends a numeric suffix (e.g., "status_2") to guarantee that no data fields are silently overwritten.',
+      'KivaroTools uses a deterministic recursive flattening engine. When an object contains child objects, nested keys are joined using your configured separator (such as an underscore or dot, yielding headers like "user_address_city"). Leaf primitive values become individual columns. If property names collide after flattening, the engine appends a numeric suffix (e.g., "status_2") to guarantee that no data fields are silently overwritten.',
   },
   {
     question: 'Why do Microsoft Excel users see corrupted accented characters in CSV files, and how does UTF-8 BOM solve it?',
     answer:
-      'Desktop versions of Microsoft Excel open plain CSV files using the operating system legacy ANSI or Windows-1252 code page by default, corrupting UTF-8 characters such as accents, umlauts, Arabic, Urdu, Chinese, and emoji. OmniTools prepends a UTF-8 Byte Order Mark (\\uFEFF) to all CSV and TSV downloads, explicitly signaling to Excel that the stream is UTF-8 encoded so all international characters render accurately without manual import wizard configuration.',
+      'Desktop versions of Microsoft Excel open plain CSV files using the operating system legacy ANSI or Windows-1252 code page by default, corrupting UTF-8 characters such as accents, umlauts, Arabic, Urdu, Chinese, and emoji. KivaroTools prepends a UTF-8 Byte Order Mark (\\uFEFF) to all CSV and TSV downloads, explicitly signaling to Excel that the stream is UTF-8 encoded so all international characters render accurately without manual import wizard configuration.',
   },
   {
     question: 'What are the RFC 4180 rules for escaping commas, newlines, and quotes in CSV files?',
     answer:
-      'Under the RFC 4180 standard, any field containing a delimiter comma, carriage return, newline, or double quotation mark must be enclosed in double quotation marks. Any literal double quotation mark inside the string must be escaped by preceding it with another double quote (""). OmniTools strictly enforces RFC 4180 compliance on all CSV exports.',
+      'Under the RFC 4180 standard, any field containing a delimiter comma, carriage return, newline, or double quotation mark must be enclosed in double quotation marks. Any literal double quotation mark inside the string must be escaped by preceding it with another double quote (""). KivaroTools strictly enforces RFC 4180 compliance on all CSV exports.',
   },
   {
-    question: 'How does OmniTools protect against Spreadsheet Formula Injection (CSV Injection)?',
+    question: 'How does KivaroTools protect against Spreadsheet Formula Injection (CSV Injection)?',
     answer:
-      'Spreadsheet applications such as Excel, LibreOffice, and Google Sheets automatically execute formulas if a cell begins with =, +, -, @, or tab characters. Malicious or untrusted JSON payloads could trigger DDE commands or exfiltrate data. OmniTools inspects every cell string: if it begins with an executable trigger character (and is not a standard finite number), it automatically prepends an apostrophe (\') to force desktop spreadsheets to treat the cell as plain text.',
+      'Spreadsheet applications such as Excel, LibreOffice, and Google Sheets automatically execute formulas if a cell begins with =, +, -, @, or tab characters. Malicious or untrusted JSON payloads could trigger DDE commands or exfiltrate data. KivaroTools inspects every cell string: if it begins with an executable trigger character (and is not a standard finite number), it automatically prepends an apostrophe (\') to force desktop spreadsheets to treat the cell as plain text.',
   },
   {
     question: 'How are arrays handled when converting JSON to tabular spreadsheets?',
     answer:
-      'OmniTools provides three configurable array handling strategies: (1) JSON String mode, which serializes the array as a valid JSON string within a single cell (e.g. \'["admin","editor"]\'); (2) Joined Values mode, which concatenates primitive values with commas for clean readability (e.g. "admin, editor"); and (3) Indexed mode, which unpacks array items into individual numbered column headers (e.g. tags_0, tags_1).',
+      'KivaroTools provides three configurable array handling strategies: (1) JSON String mode, which serializes the array as a valid JSON string within a single cell (e.g. \'["admin","editor"]\'); (2) Joined Values mode, which concatenates primitive values with commas for clean readability (e.g. "admin, editor"); and (3) Indexed mode, which unpacks array items into individual numbered column headers (e.g. tags_0, tags_1).',
   },
   {
     question: 'How does JSON to YAML conversion preserve data types and handle multiline strings?',
@@ -39,7 +39,7 @@ export const JSON_CONVERTER_FAQS: FaqItem[] = [
   {
     question: 'How does JSON to XML conversion handle invalid tag names and array elements?',
     answer:
-      'XML element names cannot contain spaces or begin with numbers or punctuation. OmniTools sanitizes object keys into valid XML identifiers by replacing illegal characters with underscores. The dataset is wrapped in a root <dataset> container, array entries are enclosed within <item> child tags, text nodes are escaped for &, <, >, ", and \', and null values are explicitly marked with xsi:nil="true".',
+      'XML element names cannot contain spaces or begin with numbers or punctuation. KivaroTools sanitizes object keys into valid XML identifiers by replacing illegal characters with underscores. The dataset is wrapped in a root <dataset> container, array entries are enclosed within <item> child tags, text nodes are escaped for &, <, >, ", and \', and null values are explicitly marked with xsi:nil="true".',
   },
   {
     question: 'Is any JSON payload uploaded to an external server or logged?',
@@ -49,7 +49,7 @@ export const JSON_CONVERTER_FAQS: FaqItem[] = [
   {
     question: 'What is the maximum file size and row limit for client-side JSON conversion?',
     answer:
-      'OmniTools safely handles files up to 50 MB, datasets with up to 200,000 root rows, and up to 5,000,000 total cells in browser memory. Payloads exceeding 256 KB automatically offload to a background Web Worker to keep the browser UI responsive during intense flattening tasks.',
+      'KivaroTools safely handles files up to 50 MB, datasets with up to 200,000 root rows, and up to 5,000,000 total cells in browser memory. Payloads exceeding 256 KB automatically offload to a background Web Worker to keep the browser UI responsive during intense flattening tasks.',
   },
   {
     question: 'Can I select specific columns and export only the fields I need?',
@@ -57,9 +57,9 @@ export const JSON_CONVERTER_FAQS: FaqItem[] = [
       'Yes. The built-in Column Manager displays all extracted column headers with real-time search filtering. You can select, deselect, or invert column selections with one click. The live tabular preview and exported files (CSV, Excel, TSV, HTML) will include only your selected columns.',
   },
   {
-    question: 'Does OmniTools support downloading genuine Microsoft Excel (.xlsx) workbooks?',
+    question: 'Does KivaroTools support downloading genuine Microsoft Excel (.xlsx) workbooks?',
     answer:
-      'Yes. OmniTools generates binary OpenXML .xlsx workbooks client-side using SheetJS with an integrated JSZip patch that injects frozen top-row header panes and auto-filter ranges, allowing you to open and analyze your data directly in Excel without import warnings.',
+      'Yes. KivaroTools generates binary OpenXML .xlsx workbooks client-side using SheetJS with an integrated JSZip patch that injects frozen top-row header panes and auto-filter ranges, allowing you to open and analyze your data directly in Excel without import warnings.',
   },
   {
     question: 'What is the difference between JSONL (NDJSON) and standard JSON array output?',
@@ -69,7 +69,7 @@ export const JSON_CONVERTER_FAQS: FaqItem[] = [
   {
     question: 'How can I troubleshoot "Unexpected token" or syntax errors in my JSON?',
     answer:
-      'Standard JSON requires double quotes around both keys and string values, forbids trailing commas after the last item in objects or arrays, and prohibits JavaScript comments (// or /* */). OmniTools displays a real-time syntax diagnostic panel highlighting the exact line, column, and character position of the syntax error with a visual caret indicator.',
+      'Standard JSON requires double quotes around both keys and string values, forbids trailing commas after the last item in objects or arrays, and prohibits JavaScript comments (// or /* */). KivaroTools displays a real-time syntax diagnostic panel highlighting the exact line, column, and character position of the syntax error with a visual caret indicator.',
   },
   {
     question: 'Can I quickly copy converted YAML, XML, CSV, or TSV without downloading a file?',
@@ -108,12 +108,12 @@ export default function JsonConverterSeo() {
         <strong>JSON (JavaScript Object Notation, RFC 8259)</strong>, downstream workflows frequently demand different representations.
         Business analysts require rectangular spreadsheets (CSV, Excel), DevOps engineers need configuration manifests (YAML),
         enterprise enterprise architectures depend on legacy schemas (XML), and data science pipelines consume newline-delimited streams (JSONL).
-        OmniTools provides a unified, zero-transmission browser engine to flatten, serialize, and export JSON across all major interchange formats with strict data integrity.
+        KivaroTools provides a unified, zero-transmission browser engine to flatten, serialize, and export JSON across all major interchange formats with strict data integrity.
       </p>
 
       {/* How to Use Section */}
       <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        How to Convert JSON with OmniTools in 4 Steps
+        How to Convert JSON with KivaroTools in 4 Steps
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
@@ -135,7 +135,7 @@ export default function JsonConverterSeo() {
         Recursive Object Flattening: Mapping Tree Hierarchies to Flat Columns
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Two-dimensional spreadsheets cannot natively represent nested sub-objects. OmniTools traverses object trees down to 20 levels deep, concatenating hierarchical keys while defending against prototype pollution and key collisions:
+        Two-dimensional spreadsheets cannot natively represent nested sub-objects. KivaroTools traverses object trees down to 20 levels deep, concatenating hierarchical keys while defending against prototype pollution and key collisions:
       </p>
 
       <div className="overflow-x-auto mb-6">
@@ -177,7 +177,7 @@ export default function JsonConverterSeo() {
         RFC 4180 Standards &amp; Formula Injection (CSV Injection) Mitigation
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Naive string splitting and comma concatenation corrupt spreadsheet files whenever fields contain commas, quotes, or newlines. OmniTools implements strict safeguards:
+        Naive string splitting and comma concatenation corrupt spreadsheet files whenever fields contain commas, quotes, or newlines. KivaroTools implements strict safeguards:
       </p>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
@@ -199,7 +199,7 @@ export default function JsonConverterSeo() {
         Structured Serialization: JSON to YAML &amp; JSON to XML
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        In addition to tabular spreadsheets, OmniTools provides native serializers for hierarchical formats:
+        In addition to tabular spreadsheets, KivaroTools provides native serializers for hierarchical formats:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="bg-gray-50 dark:bg-[#0a0f1a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800">
@@ -234,10 +234,10 @@ export default function JsonConverterSeo() {
 
       {/* Competitor Comparison Matrix */}
       <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Evidence-Based Feature Comparison: OmniTools vs. Alternative Tools
+        Evidence-Based Feature Comparison: KivaroTools vs. Alternative Tools
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Based on our verified independent audit of 27 competing online converters and formatters, here is how OmniTools compares across data security, output capabilities, and privacy standards:
+        Based on our verified independent audit of 27 competing online converters and formatters, here is how KivaroTools compares across data security, output capabilities, and privacy standards:
       </p>
 
       <div className="overflow-x-auto mb-6">
@@ -254,7 +254,7 @@ export default function JsonConverterSeo() {
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr className="bg-blue-50/50 dark:bg-blue-950/20 font-semibold text-slate-900 dark:text-white">
-              <td className="p-2.5 border border-gray-200 dark:border-slate-700">OmniTools JSON Converter</td>
+              <td className="p-2.5 border border-gray-200 dark:border-slate-700">KivaroTools JSON Converter</td>
               <td className="p-2.5 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Yes (Zero Transmission)</td>
               <td className="p-2.5 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Yes (Native .xlsx)</td>
               <td className="p-2.5 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Yes (Built-in)</td>

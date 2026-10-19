@@ -1,5 +1,5 @@
 /**
- * OmniTools — Text Case Engine
+ * KivaroTools — Text Case Engine
  * High-performance, pure TypeScript conversion engine for standard writing cases,
  * developer identifiers, text cleanup, and linguistic statistics.
  *

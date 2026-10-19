@@ -33,7 +33,7 @@ function assert(condition: boolean, description: string, detail?: string) {
 
 async function runTestSuite() {
   console.log('====================================================');
-  console.log('OMNITOOLS WEBP TO JPG & PNG — PERMANENT REGRESSION SUITE');
+  console.log('KIVAROTOOLS WEBP TO JPG & PNG — PERMANENT REGRESSION SUITE');
   console.log('====================================================\n');
 
   // -------------------------------------------------------------

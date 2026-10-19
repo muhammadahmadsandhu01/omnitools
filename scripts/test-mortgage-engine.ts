@@ -1,5 +1,5 @@
 /**
- * Automated Test Suite for OmniTools Mortgage Calculation Engine
+ * Automated Test Suite for KivaroTools Mortgage Calculation Engine
  * Run with: npx tsx scratch/test-mortgage-calculator.ts
  */
 
@@ -376,7 +376,7 @@ console.log('\n--- 10. Testing CSV Generation & RFC-4180 Formula Injection Defen
     scheduleView: 'monthly',
   });
 
-  assert(csv.startsWith('\uFEFF# OmniTools Mortgage Amortization Schedule'), 'CSV starts with UTF-8 BOM and title comment');
+  assert(csv.startsWith('\uFEFF# KivaroTools Mortgage Amortization Schedule'), 'CSV starts with UTF-8 BOM and title comment');
   assert(csv.includes('Period,Year,Payment,Principal,Interest,PMI,Extra Principal,Ending Balance'), 'CSV contains header columns');
   assert(csv.split('\r\n').length >= 65, 'CSV contains metadata + headers + 60 monthly rows');
 }

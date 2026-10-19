@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'OmniTools — Free Online Tools',
+    title: 'KivaroTools — Free Online Tools',
     description:
       'Free online tools for developers, creators, businesses, and everyday tasks.',
     url: '/',
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OmniTools — Free Online Tools',
+    title: 'KivaroTools — Free Online Tools',
     description:
       'Free online tools for developers, creators, businesses, and everyday tasks.',
   },
@@ -28,7 +28,7 @@ export default function HomePage() {
   const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'OmniTools',
+    name: 'KivaroTools',
     url: SITE_URL,
     description:
       'Free online tools for developers, creators, businesses, and everyday tasks. Simple, practical, and privacy-conscious.',

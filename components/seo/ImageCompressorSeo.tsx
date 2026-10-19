@@ -9,7 +9,7 @@ export const IMAGE_COMPRESSOR_FAQS: FaqItem[] = [
   {
     question: 'How does client-side image compression work without uploading files to a server?',
     answer:
-      'OmniTools executes 100% of the image decompression, pixel sampling, dimension resizing, and re-encoding locally inside your web browser using HTML5 Canvas 2D and native browser codecs (such as WebP, MozJPEG, and AVIF). When you drop an image onto the tool, an in-memory blob URL is instantiated in your browser runtime. Zero bytes of your photographs, confidential documents, or personal images are ever transmitted across the internet to any external server.',
+      'KivaroTools executes 100% of the image decompression, pixel sampling, dimension resizing, and re-encoding locally inside your web browser using HTML5 Canvas 2D and native browser codecs (such as WebP, MozJPEG, and AVIF). When you drop an image onto the tool, an in-memory blob URL is instantiated in your browser runtime. Zero bytes of your photographs, confidential documents, or personal images are ever transmitted across the internet to any external server.',
   },
   {
     question: 'What is the difference between lossy and lossless image compression?',
@@ -19,17 +19,17 @@ export const IMAGE_COMPRESSOR_FAQS: FaqItem[] = [
   {
     question: 'Can I compress an image to a specific file size limit like 50KB or 100KB?',
     answer:
-      'Yes. OmniTools provides a dedicated Target Size (KB) mode. When you enter a target ceiling (e.g. 50 KB, 100 KB, or 200 KB), the engine executes an iterative 5-pass binary search across quality quantization levels and proportional resolution scaling to find the optimal encoding that stays strictly below your requested byte limit while preserving the maximum possible visual clarity.',
+      'Yes. KivaroTools provides a dedicated Target Size (KB) mode. When you enter a target ceiling (e.g. 50 KB, 100 KB, or 200 KB), the engine executes an iterative 5-pass binary search across quality quantization levels and proportional resolution scaling to find the optimal encoding that stays strictly below your requested byte limit while preserving the maximum possible visual clarity.',
   },
   {
     question: 'Why did my compressed image become larger than the original file?',
     answer:
-      'This typically happens when you attempt to re-encode an image that is already heavily compressed, or when converting from a modern format (like WebP) to a less efficient legacy format (like uncompressed PNG). Furthermore, re-compressing an already quantized JPEG can introduce quantization noise that takes more bytes to store. In Smart and Auto modes, OmniTools detects this and automatically retains your original file labeled as "Already Optimized" rather than generating an inflated output.',
+      'This typically happens when you attempt to re-encode an image that is already heavily compressed, or when converting from a modern format (like WebP) to a less efficient legacy format (like uncompressed PNG). Furthermore, re-compressing an already quantized JPEG can introduce quantization noise that takes more bytes to store. In Smart and Auto modes, KivaroTools detects this and automatically retains your original file labeled as "Already Optimized" rather than generating an inflated output.',
   },
   {
     question: 'Will transparent PNG images retain their transparent backgrounds?',
     answer:
-      'Yes, as long as you keep the output format as PNG, WebP, or AVIF. These formats fully support 8-bit alpha channel transparency. However, if you explicitly select JPEG output, transparency cannot be preserved because the JPEG specification does not support an alpha channel. In that scenario, OmniTools automatically composites transparent pixels onto a clean, solid white background so your image never turns into a black box.',
+      'Yes, as long as you keep the output format as PNG, WebP, or AVIF. These formats fully support 8-bit alpha channel transparency. However, if you explicitly select JPEG output, transparency cannot be preserved because the JPEG specification does not support an alpha channel. In that scenario, KivaroTools automatically composites transparent pixels onto a clean, solid white background so your image never turns into a black box.',
   },
   {
     question: 'Which image format should I choose: JPEG, PNG, WebP, or AVIF?',
@@ -54,12 +54,12 @@ export const IMAGE_COMPRESSOR_FAQS: FaqItem[] = [
   {
     question: 'How are animated GIFs and animated WebP files handled?',
     answer:
-      'Standard HTML5 Canvas 2D decodes only the first primary frame of animated media. When you upload an animated GIF or multi-frame WebP, OmniTools identifies the animation headers and displays a "Single frame" indicator, extracting and optimizing the primary frame as a static image. For preserving multi-frame animations, a dedicated animation editor should be utilized.',
+      'Standard HTML5 Canvas 2D decodes only the first primary frame of animated media. When you upload an animated GIF or multi-frame WebP, KivaroTools identifies the animation headers and displays a "Single frame" indicator, extracting and optimizing the primary frame as a static image. For preserving multi-frame animations, a dedicated animation editor should be utilized.',
   },
   {
     question: 'Can I compress iPhone HEIC and HEIF photos on this page?',
     answer:
-      'Yes. OmniTools dynamically loads a client-side HEIC decoder (heic2any) directly within your browser runtime to convert Apple High Efficiency Image Container photos into high-quality JPEG or WebP assets without sending them to third-party cloud converters.',
+      'Yes. KivaroTools dynamically loads a client-side HEIC decoder (heic2any) directly within your browser runtime to convert Apple High Efficiency Image Container photos into high-quality JPEG or WebP assets without sending them to third-party cloud converters.',
   },
   {
     question: 'How does reducing image weight improve Google Core Web Vitals and SEO?',
@@ -74,7 +74,7 @@ export const IMAGE_COMPRESSOR_FAQS: FaqItem[] = [
   {
     question: 'Does the tool work on mobile devices and tablets?',
     answer:
-      'Yes. OmniTools Image Compressor is fully responsive and functions on modern mobile browsers (Safari on iOS, Chrome on Android, Firefox Mobile). On mobile devices, practical batch size depends on your available device RAM, so processing batches of 10 to 25 photos at a time is recommended on mobile hardware.',
+      'Yes. KivaroTools Image Compressor is fully responsive and functions on modern mobile browsers (Safari on iOS, Chrome on Android, Firefox Mobile). On mobile devices, practical batch size depends on your available device RAM, so processing batches of 10 to 25 photos at a time is recommended on mobile hardware.',
   },
 ];
 
@@ -95,7 +95,7 @@ export default function ImageCompressorSeo() {
   const softwareSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'OmniTools Image Compressor & Optimizer',
+    name: 'KivaroTools Image Compressor & Optimizer',
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Any (Web Browser)',
     browserRequirements: 'Requires JavaScript and HTML5 Canvas support',
@@ -140,7 +140,7 @@ export default function ImageCompressorSeo() {
           <strong>Largest Contentful Paint (LCP)</strong>.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400">
-          The <strong>OmniTools Image Compressor</strong> delivers professional-grade lossy and lossless media optimization
+          The <strong>KivaroTools Image Compressor</strong> delivers professional-grade lossy and lossless media optimization
           running <strong>100% client-side in your web browser</strong>. By leveraging the HTML5 Canvas 2D API, WebP encoders,
           and WebAssembly decoders, files are quantized directly in your local device memory. No photos are ever uploaded to remote
           servers, eliminating privacy risks for sensitive documents, personal snapshots, and proprietary design assets.
@@ -266,7 +266,7 @@ export default function ImageCompressorSeo() {
           systems mandate strict byte ceilings (e.g., <em>&ldquo;Passport photo must be under 50 KB&rdquo;</em> or <em>&ldquo;Signature upload must not exceed 20 KB&rdquo;</em>).
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Rather than forcing users to guess quality numbers repeatedly, OmniTools executes a <strong>5-pass binary search (bisection)</strong>.
+          Rather than forcing users to guess quality numbers repeatedly, KivaroTools executes a <strong>5-pass binary search (bisection)</strong>.
           The algorithm tests quantization factors between the quality ceiling and floor. If an image has excessive resolution (e.g. 4000×3000)
           where no quantization level can fit under 50 KB without severe pixelation, the engine automatically scales proportional dimensions
           so your photo remains razor-sharp and legible while strictly meeting your upload portal limit.
@@ -279,7 +279,7 @@ export default function ImageCompressorSeo() {
           Empirical Benchmark Results on Test Corpus Fixtures
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          All metrics below were measured on actual, reproducible test fixtures using the OmniTools client-side compression pipeline.
+          All metrics below were measured on actual, reproducible test fixtures using the KivaroTools client-side compression pipeline.
           <em> Note: The Perceptual Match score is an internal heuristic (combining thumbnail block SSIM, edge preservation, and color variance) used by the engine to rank candidates from the same source; it is not an ISO/ITU standardized metric.</em>
         </p>
         <div className="overflow-x-auto">
@@ -365,7 +365,7 @@ export default function ImageCompressorSeo() {
           shutter speed, date/time timestamps, and precise <strong>GPS latitude/longitude geolocation</strong> coordinates showing where the photo was captured.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Because OmniTools decodes images into an isolated HTML5 Canvas bitmap buffer, the resulting compressed blob is generated fresh from raw pixel data.
+          Because KivaroTools decodes images into an isolated HTML5 Canvas bitmap buffer, the resulting compressed blob is generated fresh from raw pixel data.
           Consequently, all EXIF metadata and GPS tags are automatically stripped from your downloaded files, protecting your privacy when publishing images
           to marketplaces, blogs, or public directories.
         </p>

@@ -39,7 +39,7 @@ export const TEXT_ANALYZER_FAQS: FaqItem[] = [
   {
     question: 'Is my text saved or uploaded when using the Text Analyzer?',
     answer:
-      'No. OmniTools Word Counter & Text Analyzer processes 100% of calculations directly in your browser. No text is uploaded to any server, database, or cloud API. Your documents remain completely private and confidential on your device.',
+      'No. KivaroTools Word Counter & Text Analyzer processes 100% of calculations directly in your browser. No text is uploaded to any server, database, or cloud API. Your documents remain completely private and confidential on your device.',
   },
   {
     question: 'Can I check text in languages other than English?',
@@ -77,12 +77,12 @@ export default function TextAnalyzerSeo() {
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4 text-base sm:text-lg">
           Whether drafting an editorial article, university essay, keynote speech, novel manuscript, or search-optimized
-          blog post, hitting precise length and comprehension targets is essential for clear communication. The OmniTools{' '}
+          blog post, hitting precise length and comprehension targets is essential for clear communication. The KivaroTools{' '}
           <strong>Word Counter &amp; Text Analyzer</strong> provides an advanced, browser-based writing studio that
           evaluates your prose across multiple structural and linguistic dimensions simultaneously.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-base">
-          Unlike basic counters that only track raw character lengths, OmniTools combines real-time counting with six classic
+          Unlike basic counters that only track raw character lengths, KivaroTools combines real-time counting with six classic
           educational readability formulas, keyword repetition tracking, speaking pace estimation, and contextual writing coach
           findings. Everything runs directly in your browser JavaScript memory—zero text is ever transmitted over the network or
           stored on external servers.
@@ -142,7 +142,7 @@ export default function TextAnalyzerSeo() {
           Core Counting Conventions &amp; Definitions
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          To provide dependable numbers for writers, publishers, and developers, OmniTools follows rigorous, documented counting conventions:
+          To provide dependable numbers for writers, publishers, and developers, KivaroTools follows rigorous, documented counting conventions:
         </p>
         <ul className="space-y-2 text-slate-600 dark:text-slate-400 mb-6">
           <li>
@@ -176,7 +176,7 @@ export default function TextAnalyzerSeo() {
           Readability Formulas &amp; Educational Scoring Benchmarks
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Readability formulas provide mathematical estimates of the reading skill required to understand a given piece of writing. OmniTools computes six established formulas:
+          Readability formulas provide mathematical estimates of the reading skill required to understand a given piece of writing. KivaroTools computes six established formulas:
         </p>
 
         <div className="w-full max-w-full overflow-x-auto mb-6 not-prose">
@@ -298,13 +298,13 @@ export default function TextAnalyzerSeo() {
         </p>
         <ul className="space-y-2 text-slate-600 dark:text-slate-400 mb-6">
           <li>
-            <strong>Stop Word Filtering:</strong> OmniTools automatically filters out grammatical function words (<em>the</em>, <em>and</em>, <em>in</em>, <em>of</em>, <em>to</em>, <em>is</em>) from top keyword tables, highlighting genuine conceptual vocabulary.
+            <strong>Stop Word Filtering:</strong> KivaroTools automatically filters out grammatical function words (<em>the</em>, <em>and</em>, <em>in</em>, <em>of</em>, <em>to</em>, <em>is</em>) from top keyword tables, highlighting genuine conceptual vocabulary.
           </li>
           <li>
             <strong>Editorial Repetition Diagnostics:</strong> Identifying frequently repeated phrases allows writers to eliminate accidental crutch words and vary phrasing using context-appropriate synonyms.
           </li>
           <li>
-            <strong>No Fake Ranking Promises:</strong> Modern search engines rank pages based on user satisfaction, topic comprehensiveness, and natural entity relationships. There is no magical &quot;2% keyword density&quot; that guarantees search rankings. OmniTools presents keyword density strictly as an editorial clarity tool.
+            <strong>No Fake Ranking Promises:</strong> Modern search engines rank pages based on user satisfaction, topic comprehensiveness, and natural entity relationships. There is no magical &quot;2% keyword density&quot; that guarantees search rankings. KivaroTools presents keyword density strictly as an editorial clarity tool.
           </li>
         </ul>
       </section>
@@ -384,7 +384,7 @@ export default function TextAnalyzerSeo() {
           100% Client-Side Privacy Guarantee
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-3">
-          OmniTools operates on a strict zero-server privacy architecture:
+          KivaroTools operates on a strict zero-server privacy architecture:
         </p>
         <ul className="space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           <li className="flex items-start gap-2">

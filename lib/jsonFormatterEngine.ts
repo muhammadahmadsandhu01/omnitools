@@ -1,5 +1,5 @@
 /**
- * OmniTools JSON Formatter Engine
+ * KivaroTools JSON Formatter Engine
  *
  * Core pure-function engine for JSON formatting, validation, minification,
  * structural diagnostics, key sorting, JSONPath evaluation, diffing,

@@ -44,7 +44,7 @@ export const COMPOUND_INTEREST_FAQS: FaqItem[] = [
   {
     question: 'How does the Fisher equation calculate real inflation-adjusted returns?',
     answer:
-      'Inflation erodes future purchasing power. Rather than using crude subtraction (Nominal - Inflation), OmniTools applies the exact economic Fisher equation: Real Return = (1 + Nominal Rate) / (1 + Inflation Rate) - 1. For example, an 8% nominal investment return in an economy with 3% annual inflation yields an exact real purchasing power growth rate of 4.854% per year.',
+      'Inflation erodes future purchasing power. Rather than using crude subtraction (Nominal - Inflation), KivaroTools applies the exact economic Fisher equation: Real Return = (1 + Nominal Rate) / (1 + Inflation Rate) - 1. For example, an 8% nominal investment return in an economy with 3% annual inflation yields an exact real purchasing power growth rate of 4.854% per year.',
   },
   {
     question: 'How do investment fees and management expense drag affect compound growth?',
@@ -59,7 +59,7 @@ export const COMPOUND_INTEREST_FAQS: FaqItem[] = [
   {
     question: 'Why do two financial calculators sometimes display slightly different totals?',
     answer:
-      'Differences typically stem from three methodological variations: (1) Contribution timing (beginning vs end of month), (2) Compounding convention (discrete monthly calendar periods vs daily sub-period 365-day time-stepping), and (3) Rounding rules. OmniTools provides transparent disclosure of its sub-period daily synchronization and allows toggling between beginning and end-of-period contribution timing.',
+      'Differences typically stem from three methodological variations: (1) Contribution timing (beginning vs end of month), (2) Compounding convention (discrete monthly calendar periods vs daily sub-period 365-day time-stepping), and (3) Rounding rules. KivaroTools provides transparent disclosure of its sub-period daily synchronization and allows toggling between beginning and end-of-period contribution timing.',
   },
   {
     question: 'Are calculator projections guaranteed future returns?',
@@ -99,14 +99,14 @@ export default function CompoundInterestSeo() {
           Compound interest is widely regarded as the cornerstone of personal financial planning and modern wealth creation. Unlike linear systems where interest is calculated strictly on the initial deposit, compound growth reinvests every cycle&apos;s earnings back into the capital base. As a result, subsequent interest is earned on both the original principal and all prior accumulated returns.
         </p>
         <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300">
-          Over short periods of one to three years, the difference between simple and compound interest appears modest. However, across multi-decade horizons of 10, 20, or 30 years, compounding transforms disciplined, modest contributions into substantial capital. The OmniTools Compound Interest Calculator enables savers, investors, and students to model exact wealth projections, evaluate different compounding frequencies, assess beginning versus end-of-period contribution timing, and adjust for inflation purchasing power drag.
+          Over short periods of one to three years, the difference between simple and compound interest appears modest. However, across multi-decade horizons of 10, 20, or 30 years, compounding transforms disciplined, modest contributions into substantial capital. The KivaroTools Compound Interest Calculator enables savers, investors, and students to model exact wealth projections, evaluate different compounding frequencies, assess beginning versus end-of-period contribution timing, and adjust for inflation purchasing power drag.
         </p>
       </section>
 
       {/* Section 2: Calculator Instructions */}
       <section className="mb-10">
         <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
-          How to Use the OmniTools Compound Interest Calculator
+          How to Use the KivaroTools Compound Interest Calculator
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           The calculator is designed to provide institutional-grade precision with an intuitive, responsive interface. Follow these steps to simulate your plan:
@@ -192,7 +192,7 @@ export default function CompoundInterestSeo() {
           Mathematical Formulas &amp; Variable Glossary
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
-          Financial growth modeling relies on rigorous mathematical foundations. Below are the governing equations implemented in the OmniTools calculation engine:
+          Financial growth modeling relies on rigorous mathematical foundations. Below are the governing equations implemented in the KivaroTools calculation engine:
         </p>
 
         {/* Formula Cards */}
@@ -470,7 +470,7 @@ export default function CompoundInterestSeo() {
           Related Financial Planning Tools
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
-          Explore complementary financial modeling utilities across the OmniTools suite:
+          Explore complementary financial modeling utilities across the KivaroTools suite:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <Link
@@ -525,14 +525,14 @@ export default function CompoundInterestSeo() {
           Authoritative References &amp; Academic Sources
         </h4>
         <p>
-          Formulas and financial conventions implemented in OmniTools reference standards published by the{' '}
+          Formulas and financial conventions implemented in KivaroTools reference standards published by the{' '}
           <span className="font-semibold text-slate-700 dark:text-slate-300">U.S. Securities and Exchange Commission (Investor.gov)</span>,{' '}
           <span className="font-semibold text-slate-700 dark:text-slate-300">Financial Industry Regulatory Authority (FINRA)</span>,{' '}
           <span className="font-semibold text-slate-700 dark:text-slate-300">CFA Institute</span> Standards of Practice, and the{' '}
           <span className="font-semibold text-slate-700 dark:text-slate-300">Federal Reserve Board</span> Economic Data (FRED).
         </p>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-1">
-          <strong>Educational Disclaimer:</strong> OmniTools does not provide personalized investment advice, tax counseling, or financial brokerage services. All calculations are provided for educational and illustrative modeling purposes.
+          <strong>Educational Disclaimer:</strong> KivaroTools does not provide personalized investment advice, tax counseling, or financial brokerage services. All calculations are provided for educational and illustrative modeling purposes.
         </p>
       </section>
     </article>

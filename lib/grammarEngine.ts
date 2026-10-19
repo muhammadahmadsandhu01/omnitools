@@ -1,5 +1,5 @@
 /**
- * OmniTools Premium Grammar & Linguistic Engine
+ * KivaroTools Premium Grammar & Linguistic Engine
  *
  * Layered, context-aware English writing analysis engine:
  * Layer A: Text normalization and offset-preserving tokenization

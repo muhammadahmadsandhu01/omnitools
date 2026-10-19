@@ -408,8 +408,8 @@ export async function generateCombinedPdf(
 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.setTitle(options.outputFilename.replace(/\.pdf$/i, ''));
-  pdfDoc.setCreator('OmniTools Image to PDF Converter');
-  pdfDoc.setProducer('OmniTools Document Studio');
+  pdfDoc.setCreator('KivaroTools Image to PDF Converter');
+  pdfDoc.setProducer('KivaroTools Document Studio');
   pdfDoc.setCreationDate(new Date());
 
   const bgRgb = hexToRgb(options.backgroundColor);
@@ -549,7 +549,7 @@ export async function generateSeparatePdfsZip(
 
     const singleDoc = await PDFDocument.create();
     singleDoc.setTitle(item.name.replace(/\.[^/.]+$/, ''));
-    singleDoc.setCreator('OmniTools Image to PDF Converter');
+    singleDoc.setCreator('KivaroTools Image to PDF Converter');
 
     const processed = await processImageForPdf(
       item.file,

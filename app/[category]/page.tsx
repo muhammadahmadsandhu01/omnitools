@@ -27,7 +27,7 @@ export async function generateMetadata({
   if (!category) {
     return {
       title: 'Category Not Found',
-      description: 'The requested OmniTools category could not be found.',
+      description: 'The requested KivaroTools category could not be found.',
     };
   }
 
@@ -42,20 +42,20 @@ export async function generateMetadata({
 
   return {
     title: categoryTitle,
-    description: `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from OmniTools. Fast, easy-to-use browser-based utilities.`,
+    description: `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities.`,
     alternates: {
       canonical: `/${category.id}`,
     },
     openGraph: {
-      title: `${categoryTitle} — OmniTools`,
-      description: `Explore free ${category.name.toLowerCase()} from OmniTools.`,
+      title: `${categoryTitle} — KivaroTools`,
+      description: `Explore free ${category.name.toLowerCase()} from KivaroTools.`,
       url: `/${category.id}`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${categoryTitle} — OmniTools`,
-      description: `Explore free ${category.name.toLowerCase()} from OmniTools.`,
+      title: `${categoryTitle} — KivaroTools`,
+      description: `Explore free ${category.name.toLowerCase()} from KivaroTools.`,
     },
   };
 }
@@ -242,7 +242,7 @@ export default async function CategoryPage({
               <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
                 We&apos;re working on useful tools for this category.
                 Check back soon or explore the other tools available on
-                OmniTools.
+                KivaroTools.
               </p>
 
               <Link

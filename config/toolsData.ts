@@ -38,7 +38,7 @@ export interface ToolCategory {
 }
 
 /**
- * OmniTools categories
+ * KivaroTools categories
  */
 export const categories: ToolCategory[] = [
   {
@@ -80,7 +80,7 @@ export const categories: ToolCategory[] = [
 ];
 
 /**
- * OmniTools catalogue
+ * KivaroTools catalogue
  */
 export const tools: Tool[] = [
   // ============================================================

@@ -1,5 +1,5 @@
 /**
- * OmniTools Password Generator & Cryptographic Engine Test Suite
+ * KivaroTools Password Generator & Cryptographic Engine Test Suite
  *
  * Reproducible functional, cryptographic, and security regression suite.
  * Run with: npm run test:password
@@ -47,7 +47,7 @@ function assert(condition: boolean, testName: string, details?: string) {
 }
 
 console.log('\n================================================================');
-console.log('       OMNITOOLS CRYPTOGRAPHIC PASSWORD ENGINE TEST SUITE       ');
+console.log('       KIVAROTOOLS CRYPTOGRAPHIC PASSWORD ENGINE TEST SUITE       ');
 console.log('================================================================\n');
 
 // ============================================================================

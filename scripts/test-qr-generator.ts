@@ -92,7 +92,7 @@ function decodeQrPayload(value: string, level: 'L' | 'M' | 'Q' | 'H' = 'M', marg
 // ==========================================
 console.log('[Test 1] Testing URL payloads decoding with jsQR...');
 const testUrls = [
-  'https://omnitools-navy.vercel.app',
+  'https://kivarotools.app',
   'https://example.com/search?query=hello+world&sort=desc#results',
   'https://sub.domain.co.uk:8080/path/to/resource?id=123&token=xyz_987',
 ];
@@ -108,7 +108,7 @@ console.log('  ✓ All URL test payloads decoded with exact match.');
 console.log('[Test 2] Testing all 8 standard QR payload types...');
 
 // 1. Plain Text / Unicode
-const plainText = 'OmniTools QR Suite: 100% Free, Secure & In-Browser 🚀';
+const plainText = 'KivaroTools QR Suite: 100% Free, Secure & In-Browser 🚀';
 assert.strictEqual(decodeQrPayload(plainText, 'M', 4), plainText, 'Plain text decode mismatch');
 
 // 2. Wi-Fi Quick Connect
@@ -145,9 +145,9 @@ assert.strictEqual(decodeQrPayload(vcardPayload, 'M', 4), vcardPayload, 'vCard p
 const eventPayload = [
   'BEGIN:VCALENDAR',
   'VERSION:2.0',
-  'PRODID:-//OmniTools//QR Generator//EN',
+  'PRODID:-//KivaroTools//QR Generator//EN',
   'BEGIN:VEVENT',
-  'UID:test-uid@omnitools',
+  'UID:test-uid@kivarotools',
   'DTSTAMP:20261015T120000',
   'DTSTART:20261020T090000',
   'DTEND:20261020T170000',
@@ -167,7 +167,7 @@ const complexWifi = 'WIFI:T:WPA;S:Coffee\\;House\\\\HQ;P:Sec\\"ret:P@ss;H:true;;
 assert.strictEqual(decodeQrPayload(complexWifi, 'M', 4), complexWifi, 'Escaped Wi-Fi payload decode mismatch');
 
 // 10. Long Plain Text Payload (1200 chars)
-const longContent = 'OmniTools-Test-Payload-'.repeat(50);
+const longContent = 'KivaroTools-Test-Payload-'.repeat(50);
 assert.strictEqual(decodeQrPayload(longContent, 'L', 4), longContent, 'Long payload decode mismatch');
 
 console.log('  ✓ All 8 standard QR content types, complex Unicode, escaped schemas & long payloads decoded.');
@@ -176,7 +176,7 @@ console.log('  ✓ All 8 standard QR content types, complex Unicode, escaped sch
 // TEST 3: ERROR CORRECTION TIERS (L, M, Q, H)
 // ==========================================
 console.log('[Test 3] Testing Reed-Solomon Error Correction tiers (L, M, Q, H)...');
-const testPayload = 'https://omnitools-navy.vercel.app/seo/qr-generator';
+const testPayload = 'https://kivarotools.app/seo/qr-generator';
 const levels: Array<'L' | 'M' | 'Q' | 'H'> = ['L', 'M', 'Q', 'H'];
 for (const lvl of levels) {
   const decoded = decodeQrPayload(testPayload, lvl, 4);
@@ -411,9 +411,9 @@ const doc = new jsPDF({
 });
 doc.setFont('helvetica', 'bold');
 doc.setFontSize(20);
-doc.text('OmniTools QR Code', 105, 28, { align: 'center' });
+doc.text('KivaroTools QR Code', 105, 28, { align: 'center' });
 doc.setFontSize(10);
-doc.text('Type: URL • Payload: https://omnitools-navy.vercel.app', 105, 36, { align: 'center' });
+doc.text('Type: URL • Payload: https://kivarotools.app', 105, 36, { align: 'center' });
 doc.roundedRect(25, 180, 160, 48, 3, 3, 'FD');
 
 const pdfBlob = doc.output('blob');
@@ -512,7 +512,7 @@ const validEventValidation = validateQrInput({
   contactEmail: '',
   contactOrg: '',
   contactUrl: '',
-  eventTitle: 'OmniTools Annual Summit',
+  eventTitle: 'KivaroTools Annual Summit',
   eventStart: '2026-10-20T09:00',
   eventEnd: '2026-10-20T17:00',
   fgColor: '#000000',
@@ -541,7 +541,7 @@ const validEventPayload = buildQrPayload({
   contactEmail: '',
   contactOrg: '',
   contactUrl: '',
-  eventTitle: 'OmniTools Annual Summit',
+  eventTitle: 'KivaroTools Annual Summit',
   eventLocation: 'Silicon Valley Convention Center',
   eventStart: '2026-10-20T09:00',
   eventEnd: '2026-10-20T17:00',
@@ -549,7 +549,7 @@ const validEventPayload = buildQrPayload({
 });
 
 assert.ok(validEventPayload.includes('BEGIN:VCALENDAR'), 'Payload must include VCALENDAR header');
-assert.ok(validEventPayload.includes('SUMMARY:OmniTools Annual Summit'), 'Summary must match');
+assert.ok(validEventPayload.includes('SUMMARY:KivaroTools Annual Summit'), 'Summary must match');
 assert.ok(validEventPayload.includes('DTSTART:20261020T090000'), 'DTSTART must match floating local time format');
 assert.ok(validEventPayload.includes('DTEND:20261020T170000'), 'DTEND must match floating local time format');
 
@@ -580,7 +580,7 @@ console.log(`  ✓ Case B: Valid event generated ${validBytes} bytes, V${validRe
 
 // CASE C: Clearing Required Event Title Drops Readiness Immediately
 console.log('[Case C] Clearing required event title test...');
-let currentTitle = 'OmniTools Annual Summit';
+let currentTitle = 'KivaroTools Annual Summit';
 let currentError = validateQrInput({
   qrType: 'event', url: '', text: '', wifiSsid: '', wifiPass: '', wifiEnc: 'WPA',
   email: '', phone: '', sms: '', contactFirst: '', contactLast: '', contactPhone: '',
@@ -606,7 +606,7 @@ console.log('  ✓ Case C: Clearing event title immediately returns error and dr
 
 // CASE D: Changing Payload Invalidates Previous Verified Snapshot
 console.log('[Case D] Snapshot hash invalidation on payload change test...');
-const initialPayload = 'https://omnitools-navy.vercel.app';
+const initialPayload = 'https://kivarotools.app';
 const initialHash = hashString(`${initialPayload}|#000000|#ffffff|M|4||20|100`);
 
 // Simulated active verification result matching initialHash
@@ -617,7 +617,7 @@ const verifiedState = {
 };
 
 // User modifies payload to new URL
-const modifiedPayload = 'https://omnitools-navy.vercel.app/seo';
+const modifiedPayload = 'https://kivarotools.app/seo';
 const modifiedHash = hashString(`${modifiedPayload}|#000000|#ffffff|M|4||20|100`);
 assert.notStrictEqual(initialHash, modifiedHash, 'Hash must change when payload changes');
 

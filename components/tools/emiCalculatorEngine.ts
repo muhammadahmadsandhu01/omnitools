@@ -1,5 +1,5 @@
 /**
- * Pure Financial Engine & Domain Logic for OmniTools EMI Calculator.
+ * Pure Financial Engine & Domain Logic for KivaroTools EMI Calculator.
  *
  * Implements deterministic standard reducing-balance loan amortization,
  * flexible payment frequencies (monthly, biweekly, weekly), ordinary annuity vs

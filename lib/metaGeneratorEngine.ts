@@ -1,5 +1,5 @@
 /**
- * OmniTools — Meta Tags & Open Graph Engine
+ * KivaroTools — Meta Tags & Open Graph Engine
  *
  * Pure, deterministic engine for metadata formatting, attribute escaping,
  * live preview simulations, HTML parsing, and comprehensive 0-100 SEO auditing.
@@ -1415,27 +1415,27 @@ export function getInitialFormData(): MetaFormData {
  */
 export const SAMPLE_PRESETS: Record<string, Partial<MetaFormData>> = {
   saas: {
-    title: 'OmniTools Suite — Free Online Developer Utilities (Demo)',
+    title: 'KivaroTools Suite — Free Online Developer Utilities (Demo)',
     description:
       'Demonstration configuration showcasing search snippet tags and Open Graph preview cards for a modern online utilities suite.',
-    canonicalUrl: 'https://example.com/demo/omnitools-suite',
-    author: 'OmniTools Team (Demo)',
+    canonicalUrl: 'https://example.com/demo/kivarotools-suite',
+    author: 'KivaroTools Team (Demo)',
     themeColor: '#3b82f6',
     language: 'en',
     ogType: 'website',
-    ogTitle: 'OmniTools Suite — Free Online Developer Utilities (Demo)',
+    ogTitle: 'KivaroTools Suite — Free Online Developer Utilities (Demo)',
     ogDescription:
       'Demonstration configuration showcasing search snippet tags and Open Graph preview cards for a modern online utilities suite.',
-    ogUrl: 'https://example.com/demo/omnitools-suite',
+    ogUrl: 'https://example.com/demo/kivarotools-suite',
     ogImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&h=630&q=80',
-    ogImageAlt: 'OmniTools productivity application dashboard preview (Demo Asset)',
-    ogSiteName: 'OmniTools Demo',
+    ogImageAlt: 'KivaroTools productivity application dashboard preview (Demo Asset)',
+    ogSiteName: 'KivaroTools Demo',
     ogLocale: 'en_US',
     ogImageWidth: '1200',
     ogImageHeight: '630',
     twitterCard: 'summary_large_image',
-    twitterSite: '@omnitools_demo',
-    twitterCreator: '@omnitools_demo',
+    twitterSite: '@kivarotools_demo',
+    twitterCreator: '@kivarotools_demo',
     syncSocialWithBasic: true,
   },
   article: {
@@ -1453,7 +1453,7 @@ export const SAMPLE_PRESETS: Record<string, Partial<MetaFormData>> = {
     ogUrl: 'https://example.com/demo/modern-open-graph-guide',
     ogImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&h=630&q=80',
     ogImageAlt: 'Social media cards analytics and SEO diagrams on a laptop screen (Demo Asset)',
-    ogSiteName: 'OmniTools Insights (Demo)',
+    ogSiteName: 'KivaroTools Insights (Demo)',
     ogLocale: 'en_US',
     ogImageWidth: '1200',
     ogImageHeight: '630',
@@ -1461,7 +1461,7 @@ export const SAMPLE_PRESETS: Record<string, Partial<MetaFormData>> = {
     articlePublishedTime: '2026-03-15T08:00:00Z',
     articleSection: 'Technical SEO',
     twitterCard: 'summary_large_image',
-    twitterSite: '@omnitools_demo',
+    twitterSite: '@kivarotools_demo',
     twitterCreator: '@elenavance_demo',
     syncSocialWithBasic: true,
   },

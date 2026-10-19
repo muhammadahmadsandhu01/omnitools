@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
         method: 'GET',
         headers: {
           'User-Agent':
-            `Mozilla/5.0 (compatible; OmniTools-MetaInspector/1.0; +${SITE_URL})`,
+            `Mozilla/5.0 (compatible; KivaroTools-MetaInspector/1.0; +${SITE_URL})`,
           Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
         },
         redirect: 'manual',

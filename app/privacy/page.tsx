@@ -17,22 +17,22 @@ import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description:
-    'OmniTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
+    'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
   alternates: {
     canonical: '/privacy',
   },
   openGraph: {
-    title: 'Privacy Policy — OmniTools',
+    title: 'Privacy Policy — KivaroTools',
     description:
-      'OmniTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
+      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
     url: '/privacy',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Privacy Policy — OmniTools',
+    title: 'Privacy Policy — KivaroTools',
     description:
-      'OmniTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
+      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
   },
 };
 
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            This Privacy Policy describes how OmniTools (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;),
+            This Privacy Policy describes how KivaroTools (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;),
             an independent digital utility website operated by an individual based in {OPERATOR_LOCATION} and serving
             a worldwide audience, handles information when you visit and use our web applications.
           </p>
@@ -95,9 +95,9 @@ export default function PrivacyPolicyPage() {
               1. Core Architecture: Client-Side Processing
             </h2>
             <p>
-              OmniTools is architected from the ground up to minimize data collection. Unlike traditional web services
+              KivaroTools is architected from the ground up to minimize data collection. Unlike traditional web services
               that require uploading your confidential files, passwords, or personal financial figures to remote cloud
-              servers for processing, the majority of OmniTools utilities execute <strong>locally within your web browser</strong>:
+              servers for processing, the majority of KivaroTools utilities execute <strong>locally within your web browser</strong>:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
@@ -124,7 +124,7 @@ export default function PrivacyPolicyPage() {
               2. Information Automatically Collected (Current Active State)
             </h2>
             <p>
-              In our current operating state, OmniTools does not require registration, does not create user profiles,
+              In our current operating state, KivaroTools does not require registration, does not create user profiles,
               and does not collect names, credit cards, or physical addresses.
             </p>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
@@ -191,7 +191,7 @@ export default function PrivacyPolicyPage() {
                 </h3>
                 <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">
                   When enabled, third-party vendors, including Google, will use cookies to serve advertisements based on your
-                  prior visits to OmniTools or other websites on the internet.
+                  prior visits to KivaroTools or other websites on the internet.
                 </p>
                 <ul className="list-disc pl-6 mt-3 space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
                   <li>
@@ -232,7 +232,7 @@ export default function PrivacyPolicyPage() {
               4. International Privacy Rights &amp; User Choices
             </h2>
             <p>
-              Because OmniTools serves visitors from countries across the globe, we recognize and respect your privacy rights
+              Because KivaroTools serves visitors from countries across the globe, we recognize and respect your privacy rights
               under applicable international data protection frameworks:
             </p>
 
@@ -268,7 +268,7 @@ export default function PrivacyPolicyPage() {
               5. Children&apos;s Privacy
             </h2>
             <p>
-              OmniTools provides general-purpose web utilities and does not knowingly collect personally identifiable information
+              KivaroTools provides general-purpose web utilities and does not knowingly collect personally identifiable information
               from children under the age of 13 (or under 16 where applicable under local regulations). If you believe a child has
               provided personal information through our website, please notify us so we can take immediate corrective measures.
             </p>

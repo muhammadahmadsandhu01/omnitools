@@ -9,12 +9,12 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How does Cryptographically Secure Pseudorandom Number Generation (CSPRNG) differ from Math.random()?',
     answer:
-      'Standard Math.random() relies on deterministic pseudorandom algorithms (such as xoshiro128+ in modern JavaScript engines) engineered for rapid execution in non-security contexts like simulations and gaming. Because these algorithms maintain small internal states, an adversary who observes past outputs can deduce future values. In contrast, OmniTools uses the browser-native Web Cryptography API (crypto.getRandomValues), which sources entropy directly from the host operating system kernel (e.g., Linux /dev/urandom or Windows BCryptGenRandom/CNG), guaranteeing cryptographically unpredictable outputs.',
+      'Standard Math.random() relies on deterministic pseudorandom algorithms (such as xoshiro128+ in modern JavaScript engines) engineered for rapid execution in non-security contexts like simulations and gaming. Because these algorithms maintain small internal states, an adversary who observes past outputs can deduce future values. In contrast, KivaroTools uses the browser-native Web Cryptography API (crypto.getRandomValues), which sources entropy directly from the host operating system kernel (e.g., Linux /dev/urandom or Windows BCryptGenRandom/CNG), guaranteeing cryptographically unpredictable outputs.',
   },
   {
     question: 'What is rejection sampling, and why is it necessary to eliminate modulo bias?',
     answer:
-      'When mapping a 32-bit unsigned random integer (0 to 4,294,967,295) onto an arbitrary character pool of size N using standard modulo division (rand % N), numbers in the incomplete final bucket receive slightly higher probability of selection whenever N does not evenly divide 2^32. OmniTools eliminates modulo bias through strict rejection sampling: any 32-bit random integer equal to or greater than 2^32 - (2^32 % N) is discarded and resampled, ensuring every character in your chosen pool has a mathematically identical selection probability.',
+      'When mapping a 32-bit unsigned random integer (0 to 4,294,967,295) onto an arbitrary character pool of size N using standard modulo division (rand % N), numbers in the incomplete final bucket receive slightly higher probability of selection whenever N does not evenly divide 2^32. KivaroTools eliminates modulo bias through strict rejection sampling: any 32-bit random integer equal to or greater than 2^32 - (2^32 % N) is discarded and resampled, ensuring every character in your chosen pool has a mathematically identical selection probability.',
   },
   {
     question: 'How is password entropy calculated mathematically?',
@@ -29,7 +29,7 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'Why do some websites and legacy systems reject passwords containing certain symbols?',
     answer:
-      'Certain legacy web applications and enterprise backends pass credentials into SQL queries, LDAP directories, or shell commands without adequate parameterization. To prevent command injection or database syntax errors, these systems restrict symbols like quotes, ampersands, semicolons, or angle brackets (<, >, \', ", &). OmniTools allows you to disable symbol inclusion or exclude ambiguous characters to satisfy restrictive platform requirements.',
+      'Certain legacy web applications and enterprise backends pass credentials into SQL queries, LDAP directories, or shell commands without adequate parameterization. To prevent command injection or database syntax errors, these systems restrict symbols like quotes, ampersands, semicolons, or angle brackets (<, >, \', ", &). KivaroTools allows you to disable symbol inclusion or exclude ambiguous characters to satisfy restrictive platform requirements.',
   },
   {
     question: 'Are my generated passwords, secrets, or file hashes saved or sent to a server?',
@@ -54,7 +54,7 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'Can I generate passwords in bulk or create developer API tokens?',
     answer:
-      'Yes. OmniTools includes a built-in Bulk Password Generator supporting batches of 5, 10, 20, or 50 passwords with one-click "Copy All" and individual copy buttons. Additionally, the Developer Secret Generator produces cryptographically secure Hex keys, Base64 tokens, Base64URL strings (for JWTs and OAuth), and RFC 4122 v4 UUIDs with proper version and variant bits.',
+      'Yes. KivaroTools includes a built-in Bulk Password Generator supporting batches of 5, 10, 20, or 50 passwords with one-click "Copy All" and individual copy buttons. Additionally, the Developer Secret Generator produces cryptographically secure Hex keys, Base64 tokens, Base64URL strings (for JWTs and OAuth), and RFC 4122 v4 UUIDs with proper version and variant bits.',
   },
 ];
 
@@ -92,7 +92,7 @@ export default function PasswordGeneratorSeo() {
 
       {/* STEP BY STEP USAGE INSTRUCTIONS */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How to Use the OmniTools Password Generator (Step-by-Step)
+        How to Use the KivaroTools Password Generator (Step-by-Step)
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
@@ -117,13 +117,13 @@ export default function PasswordGeneratorSeo() {
         CSPRNG Generation &amp; Rejection Sampling Without Modulo Bias
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools generates random characters and passphrases using the browser-native <strong>Web Cryptography API</strong>{' '}
+        KivaroTools generates random characters and passphrases using the browser-native <strong>Web Cryptography API</strong>{' '}
         (<code className="text-xs font-mono">crypto.getRandomValues</code>). This interface taps into hardware entropy gathered by the underlying
         operating system kernel (such as Linux <code className="text-xs font-mono">/dev/urandom</code> or Windows CNG CryptoAPI).
       </p>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
         Furthermore, naive generators introduce <strong>modulo bias</strong> when scaling large random integers down to smaller pool sizes.
-        OmniTools applies strict <strong>rejection sampling</strong>: any generated 32-bit unsigned integer falling in the incomplete upper range
+        KivaroTools applies strict <strong>rejection sampling</strong>: any generated 32-bit unsigned integer falling in the incomplete upper range
         (<code className="text-xs font-mono">2^32 - (2^32 % poolSize)</code>) is discarded and re-drawn, ensuring every character in your pool
         has an identical probability of selection.
       </p>
@@ -191,7 +191,7 @@ export default function PasswordGeneratorSeo() {
         Instead, NIST advocates for <strong>longer, memorable passphrases</strong> and backend screening against known breach databases.
       </p>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools includes a dedicated Passphrase Generator using a curated 1,024-word English dictionary. Because an ordered sequence of <code className="text-xs font-mono">W</code> words is sampled uniformly without replacement, the total permutation search space is <code className="text-xs font-mono">P(1024, W) = 1024! / (1024 - W)!</code>, yielding exact Shannon entropy <code className="text-xs font-mono">sum(log2(1024 - i))</code>:
+        KivaroTools includes a dedicated Passphrase Generator using a curated 1,024-word English dictionary. Because an ordered sequence of <code className="text-xs font-mono">W</code> words is sampled uniformly without replacement, the total permutation search space is <code className="text-xs font-mono">P(1024, W) = 1024! / (1024 - W)!</code>, yielding exact Shannon entropy <code className="text-xs font-mono">sum(log2(1024 - i))</code>:
       </p>
       <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li><strong>3 words:</strong> ~30 bits dictionary entropy (~43 bits with 4-digit number)</li>
@@ -215,7 +215,7 @@ export default function PasswordGeneratorSeo() {
         Reusing even a complex 25-character password across two websites exposes both services if one is compromised.
       </p>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        To protect user confidentiality, OmniTools enforces a strict <strong>zero-leakage architecture</strong>: password generation,
+        To protect user confidentiality, KivaroTools enforces a strict <strong>zero-leakage architecture</strong>: password generation,
         secret token assembly, and cryptographic hashing take place entirely within your browser&rsquo;s JavaScript runtime.
         Freshly generated credentials are never sent to external servers, logged in telemetry, or stored in browser storage.
       </p>

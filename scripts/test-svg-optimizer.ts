@@ -1,5 +1,5 @@
 /**
- * Comprehensive automated test suite for OmniTools SVG Optimizer
+ * Comprehensive automated test suite for KivaroTools SVG Optimizer
  * Executes in real headless Chromium to ensure 100% faithful DOMParser,
  * XMLSerializer, and Web Worker API compliance.
  *
@@ -74,7 +74,7 @@ function getEngineSource(): string {
 
 async function main() {
   console.log('================================================================');
-  console.log('       OMNITOOLS SVG OPTIMIZER CHROMIUM REGRESSION SUITE       ');
+  console.log('       KIVAROTOOLS SVG OPTIMIZER CHROMIUM REGRESSION SUITE       ');
   console.log('================================================================\n');
 
   if (!fs.existsSync(USER_DATA_DIR)) {
@@ -137,7 +137,7 @@ async function main() {
   await send('Runtime.enable');
 
   // Inject engine code into page context
-  console.log('• Injecting OmniTools SVG Optimizer Engine into Chromium runtime...');
+  console.log('• Injecting KivaroTools SVG Optimizer Engine into Chromium runtime...');
   const injectRes = await send('Runtime.evaluate', {
     expression: engineScript,
     returnByValue: true,
@@ -510,7 +510,7 @@ async function main() {
       { input: 'path/to/my logo.svg', expected: 'my logo.optimized.svg' },
       { input: 'CON.svg', expected: 'file_CON.optimized.svg' },
       { input: 'unsafe<file>:name.svg', expected: 'unsafe_file__name.optimized.svg' },
-      { input: '', expected: 'optimized_omnitools.svg' },
+      { input: '', expected: 'optimized_kivarotools.svg' },
     ];
     cases.forEach(c => {
       const actual = sanitizeExportFilename(c.input);

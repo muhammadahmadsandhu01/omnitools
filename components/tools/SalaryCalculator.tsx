@@ -12269,7 +12269,7 @@ export default function SalaryCalculator() {
                 <span>Phase 2 Dedicated Route Roadmap</span>
               </div>
               <p className="text-[11px] text-blue-800/90 dark:text-blue-300/90 leading-relaxed">
-                The standalone dedicated route <span className="font-mono font-semibold">/finance/salary-calculator/{getCountrySlug(selectedCountryModal)}</span> is scheduled for rollout in Phase 2. All underlying statutory calculation formulas and test assertions are already codified in the OmniTools engine.
+                The standalone dedicated route <span className="font-mono font-semibold">/finance/salary-calculator/{getCountrySlug(selectedCountryModal)}</span> is scheduled for rollout in Phase 2. All underlying statutory calculation formulas and test assertions are already codified in the KivaroTools engine.
               </p>
             </div>
 

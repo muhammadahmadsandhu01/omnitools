@@ -14,24 +14,24 @@ import {
 import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Contact OmniTools',
+  title: 'Contact KivaroTools',
   description:
-    'Get in touch with OmniTools for feedback, bug reports, tool suggestions, or general inquiries. Serving users worldwide.',
+    'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries. Serving users worldwide.',
   alternates: {
     canonical: '/contact',
   },
   openGraph: {
-    title: 'Contact OmniTools',
+    title: 'Contact KivaroTools',
     description:
-      'Get in touch with OmniTools for feedback, bug reports, tool suggestions, or general inquiries.',
+      'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
     url: '/contact',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact OmniTools',
+    title: 'Contact KivaroTools',
     description:
-      'Get in touch with OmniTools for feedback, bug reports, tool suggestions, or general inquiries.',
+      'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
   },
 };
 
@@ -68,7 +68,7 @@ export default function ContactPage() {
           </div>
 
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl dark:text-white">
-            Contact <span className="text-blue-600">OmniTools</span>
+            Contact <span className="text-blue-600">KivaroTools</span>
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
@@ -88,7 +88,7 @@ export default function ContactPage() {
                 Independent Digital Utility
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                OmniTools is an independent web utility project developed and operated by an individual
+                KivaroTools is an independent web utility project developed and operated by an individual
                 based in {OPERATOR_LOCATION}, serving visitors and developers across the globe. We build
                 transparent, client-side tools designed to make common calculations and formatting tasks
                 accessible without registration barriers.
@@ -139,7 +139,7 @@ export default function ContactPage() {
                         upcoming public release. No placeholder or unmonitored mailbox is published here.
                         Please check back shortly or review our{' '}
                         <Link href="/about" className="underline font-semibold hover:text-amber-950 dark:hover:text-amber-100">
-                          About OmniTools
+                          About KivaroTools
                         </Link>{' '}
                         page for architecture details.
                       </p>

@@ -1,5 +1,5 @@
 /**
- * OmniTools Currency & Crypto Conversion Engine
+ * KivaroTools Currency & Crypto Conversion Engine
  *
  * Deterministic mathematical conversion engine and multi-source market rate aggregator.
  * Sourced from:
@@ -169,8 +169,8 @@ export const POPULAR_PAIRS = [
 ];
 
 export const CURRENT_CACHE_VERSION = 3;
-export const CACHE_STORAGE_KEY = 'omnitools_currency_rates_v3';
-export const CHART_CACHE_PREFIX = 'omnitools_fx_chart_v2';
+export const CACHE_STORAGE_KEY = 'kivarotools_currency_rates_v3';
+export const CHART_CACHE_PREFIX = 'kivarotools_fx_chart_v2';
 
 export const FIAT_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours for Frankfurter daily FX
 export const FALLBACK_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes for fallback provider

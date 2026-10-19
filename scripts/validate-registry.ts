@@ -1,7 +1,7 @@
 /**
- * OmniTools Registry & SEO Integrity Validator
+ * KivaroTools Registry & SEO Integrity Validator
  *
- * Automated regression test script ensuring every tool in OmniTools adheres to
+ * Automated regression test script ensuring every tool in KivaroTools adheres to
  * the registry contract:
  * 1. Pure metadata integrity in config/toolsData.ts
  * 2. Component mapping in config/toolRegistry.ts
@@ -69,7 +69,7 @@ interface ValidationError {
 
 const errors: ValidationError[] = [];
 
-console.log('🔍 [OmniTools] Validating Tool Registry & Architecture Integrity...\n');
+console.log('🔍 [KivaroTools] Validating Tool Registry & Architecture Integrity...\n');
 
 // ============================================================
 // 1. Categories Validation

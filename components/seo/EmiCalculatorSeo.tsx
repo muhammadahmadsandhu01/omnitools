@@ -238,7 +238,7 @@ export default function EmiCalculatorSeo() {
         5. Prepayment Optimization: Tenure Reduction vs. Payment Reduction
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools enables borrowers to model both recurring extra payments and one-time lump-sum prepayments under two distinct strategies:
+        KivaroTools enables borrowers to model both recurring extra payments and one-time lump-sum prepayments under two distinct strategies:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/40">
@@ -320,10 +320,10 @@ export default function EmiCalculatorSeo() {
 
       {/* Section 10: Related Financial Calculators */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        10. Related Financial Calculators on OmniTools
+        10. Related Financial Calculators on KivaroTools
       </h3>
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
-        Explore related personal finance and lending utilities on OmniTools:
+        Explore related personal finance and lending utilities on KivaroTools:
       </p>
       <ul className="list-disc list-inside space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <li>

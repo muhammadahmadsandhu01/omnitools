@@ -1,5 +1,5 @@
 /**
- * OmniTools JSON Converter Engine
+ * KivaroTools JSON Converter Engine
  * High-performance, client-side transformation engine for JSON data.
  * Supports tabular conversion (CSV, TSV, Excel, JSONL, HTML) and
  * structured data serialization (YAML, XML).
@@ -58,10 +58,10 @@ export const formatBytes = (bytes: number): string => {
  * Removes path traversal, control chars, and invalid filesystem characters.
  */
 export const sanitizeFilename = (filename: string): string => {
-  if (!filename || typeof filename !== 'string') return 'omnitools_export';
+  if (!filename || typeof filename !== 'string') return 'kivarotools_export';
   let cleaned = filename.trim().replace(/\.\.+/g, '_').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
   cleaned = cleaned.replace(/[. ]+$/, '');
-  return cleaned.slice(0, 80) || 'omnitools_export';
+  return cleaned.slice(0, 80) || 'kivarotools_export';
 };
 
 /**
@@ -658,7 +658,7 @@ export const jsonToJsonl = (data: Record<string, CellValue>[]): string => {
 export const jsonToHtmlTable = (
   data: Record<string, CellValue>[],
   columns: string[],
-  title = 'OmniTools Export',
+  title = 'KivaroTools Export',
 ): string => {
   const escapeHtml = (val: unknown) =>
     String(val ?? '')
@@ -702,7 +702,7 @@ tr:hover td { background: #f8fafc; }
 <body>
 <div class="header">
   <h1>${escapeHtml(title)}</h1>
-  <p>Exported from OmniTools JSON Converter • ${data.length.toLocaleString()} rows • ${columns.length.toLocaleString()} columns</p>
+  <p>Exported from KivaroTools JSON Converter • ${data.length.toLocaleString()} rows • ${columns.length.toLocaleString()} columns</p>
 </div>
 <div class="container">
   <table>

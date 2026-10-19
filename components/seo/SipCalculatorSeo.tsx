@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -29,12 +30,12 @@ export const SIP_CALCULATOR_FAQS: FaqItem[] = [
   {
     question: 'How do expense ratios and management fees erode compounding wealth?',
     answer:
-      'Mutual funds and exchange-traded funds charge an ongoing management fee known as an expense ratio, usually ranging from 0.05% for passive index funds to 1.5% or more for actively managed funds. Even a 1% annual fee deduction compounds over 20 years to consume 15% to 25% of your potential total wealth gains. OmniTools models annual management fee drag directly into the yearly amortization schedule so you can assess true net returns.',
+      'Mutual funds and exchange-traded funds charge an ongoing management fee known as an expense ratio, usually ranging from 0.05% for passive index funds to 1.5% or more for actively managed funds. Even a 1% annual fee deduction compounds over 20 years to consume 15% to 25% of your potential total wealth gains. KivaroTools models annual management fee drag directly into the yearly amortization schedule so you can assess true net returns.',
   },
   {
     question: 'How does inflation affect my projected future wealth?',
     answer:
-      'Inflation erodes the purchasing power of money over time. While your nominal portfolio might reach $100,000 in 15 years, persistent 3% annual inflation means $100,000 in future cash will only buy what approximately $64,186 buys today. OmniTools includes an inflation-discounted purchasing power metric (Real Value) calculated using the Fisher discount formula: Real Value = Nominal Value / (1 + inflation)^years.',
+      'Inflation erodes the purchasing power of money over time. While your nominal portfolio might reach $100,000 in 15 years, persistent 3% annual inflation means $100,000 in future cash will only buy what approximately $64,186 buys today. KivaroTools includes an inflation-discounted purchasing power metric (Real Value) calculated using the Fisher discount formula: Real Value = Nominal Value / (1 + inflation)^years.',
   },
   {
     question: 'Should I choose an SIP or a Lump Sum investment?',
@@ -52,14 +53,14 @@ export const SIP_CALCULATOR_FAQS: FaqItem[] = [
       'Historically, broad diversified equity index funds (such as the S&P 500, MSCI World, or Nifty 50) have delivered long-term nominal annualized returns between 9% and 13% before inflation. Conservative bond-heavy portfolios typically generate 4% to 7%. For responsible financial planning, it is prudent to test multiple scenarios (e.g. 8%, 10%, and 12%) rather than assuming peak historical bull market returns.',
   },
   {
-    question: 'How does the OmniTools Goal Planner solve for required contributions?',
+    question: 'How does the KivaroTools Goal Planner solve for required contributions?',
     answer:
       'The Goal Planner feature uses numerical bisection root-finding to solve for the exact periodic installment required to achieve a target future wealth milestone. It accounts for your time horizon, assumed return rate, compounding frequency, entry fees, and management expense drag, identifying the precise required budget within fractions of a currency cent.',
   },
   {
     question: 'What is Sequence of Returns Risk and how does Monte Carlo modeling help?',
     answer:
-      'Standard compound interest formulas assume a perfectly constant return year after year (e.g., exactly 12.0% annually). In reality, market returns are volatile: a major bear market early or late in your horizon dramatically alters your ending balance. OmniTools features an integrated 3,000-path Monte Carlo stochastic simulation that models lognormal market volatility, revealing 10th percentile conservative, 50th percentile median, and 90th percentile optimistic outcomes.',
+      'Standard compound interest formulas assume a perfectly constant return year after year (e.g., exactly 12.0% annually). In reality, market returns are volatile: a major bear market early or late in your horizon dramatically alters your ending balance. KivaroTools features an integrated 3,000-path Monte Carlo stochastic simulation that models lognormal market volatility, revealing 10th percentile conservative, 50th percentile median, and 90th percentile optimistic outcomes.',
   },
 ];
 
@@ -85,19 +86,19 @@ export default function SipCalculatorSeo() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://omnitools-navy.vercel.app',
+        item: `${SITE_URL}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Finance Tools',
-        item: 'https://omnitools-navy.vercel.app/finance',
+        item: `${SITE_URL}/finance`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'SIP Calculator',
-        item: 'https://omnitools-navy.vercel.app/finance/sip-calculator',
+        item: `${SITE_URL}/finance/sip-calculator`,
       },
     ],
   };
@@ -243,7 +244,7 @@ export default function SipCalculatorSeo() {
         Independently Verified Worked Numerical Example
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        To demonstrate the exact mechanics of the OmniTools engine, consider a typical retail wealth-building plan:
+        To demonstrate the exact mechanics of the KivaroTools engine, consider a typical retail wealth-building plan:
       </p>
 
       <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 my-6 not-prose space-y-3 text-sm">
@@ -407,7 +408,7 @@ export default function SipCalculatorSeo() {
         Inflation Discounting: Measuring Real Future Purchasing Power
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Achieving a nominal portfolio of $500,000 sounds impressive, but if consumer prices double over the same 20-year span, your actual standard of living is dramatically different. OmniTools provides a continuous real purchasing power calculation:
+        Achieving a nominal portfolio of $500,000 sounds impressive, but if consumer prices double over the same 20-year span, your actual standard of living is dramatically different. KivaroTools provides a continuous real purchasing power calculation:
       </p>
 
       <div className="rounded-xl bg-slate-100 dark:bg-slate-800/60 p-4 border border-slate-200 dark:border-slate-700 font-mono text-sm mb-6 text-center text-slate-900 dark:text-slate-100">

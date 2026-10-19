@@ -1,5 +1,5 @@
 /**
- * OmniTools Regex Tester & Code Generator — Automated Regression Test Suite
+ * KivaroTools Regex Tester & Code Generator — Automated Regression Test Suite
  *
  * Scenarios tested:
  * 1. Valid pattern with multiple matches (offsets, groups, text)
@@ -56,7 +56,7 @@ function runTest(name: string, fn: () => void) {
   }
 }
 
-console.log('\n=== Starting OmniTools Regex Tester Regression Suite ===\n');
+console.log('\n=== Starting KivaroTools Regex Tester Regression Suite ===\n');
 
 // 1. Valid pattern with multiple matches
 runTest('Valid pattern matches globally with correct UTF-16 offsets', () => {
@@ -153,11 +153,11 @@ runTest('Multiline flag changes ^ and $ to match line boundaries', () => {
 
 // 9. Case-insensitive flag (i) mechanics
 runTest('Case-insensitive flag matches uppercase and lowercase', () => {
-  const text = 'OmniTools omnitools OMNITOOLS';
-  const caseSensitive = new RegExp('omnitools', 'g');
+  const text = 'KivaroTools kivarotools KIVAROTOOLS';
+  const caseSensitive = new RegExp('kivarotools', 'g');
   assert.equal([...text.matchAll(caseSensitive)].length, 1);
 
-  const caseInsensitive = new RegExp('omnitools', 'gi');
+  const caseInsensitive = new RegExp('kivarotools', 'gi');
   assert.equal([...text.matchAll(caseInsensitive)].length, 3);
 });
 

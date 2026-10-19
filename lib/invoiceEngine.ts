@@ -1,5 +1,5 @@
 /**
- * OmniTools Invoice Calculation & Pagination Engine
+ * KivaroTools Invoice Calculation & Pagination Engine
  *
  * Deterministic mathematical calculation layer, decimal-safe monetary arithmetic,
  * multi-currency formatting, height-aware A4 pagination budgeting, and draft validation.

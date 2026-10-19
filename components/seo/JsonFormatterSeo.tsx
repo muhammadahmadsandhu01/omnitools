@@ -17,14 +17,14 @@ export const JSON_FORMATTER_FAQS: FaqItem[] = [
       'Production web APIs, microservices, CDN caches, and log aggregators strip all non-essential whitespace and line breaks to minimize payload transfer size over HTTP/2 and HTTP/3. While minified payloads save bandwidth, they are virtually impossible for engineers to read or debug directly. Formatting minified JSON restores visual hierarchy, exposes nested property structures, and enables rapid pinpointing of specific keys or values.',
   },
   {
-    question: 'How does OmniTools validate JSON against the RFC 8259 specification?',
+    question: 'How does KivaroTools validate JSON against the RFC 8259 specification?',
     answer:
-      'OmniTools executes strict client-side parsing using the ECMAScript standard JSON parser conforming to RFC 8259 and ECMA-404. It strictly rejects syntax violations that lenient JavaScript object literals allow—such as single-quoted strings, unquoted object keys, trailing commas, comments (// and /* */), and unsupported identifiers like undefined or NaN.',
+      'KivaroTools executes strict client-side parsing using the ECMAScript standard JSON parser conforming to RFC 8259 and ECMA-404. It strictly rejects syntax violations that lenient JavaScript object literals allow—such as single-quoted strings, unquoted object keys, trailing commas, comments (// and /* */), and unsupported identifiers like undefined or NaN.',
   },
   {
-    question: 'What happens when JSON syntax is invalid and how does OmniTools highlight errors?',
+    question: 'What happens when JSON syntax is invalid and how does KivaroTools highlight errors?',
     answer:
-      'When syntax is malformed, OmniTools intercepts the parser diagnostic, extracts the exact line number, column index, and character byte offset, and renders an visual code frame. A directional caret (^) points directly to the erroneous token alongside a descriptive explanation (such as "Unexpected token , at line 4 column 12"), allowing developers to immediately spot and fix syntax mistakes.',
+      'When syntax is malformed, KivaroTools intercepts the parser diagnostic, extracts the exact line number, column index, and character byte offset, and renders an visual code frame. A directional caret (^) points directly to the erroneous token alongside a descriptive explanation (such as "Unexpected token , at line 4 column 12"), allowing developers to immediately spot and fix syntax mistakes.',
   },
   {
     question: 'How does minification differ from formatting and what are the performance impacts?',
@@ -57,24 +57,24 @@ export const JSON_FORMATTER_FAQS: FaqItem[] = [
       'Yes. JSON natively represents multi-dimensional arrays, deeply nested object hierarchies, explicit null assignments, and full UTF-8 Unicode characters including international alphabets (Arabic, Cyrillic, Chinese, Kanji) and multi-byte emoji sequences without requiring manual escape codes.',
   },
   {
-    question: 'Why does JavaScript lose precision on large 64-bit integers and how does OmniTools detect it?',
+    question: 'Why does JavaScript lose precision on large 64-bit integers and how does KivaroTools detect it?',
     answer:
-      'JavaScript native numbers conform to the IEEE 754 double-precision floating-point standard, which guarantees exact integer precision only up to 2^53 - 1 (9,007,199,254,740,991). When an API returns 64-bit database identifiers (such as PostgreSQL BigInt or Twitter/Discord Snowflake IDs) as raw JSON numbers, the browser silently rounds the least significant digits. OmniTools runs a pre-parse lexical scanner that flags integers exceeding Number.MAX_SAFE_INTEGER so you can identify truncation risks before ingestion.',
+      'JavaScript native numbers conform to the IEEE 754 double-precision floating-point standard, which guarantees exact integer precision only up to 2^53 - 1 (9,007,199,254,740,991). When an API returns 64-bit database identifiers (such as PostgreSQL BigInt or Twitter/Discord Snowflake IDs) as raw JSON numbers, the browser silently rounds the least significant digits. KivaroTools runs a pre-parse lexical scanner that flags integers exceeding Number.MAX_SAFE_INTEGER so you can identify truncation risks before ingestion.',
   },
   {
     question: 'What are the tool\'s actual processing limits and performance budgets?',
     answer:
-      'OmniTools enforces a maximum 25 MB payload safety limit in the browser to prevent tab crashes and excessive garbage collection overhead. Payloads over 256 KB automatically delegate parsing to a dedicated background Web Worker thread, keeping the UI smooth. The interactive tree viewer renders up to 60,000 nodes using virtualized DOM row recycling.',
+      'KivaroTools enforces a maximum 25 MB payload safety limit in the browser to prevent tab crashes and excessive garbage collection overhead. Payloads over 256 KB automatically delegate parsing to a dedicated background Web Worker thread, keeping the UI smooth. The interactive tree viewer renders up to 60,000 nodes using virtualized DOM row recycling.',
   },
   {
-    question: 'What happens to my data and does OmniTools ever upload payloads to a remote server?',
+    question: 'What happens to my data and does KivaroTools ever upload payloads to a remote server?',
     answer:
       'Your data never leaves your device. All JSON formatting, strict syntax validation, minification, tree rendering, and diffing occur 100% locally in your client browser memory using Web Workers and JavaScript APIs. No payloads, tokens, customer records, or API responses are transmitted to any backend server, telemetry endpoint, or external analytics tracker.',
   },
   {
     question: 'Which related tool should I use if I need to convert JSON into CSV, Excel, or SQL?',
     answer:
-      'If your workflow requires converting structured JSON data into tabular formats or database queries, use our dedicated companion tools: the OmniTools JSON to CSV/Excel Converter for tabular reporting, or the SQL Query Formatter for formatting database schema definitions and SQL queries.',
+      'If your workflow requires converting structured JSON data into tabular formats or database queries, use our dedicated companion tools: the KivaroTools JSON to CSV/Excel Converter for tabular reporting, or the SQL Query Formatter for formatting database schema definitions and SQL queries.',
   },
 ];
 
@@ -111,7 +111,7 @@ export default function JsonFormatterSeo() {
       </p>
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Step-by-Step Guide: How to Format, Validate, and Inspect JSON on OmniTools
+        Step-by-Step Guide: How to Format, Validate, and Inspect JSON on KivaroTools
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
@@ -140,7 +140,7 @@ export default function JsonFormatterSeo() {
             <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Review Diagnostics &amp; Trees</h3>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            OmniTools automatically verifies syntax, scans for duplicate object keys, highlights 64-bit integer precision boundaries, and opens an interactive virtualized tree viewer.
+            KivaroTools automatically verifies syntax, scans for duplicate object keys, highlights 64-bit integer precision boundaries, and opens an interactive virtualized tree viewer.
           </p>
         </div>
 
@@ -220,8 +220,8 @@ export default function JsonFormatterSeo() {
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Quotes</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;title&quot;: &quot;OmniTools&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">&apos;title&apos;: &apos;OmniTools&apos; (single quotes disallowed)</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;title&quot;: &quot;KivaroTools&quot;</td>
+              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">&apos;title&apos;: &apos;KivaroTools&apos; (single quotes disallowed)</td>
             </tr>
             <tr>
               <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Object Keys</th>
@@ -262,7 +262,7 @@ export default function JsonFormatterSeo() {
         Number.MAX_SAFE_INTEGER = 2<sup>53</sup> - 1 = 9,007,199,254,740,991
       </div>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        JavaScript engines use IEEE 754 double-precision floating-point numbers. Any integer larger than <code>9,007,199,254,740,991</code> or smaller than <code>-9,007,199,254,740,991</code> loses precision, causing the browser to silently alter the least significant digits during native <code>JSON.parse()</code>. OmniTools features an automated pre-parse lexical diagnostic scanner that flags unsafe integers before parsing, advising you to serialize 64-bit IDs as strings (e.g., <code>&quot;1740284918239019234&quot;</code>) in your API endpoints.
+        JavaScript engines use IEEE 754 double-precision floating-point numbers. Any integer larger than <code>9,007,199,254,740,991</code> or smaller than <code>-9,007,199,254,740,991</code> loses precision, causing the browser to silently alter the least significant digits during native <code>JSON.parse()</code>. KivaroTools features an automated pre-parse lexical diagnostic scanner that flags unsafe integers before parsing, advising you to serialize 64-bit IDs as strings (e.g., <code>&quot;1740284918239019234&quot;</code>) in your API endpoints.
       </p>
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
@@ -272,7 +272,7 @@ export default function JsonFormatterSeo() {
         Under RFC 8259, JSON object keys should be unique within an object. When a payload contains duplicate keys (such as <code>&#123;&quot;role&quot;: &quot;admin&quot;, &quot;role&quot;: &quot;guest&quot;&#125;</code>), the ECMAScript <code>JSON.parse()</code> specification dictates that the last encountered value overwrites earlier values silently. This silent overwrite can mask catastrophic security vulnerabilities and configuration regressions.
       </p>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        OmniTools executes an independent, non-destructive lexical analysis across raw input strings before ingestion. It detects duplicate keys and reports their exact line and column coordinates, alerting you before silent data masking occurs.
+        KivaroTools executes an independent, non-destructive lexical analysis across raw input strings before ingestion. It detects duplicate keys and reports their exact line and column coordinates, alerting you before silent data masking occurs.
       </p>
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
@@ -317,7 +317,7 @@ export default function JsonFormatterSeo() {
         In an enterprise software environment, JSON payloads often contain sensitive production data—including authentication tokens, customer personal identifiable information (PII), proprietary business logic, or confidential financial records. Many legacy online formatting tools transmit payloads to backend servers for processing or inject third-party ad networks that inspect form fields.
       </p>
       <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 p-5 bg-emerald-50/50 dark:bg-emerald-950/20 mb-6">
-        <h3 className="font-bold text-emerald-900 dark:text-emerald-300 text-base mb-2">OmniTools Zero-Upload Guarantee</h3>
+        <h3 className="font-bold text-emerald-900 dark:text-emerald-300 text-base mb-2">KivaroTools Zero-Upload Guarantee</h3>
         <ul className="list-disc pl-5 text-sm space-y-1 text-emerald-800 dark:text-emerald-400">
           <li><strong>Zero Network Calls:</strong> All parsing, validation, formatting, minification, and diffing occur exclusively in your local browser sandbox via JavaScript and Web Workers.</li>
           <li><strong>No Server Logs or Telemetry:</strong> Payload contents are never sent to remote logging services, databases, or analytics platforms.</li>
@@ -326,7 +326,7 @@ export default function JsonFormatterSeo() {
       </div>
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Competitive Analysis: OmniTools vs. 28 Online JSON Utilities
+        Competitive Analysis: KivaroTools vs. 28 Online JSON Utilities
       </h2>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
         We audited 28 distinct developer utilities across the web (including JSONLint, JSONFormatter.org, CodeBeautify, JSON Editor Online, JSON Crack, and jqplay) to identify where standard formatters fail modern developer workflows:
@@ -345,7 +345,7 @@ export default function JsonFormatterSeo() {
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
             <tr className="bg-blue-50/40 dark:bg-blue-950/20 font-medium">
-              <th scope="row" className="p-3 font-bold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-blue-900 dark:text-blue-300">OmniTools (This Tool)</th>
+              <th scope="row" className="p-3 font-bold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-blue-900 dark:text-blue-300">KivaroTools (This Tool)</th>
               <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">100% Client-Side (Zero Uploads)</td>
               <td className="p-3 border border-gray-200 dark:border-slate-700">Web Worker + 60k Node Virtual Tree</td>
               <td className="p-3 border border-gray-200 dark:border-slate-700">Duplicate Keys + BigInt 64-bit Scanning</td>

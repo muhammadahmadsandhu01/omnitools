@@ -17,22 +17,22 @@ import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description:
-    'OmniTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+    'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
   alternates: {
     canonical: '/terms',
   },
   openGraph: {
-    title: 'Terms of Service — OmniTools',
+    title: 'Terms of Service — KivaroTools',
     description:
-      'OmniTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+      'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
     url: '/terms',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Terms of Service — OmniTools',
+    title: 'Terms of Service — KivaroTools',
     description:
-      'OmniTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+      'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
   },
 };
 
@@ -79,8 +79,8 @@ export default function TermsOfServicePage() {
           </div>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            Welcome to OmniTools. These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use
-            of the OmniTools website and web applications. By accessing or using our website, you acknowledge
+            Welcome to KivaroTools. These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use
+            of the KivaroTools website and web applications. By accessing or using our website, you acknowledge
             that you have read, understood, and agreed to be bound by these Terms.
           </p>
         </header>
@@ -95,7 +95,7 @@ export default function TermsOfServicePage() {
               1. Nature of the Service &amp; Global Access
             </h2>
             <p>
-              OmniTools is an independent digital utility suite developed and operated by an individual based
+              KivaroTools is an independent digital utility suite developed and operated by an individual based
               in {OPERATOR_LOCATION}, provided free of charge for a worldwide audience. The platform offers client-side
               calculators, data converters, document utilities, and developer tools designed to run directly in your web browser.
             </p>
@@ -116,7 +116,7 @@ export default function TermsOfServicePage() {
                 IMPORTANT: Not Professional Financial, Tax, or Legal Advice
               </p>
               <p className="text-xs leading-6 text-amber-900 dark:text-amber-300">
-                All tools on OmniTools—including but not limited to our 22 Country Salary Calculators, Mortgage Amortization
+                All tools on KivaroTools—including but not limited to our 22 Country Salary Calculators, Mortgage Amortization
                 Calculators, Personal &amp; Auto Loan EMI Calculators, Compound Interest Calculators, SIP Projection Engines,
                 and Precious Metals Melt Rate Trackers—are provided strictly for <strong>educational estimation, preliminary modeling,
                 and informational planning purposes</strong>.
@@ -148,7 +148,7 @@ export default function TermsOfServicePage() {
               3. User Responsibilities &amp; Acceptable Use
             </h2>
             <p>
-              Because OmniTools executes file transformations and calculations client-side in your device&apos;s browser,
+              Because KivaroTools executes file transformations and calculations client-side in your device&apos;s browser,
               you retain sole responsibility for your use of the platform:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
@@ -175,7 +175,7 @@ export default function TermsOfServicePage() {
               4. Intellectual Property Rights
             </h2>
             <p className="text-sm">
-              The OmniTools name, branding, visual design, custom layouts, and original software code are the intellectual property
+              The KivaroTools name, branding, visual design, custom layouts, and original software code are the intellectual property
               of the operator and are protected by applicable copyright and intellectual property standards.
             </p>
             <p className="text-sm">
@@ -191,7 +191,7 @@ export default function TermsOfServicePage() {
               5. Disclaimer of Warranties
             </h2>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50 text-xs leading-6 uppercase text-slate-600 dark:text-slate-400">
-              OmniTools is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis, without warranties of any kind,
+              KivaroTools is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis, without warranties of any kind,
               either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose,
               non-infringement, uninterrupted availability, or complete freedom from mathematical or programming errors. We do not
               warrant that calculation results will meet your specific accounting requirements or that the site will remain error-free.
@@ -205,7 +205,7 @@ export default function TermsOfServicePage() {
               6. Limitation of Liability
             </h2>
             <p className="text-sm leading-6">
-              To the maximum extent permitted by applicable law, in no event shall the operator of OmniTools be liable for any indirect,
+              To the maximum extent permitted by applicable law, in no event shall the operator of KivaroTools be liable for any indirect,
               incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, goodwill, or business
               opportunities arising out of or related to your use of, or inability to use, our website or calculation tools, even if
               advised of the possibility of such damages.
@@ -220,12 +220,12 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800 text-sm leading-6 text-slate-600 dark:text-slate-400 space-y-3">
               <p>
-                OmniTools is operated by an independent developer located in {OPERATOR_LOCATION}. To the extent permitted by law,
+                KivaroTools is operated by an independent developer located in {OPERATOR_LOCATION}. To the extent permitted by law,
                 these Terms are governed by and construed in accordance with the laws of {OPERATOR_LOCATION}, without regard to conflict
                 of law principles.
               </p>
               <p>
-                <strong>Worldwide Consumer Rights Notice:</strong> Because OmniTools serves a worldwide audience, nothing in these
+                <strong>Worldwide Consumer Rights Notice:</strong> Because KivaroTools serves a worldwide audience, nothing in these
                 Terms excludes, restricts, limits, or modifies any non-waivable statutory rights, consumer guarantees, or legal remedies
                 that you are entitled to under the mandatory consumer protection laws of your country or jurisdiction of habitual
                 residence (such as mandatory consumer rights under European Union, United Kingdom, or other local consumer protection legislation).

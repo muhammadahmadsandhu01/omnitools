@@ -5,7 +5,7 @@ export default function SalaryCalculatorSeo() {
         Salary Calculator by Country: Country & Territory Directory of 212 Jurisdictions
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        Choose a country to calculate estimated salary, taxes, deductions, and take-home pay using the applicable payroll assumptions. OmniTools provides a comprehensive directory of <strong>212 jurisdictions</strong>,
+        Choose a country to calculate estimated salary, taxes, deductions, and take-home pay using the applicable payroll assumptions. KivaroTools provides a comprehensive directory of <strong>212 jurisdictions</strong>,
         combining verified statutory tax engines (Pakistan, United Kingdom, Germany, India, Australia, and more),
         limited statutory models (United States, Canada, Singapore, United Arab Emirates, Saudi Arabia, France, Japan),
         and transparent <strong>Custom Estimate modeling across the global catalogue</strong>.
@@ -158,7 +158,7 @@ export default function SalaryCalculatorSeo() {
         <div>
           <h4 className="font-semibold text-slate-800 dark:text-slate-200">200 Worldwide Jurisdictions in Custom Estimate Mode</h4>
           <p className="text-sm mt-1">
-            For countries without an active statutory payroll model, OmniTools provides a transparent Custom Estimate mode allowing users to specify custom effective income tax rates and employee/employer social contribution percentages. Results are clearly designated as illustrative custom estimates rather than statutory payroll advice.
+            For countries without an active statutory payroll model, KivaroTools provides a transparent Custom Estimate mode allowing users to specify custom effective income tax rates and employee/employer social contribution percentages. Results are clearly designated as illustrative custom estimates rather than statutory payroll advice.
           </p>
         </div>
       </div>
@@ -179,7 +179,7 @@ export default function SalaryCalculatorSeo() {
         Statutory Freshness, Provenance & Privacy Standard
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Unlike web tools that silently store financial figures or send salary queries across analytics APIs, OmniTools
+        Unlike web tools that silently store financial figures or send salary queries across analytics APIs, KivaroTools
         operates strictly on client-side deterministic evaluation. <strong>Zero salary data is persisted</strong> to local
         storage, session cookies, or external servers. Every supported statutory engine explicitly publishes its ruleset ID,
         statutory source authority, last verified date, and documented calculation scope.

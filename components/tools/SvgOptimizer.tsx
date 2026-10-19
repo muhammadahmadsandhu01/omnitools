@@ -1699,7 +1699,7 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
 
 // Filename sanitizer for export
 const sanitizeExportFilename = (originalName?: string): string => {
-  if (!originalName || !originalName.trim()) return 'optimized_omnitools.svg';
+  if (!originalName || !originalName.trim()) return 'optimized_kivarotools.svg';
   let name = originalName.trim().replace(/^.*[\\/]/, ''); // Strip directory path
   name = name.replace(/[\x00-\x1f<>:"/\\|?*]/g, '_'); // Strip invalid chars
   name = name.replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$/i, 'file_$1'); // Windows reserved

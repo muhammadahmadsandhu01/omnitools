@@ -320,7 +320,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: canonicalUrl,
     },
     openGraph: {
-      title: `${entry.name} Salary Calculator ${taxYear} — OmniTools`,
+      title: `${entry.name} Salary Calculator ${taxYear} — KivaroTools`,
       description,
       url: canonicalUrl,
       type: 'website',

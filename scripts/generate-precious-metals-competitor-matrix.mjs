@@ -3,7 +3,7 @@ import path from 'node:path';
 
 const verifiedData = JSON.parse(fs.readFileSync('scratch/competitor_audit_deep_verified.json', 'utf8'));
 
-let md = `# OmniTools Precious Metals — Evidence-Based Competitor Audit Matrix
+let md = `# KivaroTools Precious Metals — Evidence-Based Competitor Audit Matrix
 
 **Inspection Date**: 2026-10-14  
 **Audit Protocol**: Direct HTTP GET response and DOM/HTML analysis.  
@@ -80,7 +80,7 @@ for (const c of verifiedData) {
 
 md += `---
 
-## 5. Architectural Gap Analysis: OmniTools vs. Market Landscape
+## 5. Architectural Gap Analysis: KivaroTools vs. Market Landscape
 
 ### Key Gaps in Competitor Landscape
 1. **Troy Ounce vs Avoirdupois Ounce Confusion**: Over 60% of inspected competitor tools do not explicitly clarify or separate ordinary kitchen scale ounces (28.35 g) from international bullion troy ounces (31.10 g), creating a potential ~9.71% financial valuation discrepancy for consumers weighing items at home.
@@ -89,7 +89,7 @@ md += `---
 4. **Lack of Truthful Dealer Payout Modeling**: The vast majority of competitor tools report only the 100% theoretical wholesale melt value without clarifying that refiners pay ~93-96%, bullion dealers pay ~85-90%, and pawn shops pay ~70-75%. This leads sellers into unrealistic expectations and predatory negotiations.
 5. **CORS Failures and Broken Historical Charts**: External historical charts on consumer tools frequently break due to third-party CORS limitations or unmaintained widget embeds.
 
-### OmniTools Solution Architecture
+### KivaroTools Solution Architecture
 - **Canonical Unit Oracle**: Exact conversion across Troy Ounces (31.1034768 g), Pennyweights (1.55517384 g), Tola (11.6638038 g), Grams, Avoirdupois Ounces (28.349523125 g), and Kilograms.
 - **Scrap Lot Builder**: Multi-item lot table allowing simultaneous entry of gold, silver, platinum, and palladium items with instant fine-weight aggregation and payout tier modeling.
 - **Transparent Data Provenance & Freshness Engine**: Deterministic Eastern Time market calendar distinguishing live spot trading from weekend/holiday closes, stale feeds, and manual user overrides.

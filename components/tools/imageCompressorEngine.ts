@@ -1,5 +1,5 @@
 /**
- * OmniTools Image Compressor Engine
+ * KivaroTools Image Compressor Engine
  *
  * Core algorithmic engine for client-side image compression, candidate ranking,
  * format detection, aspect-ratio preservation, target-size bisection, and batch metrics.

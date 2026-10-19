@@ -733,7 +733,7 @@ const bhd = WORLD_CURRENCIES.find((c) => c.code === 'BHD')!;
 // ============================================================================
 
 console.log('\n================================================================================');
-console.log('         OMNITOOLS INDEPENDENT FINANCIAL ORACLE BENCHMARK REPORT                ');
+console.log('         KIVAROTOOLS INDEPENDENT FINANCIAL ORACLE BENCHMARK REPORT                ');
 console.log('================================================================================\n');
 
 let passCount = 0;

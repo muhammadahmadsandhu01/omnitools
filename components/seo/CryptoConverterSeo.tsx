@@ -9,7 +9,7 @@ export const CRYPTO_CONVERTER_FAQS: FaqItem[] = [
   {
     question: 'What is the mid-market exchange rate, and why does it differ from bank quotes?',
     answer:
-      'The mid-market exchange rate (also called the interbank spot rate) is the mathematical midpoint between the global wholesale buy (bid) and sell (ask) prices for a currency pair. Banks, card issuers, and airport exchange booths rarely give consumers the mid-market rate. Instead, they add a hidden retail markup—typically 1% to 4% above spot—plus possible wire or flat gateway fees. OmniTools displays the unbiased mid-market reference rate and lets you simulate realistic bank spreads.',
+      'The mid-market exchange rate (also called the interbank spot rate) is the mathematical midpoint between the global wholesale buy (bid) and sell (ask) prices for a currency pair. Banks, card issuers, and airport exchange booths rarely give consumers the mid-market rate. Instead, they add a hidden retail markup—typically 1% to 4% above spot—plus possible wire or flat gateway fees. KivaroTools displays the unbiased mid-market reference rate and lets you simulate realistic bank spreads.',
   },
   {
     question: 'How are cryptocurrency exchange rates calculated compared to fiat currencies?',
@@ -24,7 +24,7 @@ export const CRYPTO_CONVERTER_FAQS: FaqItem[] = [
   {
     question: 'Why does a reciprocal exchange rate not always look like an exact reverse?',
     answer:
-      'Mathematically, Rate(B → A) is the exact reciprocal 1 / Rate(A → B). For example, if 1 USD = 0.9250 EUR, then 1 EUR = 1 / 0.9250 ≈ 1.0811 USD. The product of the two rates equals exactly 1.0. However, when rates are rounded to two decimal places on retail statements, rounding artifacts can appear. OmniTools preserves high decimal precision internally to maintain reciprocal integrity.',
+      'Mathematically, Rate(B → A) is the exact reciprocal 1 / Rate(A → B). For example, if 1 USD = 0.9250 EUR, then 1 EUR = 1 / 0.9250 ≈ 1.0811 USD. The product of the two rates equals exactly 1.0. However, when rates are rounded to two decimal places on retail statements, rounding artifacts can appear. KivaroTools preserves high decimal precision internally to maintain reciprocal integrity.',
   },
   {
     question: 'What is credit card foreign transaction fee (FTF) and how does it impact international purchases?',
@@ -47,14 +47,14 @@ export const CRYPTO_CONVERTER_FAQS: FaqItem[] = [
       'Certain sovereign currencies maintain an official fixed peg to the US Dollar. For example, the United Arab Emirates Dirham is officially pegged at 1 USD = 3.6725 AED, and the Saudi Riyal is pegged at 1 USD = 3.7500 SAR. While their central bank reference rate remains constant, retail currency booths and commercial banks still add small transaction margins for conversion.',
   },
   {
-    question: 'How frequently are currency exchange rates updated on OmniTools?',
+    question: 'How frequently are currency exchange rates updated on KivaroTools?',
     answer:
       'Fiat currency rates are sourced from the European Central Bank (ECB) via Frankfurter, updated every European business day around 16:00 CET, with fallback feeds from ExchangeRate-API. Cryptocurrency prices are synchronized from CoinGecko with automated caching to maintain responsiveness and avoid rate limits. A status badge clearly indicates whether rates are Live, Fresh Cache, or Stale Cache.',
   },
   {
-    question: 'Does OmniTools store my conversion amounts or share them with third parties?',
+    question: 'Does KivaroTools store my conversion amounts or share them with third parties?',
     answer:
-      'No. All currency conversion calculations, fee modeling, and arithmetic breakdowns execute entirely in your web browser. OmniTools never logs, stores, or transmits your conversion amounts, personal data, or financial queries to any external server.',
+      'No. All currency conversion calculations, fee modeling, and arithmetic breakdowns execute entirely in your web browser. KivaroTools never logs, stores, or transmits your conversion amounts, personal data, or financial queries to any external server.',
   },
 ];
 
@@ -86,7 +86,7 @@ export default function CryptoConverterSeo() {
           Currency &amp; Cryptocurrency Converter: Mid-Market Exchange Rates &amp; Fee Simulation
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
-          Converting value between sovereign fiat currencies (such as the US Dollar, Euro, British Pound, Pakistani Rupee, and Indian Rupee) and decentralized digital assets (like Bitcoin, Ethereum, and Solana) requires understanding market microstructure, spot pricing, and commercial fee structures. OmniTools provides transparent mid-market exchange rates combined with custom broker markup simulation, giving travelers, freelancers, businesses, and investors the tools to calculate true net transaction proceeds.
+          Converting value between sovereign fiat currencies (such as the US Dollar, Euro, British Pound, Pakistani Rupee, and Indian Rupee) and decentralized digital assets (like Bitcoin, Ethereum, and Solana) requires understanding market microstructure, spot pricing, and commercial fee structures. KivaroTools provides transparent mid-market exchange rates combined with custom broker markup simulation, giving travelers, freelancers, businesses, and investors the tools to calculate true net transaction proceeds.
         </p>
       </section>
 
@@ -200,7 +200,7 @@ export default function CryptoConverterSeo() {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Interbank Spot (OmniTools Base)</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Interbank Spot (KivaroTools Base)</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">0.00% (Pure Mid-Market)</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">$0.00</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">$0.00 (Benchmark Standard)</td>
@@ -278,13 +278,13 @@ export default function CryptoConverterSeo() {
           Data Sourcing &amp; Reliability Architecture
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          OmniTools operates a multi-tier rate synchronization engine designed for maximum resilience, auditability, and data honesty:
+          KivaroTools operates a multi-tier rate synchronization engine designed for maximum resilience, auditability, and data honesty:
         </p>
         <ul className="text-xs sm:text-sm space-y-2.5 text-slate-600 dark:text-slate-400 list-disc pl-5 mb-6">
           <li><strong>Primary Fiat Feed (Frankfurter):</strong> Sourced directly from official European Central Bank (ECB) daily reference exchange rates published at approximately 16:00 CET on TARGET business days.</li>
           <li><strong>Secondary Fallback Feed (ExchangeRate-API):</strong> Seamless automatic failover providing high-availability global rates if the primary feed encounters network latency.</li>
           <li><strong>Cryptocurrency Spot Pricing (CoinGecko):</strong> Real-time volume-weighted average prices (VWAP) aggregated across more than 700 verified centralized and decentralized exchange liquidity pools.</li>
-          <li><strong>Client-Side Privacy:</strong> All calculation logic executes locally in your browser. OmniTools never transmits your financial amounts or portfolio calculations to third parties.</li>
+          <li><strong>Client-Side Privacy:</strong> All calculation logic executes locally in your browser. KivaroTools never transmits your financial amounts or portfolio calculations to third parties.</li>
         </ul>
       </section>
 
@@ -361,7 +361,7 @@ export default function CryptoConverterSeo() {
           Related Financial &amp; Planning Utilities
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
-          Explore complementary financial modeling utilities across the OmniTools suite:
+          Explore complementary financial modeling utilities across the KivaroTools suite:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <Link
@@ -438,7 +438,7 @@ export default function CryptoConverterSeo() {
           Regulatory Disclosures &amp; Informational Limitations
         </h4>
         <p>
-          Exchange rate quotes and currency conversion figures presented by OmniTools are intended solely for general informational and educational planning purposes. They do not constitute financial, legal, tax, or investment advice, nor do they represent a binding quotation or execution commitment from any financial institution, money transmitter, or broker.
+          Exchange rate quotes and currency conversion figures presented by KivaroTools are intended solely for general informational and educational planning purposes. They do not constitute financial, legal, tax, or investment advice, nor do they represent a binding quotation or execution commitment from any financial institution, money transmitter, or broker.
         </p>
         <p>
           Actual retail transaction proceeds will vary based on commercial spreads, bank foreign transaction fees, card network charges, and dynamic cryptocurrency blockchain network gas fees. Always confirm final binding quotes with your authorized banking institution or licensed exchange before executing financial transactions.

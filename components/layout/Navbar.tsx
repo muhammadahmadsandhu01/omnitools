@@ -68,7 +68,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          aria-label="OmniTools home"
+          aria-label="KivaroTools home"
           className="group flex shrink-0 items-center gap-2.5"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 transition-transform duration-200 group-hover:scale-105">
@@ -79,7 +79,7 @@ export default function Navbar() {
           </span>
 
           <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
-            Omni<span className="text-blue-600">Tools</span>
+            Kivaro<span className="text-blue-600">Tools</span>
           </span>
         </Link>
 

@@ -10,7 +10,7 @@ import {
   WORLD_CURRENCIES,
 } from '../components/tools/SipCalculator';
 
-console.log('=== Starting OmniTools SIP Calculator Mathematical Regression Suite ===\n');
+console.log('=== Starting KivaroTools SIP Calculator Mathematical Regression Suite ===\n');
 
 let passedTests = 0;
 function runTest(name: string, fn: () => void) {

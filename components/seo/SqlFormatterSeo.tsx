@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -14,7 +15,7 @@ export const SQL_FORMATTER_FAQS: FaqItem[] = [
   {
     question: 'Is an SQL formatter the same as an SQL validator or linter?',
     answer:
-      'No. An SQL formatter reorganizes query whitespace, line breaks, and token casing according to typographic conventions. An SQL validator or database compiler, by contrast, connects to a database catalog to check table existence, column datatypes, permissions, and engine-specific semantics. While the OmniTools formatter catches syntax tokenization issues (such as unclosed quotes or brackets), it does not connect to your database or certify that referenced schema entities exist.',
+      'No. An SQL formatter reorganizes query whitespace, line breaks, and token casing according to typographic conventions. An SQL validator or database compiler, by contrast, connects to a database catalog to check table existence, column datatypes, permissions, and engine-specific semantics. While the KivaroTools formatter catches syntax tokenization issues (such as unclosed quotes or brackets), it does not connect to your database or certify that referenced schema entities exist.',
   },
   {
     question: 'Does formatting or beautifying an SQL query alter its execution plan or database performance?',
@@ -32,9 +33,9 @@ export const SQL_FORMATTER_FAQS: FaqItem[] = [
       'Placing Boolean operators (AND, OR), JOIN conditions, and commas on separate lines isolates query modifications down to individual lines. In version control systems like Git, adding, modifying, or deleting a single filter predicate generates a clean one-line diff without altering adjacent lines, avoiding unnecessary merge conflicts during pull requests.',
   },
   {
-    question: 'Which database dialects does the OmniTools SQL Formatter support?',
+    question: 'Which database dialects does the KivaroTools SQL Formatter support?',
     answer:
-      'OmniTools natively supports 19 database dialects powered by the sql-formatter 15.9.0 engine: Standard ANSI/ISO SQL, PostgreSQL, MySQL, MariaDB, Google BigQuery, Snowflake, SQL Server (Transact-SQL / T-SQL), SQLite, DuckDB, ClickHouse, Amazon Redshift, Oracle PL/SQL, IBM DB2, Trino / Presto, Apache Spark SQL, Apache Hive, SingleStoreDB, TiDB, and Couchbase N1QL.',
+      'KivaroTools natively supports 19 database dialects powered by the sql-formatter 15.9.0 engine: Standard ANSI/ISO SQL, PostgreSQL, MySQL, MariaDB, Google BigQuery, Snowflake, SQL Server (Transact-SQL / T-SQL), SQLite, DuckDB, ClickHouse, Amazon Redshift, Oracle PL/SQL, IBM DB2, Trino / Presto, Apache Spark SQL, Apache Hive, SingleStoreDB, TiDB, and Couchbase N1QL.',
   },
   {
     question: 'What is the difference between standard indentation and tabular alignment?',
@@ -44,17 +45,17 @@ export const SQL_FORMATTER_FAQS: FaqItem[] = [
   {
     question: 'Can I format multi-statement SQL scripts or batch transactions?',
     answer:
-      'Yes. OmniTools supports multi-statement SQL scripts containing multiple SELECT, INSERT, UPDATE, DELETE, CREATE, or ALTER statements separated by semicolons. You can customize the number of blank lines separating individual statements in the Advanced Settings panel.',
+      'Yes. KivaroTools supports multi-statement SQL scripts containing multiple SELECT, INSERT, UPDATE, DELETE, CREATE, or ALTER statements separated by semicolons. You can customize the number of blank lines separating individual statements in the Advanced Settings panel.',
   },
   {
     question: 'Are my database queries, schema names, or table data sent to any server?',
     answer:
-      'No. Formatting, minification, and query analysis run 100% client-side in your web browser using a dedicated Web Worker (with synchronous fallback). No SQL queries, table names, confidential schema structures, or parameter values are ever transmitted to external servers, cloud endpoints, or analytics services. OmniTools is safe for proprietary queries and sensitive production environments.',
+      'No. Formatting, minification, and query analysis run 100% client-side in your web browser using a dedicated Web Worker (with synchronous fallback). No SQL queries, table names, confidential schema structures, or parameter values are ever transmitted to external servers, cloud endpoints, or analytics services. KivaroTools is safe for proprietary queries and sensitive production environments.',
   },
   {
     question: 'Can I format complex Common Table Expressions (CTEs) and window functions?',
     answer:
-      'Yes. OmniTools accurately formats complex CTEs (WITH ... AS ...) by indenting the query definition blocks, separating multiple CTE definitions with commas, and properly indenting window functions containing OVER (PARTITION BY ... ORDER BY ... ROWS BETWEEN ...).',
+      'Yes. KivaroTools accurately formats complex CTEs (WITH ... AS ...) by indenting the query definition blocks, separating multiple CTE definitions with commas, and properly indenting window functions containing OVER (PARTITION BY ... ORDER BY ... ROWS BETWEEN ...).',
   },
   {
     question: 'How does SQL minification work without corrupting string literals or comments?',
@@ -64,7 +65,7 @@ export const SQL_FORMATTER_FAQS: FaqItem[] = [
   {
     question: 'Why did formatting fail for my SQL query?',
     answer:
-      'Formatting typically fails due to unclosed quotation marks (single quotes, double quotes, backticks, or square brackets), mismatched parentheses, or vendor-specific procedural control blocks (such as custom MySQL DELIMITER commands or procedural DO $$ blocks). If an error occurs, OmniTools preserves your original input text and provides an error message indicating the approximate line and column of the syntax issue.',
+      'Formatting typically fails due to unclosed quotation marks (single quotes, double quotes, backticks, or square brackets), mismatched parentheses, or vendor-specific procedural control blocks (such as custom MySQL DELIMITER commands or procedural DO $$ blocks). If an error occurs, KivaroTools preserves your original input text and provides an error message indicating the approximate line and column of the syntax issue.',
   },
 ];
 
@@ -77,19 +78,19 @@ export default function SqlFormatterSeo() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://omnitools-navy.vercel.app',
+        item: `${SITE_URL}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Developer Tools',
-        item: 'https://omnitools-navy.vercel.app/developer',
+        item: `${SITE_URL}/developer`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'SQL Query Formatter',
-        item: 'https://omnitools-navy.vercel.app/developer/sql-formatter',
+        item: `${SITE_URL}/developer/sql-formatter`,
       },
     ],
   };
@@ -125,7 +126,7 @@ export default function SqlFormatterSeo() {
           SQL Query Formatter &amp; Beautifier: Dialects, Indentation &amp; Performance Guide
         </h2>
         <p className="text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-          The <strong>OmniTools SQL Query Formatter</strong> transforms dense, unformatted, or single-line database queries into clean,
+          The <strong>KivaroTools SQL Query Formatter</strong> transforms dense, unformatted, or single-line database queries into clean,
           idiomatic, and structured code. Powered by client-side Web Worker execution with support for 19 major database engines, it gives
           developers, data engineers, and analysts full control over indentation, keyword capitalization, dialect-specific syntax, and 1-click codebase exports.
         </p>
@@ -164,7 +165,7 @@ export default function SqlFormatterSeo() {
           </li>
         </ul>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-          OmniTools solves this friction with an instantaneous, 100% client-side formatting workspace that parses queries in your browser memory,
+          KivaroTools solves this friction with an instantaneous, 100% client-side formatting workspace that parses queries in your browser memory,
           honors engine-specific syntax tokens, and provides structural diagnostics without transmitting any proprietary data over the network.
         </p>
       </section>
@@ -172,7 +173,7 @@ export default function SqlFormatterSeo() {
       {/* Section C: How to Use the Formatter */}
       <section className="mb-10">
         <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-          How to Use the OmniTools SQL Formatter
+          How to Use the KivaroTools SQL Formatter
         </h3>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
           Follow these simple steps to format, customize, and export your SQL queries:
@@ -213,7 +214,7 @@ export default function SqlFormatterSeo() {
         </h3>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
           Different database engines implement distinct lexical conventions for identifier quotation, type casting, array unwrapping,
-          and proprietary analytical operators. OmniTools supports 19 core dialects:
+          and proprietary analytical operators. KivaroTools supports 19 core dialects:
         </p>
 
         <div className="overflow-x-auto mb-6">
@@ -304,7 +305,7 @@ export default function SqlFormatterSeo() {
           Formatting &amp; Indentation Options
         </h3>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-          OmniTools provides fine-grained formatting controls to match your team’s engineering style guide:
+          KivaroTools provides fine-grained formatting controls to match your team’s engineering style guide:
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
@@ -358,7 +359,7 @@ export default function SqlFormatterSeo() {
           Before-and-After SQL Formatting Examples
         </h3>
         <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
-          Compare unformatted queries against OmniTools formatted output across seven common query archetypes:
+          Compare unformatted queries against KivaroTools formatted output across seven common query archetypes:
         </p>
 
         {/* Example 1: Basic SELECT */}
@@ -573,7 +574,7 @@ WHERE
           <p>
             <strong>Untangling Application &amp; Slow-Query Logs:</strong> When investigating production incidents, raw SQL extracted from
             Datadog, New Relic, CloudWatch, or Postgres <code className="text-xs">pg_stat_statements</code> often lacks whitespace. Pasting
-            the query into OmniTools immediately isolates filter clauses and joins so you can identify missing indexes or sequential table scans.
+            the query into KivaroTools immediately isolates filter clauses and joins so you can identify missing indexes or sequential table scans.
           </p>
           <p>
             <strong>Reviewing ORM-Generated SQL:</strong> Tools like Prisma, Hibernate, and Entity Framework generate extensive SQL statements
@@ -604,7 +605,7 @@ WHERE
           <h4 className="font-bold mb-2">Our Strict Client-Side Commitment:</h4>
           <ul className="list-disc pl-5 space-y-1.5 text-xs">
             <li><strong>Zero Server Transmission:</strong> SQL formatting executes entirely in your browser using an isolated Web Worker.</li>
-            <li><strong>No Database Connection:</strong> OmniTools is a static code formatter. It never attempts to connect to or query your database.</li>
+            <li><strong>No Database Connection:</strong> KivaroTools is a static code formatter. It never attempts to connect to or query your database.</li>
             <li><strong>Zero Content Telemetry:</strong> Your queries are never saved to local storage, cookies, server logs, or telemetry analytics.</li>
             <li><strong>Air-Gapped Safety:</strong> You can load this page, disconnect your internet connection, and format SQL completely offline.</li>
           </ul>
@@ -631,10 +632,10 @@ WHERE
           </li>
           <li>
             <strong>Unclosed Quotation Marks:</strong> If a query contains an unclosed single quote, double quote, backtick, or bracket, the parser
-            will report a syntax error with line and column numbers. OmniTools preserves your original input text so no work is lost.
+            will report a syntax error with line and column numbers. KivaroTools preserves your original input text so no work is lost.
           </li>
           <li>
-            <strong>Very Large Query Scripts:</strong> For multi-megabyte database dumps, OmniTools safely caps DOM syntax rendering at 1,000 lines
+            <strong>Very Large Query Scripts:</strong> For multi-megabyte database dumps, KivaroTools safely caps DOM syntax rendering at 1,000 lines
             to prevent browser tab freezing, while preserving the full formatted SQL for 1-click Copy and Download.
           </li>
         </ul>

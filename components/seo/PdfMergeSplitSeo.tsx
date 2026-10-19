@@ -9,7 +9,7 @@ export const PDF_MERGE_SPLIT_FAQS: FaqItem[] = [
   {
     question: 'How does client-side PDF processing protect document privacy?',
     answer:
-      'Unlike traditional cloud converters that upload documents to external remote servers, OmniTools executes all PDF parsing, page extraction, splitting, and merging 100% locally in your web browser memory via pdf-lib and Web APIs. Confidential contracts, legal briefs, tax filings, medical reports, and financial statements never travel across the internet or touch third-party disks.',
+      'Unlike traditional cloud converters that upload documents to external remote servers, KivaroTools executes all PDF parsing, page extraction, splitting, and merging 100% locally in your web browser memory via pdf-lib and Web APIs. Confidential contracts, legal briefs, tax filings, medical reports, and financial statements never travel across the internet or touch third-party disks.',
   },
   {
     question: 'Can I split a PDF into separate individual 1-page documents?',
@@ -29,7 +29,7 @@ export const PDF_MERGE_SPLIT_FAQS: FaqItem[] = [
   {
     question: 'Why are password-protected or encrypted PDFs rejected?',
     answer:
-      'Encrypted and password-protected PDF files restrict binary parsing and page extraction without authorized cryptographic decryption keys. To prevent document corruption, OmniTools detects encrypted files during preflight inspection and prompts you to decrypt them with authorized software prior to processing.',
+      'Encrypted and password-protected PDF files restrict binary parsing and page extraction without authorized cryptographic decryption keys. To prevent document corruption, KivaroTools detects encrypted files during preflight inspection and prompts you to decrypt them with authorized software prior to processing.',
   },
   {
     question: 'Are bookmarks, vector fonts, and form fields preserved when merging?',
@@ -70,7 +70,7 @@ export default function PdfMergeSplitSeo() {
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Managing Portable Document Format (PDF) files should not require expensive software subscriptions, command-line complexity,
-        or uploading confidential information to third-party cloud servers. The OmniTools <strong>PDF Merge &amp; Split Tool</strong>{' '}
+        or uploading confidential information to third-party cloud servers. The KivaroTools <strong>PDF Merge &amp; Split Tool</strong>{' '}
         delivers a streamlined document workshop running 100% locally in your web browser. Combine multiple PDF reports into a single
         continuous document, extract exact page selections, split multi-page files into individual 1-page documents, or partition
         records by custom ranges into ZIP archives—all with zero server uploads and instant local processing.
@@ -171,7 +171,7 @@ export default function PdfMergeSplitSeo() {
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
         Conventional online PDF converters send your files to remote cloud servers running command-line utilities
-        like Ghostscript or Poppler. OmniTools executes the entire PDF specification parser directly inside your web browser
+        like Ghostscript or Poppler. KivaroTools executes the entire PDF specification parser directly inside your web browser
         using pure JavaScript binary manipulation via <strong>pdf-lib</strong> and <strong>JSZip</strong>:
       </p>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">

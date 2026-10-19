@@ -1483,7 +1483,7 @@ export default function PreciousMetals() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `omnitools_precious_metals_lot_${selectedCurrency}.csv`);
+    link.setAttribute('download', `kivarotools_precious_metals_lot_${selectedCurrency}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1492,7 +1492,7 @@ export default function PreciousMetals() {
   const handleCopyLotSummary = () => {
     if (lotCalcResult.items.length === 0) return;
     const lines = [
-      `OmniTools Precious Metals Scrap Lot Summary`,
+      `KivaroTools Precious Metals Scrap Lot Summary`,
       `Currency: ${selectedCurrency}`,
       `Items: ${lotCalcResult.itemCount}`,
       `Total Gross Weight: ${formatDecimal(lotCalcResult.grandTotalGrossGrams, 3)} g`,
@@ -1551,7 +1551,7 @@ export default function PreciousMetals() {
   };
 
   const handleCopySummary = () => {
-    const text = `${METALS[selectedMetal].name} Rate: ${formatCurrencyValue(activePriceConverted, selectedCurrency)} per ${UNIT_LABELS[selectedUnit].short} (${formatDeterministicTimestamp(activeMetalData.timestampMs)}). Reference: OmniTools.`;
+    const text = `${METALS[selectedMetal].name} Rate: ${formatCurrencyValue(activePriceConverted, selectedCurrency)} per ${UNIT_LABELS[selectedUnit].short} (${formatDeterministicTimestamp(activeMetalData.timestampMs)}). Reference: KivaroTools.`;
     navigator.clipboard.writeText(text).then(() => {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
@@ -2755,7 +2755,7 @@ export default function PreciousMetals() {
                 <button
                   type="button"
                   onClick={() => {
-                    const text = `OmniTools Melt Valuation:
+                    const text = `KivaroTools Melt Valuation:
 Metal: ${singleCalcResult.metalName} (${singleCalcResult.metal})
 Purity: ${singleCalcResult.purityLabel}
 Gross Weight: ${singleCalcResult.grossWeightInput} ${singleCalcResult.grossWeightUnit} (${singleCalcResult.totalGrossWeightGrams.toFixed(3)} g)

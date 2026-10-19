@@ -34,12 +34,12 @@ export const BASE64_FAQS: FaqItem[] = [
   {
     question: 'Can Base64 be safely decoded without trailing equals (=) padding?',
     answer:
-      'Yes. In URL-safe environments like JSON Web Tokens (JWT, RFC 7519), padding is intentionally omitted because the length modulo 4 can be used to mathematically deduce whether 1 or 2 padding characters were omitted. OmniTools includes a Tolerant Decoding mode that automatically recalculates and restores missing padding characters before decoding.',
+      'Yes. In URL-safe environments like JSON Web Tokens (JWT, RFC 7519), padding is intentionally omitted because the length modulo 4 can be used to mathematically deduce whether 1 or 2 padding characters were omitted. KivaroTools includes a Tolerant Decoding mode that automatically recalculates and restores missing padding characters before decoding.',
   },
   {
-    question: 'How does OmniTools handle multi-byte UTF-8 Unicode, accents, and emoji?',
+    question: 'How does KivaroTools handle multi-byte UTF-8 Unicode, accents, and emoji?',
     answer:
-      'Legacy JavaScript window.btoa only accepts 8-bit Latin-1 characters (code points 0 to 255) and throws an InvalidCharacterError when encountering characters outside that range. OmniTools uses the modern WHATWG TextEncoder and TextDecoder Web APIs to serialize text into raw UTF-8 binary bytes before encoding. This guarantees 100% character fidelity for accented Latin, Cyrillic, Arabic, Hebrew, CJK, and modern multi-byte emojis.',
+      'Legacy JavaScript window.btoa only accepts 8-bit Latin-1 characters (code points 0 to 255) and throws an InvalidCharacterError when encountering characters outside that range. KivaroTools uses the modern WHATWG TextEncoder and TextDecoder Web APIs to serialize text into raw UTF-8 binary bytes before encoding. This guarantees 100% character fidelity for accented Latin, Cyrillic, Arabic, Hebrew, CJK, and modern multi-byte emojis.',
   },
   {
     question: 'What is a Base64 Data URI and when should you use it?',
@@ -49,7 +49,7 @@ export const BASE64_FAQS: FaqItem[] = [
   {
     question: 'Are my files or sensitive strings uploaded to any remote server?',
     answer:
-      'No. OmniTools Base64 Encoder & Decoder executes 100% client-side in your web browser using modern Web APIs (Uint8Array, FileReader, TextEncoder, and TextDecoder). No text strings, files, or binary buffers are uploaded to remote servers or stored externally.',
+      'No. KivaroTools Base64 Encoder & Decoder executes 100% client-side in your web browser using modern Web APIs (Uint8Array, FileReader, TextEncoder, and TextDecoder). No text strings, files, or binary buffers are uploaded to remote servers or stored externally.',
   },
   {
     question: 'Why is my decoded output showing garbled text or broken symbols?',
@@ -293,7 +293,7 @@ export default function Base64EncoderSeo() {
         <div>
           <h4 className="font-semibold text-slate-900 dark:text-slate-100">2. Why does emoji or non-English text fail in some encoders?</h4>
           <p className="text-sm mt-1">
-            Older tools rely directly on JavaScript&apos;s native <code>window.btoa()</code>, which throws an <code>InvalidCharacterError</code> when given characters outside Latin-1 (code points &gt; 255). OmniTools passes all input through a WHATWG-compliant <code>TextEncoder</code>, converting characters to raw UTF-8 bytes first.
+            Older tools rely directly on JavaScript&apos;s native <code>window.btoa()</code>, which throws an <code>InvalidCharacterError</code> when given characters outside Latin-1 (code points &gt; 255). KivaroTools passes all input through a WHATWG-compliant <code>TextEncoder</code>, converting characters to raw UTF-8 bytes first.
           </p>
         </div>
         <div>

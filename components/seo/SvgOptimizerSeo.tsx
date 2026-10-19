@@ -10,7 +10,7 @@ export const SVG_OPTIMIZER_FAQS: FaqItem[] = [
   {
     question: 'Why is preserving the viewBox attribute critical for responsive web design?',
     answer:
-      'The viewBox attribute defines the internal coordinate ratio of an SVG graphic (e.g. viewBox="0 0 24 24"). When width and height are removed or overridden by CSS rules (such as w-6 h-6 or width: 100%), browsers use the viewBox to scale the vector cleanly without distortion or clipping. The OmniTools SVG Optimizer preserves viewBox by default across all optimization modes.',
+      'The viewBox attribute defines the internal coordinate ratio of an SVG graphic (e.g. viewBox="0 0 24 24"). When width and height are removed or overridden by CSS rules (such as w-6 h-6 or width: 100%), browsers use the viewBox to scale the vector cleanly without distortion or clipping. The KivaroTools SVG Optimizer preserves viewBox by default across all optimization modes.',
   },
   {
     question: 'How does coordinate decimal precision impact SVG file size and visual rendering?',
@@ -20,27 +20,27 @@ export const SVG_OPTIMIZER_FAQS: FaqItem[] = [
   {
     question: 'Can SVG files contain malicious scripts or security threats (XSS)?',
     answer:
-      'Yes. Because SVG is valid XML, the SVG specification permits embedded <script> tags, foreignObject containers, and inline event handlers (like onload or onclick). Rendering unsanitized user-supplied SVGs inline in HTML can execute arbitrary JavaScript. OmniTools isolates live visual previews inside a sandboxed iframe with zero execution privileges and strips active script attributes.',
+      'Yes. Because SVG is valid XML, the SVG specification permits embedded <script> tags, foreignObject containers, and inline event handlers (like onload or onclick). Rendering unsanitized user-supplied SVGs inline in HTML can execute arbitrary JavaScript. KivaroTools isolates live visual previews inside a sandboxed iframe with zero execution privileges and strips active script attributes.',
   },
   {
     question: 'What is the difference between AST/DOM-based SVG cleaners and regular-expression minifiers?',
     answer:
-      'Regex-only cleaners perform naive text find-and-replace, which frequently corrupts nested <style> blocks, damages self-closing tags, and breaks multi-line coordinate arrays. An AST or DOM-based cleaner (like OmniTools and SVGO) parses the SVG into a true Document Object Model tree, safely distinguishing element attributes, CSS selectors, XML namespaces, and geometric path tokens.',
+      'Regex-only cleaners perform naive text find-and-replace, which frequently corrupts nested <style> blocks, damages self-closing tags, and breaks multi-line coordinate arrays. An AST or DOM-based cleaner (like KivaroTools and SVGO) parses the SVG into a true Document Object Model tree, safely distinguishing element attributes, CSS selectors, XML namespaces, and geometric path tokens.',
   },
   {
     question: 'Why does the optimizer sometimes report 0% size reduction on already compact SVGs?',
     answer:
-      'If an SVG has already been heavily minified, or if precision rounding would alter tiny geometric coordinates, OmniTools rolls back to the compact original input. Rather than forcing lossy transformations or artificially claiming savings, the tool preserves the original markup and clearly reports that no further safe reductions were found.',
+      'If an SVG has already been heavily minified, or if precision rounding would alter tiny geometric coordinates, KivaroTools rolls back to the compact original input. Rather than forcing lossy transformations or artificially claiming savings, the tool preserves the original markup and clearly reports that no further safe reductions were found.',
   },
   {
     question: 'Does the optimizer remove IDs used by CSS styling or SVG gradients?',
     answer:
-      'OmniTools builds an internal reference graph before running cleanup passes. IDs referenced by fill="url(#id)", clip-path="url(#id)", href="#id", aria-labelledby, or internal CSS stylesheets (#id selectors) are retained in standard modes. If your external application JavaScript targets IDs dynamically, you should verify those identifiers before deploying.',
+      'KivaroTools builds an internal reference graph before running cleanup passes. IDs referenced by fill="url(#id)", clip-path="url(#id)", href="#id", aria-labelledby, or internal CSS stylesheets (#id selectors) are retained in standard modes. If your external application JavaScript targets IDs dynamically, you should verify those identifiers before deploying.',
   },
   {
     question: 'How does the defs reachability graph prevent broken graphic references?',
     answer:
-      'Vector files frequently accumulate orphaned gradients, filters, and clipping masks inside <defs> when elements are deleted in design apps. OmniTools uses Breadth-First Search (BFS) reachability: only definitions with zero direct or indirect references from visible elements are removed, helping preserve referenced visual effects.',
+      'Vector files frequently accumulate orphaned gradients, filters, and clipping masks inside <defs> when elements are deleted in design apps. KivaroTools uses Breadth-First Search (BFS) reachability: only definitions with zero direct or indirect references from visible elements are removed, helping preserve referenced visual effects.',
   },
   {
     question: 'Are my proprietary vector assets uploaded to any remote server?',
@@ -50,7 +50,7 @@ export const SVG_OPTIMIZER_FAQS: FaqItem[] = [
   {
     question: 'How do I prepare SVGs exported from Adobe Illustrator for the web?',
     answer:
-      'When exporting from Illustrator, select SVG, uncheck "Preserve Illustrator Editing Capabilities", set Decimal Places to 2 or 3, and choose "Presentation Attributes" for styling. Pasting that export into OmniTools will instantly strip the remaining DOCTYPE, XML declaration, RDF metadata, and empty layer groups.',
+      'When exporting from Illustrator, select SVG, uncheck "Preserve Illustrator Editing Capabilities", set Decimal Places to 2 or 3, and choose "Presentation Attributes" for styling. Pasting that export into KivaroTools will instantly strip the remaining DOCTYPE, XML declaration, RDF metadata, and empty layer groups.',
   },
   {
     question: 'Can I copy the optimized SVG markup directly into React or Next.js components?',
@@ -66,7 +66,7 @@ export default function SvgOptimizerSeo() {
   const softwareAppSchema = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'OmniTools SVG Optimizer & Cleaner',
+    name: 'KivaroTools SVG Optimizer & Cleaner',
     operatingSystem: 'Any (Web Browser)',
     applicationCategory: 'DeveloperApplication',
     url: canonicalUrl,
@@ -153,7 +153,7 @@ export default function SvgOptimizerSeo() {
             <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
               <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Bloat Category</th>
               <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Raw Export Example</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">OmniTools Optimized Action</th>
+              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">KivaroTools Optimized Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
@@ -195,7 +195,7 @@ export default function SvgOptimizerSeo() {
         Empirical Optimization Benchmarks: Verified Engine Performance
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        The table below shows real, uncompressed byte savings measured directly using the OmniTools client-side optimization engine across representative vector fixtures:
+        The table below shows real, uncompressed byte savings measured directly using the KivaroTools client-side optimization engine across representative vector fixtures:
       </p>
 
       {/* Benchmark Table */}
@@ -246,7 +246,7 @@ export default function SvgOptimizerSeo() {
       </p>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
         If an untrusted SVG is rendered directly in an application's DOM, it can compromise user session cookies and execute unauthorized API calls.
-        OmniTools employs two layers of protection:
+        KivaroTools employs two layers of protection:
       </p>
       <ul className="list-disc pl-5 space-y-2 mb-6 text-slate-600 dark:text-slate-400">
         <li>
@@ -258,7 +258,7 @@ export default function SvgOptimizerSeo() {
       </ul>
 
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How to Use the OmniTools SVG Optimizer
+        How to Use the KivaroTools SVG Optimizer
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>

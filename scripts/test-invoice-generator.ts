@@ -1,5 +1,5 @@
 /**
- * Automated Regression & Independent Oracle Test Suite for OmniTools Invoice Generator
+ * Automated Regression & Independent Oracle Test Suite for KivaroTools Invoice Generator
  *
  * Verifies mathematical accuracy, floating-point safety, multi-currency decimal precision,
  * proportional tax and discount modeling, A4 pagination budgeting, and JSON/CSV serialization.
@@ -42,7 +42,7 @@ function assertEqual<T>(actual: T, expected: T, testName: string) {
   assert(isMatch, testName, `Expected ${expected}, got ${actual}`);
 }
 
-console.log('=== OmniTools Invoice Generator Test Suite ===\n');
+console.log('=== KivaroTools Invoice Generator Test Suite ===\n');
 
 /* -------------------------------------------------------------------------- */
 /* 1. Monetary Rounding & Arithmetic Safety                                    */

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -9,7 +10,7 @@ export const INVOICE_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How does client-side invoice generation protect confidential business data?',
     answer:
-      'OmniTools Invoice Generator executes 100% in your local web browser session using modern JavaScript and HTML5 Canvas APIs. Client billing addresses, proprietary hourly rates, registration numbers, line items, and banking instructions (IBAN/SWIFT) never transmit across the network to our servers or any third-party databases. Your draft is automatically saved to your browser local storage so you can safely resume editing later.',
+      'KivaroTools Invoice Generator executes 100% in your local web browser session using modern JavaScript and HTML5 Canvas APIs. Client billing addresses, proprietary hourly rates, registration numbers, line items, and banking instructions (IBAN/SWIFT) never transmit across the network to our servers or any third-party databases. Your draft is automatically saved to your browser local storage so you can safely resume editing later.',
   },
   {
     question: 'How does the automatic multi-page pagination algorithm prevent table cut-offs?',
@@ -29,7 +30,7 @@ export const INVOICE_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'Which file formats can I export my invoice to?',
     answer:
-      'OmniTools supports four versatile export pipelines: (1) Vector-rendered print-ready A4 PDF download via client-side PDF rendering; (2) Browser-native print formatting (@media print) allowing direct printing or Save as PDF; (3) Full JSON draft backup for re-importing and editing on any computer; and (4) Structured RFC 4180 CSV spreadsheet export of all line items for accounting ledgers like Excel or QuickBooks.',
+      'KivaroTools supports four versatile export pipelines: (1) Vector-rendered print-ready A4 PDF download via client-side PDF rendering; (2) Browser-native print formatting (@media print) allowing direct printing or Save as PDF; (3) Full JSON draft backup for re-importing and editing on any computer; and (4) Structured RFC 4180 CSV spreadsheet export of all line items for accounting ledgers like Excel or QuickBooks.',
   },
   {
     question: 'What are standard commercial payment terms (such as Net 30), and which should I choose?',
@@ -39,7 +40,7 @@ export const INVOICE_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'Does this invoice generator fulfill government legal e-invoicing compliance requirements?',
     answer:
-      'No standalone web document generator can replace official government-regulated e-invoicing portals. While OmniTools generates commercially valid PDF invoices containing all standard commercial fields (Tax ID, registration numbers, itemized taxes, and remittance data), certain jurisdictions legally mandate cryptographically signed XML/UBL files routed through centralized tax authorities (such as Peppol in Europe, ZATCA in Saudi Arabia, Factur-X in France, or GSTN e-Invoicing in India). Always verify local statutory regulations.',
+      'No standalone web document generator can replace official government-regulated e-invoicing portals. While KivaroTools generates commercially valid PDF invoices containing all standard commercial fields (Tax ID, registration numbers, itemized taxes, and remittance data), certain jurisdictions legally mandate cryptographically signed XML/UBL files routed through centralized tax authorities (such as Peppol in Europe, ZATCA in Saudi Arabia, Factur-X in France, or GSTN e-Invoicing in India). Always verify local statutory regulations.',
   },
   {
     question: 'What is the fundamental difference between an invoice, a receipt, and a quotation?',
@@ -59,7 +60,7 @@ export const INVOICE_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How does the local draft recovery and auto-save feature work?',
     answer:
-      'Every time you modify an invoice field, the state is synchronized in browser memory. Clicking "Save Draft" writes an encrypted snapshot to your browser localStorage. When returning to OmniTools, a restoration banner allows you to resume your draft with one click or discard it to start fresh.',
+      'Every time you modify an invoice field, the state is synchronized in browser memory. Clicking "Save Draft" writes an encrypted snapshot to your browser localStorage. When returning to KivaroTools, a restoration banner allows you to resume your draft with one click or discard it to start fresh.',
   },
   {
     question: 'How are partial payments, deposits, and retainers reflected on the invoice?',
@@ -90,19 +91,19 @@ export default function InvoiceGeneratorSeo() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://omnitools-navy.vercel.app',
+        item: `${SITE_URL}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Finance',
-        item: 'https://omnitools-navy.vercel.app/finance',
+        item: `${SITE_URL}/finance`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'Pro Invoice Generator (PDF)',
-        item: 'https://omnitools-navy.vercel.app/finance/invoice-generator',
+        item: `${SITE_URL}/finance/invoice-generator`,
       },
     ],
   };
@@ -124,7 +125,7 @@ export default function InvoiceGeneratorSeo() {
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Creating accurate, compliant invoices is critical for freelancers, consultants, contractors, and growing businesses.
-        OmniTools <strong>Invoice Generator</strong> delivers an enterprise-grade billing workspace directly in your web browser.
+        KivaroTools <strong>Invoice Generator</strong> delivers an enterprise-grade billing workspace directly in your web browser.
         Generate clean, print-ready PDF invoices with real-time tax calculations, itemized discounts, custom branding, and
         automatic multi-page pagination—with zero subscription fees, watermarks, or remote server uploads.
       </p>
@@ -246,7 +247,7 @@ export default function InvoiceGeneratorSeo() {
         Mathematical Calculation Order &amp; Proportional Tax Allocation
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        To prevent floating-point calculation anomalies and ensure financial precision, OmniTools employs a deterministic 7-step mathematical model:
+        To prevent floating-point calculation anomalies and ensure financial precision, KivaroTools employs a deterministic 7-step mathematical model:
       </p>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>
@@ -277,7 +278,7 @@ export default function InvoiceGeneratorSeo() {
         Automatic Multi-Page A4 Pagination Engine
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        A common flaw in simple web invoicing tools is awkward page breaks—where table rows get clipped in half, or total balances appear orphaned on a blank second page. OmniTools solves this with an integrated <strong>A4 Page Budgeting Algorithm</strong>:
+        A common flaw in simple web invoicing tools is awkward page breaks—where table rows get clipped in half, or total balances appear orphaned on a blank second page. KivaroTools solves this with an integrated <strong>A4 Page Budgeting Algorithm</strong>:
       </p>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
         <li>

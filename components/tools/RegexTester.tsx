@@ -606,7 +606,7 @@ function createWorker(): { worker: Worker | null; url: string | null } {
 export default function RegexTester() {
   const [pattern, setPattern] = useState('([A-Z][a-z]+)\\s([A-Z][a-z]+)');
   const [flags, setFlags] = useState('g');
-  const [testString, setTestString] = useState('Hello World\nThis is OmniTools!\nJohn Doe and Jane Smith.');
+  const [testString, setTestString] = useState('Hello World\nThis is KivaroTools!\nJohn Doe and Jane Smith.');
   const [activeTab, setActiveTab] = useState<ActiveTab>('breakdown');
   const [replacement, setReplacement] = useState('[$1] [$2]');
   const [copied, setCopied] = useState('');
@@ -1209,7 +1209,7 @@ export default function RegexTester() {
   const reset = () => {
     setPattern('([A-Z][a-z]+)\\s([A-Z][a-z]+)');
     setFlags('g');
-    setTestString('Hello World\nThis is OmniTools!\nJohn Doe and Jane Smith.');
+    setTestString('Hello World\nThis is KivaroTools!\nJohn Doe and Jane Smith.');
     setReplacement('[$1] [$2]');
     setActiveTab('breakdown');
     setSearch('');

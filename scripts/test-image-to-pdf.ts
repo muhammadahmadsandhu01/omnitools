@@ -41,7 +41,7 @@ const MINIMAL_JPG_BASE64 = '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////
 
 async function runTestSuite() {
   console.log('====================================================');
-  console.log('OMNITOOLS IMAGE TO PDF STUDIO — AUTOMATED TEST SUITE');
+  console.log('KIVAROTOOLS IMAGE TO PDF STUDIO — AUTOMATED TEST SUITE');
   console.log('====================================================\n');
 
   // ----------------------------------------------------------------
@@ -154,8 +154,8 @@ async function runTestSuite() {
   console.log('\nTest Group 4: End-to-End PDF Document Assembly & Integrity Verification');
 
   const doc = await PDFDocument.create();
-  doc.setTitle('OmniTools Test Batch');
-  doc.setCreator('OmniTools Image to PDF Studio');
+  doc.setTitle('KivaroTools Test Batch');
+  doc.setCreator('KivaroTools Image to PDF Studio');
 
   doc.addPage([PAGE_SIZE_POINTS.a4.width, PAGE_SIZE_POINTS.a4.height]);
   doc.addPage([PAGE_SIZE_POINTS.letter.width, PAGE_SIZE_POINTS.letter.height]);
@@ -171,7 +171,7 @@ async function runTestSuite() {
   assert(reloadedDoc.getPageCount() === 2, 'Reloaded PDF contains exactly 2 pages');
   assertClose(reloadedDoc.getPage(0).getWidth(), PAGE_SIZE_POINTS.a4.width, 'Page 1 width matches A4');
   assertClose(reloadedDoc.getPage(1).getWidth(), PAGE_SIZE_POINTS.letter.width, 'Page 2 width matches US Letter');
-  assert(reloadedDoc.getTitle() === 'OmniTools Test Batch', 'Title metadata matches');
+  assert(reloadedDoc.getTitle() === 'KivaroTools Test Batch', 'Title metadata matches');
 
   // Integrity validation function verification
   let integrityPassed = false;

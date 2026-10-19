@@ -1,4 +1,4 @@
-// Comprehensive automated test suite for OmniTools SQL Formatter
+// Comprehensive automated test suite for KivaroTools SQL Formatter
 import assert from 'node:assert';
 import { format } from 'sql-formatter';
 import {
@@ -10,7 +10,7 @@ import {
   type Language,
 } from '../components/tools/SqlFormatter';
 
-console.log('=== Starting OmniTools SQL Formatter Test Suite ===\n');
+console.log('=== Starting KivaroTools SQL Formatter Test Suite ===\n');
 
 let passedTests = 0;
 

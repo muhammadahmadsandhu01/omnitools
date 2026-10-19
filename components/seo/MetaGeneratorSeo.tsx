@@ -43,7 +43,7 @@ export const META_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How do Twitter / X Cards differ from Open Graph tags?',
     answer:
-      'Twitter / X uses proprietary card markup prefixed with twitter: (e.g., twitter:card, twitter:title, twitter:description, twitter:image, twitter:site, twitter:creator). However, when Twitter-specific tags are absent, Twitter automatically falls back to corresponding Open Graph tags (og:title, og:description, and og:image). OmniTools allows automatic inheritance so you never generate redundant or conflicting social preview data.',
+      'Twitter / X uses proprietary card markup prefixed with twitter: (e.g., twitter:card, twitter:title, twitter:description, twitter:image, twitter:site, twitter:creator). However, when Twitter-specific tags are absent, Twitter automatically falls back to corresponding Open Graph tags (og:title, og:description, and og:image). KivaroTools allows automatic inheritance so you never generate redundant or conflicting social preview data.',
   },
   {
     question: 'What is the recommended size and aspect ratio for social preview images (og:image)?',
@@ -63,7 +63,7 @@ export const META_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'What do the robots meta tag directives index, noindex, follow, and nofollow mean?',
     answer:
-      'The robots meta tag instructs search engine crawlers how to handle a specific page. The "index" directive permits indexing in search results, while "noindex" excludes it. The "follow" directive permits crawlers to follow links on the page to discover new content, while "nofollow" instructs crawlers not to follow those links. OmniTools defaults to "index, follow" for public pages and prominently warns users if "noindex" or "nofollow" is selected.',
+      'The robots meta tag instructs search engine crawlers how to handle a specific page. The "index" directive permits indexing in search results, while "noindex" excludes it. The "follow" directive permits crawlers to follow links on the page to discover new content, while "nofollow" instructs crawlers not to follow those links. KivaroTools defaults to "index, follow" for public pages and prominently warns users if "noindex" or "nofollow" is selected.',
   },
   {
     question: 'Is the robots meta tag a security or access control mechanism?',
@@ -73,7 +73,7 @@ export const META_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'Does Google still use the meta keywords tag for search ranking?',
     answer:
-      'No. Google officially announced in September 2009 that it does not use the meta keywords tag in web search ranking. Bing and other major search engines also ignore it or treat keyword stuffing in the tag as a spam signal. OmniTools includes the keywords field strictly for legacy cataloging or internal search engines, clearly labelled as optional.',
+      'No. Google officially announced in September 2009 that it does not use the meta keywords tag in web search ranking. Bing and other major search engines also ignore it or treat keyword stuffing in the tag as a spam signal. KivaroTools includes the keywords field strictly for legacy cataloging or internal search engines, clearly labelled as optional.',
   },
   {
     question: 'Can social media share titles and descriptions be different from SEO titles?',
@@ -83,12 +83,12 @@ export const META_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How do I avoid duplicate meta tags when using a CMS or framework like Next.js or WordPress?',
     answer:
-      'Modern web frameworks (like Next.js Metadata API) and CMS plugins (like Yoast or Rank Math) dynamically generate <head> tags from their own configuration. If you manually paste raw HTML meta tags into your template while a plugin or layout is already emitting them, search engines may see conflicting duplicate tags. When using OmniTools, ensure you disable duplicate plugin outputs or copy only the specific tags that your framework does not automatically generate.',
+      'Modern web frameworks (like Next.js Metadata API) and CMS plugins (like Yoast or Rank Math) dynamically generate <head> tags from their own configuration. If you manually paste raw HTML meta tags into your template while a plugin or layout is already emitting them, search engines may see conflicting duplicate tags. When using KivaroTools, ensure you disable duplicate plugin outputs or copy only the specific tags that your framework does not automatically generate.',
   },
   {
-    question: 'How does OmniTools protect user privacy when generating meta tags?',
+    question: 'How does KivaroTools protect user privacy when generating meta tags?',
     answer:
-      'OmniTools executes all metadata formatting, character counting, pixel width estimations, live preview card simulations, and HTML generation 100% locally within your browser\'s JavaScript engine. Your draft titles, descriptions, and proprietary URLs are never uploaded to our servers, logged to analytics platforms, or shared with third parties.',
+      'KivaroTools executes all metadata formatting, character counting, pixel width estimations, live preview card simulations, and HTML generation 100% locally within your browser\'s JavaScript engine. Your draft titles, descriptions, and proprietary URLs are never uploaded to our servers, logged to analytics platforms, or shared with third parties.',
   },
 ];
 
@@ -173,7 +173,7 @@ export default function MetaGeneratorSeo() {
       {/* 2. Step-by-Step Instructions */}
       <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-          Step-by-Step Guide: How to Generate, Customize, and Deploy Tags on OmniTools
+          Step-by-Step Guide: How to Generate, Customize, and Deploy Tags on KivaroTools
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
           Follow this structured four-step workflow to generate clean, production-ready HTML metadata for your website:
@@ -236,7 +236,7 @@ export default function MetaGeneratorSeo() {
           Supported Output Tags & Complete Specification Reference
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          The table below documents every tag generated by OmniTools, its W3C or vendor attribute format, recommended standards, and targeted crawler platforms:
+          The table below documents every tag generated by KivaroTools, its W3C or vendor attribute format, recommended standards, and targeted crawler platforms:
         </p>
 
         <div className="mt-6 overflow-x-auto">
@@ -370,7 +370,7 @@ export default function MetaGeneratorSeo() {
               Searchers are actively seeking a specific answer, tool, or product. Titles must be concise, front-load the target keyword, and clearly declare what the page provides. Meta descriptions should confirm relevance and provide a reassuring reason to click before other search results.
             </p>
             <div className="mt-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-              &lt;title&gt;JSON Formatter &amp; Validator — Beautify &amp; Minify | OmniTools&lt;/title&gt;
+              &lt;title&gt;JSON Formatter &amp; Validator — Beautify &amp; Minify | KivaroTools&lt;/title&gt;
             </div>
           </div>
 
@@ -428,7 +428,7 @@ export default function MetaGeneratorSeo() {
           Real Before-and-After Code Example
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Compare a bare, incomplete HTML head snippet with a complete, production-ready metadata implementation generated by OmniTools:
+          Compare a bare, incomplete HTML head snippet with a complete, production-ready metadata implementation generated by KivaroTools:
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -441,7 +441,7 @@ export default function MetaGeneratorSeo() {
             <pre className="p-4 rounded-2xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-xs font-mono text-red-900 dark:text-red-200 overflow-x-auto leading-relaxed">
 {`<!-- Missing canonical, no social tags, unescaped quotes -->
 <head>
-  <title>OmniTools - Online Tools for Devs</title>
+  <title>KivaroTools - Online Tools for Devs</title>
   <meta name="description" content="Free online tools & utilities.">
   <!-- Missing charset, viewport, canonical -->
   <!-- Missing Open Graph tags -->
@@ -457,27 +457,27 @@ export default function MetaGeneratorSeo() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
-              <span>After: Production-Ready OmniTools Head Block</span>
+              <span>After: Production-Ready KivaroTools Head Block</span>
             </div>
             <pre className="p-4 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-xs font-mono text-emerald-900 dark:text-emerald-200 overflow-x-auto leading-relaxed">
 {`<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OmniTools — Fast Online Developer Utilities &amp; PDF Tools</title>
+  <title>KivaroTools — Fast Online Developer Utilities &amp; PDF Tools</title>
   <meta name="description" content="Free in-browser developer utilities..." />
-  <link rel="canonical" href="https://omnitools.app/tools" />
+  <link rel="canonical" href="https://kivarotools.app/tools" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://omnitools.app/tools" />
-  <meta property="og:title" content="OmniTools — Fast Online Developer Utilities" />
-  <meta property="og:image" content="https://omnitools.app/og-banner.jpg" />
-  <meta property="og:image:alt" content="OmniTools Developer Dashboard" />
+  <meta property="og:url" content="https://kivarotools.app/tools" />
+  <meta property="og:title" content="KivaroTools — Fast Online Developer Utilities" />
+  <meta property="og:image" content="https://kivarotools.app/og-banner.jpg" />
+  <meta property="og:image:alt" content="KivaroTools Developer Dashboard" />
 
   <!-- Twitter / X -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@omnitools" />
+  <meta name="twitter:site" content="@kivarotools" />
 </head>`}
             </pre>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -513,7 +513,7 @@ export default function MetaGeneratorSeo() {
               <span>Next.js App Router</span>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              In Next.js 13+, prefer exporting a typed <code>metadata</code> object from <code>layout.tsx</code> or <code>page.tsx</code>. Use OmniTools to model values, then transfer them into the Next.js Metadata API.
+              In Next.js 13+, prefer exporting a typed <code>metadata</code> object from <code>layout.tsx</code> or <code>page.tsx</code>. Use KivaroTools to model values, then transfer them into the Next.js Metadata API.
             </p>
           </div>
 
@@ -549,7 +549,7 @@ export default function MetaGeneratorSeo() {
           </h2>
         </div>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          OmniTools adheres to strict privacy and enterprise security standards when generating code and analyzing web metadata:
+          KivaroTools adheres to strict privacy and enterprise security standards when generating code and analyzing web metadata:
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">

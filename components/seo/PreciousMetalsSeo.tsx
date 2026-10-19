@@ -14,7 +14,7 @@ export const PRECIOUS_METALS_FAQS: FaqItem[] = [
   {
     question: 'What is the critical difference between a troy ounce and an ordinary kitchen scale ounce?',
     answer:
-      'A troy ounce (oz t) is the universal international standard for precious metals trading and weighs exactly 31.1034768 grams. An ordinary avoirdupois ounce (oz), standard on American kitchen and postal scales, weighs only 28.349523125 grams. One troy ounce is approximately 9.71% heavier than an ordinary ounce. If you weigh scrap jewelry on a household kitchen scale and assume the reading is troy ounces, your valuation will be inaccurate by nearly 9%. OmniTools explicitly separates troy ounces from ordinary ounces to prevent this costly error.',
+      'A troy ounce (oz t) is the universal international standard for precious metals trading and weighs exactly 31.1034768 grams. An ordinary avoirdupois ounce (oz), standard on American kitchen and postal scales, weighs only 28.349523125 grams. One troy ounce is approximately 9.71% heavier than an ordinary ounce. If you weigh scrap jewelry on a household kitchen scale and assume the reading is troy ounces, your valuation will be inaccurate by nearly 9%. KivaroTools explicitly separates troy ounces from ordinary ounces to prevent this costly error.',
   },
   {
     question: 'How much do refiners, bullion dealers, and pawn shops actually pay for scrap gold?',
@@ -34,7 +34,7 @@ export const PRECIOUS_METALS_FAQS: FaqItem[] = [
   {
     question: 'Can I use this calculator if the live market feed is down or closed for the weekend?',
     answer:
-      'Yes. OmniTools provides a dedicated "Enter Custom Spot Override" toggle. When enabled, you can enter any custom spot benchmark price per troy ounce in your selected currency. The calculator will immediately recompute all gross weights, fine weights, melt values, and dealer payout tiers based on your manual figure.',
+      'Yes. KivaroTools provides a dedicated "Enter Custom Spot Override" toggle. When enabled, you can enter any custom spot benchmark price per troy ounce in your selected currency. The calculator will immediately recompute all gross weights, fine weights, melt values, and dealer payout tiers based on your manual figure.',
   },
   {
     question: 'How do gemstones and diamonds affect scrap jewelry melt value?',
@@ -42,9 +42,9 @@ export const PRECIOUS_METALS_FAQS: FaqItem[] = [
       'Melt value calculators determine the value of the precious metal only. Heavy gemstones, diamonds, cubic zirconia, enamel, and spring mechanisms in clasps add gross weight on a scale but contain zero gold. Professional buyers will subtract the estimated stone weight (known as tare weight) before computing their offer. If your jewelry contains certified, valuable natural diamonds or precious gems, consider having the stones appraised separately or unset before selling the metal for melt.',
   },
   {
-    question: 'Does OmniTools store my scrap lot items or transmit my personal weights to a server?',
+    question: 'Does KivaroTools store my scrap lot items or transmit my personal weights to a server?',
     answer:
-      'No. All mathematical valuation algorithms, unit conversions, multi-item scrap lot calculations, and dealer spread simulations execute 100% locally inside your web browser. Neither your weights, item names, lot manifests, nor estimated payouts are ever transmitted, tracked, or saved on OmniTools servers.',
+      'No. All mathematical valuation algorithms, unit conversions, multi-item scrap lot calculations, and dealer spread simulations execute 100% locally inside your web browser. Neither your weights, item names, lot manifests, nor estimated payouts are ever transmitted, tracked, or saved on KivaroTools servers.',
   },
 ];
 
@@ -366,7 +366,7 @@ export default function PreciousMetalsSeo() {
       {/* Practical Use Cases */}
       <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
-          Practical Use Cases Supported by OmniTools
+          Practical Use Cases Supported by KivaroTools
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800">

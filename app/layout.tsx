@@ -32,14 +32,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: 'OmniTools — Powerful Tools. Private by Design.',
-    template: '%s | OmniTools',
+    default: 'KivaroTools — Powerful Tools. Private by Design.',
+    template: '%s | KivaroTools',
   },
 
   description:
     'Free browser-based tools for developers, creators, businesses, and everyday tasks. No registration and privacy-conscious processing.',
 
-  applicationName: 'OmniTools',
+  applicationName: 'KivaroTools',
 
   keywords: [
     'online tools',
@@ -55,11 +55,11 @@ export const metadata: Metadata = {
 
   authors: [
     {
-      name: 'OmniTools',
+      name: 'KivaroTools',
     },
   ],
 
-  creator: 'OmniTools',
+  creator: 'KivaroTools',
 
   robots: {
     index: true,
@@ -68,8 +68,8 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: 'website',
-    siteName: 'OmniTools',
-    title: 'OmniTools — Powerful Tools. Private by Design.',
+    siteName: 'KivaroTools',
+    title: 'KivaroTools — Powerful Tools. Private by Design.',
     description:
       'Free browser-based tools for developers, creators, businesses, and everyday tasks.',
     url: '/',
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: 'summary_large_image',
-    title: 'OmniTools — Powerful Tools. Private by Design.',
+    title: 'KivaroTools — Powerful Tools. Private by Design.',
     description:
       'Free browser-based tools for developers, creators, businesses, and everyday tasks.',
   },
@@ -144,7 +144,7 @@ function SiteFooter() {
               </span>
 
               <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Omni<span className="text-blue-600">Tools</span>
+                Kivaro<span className="text-blue-600">Tools</span>
               </span>
             </Link>
 
@@ -196,7 +196,7 @@ function SiteFooter() {
                   href="/about"
                   className="text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
-                  About OmniTools
+                  About KivaroTools
                 </Link>
               </li>
 
@@ -246,7 +246,7 @@ function SiteFooter() {
         {/* Bottom */}
         <div className="flex flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:text-slate-400">
           <p>
-            © {new Date().getFullYear()} OmniTools. All rights reserved.
+            © {new Date().getFullYear()} KivaroTools. All rights reserved.
           </p>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">

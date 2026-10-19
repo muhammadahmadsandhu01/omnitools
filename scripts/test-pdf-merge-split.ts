@@ -1,5 +1,5 @@
 /**
- * OmniTools PDF Merge & Split — Automated Engine & Regression Test Suite
+ * KivaroTools PDF Merge & Split — Automated Engine & Regression Test Suite
  *
  * Verifies:
  * 1. Page range parsing (single, intervals, deduplication, sorting)
@@ -32,7 +32,7 @@ import {
 
 async function runPdfTests() {
   console.log('====================================================');
-  console.log('🧪 RUNNING OMNITOOLS PDF MERGE & SPLIT TEST SUITE');
+  console.log('🧪 RUNNING KIVAROTOOLS PDF MERGE & SPLIT TEST SUITE');
   console.log('====================================================\n');
 
   let passed = 0;
@@ -240,9 +240,9 @@ async function runPdfTests() {
   });
 
   test('Falls back to provided default if sanitized string is empty', () => {
-    assert.strictEqual(sanitizeFilename('', 'OmniTools_Merged'), 'OmniTools_Merged');
-    assert.strictEqual(sanitizeFilename('   ', 'OmniTools_Merged'), 'OmniTools_Merged');
-    assert.strictEqual(sanitizeFilename('???***', 'OmniTools_Merged'), 'OmniTools_Merged');
+    assert.strictEqual(sanitizeFilename('', 'KivaroTools_Merged'), 'KivaroTools_Merged');
+    assert.strictEqual(sanitizeFilename('   ', 'KivaroTools_Merged'), 'KivaroTools_Merged');
+    assert.strictEqual(sanitizeFilename('???***', 'KivaroTools_Merged'), 'KivaroTools_Merged');
   });
 
   // ----------------------------------------------------------------

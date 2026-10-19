@@ -883,7 +883,7 @@ export default function ImageCompressor() {
 
     const link = document.createElement('a');
     link.href = img.compressedUrl;
-    link.download = `${getBaseName(img.originalFile.name)}_omnitools.${img.finalExtension}`;
+    link.download = `${getBaseName(img.originalFile.name)}_kivarotools.${img.finalExtension}`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -901,7 +901,7 @@ export default function ImageCompressor() {
     const usedNames = new Set<string>();
 
     processedImages.forEach((img) => {
-      const base = `${getBaseName(img.originalFile.name)}_omnitools`;
+      const base = `${getBaseName(img.originalFile.name)}_kivarotools`;
       let fileName = `${base}.${img.finalExtension}`;
       let suffix = 2;
 
@@ -918,7 +918,7 @@ export default function ImageCompressor() {
     const url = URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'OmniTools_Optimized_Images.zip';
+    link.download = 'KivaroTools_Optimized_Images.zip';
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -926,7 +926,7 @@ export default function ImageCompressor() {
   };
 
   const copySummary = async () => {
-    const text = `OmniTools Image Optimizer: ${stats.processed} image(s), ${formatSize(
+    const text = `KivaroTools Image Optimizer: ${stats.processed} image(s), ${formatSize(
       stats.originalBytes
     )} → ${formatSize(stats.outputBytes)}, saved ${formatSize(stats.savedBytes)} (${stats.savings}%).`;
 
@@ -1185,7 +1185,7 @@ export default function ImageCompressor() {
                     </div>
 
                     <div className="bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-3 text-xs text-gray-500 dark:text-slate-400">
-                      <strong className="text-slate-700 dark:text-slate-300">Privacy:</strong> compression happens locally in your browser. Files are not uploaded by this component to an OmniTools server.
+                      <strong className="text-slate-700 dark:text-slate-300">Privacy:</strong> compression happens locally in your browser. Files are not uploaded by this component to a KivaroTools server.
                     </div>
                   </div>
                 )}

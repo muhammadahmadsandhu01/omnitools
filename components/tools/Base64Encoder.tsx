@@ -275,7 +275,7 @@ const SAMPLE_PRESETS = [
     badge: 'UTF-8',
     op: 'encode' as Operation,
     mode: 'text' as Mode,
-    value: '🚀 OmniTools: Café, 日本語, العربية, & Zürich ✨',
+    value: '🚀 KivaroTools: Café, 日本語, العربية, & Zürich ✨',
   },
   {
     label: 'JWT Header',

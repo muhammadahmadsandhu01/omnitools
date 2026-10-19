@@ -115,7 +115,7 @@ const sanitizeFilename = (filename: string): string => {
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
     .replace(/\.+/g, '.')
     .trim();
-  return cleaned.slice(0, 80) || 'omnitools_export';
+  return cleaned.slice(0, 80) || 'kivarotools_export';
 };
 
 /**
@@ -708,7 +708,7 @@ export default function JsonConverter() {
   const [separator, setSeparator] = useState('_');
   const [arrayMode, setArrayMode] = useState<FlattenOptions['arrayMode']>('json');
   const [maxDepth, setMaxDepth] = useState<number>(20);
-  const [baseFilename, setBaseFilename] = useState('omnitools_export');
+  const [baseFilename, setBaseFilename] = useState('kivarotools_export');
   const [importedFileInfo, setImportedFileInfo] = useState<{ name: string; size: number } | null>(null);
 
   // Status & Progress
@@ -1024,7 +1024,7 @@ export default function JsonConverter() {
     const data = SAMPLE_DATASETS[sampleKey];
     if (data) {
       setInput(data);
-      setBaseFilename(`omnitools_${sampleKey}`);
+      setBaseFilename(`kivarotools_${sampleKey}`);
       setImportedFileInfo(null);
       const label = sampleKey === 'users' ? 'Users (Nested)' : sampleKey === 'ecommerce' ? 'E-Commerce' : 'Geo Coordinates';
       setAriaAnnouncement(`Loaded sample dataset: ${label}`);
@@ -1051,7 +1051,7 @@ export default function JsonConverter() {
     reader.onload = (event) => {
       const text = String(event.target?.result ?? '');
       setImportedFileInfo({ name: file.name, size: file.size });
-      setBaseFilename(file.name.replace(/\.json$/i, '') || 'omnitools_export');
+      setBaseFilename(file.name.replace(/\.json$/i, '') || 'kivarotools_export');
       setInput(text);
     };
 
@@ -1337,7 +1337,7 @@ tr:hover td { background: #f8fafc; }
 <body>
 <div class="header">
   <h1>${escapeHtml(baseFilename)}</h1>
-  <p>Exported from OmniTools JSON Converter • ${data.length.toLocaleString()} rows • ${visibleColumnList.length.toLocaleString()} columns</p>
+  <p>Exported from KivaroTools JSON Converter • ${data.length.toLocaleString()} rows • ${visibleColumnList.length.toLocaleString()} columns</p>
 </div>
 <div class="container">
   <table>
@@ -1356,7 +1356,7 @@ tr:hover td { background: #f8fafc; }
 
   const copySummary = async () => {
     const summary = [
-      'OmniTools JSON Dataset Summary',
+      'KivaroTools JSON Dataset Summary',
       '==============================',
       `Rows: ${parsedData.length.toLocaleString()}`,
       `Total Columns: ${allColumns.length.toLocaleString()}`,

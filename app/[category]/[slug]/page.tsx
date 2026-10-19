@@ -46,7 +46,7 @@ export async function generateMetadata({
   if (!tool) {
     return {
       title: 'Tool Not Found',
-      description: 'The requested OmniTools tool could not be found.',
+      description: 'The requested KivaroTools tool could not be found.',
     };
   }
 
@@ -60,14 +60,14 @@ export async function generateMetadata({
       canonical: `/${resolvedCategory}/${resolvedSlug}`,
     },
     openGraph: {
-      title: `${metaTitle} — OmniTools`,
+      title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
       url: `/${resolvedCategory}/${resolvedSlug}`,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${metaTitle} — OmniTools`,
+      title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
     },
   };

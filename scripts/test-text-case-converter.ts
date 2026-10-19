@@ -50,7 +50,7 @@ function assertEqual<T>(actual: T, expected: T, testName: string) {
 }
 
 console.log('================================================================');
-console.log('       OMNITOOLS TEXT CASE CONVERTER — AUTOMATED TEST SUITE     ');
+console.log('       KIVAROTOOLS TEXT CASE CONVERTER — AUTOMATED TEST SUITE     ');
 console.log('================================================================\n');
 
 // -------------------------------------------------------------

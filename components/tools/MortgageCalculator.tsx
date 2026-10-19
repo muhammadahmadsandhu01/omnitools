@@ -366,7 +366,7 @@ export default function MortgageCalculator() {
     try {
       await navigator.clipboard.writeText(
         [
-          '=== OmniTools Mortgage & Housing Cost Summary ===',
+          '=== KivaroTools Mortgage & Housing Cost Summary ===',
           `Currency: ${currency.name} (${currency.code})`,
           `Home Price: ${money(priceNum)}`,
           `Down Payment: ${money(dpNum)} (${currentDownPct.toFixed(2)}%)`,

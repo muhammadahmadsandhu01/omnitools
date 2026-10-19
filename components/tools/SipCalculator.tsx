@@ -783,7 +783,7 @@ export function generateCsvReport({
   });
 
   const metadata = [
-    '# OmniTools Investment & SIP Calculator Projection Report',
+    '# KivaroTools Investment & SIP Calculator Projection Report',
     `# Mode: ${mode === 'sip' ? 'SIP (Periodic Investment)' : 'Lump Sum (One-Time)'}`,
     `# Currency: ${currencyCode}`,
     `# Initial Investment: ${initialInvestment.toFixed(2)}`,
@@ -898,7 +898,7 @@ export function generateReportHtml({
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>OmniTools Investment & SIP Audit Report</title>
+  <title>KivaroTools Investment & SIP Audit Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 1040px; margin: 40px auto; padding: 0 24px; color: #0f172a; line-height: 1.5; }
@@ -919,7 +919,7 @@ export function generateReportHtml({
   </style>
 </head>
 <body>
-  <h1>OmniTools Investment & SIP Projection Report</h1>
+  <h1>KivaroTools Investment & SIP Projection Report</h1>
   <div class="subtitle">Deterministic Audit Report · Generated on ${new Date().toLocaleDateString('en-US', { dateStyle: 'long' })}</div>
 
   <div class="grid-kpis">
@@ -1301,7 +1301,7 @@ export default function SipCalculator() {
   const handleCopySummary = async () => {
     if (!calculations) return;
     const text = [
-      'OmniTools Investment & SIP Calculator Projection Summary',
+      'KivaroTools Investment & SIP Calculator Projection Summary',
       `Mode: ${mode === 'sip' ? 'SIP (Periodic Investment)' : 'Lump Sum (One-Time)'}`,
       `Currency: ${currency.code}`,
       ...(mode === 'sip' && calculations.initialInvestment > 0 ? [`Initial Starting Capital: ${formatCurrency(calculations.initialInvestment, currency.code)}`] : []),
@@ -1390,7 +1390,7 @@ export default function SipCalculator() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `omnitools-${mode === 'sip' ? 'sip' : 'lumpsum'}-schedule-${currency.code}.csv`;
+    a.download = `kivarotools-${mode === 'sip' ? 'sip' : 'lumpsum'}-schedule-${currency.code}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1422,7 +1422,7 @@ export default function SipCalculator() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `omnitools-investment-report-${currency.code}.html`;
+    a.download = `kivarotools-investment-report-${currency.code}.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();

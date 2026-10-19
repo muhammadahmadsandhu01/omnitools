@@ -667,7 +667,7 @@ export default function InvoiceGenerator() {
   const exportJSON = () => {
     const exportData = {
       schemaVersion: 1,
-      generator: 'OmniTools Business Invoice Generator',
+      generator: 'KivaroTools Business Invoice Generator',
       exportedAt: new Date().toISOString(),
       invoice: {
         meta,

@@ -1,5 +1,5 @@
 /**
- * OmniTools Text Analyzer — Comprehensive Regression & Accuracy Test Suite
+ * KivaroTools Text Analyzer — Comprehensive Regression & Accuracy Test Suite
  *
  * Verifies:
  * 1. Character counting (UTF-16 code units vs grapheme clusters)
@@ -39,7 +39,7 @@ function assert(condition: boolean, testName: string, details?: unknown) {
   }
 }
 
-console.log('🧪 [OmniTools] Running Text Analyzer Automated Verification Suite...\n');
+console.log('🧪 [KivaroTools] Running Text Analyzer Automated Verification Suite...\n');
 
 // ============================================================
 // 1. Empty & Whitespace Handling

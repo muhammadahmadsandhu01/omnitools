@@ -9,27 +9,27 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
   {
     question: 'How do I combine multiple photos into a single PDF document?',
     answer:
-      'Drag and drop your images into the OmniTools upload area or select them using the file browser. Arrange the image sequence using the drag-and-drop handles or the Move Up and Move Down arrow buttons. Ensure Output Mode is set to "Single Combined PDF", customize your preferred page size and margins, and click "Convert to PDF". All images will be compiled into one multi-page document in your exact order.',
+      'Drag and drop your images into the KivaroTools upload area or select them using the file browser. Arrange the image sequence using the drag-and-drop handles or the Move Up and Move Down arrow buttons. Ensure Output Mode is set to "Single Combined PDF", customize your preferred page size and margins, and click "Convert to PDF". All images will be compiled into one multi-page document in your exact order.',
   },
   {
     question: 'Can I generate separate individual PDFs for each uploaded image?',
     answer:
-      'Yes. Toggle the Output Mode switch from "Single Combined PDF" to "Separate PDFs (ZIP)". OmniTools will compile an independent standalone PDF for every image in your queue and package them into a single downloadable ZIP archive, making it easy to process dozens of receipts or invoices at once.',
+      'Yes. Toggle the Output Mode switch from "Single Combined PDF" to "Separate PDFs (ZIP)". KivaroTools will compile an independent standalone PDF for every image in your queue and package them into a single downloadable ZIP archive, making it easy to process dozens of receipts or invoices at once.',
   },
   {
     question: 'Are my images or generated PDF documents uploaded to any remote server?',
     answer:
-      'No. OmniTools operates 100% client-side directly within your browser memory using pdf-lib and the HTML5 Canvas API. Your image bytes never leave your personal computer or mobile device, ensuring complete privacy for sensitive government identity cards, medical records, financial tax forms, and confidential business documents.',
+      'No. KivaroTools operates 100% client-side directly within your browser memory using pdf-lib and the HTML5 Canvas API. Your image bytes never leave your personal computer or mobile device, ensuring complete privacy for sensitive government identity cards, medical records, financial tax forms, and confidential business documents.',
   },
   {
     question: 'What image formats are supported by the converter?',
     answer:
-      'OmniTools supports standard JPEG (JPG), PNG, WebP, BMP, GIF (first frame extracted), SVG vector graphics, and Apple iPhone HEIC/HEIF photos. Unsupported, corrupted, or zero-byte files are caught immediately during pre-flight validation with helpful diagnostic feedback.',
+      'KivaroTools supports standard JPEG (JPG), PNG, WebP, BMP, GIF (first frame extracted), SVG vector graphics, and Apple iPhone HEIC/HEIF photos. Unsupported, corrupted, or zero-byte files are caught immediately during pre-flight validation with helpful diagnostic feedback.',
   },
   {
     question: 'How does the tool handle iPhone HEIC and HEIF photos?',
     answer:
-      'OmniTools dynamically imports the client-side heic2any decoding engine in your browser. This decodes Apple High Efficiency Image Container (HEIC/HEIF) files into standard JPEG streams locally on your device before embedding them into the PDF, requiring zero cloud conversion or third-party server processing.',
+      'KivaroTools dynamically imports the client-side heic2any decoding engine in your browser. This decodes Apple High Efficiency Image Container (HEIC/HEIF) files into standard JPEG streams locally on your device before embedding them into the PDF, requiring zero cloud conversion or third-party server processing.',
   },
   {
     question: 'How does Auto Orientation work?',
@@ -44,7 +44,7 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
   {
     question: 'Will converting transparent PNG images create a black background?',
     answer:
-      'No. In "Original / Lossless" mode, PNG transparency channels are preserved. When using quality compression presets that convert images to JPEG (which lacks an alpha channel), OmniTools automatically composites transparent pixels against a clean background color (white by default, or your custom chosen hex color) to prevent black background artifacts.',
+      'No. In "Original / Lossless" mode, PNG transparency channels are preserved. When using quality compression presets that convert images to JPEG (which lacks an alpha channel), KivaroTools automatically composites transparent pixels against a clean background color (white by default, or your custom chosen hex color) to prevent black background artifacts.',
   },
   {
     question: 'What is the difference between Contain, Cover, and Actual image placement?',
@@ -74,7 +74,7 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
   {
     question: 'What should I do if my downloaded PDF is too large for an email attachment or portal upload?',
     answer:
-      'If your resulting PDF exceeds upload limits (such as government portals requiring files under 2 MB), use the "Compressed (60%)" or "Standard (80%)" quality preset before conversion, or run your generated PDF through the OmniTools PDF Merge & Split and Image Compressor utilities.',
+      'If your resulting PDF exceeds upload limits (such as government portals requiring files under 2 MB), use the "Compressed (60%)" or "Standard (80%)" quality preset before conversion, or run your generated PDF through the KivaroTools PDF Merge & Split and Image Compressor utilities.',
   },
 ];
 
@@ -107,12 +107,12 @@ export default function ImageToPdfSeo() {
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
         Converting smartphone photos, scanned paper receipts, signed contracts, architectural blueprints, and student assignments
         into a standardized PDF document shouldn&apos;t require expensive software licenses or uploading sensitive records to remote cloud servers.
-        OmniTools <strong>Image to PDF Converter</strong> delivers a complete document publishing studio that executes
+        KivaroTools <strong>Image to PDF Converter</strong> delivers a complete document publishing studio that executes
         <strong> 100% locally in your web browser</strong>.
       </p>
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-6">
         Whether you need to compile 30 expense receipts into a single monthly report for accounting, convert high-resolution graphic design
-        portfolios into print-ready A4 booklets, or package individual product photos into separate PDFs, OmniTools offers complete control
+        portfolios into print-ready A4 booklets, or package individual product photos into separate PDFs, KivaroTools offers complete control
         over page geometry, margins, orientation, and image placement with zero watermarks and zero daily limits.
       </p>
 
@@ -148,7 +148,7 @@ export default function ImageToPdfSeo() {
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Different image formats serve distinct purposes, from compressed photographic lossy streams to lossless transparent graphics.
-          OmniTools provides specialized decoding and rasterization pipelines for each format:
+          KivaroTools provides specialized decoding and rasterization pipelines for each format:
         </p>
         <div className="overflow-x-auto mb-4">
           <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
@@ -202,7 +202,7 @@ export default function ImageToPdfSeo() {
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           PDF documents use typographic points as their base geometric unit, where <strong>72 points equal 1 inch (25.4 mm)</strong>.
-          OmniTools provides rigorous mathematical point conversions across all international paper standards:
+          KivaroTools provides rigorous mathematical point conversions across all international paper standards:
         </p>
         <ul className="list-disc pl-6 space-y-2 text-slate-600 dark:text-slate-400 mb-4">
           <li><strong>A4 (210 × 297 mm):</strong> 595.28 × 841.89 points — The global standard for business reports, contracts, and international applications.</li>
@@ -225,7 +225,7 @@ export default function ImageToPdfSeo() {
           illegible strips with enormous white voids on the top and bottom.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          OmniTools solves this with <strong>Auto Orientation</strong>. The engine inspects each image natural aspect ratio ($W/H$).
+          KivaroTools solves this with <strong>Auto Orientation</strong>. The engine inspects each image natural aspect ratio ($W/H$).
           If an image is wider than it is tall, the engine automatically formats that specific page in Landscape orientation.
           If an image is taller than it is wide, it generates a Portrait page. This ensures every image maximizes its printable area without manual per-page overrides.
         </p>
@@ -237,7 +237,7 @@ export default function ImageToPdfSeo() {
           Image Placement: Contain vs. Cover vs. Actual Size
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Depending on whether you are assembling an official legal packet or printing photography, OmniTools offers three distinct fitting algorithms:
+          Depending on whether you are assembling an official legal packet or printing photography, KivaroTools offers three distinct fitting algorithms:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
@@ -267,7 +267,7 @@ export default function ImageToPdfSeo() {
           Empirical Benchmark Results on Test Corpus Fixtures
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          All performance metrics below were measured on actual, reproducible test fixtures using the OmniTools client-side PDF generation engine:
+          All performance metrics below were measured on actual, reproducible test fixtures using the KivaroTools client-side PDF generation engine:
         </p>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
@@ -330,7 +330,7 @@ export default function ImageToPdfSeo() {
           where they are stored on physical hard drives for 1 to 24 hours.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          OmniTools operates under a fundamentally different security paradigm. <strong>All PDF compilation executes strictly inside your local browser memory</strong>.
+          KivaroTools operates under a fundamentally different security paradigm. <strong>All PDF compilation executes strictly inside your local browser memory</strong>.
           We independently verified this architecture using Chrome DevTools Protocol network interception, confirming that exactly <strong>0 bytes</strong> of image data
           are ever transmitted to any remote server, tracking provider, or third-party API.
         </p>
@@ -339,14 +339,14 @@ export default function ImageToPdfSeo() {
       {/* Section 9: Competitor Comparison Matrix */}
       <section className="mb-10">
         <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
-          OmniTools vs. Legacy Cloud PDF Converters
+          KivaroTools vs. Legacy Cloud PDF Converters
         </h3>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature / Attribute</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">OmniTools Converter</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">KivaroTools Converter</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Adobe Acrobat Online</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Smallpdf &amp; iLovePDF</th>
               </tr>

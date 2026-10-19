@@ -615,9 +615,9 @@ export function buildQrPayload({
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//OmniTools//QR Generator//EN',
+    'PRODID:-//KivaroTools//QR Generator//EN',
     'BEGIN:VEVENT',
-    `UID:${uidHash}@omnitools`,
+    `UID:${uidHash}@kivarotools`,
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${start}`,
     `DTEND:${end}`,
@@ -676,7 +676,7 @@ export default function QrGenerator() {
 
   // Content state
   const [qrType, setQrType] = useState<QrType>('url');
-  const [url, setUrl] = useState('https://omnitools-navy.vercel.app');
+  const [url, setUrl] = useState('https://kivarotools.app');
   const [text, setText] = useState('');
   const [wifiSsid, setWifiSsid] = useState('');
   const [wifiPass, setWifiPass] = useState('');
@@ -948,7 +948,7 @@ export default function QrGenerator() {
   const downloadBlob = (blob: Blob, extension: string) => {
     const urlObject = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const safeName = `OmniTools_QR_${qrType}_${new Date().toISOString().slice(0, 10)}.${extension}`;
+    const safeName = `KivaroTools_QR_${qrType}_${new Date().toISOString().slice(0, 10)}.${extension}`;
     a.href = urlObject;
     a.download = sanitizeFilename(safeName, `qr-code.${extension}`);
     document.body.appendChild(a);
@@ -1075,7 +1075,7 @@ export default function QrGenerator() {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(20);
       doc.setTextColor(30, 41, 59);
-      doc.text('OmniTools QR Code', 105, 28, { align: 'center' });
+      doc.text('KivaroTools QR Code', 105, 28, { align: 'center' });
 
       // Subheading / Type
       doc.setFont('helvetica', 'normal');
@@ -1112,7 +1112,7 @@ export default function QrGenerator() {
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text('Generated with OmniTools • https://omnitools-navy.vercel.app/seo/qr-generator', 105, 282, { align: 'center' });
+      doc.text('Generated with KivaroTools • https://kivarotools.app/seo/qr-generator', 105, 282, { align: 'center' });
 
       const pdfBlob = doc.output('blob');
       setIsExporting(false);
@@ -1996,7 +1996,7 @@ export default function QrGenerator() {
                   level={level}
                   marginSize={marginSize}
                   boostLevel={boostLevel}
-                  title="OmniTools QR Code"
+                  title="KivaroTools QR Code"
                   className="block w-full h-auto max-w-full"
                   style={{ width: '100%', height: 'auto', display: 'block' }}
                   imageSettings={
@@ -2026,7 +2026,7 @@ export default function QrGenerator() {
                   level={level}
                   marginSize={marginSize}
                   boostLevel={boostLevel}
-                  title="OmniTools QR Code"
+                  title="KivaroTools QR Code"
                   imageSettings={
                     logoDataUrl
                       ? {

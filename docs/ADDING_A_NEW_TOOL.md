@@ -1,8 +1,8 @@
-# Adding a New Tool to OmniTools
+# Adding a New Tool to KivaroTools
 
-This guide details the exact, repeatable workflow for adding a new tool to OmniTools.
+This guide details the exact, repeatable workflow for adding a new tool to KivaroTools.
 
-OmniTools uses a clean, registry-driven architecture designed to balance developer speed, type safety, bundle isolation, and SEO rigor:
+KivaroTools uses a clean, registry-driven architecture designed to balance developer speed, type safety, bundle isolation, and SEO rigor:
 - **Pure Metadata (`config/toolsData.ts`)**: Defines tool identity, categorization, search intent metadata, and indexability status. This file contains zero React components or heavy dependencies, keeping sitemap and server layouts lightweight.
 - **Component Registry (`config/toolRegistry.ts`)**: Explicitly maps tool slugs to interactive functional components and SEO landing page components. This ensures reliable bundler tree-shaking and type safety.
 - **Dynamic Routing (`app/[category]/[slug]/page.tsx`)**: Automatically handles canonical URLs, Open Graph tags, breadcrumbs, JSON-LD structured data (`SoftwareApplication`), advertising slots, and contextual related-tool links.
@@ -274,7 +274,7 @@ npm run build
 
 ## Tool Lifecycle & Indexability Rules
 
-To protect OmniTools from SEO penalties (thin pages, 404s, incomplete tools), follow the status lifecycle:
+To protect KivaroTools from SEO penalties (thin pages, 404s, incomplete tools), follow the status lifecycle:
 
 1. **`status: 'draft'`**:
    - The tool is being authored or reviewed.

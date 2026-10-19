@@ -13,24 +13,24 @@ import {
 import { categories } from '@/config/toolsData';
 
 export const metadata: Metadata = {
-  title: 'About OmniTools',
+  title: 'About KivaroTools',
   description:
-    'Learn about OmniTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
+    'Learn about KivaroTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
   alternates: {
     canonical: '/about',
   },
   openGraph: {
-    title: 'About OmniTools',
+    title: 'About KivaroTools',
     description:
-      'Learn about OmniTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
+      'Learn about KivaroTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
     url: '/about',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About OmniTools',
+    title: 'About KivaroTools',
     description:
-      'Learn about OmniTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
+      'Learn about KivaroTools, our browser-based utility suite, client-side execution model, and commitment to privacy-conscious computing.',
   },
 };
 
@@ -71,7 +71,7 @@ export default function AboutPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            OmniTools provides free, browser-based utilities for developers, creators, businesses,
+            KivaroTools provides free, browser-based utilities for developers, creators, businesses,
             and everyday digital tasks. We believe essential computational tools should be fast,
             accessible, and private—without registration walls or unnecessary data transmission.
           </p>
@@ -172,7 +172,7 @@ export default function AboutPage() {
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
             Because operations execute in the client browser runtime, user documents (such as uploaded images,
-            PDFs, JSON datasets, and custom passwords) remain in local browser memory. OmniTools does not operate
+            PDFs, JSON datasets, and custom passwords) remain in local browser memory. KivaroTools does not operate
             a central user database to store your inputs, documents, or financial calculations.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">

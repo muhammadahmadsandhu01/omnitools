@@ -1,5 +1,5 @@
 /**
- * OmniTools Mortgage & Financial Amortization Engine
+ * KivaroTools Mortgage & Financial Amortization Engine
  *
  * Deterministic mathematical calculation engine for conventional fixed-rate mortgages,
  * PITI escrow obligations, dynamic PMI drop-off, biweekly compounding, prepayments,
@@ -559,7 +559,7 @@ export type MortgageCsvMeta = {
  */
 export function generateMortgageCsv(rows: ScheduleRow[], meta: MortgageCsvMeta): string {
   const lines: string[] = [
-    '\uFEFF# OmniTools Mortgage Amortization Schedule',
+    '\uFEFF# KivaroTools Mortgage Amortization Schedule',
     `# Currency: ${meta.currencyName} (${meta.currencyCode})`,
     `# Payment Frequency: ${meta.frequency === 'biweekly' ? 'Biweekly (26/yr)' : 'Monthly (12/yr)'}`,
     `# Home Price: ${meta.price}`,

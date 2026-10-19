@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -24,7 +25,7 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
   {
     question: 'What happens to transparent backgrounds when converting WebP to JPG?',
     answer:
-      'The JPEG specification does not support an alpha transparency channel. If a WebP image with transparent areas is encoded to JPG without a composite background, transparent pixels would typically render as black artifacts. OmniTools automatically composites transparent areas onto a clean background fill color (defaulting to clean white #ffffff, or customizable to black or custom hex values) before rasterization.',
+      'The JPEG specification does not support an alpha transparency channel. If a WebP image with transparent areas is encoded to JPG without a composite background, transparent pixels would typically render as black artifacts. KivaroTools automatically composites transparent areas onto a clean background fill color (defaulting to clean white #ffffff, or customizable to black or custom hex values) before rasterization.',
   },
   {
     question: 'Does converting WebP to PNG preserve transparency?',
@@ -44,12 +45,12 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
   {
     question: 'Can I convert animated WebP files into animated JPG or PNG?',
     answer:
-      'Neither standard JPG nor standard PNG support multi-frame animations (JPG is strictly a single-frame format, and APNG is a distinct animated format). When an animated WebP is loaded into the converter, OmniTools detects the VP8X animation container and extracts the first frame (keyframe) as a high-fidelity static image. If you need animated output, consider converting to GIF or WebM using dedicated animation tools.',
+      'Neither standard JPG nor standard PNG support multi-frame animations (JPG is strictly a single-frame format, and APNG is a distinct animated format). When an animated WebP is loaded into the converter, KivaroTools detects the VP8X animation container and extracts the first frame (keyframe) as a high-fidelity static image. If you need animated output, consider converting to GIF or WebM using dedicated animation tools.',
   },
   {
     question: 'Are my files uploaded to a remote server or stored in the cloud?',
     answer:
-      'No. OmniTools operates 100% client-side inside your browser runtime using HTML5 Canvas 2D and OffscreenCanvas APIs. Your image bytes are decoded and re-encoded locally in your device memory. Zero files are transmitted over the internet, stored on remote servers, or analyzed by third-party tracking services.',
+      'No. KivaroTools operates 100% client-side inside your browser runtime using HTML5 Canvas 2D and OffscreenCanvas APIs. Your image bytes are decoded and re-encoded locally in your device memory. Zero files are transmitted over the internet, stored on remote servers, or analyzed by third-party tracking services.',
   },
   {
     question: 'Can I convert multiple WebP files simultaneously in batch?',
@@ -62,9 +63,9 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
       'Common reasons include: (1) The file is corrupted or incomplete; (2) The file is an HTML document or error page mistakenly renamed with a .webp extension; (3) The file header lacks the required RIFF....WEBP magic byte signature; or (4) The image resolution exceeds your device browser memory limits (e.g., images exceeding 100 megapixels on low-memory mobile devices).',
   },
   {
-    question: 'Is the OmniTools WebP converter completely free to use?',
+    question: 'Is the KivaroTools WebP converter completely free to use?',
     answer:
-      'Yes. OmniTools WebP to JPG & PNG Converter is free with no sign-up requirements, no watermarks, and no daily conversion credits. Because processing happens locally on your own hardware, there are no cloud subscription fees or artificial queue throttling.',
+      'Yes. KivaroTools WebP to JPG & PNG Converter is free with no sign-up requirements, no watermarks, and no daily conversion credits. Because processing happens locally on your own hardware, there are no cloud subscription fees or artificial queue throttling.',
   },
 ];
 
@@ -90,19 +91,19 @@ export default function WebpToJpgPngSeo() {
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: 'https://omnitools-navy.vercel.app',
+        item: `${SITE_URL}`,
       },
       {
         '@type': 'ListItem',
         position: 2,
         name: 'Media & Images',
-        item: 'https://omnitools-navy.vercel.app/media',
+        item: `${SITE_URL}/media`,
       },
       {
         '@type': 'ListItem',
         position: 3,
         name: 'WebP to JPG & PNG Converter',
-        item: 'https://omnitools-navy.vercel.app/media/webp-to-jpg-png',
+        item: `${SITE_URL}/media/webp-to-jpg-png`,
       },
     ],
   };
@@ -128,7 +129,7 @@ export default function WebpToJpgPngSeo() {
           Google developed the <strong>WebP</strong> format to dramatically shrink image file sizes on the modern web. By utilizing advanced VP8 intra-frame predictive coding, WebP delivers comparable visual fidelity to legacy JPEG and PNG formats while reducing payload sizes by 25% to 35%. Despite universal support across modern web browsers, WebP still faces significant compatibility friction across desktop software, legacy photo viewers, social media uploaders, content management systems, print laboratories, and enterprise email clients.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-base">
-          OmniTools <strong>WebP to JPG &amp; PNG Converter</strong> bridges this gap by enabling fast, high-fidelity conversion of WebP files into universal JPEG or lossless PNG images. Built on client-side HTML5 Canvas and OffscreenCanvas technology, the tool processes your images directly in your browser without transmitting any data to external cloud servers.
+          KivaroTools <strong>WebP to JPG &amp; PNG Converter</strong> bridges this gap by enabling fast, high-fidelity conversion of WebP files into universal JPEG or lossless PNG images. Built on client-side HTML5 Canvas and OffscreenCanvas technology, the tool processes your images directly in your browser without transmitting any data to external cloud servers.
         </p>
       </section>
 
@@ -241,7 +242,7 @@ export default function WebpToJpgPngSeo() {
               Converting to JPG (Background Compositing)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Because JPEG cannot store transparency, transparent areas must be filled with a solid color. OmniTools fills the canvas with your chosen background color (default white <code>#ffffff</code>, or custom hex) before drawing the image, preventing ugly black borders.
+              Because JPEG cannot store transparency, transparent areas must be filled with a solid color. KivaroTools fills the canvas with your chosen background color (default white <code>#ffffff</code>, or custom hex) before drawing the image, preventing ugly black borders.
             </p>
           </div>
         </div>
@@ -258,7 +259,7 @@ export default function WebpToJpgPngSeo() {
         <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs sm:text-sm text-amber-900 dark:text-amber-200 space-y-2">
           <p className="font-semibold">Honest Pipeline Disclosure:</p>
           <p className="leading-relaxed">
-            When an animated WebP file is queued in OmniTools, the engine detects the animation flag in the RIFF header and extracts the <strong>first keyframe</strong> as a high-fidelity static image. We do not falsely claim to convert entire animations into still JPG or PNG files. If your workflow requires animated playback, use a specialized video converter to export to GIF or MP4/WebM.
+            When an animated WebP file is queued in KivaroTools, the engine detects the animation flag in the RIFF header and extracts the <strong>first keyframe</strong> as a high-fidelity static image. We do not falsely claim to convert entire animations into still JPG or PNG files. If your workflow requires animated playback, use a specialized video converter to export to GIF or MP4/WebM.
           </p>
         </div>
       </section>
@@ -328,7 +329,7 @@ export default function WebpToJpgPngSeo() {
           Most online image conversion services require uploading your files to remote cloud servers. Those files sit in temporary server storage buckets where they may be retained for hours or days, posing confidentiality risks for private family photographs, confidential business presentations, unreleased product photos, and sensitive customer data.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-sm sm:text-base">
-          OmniTools executes all conversions locally inside your browser via standard HTML5 Canvas 2D and OffscreenCanvas APIs. Your image bytes never travel across the network, no remote servers are contacted, and all temporary memory URLs are revoked immediately upon queue clearance.
+          KivaroTools executes all conversions locally inside your browser via standard HTML5 Canvas 2D and OffscreenCanvas APIs. Your image bytes never travel across the network, no remote servers are contacted, and all temporary memory URLs are revoked immediately upon queue clearance.
         </p>
       </section>
 
@@ -354,13 +355,13 @@ export default function WebpToJpgPngSeo() {
         </div>
       </section>
 
-      {/* SECTION 10: RELATED OMNITOOLS UTILITIES */}
+      {/* SECTION 10: RELATED KivaroTools UTILITIES */}
       <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
         <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Related Media &amp; Image Utilities
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-300">
-          Optimize and transform your media assets using other privacy-first utilities in the OmniTools workspace:
+          Optimize and transform your media assets using other privacy-first utilities in the KivaroTools workspace:
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
           <Link
