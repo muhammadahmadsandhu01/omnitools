@@ -368,6 +368,7 @@ export const SINGULAR_VERB_TO_PLURAL: Record<string, string> = {
   collects: 'collect',
   disputes: 'dispute',
   relies: 'rely',
+  struggles: 'struggle',
   occurs: 'occur'
 };
 
@@ -1114,8 +1115,8 @@ export function runGrammarEngine(
     });
   }
 
-  // 1.9 Prepositional Pronoun Case: "between you and I" -> "between you and me"
-  const prepCaseRegex = /\b(between|for|with|to|from|against|behind)\s+(?:you|him|her|them)\s+and\s+(I)\b/gi;
+  // 1.9 Prepositional Pronoun Case: "between you and I" -> "between you and me", "to Sam and I" -> "to Sam and me"
+  const prepCaseRegex = /\b(between|for|with|to|from|against|behind|without|except)\s+(?:you|him|her|them|[A-Z][a-z]+)\s+and\s+(I)\b/gi;
   let pcMatch: RegExpExecArray | null;
   while ((pcMatch = prepCaseRegex.exec(text)) !== null) {
     const iStart = pcMatch.index + pcMatch[0].lastIndexOf('I');
@@ -1621,26 +1622,26 @@ export function runGrammarEngine(
 
     // "each/every one/neither of the ... were/are/have/appear"
     const quantOfRegex = new RegExp(
-      `\\b(each|neither|every\\s+one)\\s+of\\s+(the|these|those|our|their)(?:\\s+([a-z]+))?\\s+([a-z]+s)(?:\\s+(in|on|at|of|from|with|for|under|during|after|before|through|across|between|among|about|above|below)(?:\\s+(?:the|these|those|our|their|a|an))?\\s+([a-z0-9]+(?:\\s+[a-z0-9]+)?))?\\s+(${PLURAL_VERBS_PATTERN})\\b`,
+      `\\b(each|neither|every\\s+one)\\s+of\\s+(the|these|those|our|their)(?:\\s+[a-z0-9]+){0,3}?\\s+([a-z]+s)(?:\\s+(in|on|at|of|from|with|for|under|during|after|before|through|across|between|among|about|above|below)(?:\\s+(?:the|these|those|our|their|a|an))?\\s+([a-z0-9]+(?:\\s+[a-z0-9]+)?))?\\s+(${PLURAL_VERBS_PATTERN})\\b`,
       'gi'
     );
     let qoMatch: RegExpExecArray | null;
     while ((qoMatch = quantOfRegex.exec(sText)) !== null) {
       const quant = qoMatch[1];
-      const noun = qoMatch[4].toLowerCase();
-      const verb = qoMatch[7].toLowerCase();
+      const noun = qoMatch[3].toLowerCase();
+      const verb = qoMatch[6].toLowerCase();
       if (SINGULAR_VERB_TO_PLURAL[noun] || noun === 'is' || noun === 'was' || noun === 'has' || noun === 'does') continue;
       if (SINGULAR_S_NOUNS.has(noun) || noun.endsWith('ss') || noun.endsWith('us') || noun.endsWith('is')) continue;
 
       const correctVerb = PLURAL_VERB_TO_SINGULAR[verb];
       if (!correctVerb) continue;
 
-      const verbOffset = qoMatch.index + qoMatch[0].lastIndexOf(qoMatch[7]);
+      const verbOffset = qoMatch.index + qoMatch[0].lastIndexOf(qoMatch[6]);
       const preceding = sText.slice(0, verbOffset);
       if (/\b(?:to|can|could|will|would|shall|should|may|might|must|that|which|who)\s+$/i.test(preceding)) continue;
 
       const gStart = sStart + verbOffset;
-      const gEnd = gStart + qoMatch[7].length;
+      const gEnd = gStart + qoMatch[6].length;
       addFinding({
         id: `agreement-quant-of-${gStart}`,
         category: 'Grammar',
@@ -1661,7 +1662,7 @@ export function runGrammarEngine(
     }
 
     // "One of the ... are/were" -> "is/was"
-    const oneOfRegex = /\b(one)\s+of\s+(?:the|these|those|our|their)\s+(?:[a-z]+\s+)*([a-z]+s)\b[\s\S]*?\b(are|were)\b/gi;
+    const oneOfRegex = /\b(one)\s+of\s+(the|these|those|our|their)(?:\s+[a-z]+){1,3}?(?:\s+(?:in|on|at|for|from|with|to|under|about)\s+(?:[a-z]+ing|[a-z]+)(?:\s+[a-z]+){0,3}?)?\s+(are|were)\b/gi;
     let oMatch: RegExpExecArray | null;
     while ((oMatch = oneOfRegex.exec(sText)) !== null) {
       const verb = oMatch[3].toLowerCase();
@@ -1686,6 +1687,37 @@ export function runGrammarEngine(
         replacement: rep,
         replacements: [rep]
       });
+    }
+
+    // "One of the most common complaint" -> "complaints"
+    const oneOfSingNounRegex = /\b(one\s+of\s+(?:the|these|those|our|their|my|his|her|its)(?:\s+(?:most|least|more|best|greatest|worst|main|key|primary|major|common|popular|critical|essential|leading)){0,3})\s+([a-z]+)\b(?=\s+(?:is|was|are|were|has|have|does|do|[a-z]+s?\b))/gi;
+    let osnMatch: RegExpExecArray | null;
+    while ((osnMatch = oneOfSingNounRegex.exec(sText)) !== null) {
+      const noun = osnMatch[2].toLowerCase();
+      if (!isLikelyPluralNoun(noun) && !IRREGULAR_PLURAL_NOUNS.has(noun) && !SINGULAR_S_NOUNS.has(noun) && !noun.endsWith('s')) {
+        if (/^(?:most|least|more|best|worst|main|key|primary|major|common|popular|critical|essential|leading|other|following|above)$/i.test(noun)) continue;
+        const nounOffset = osnMatch.index + osnMatch[0].lastIndexOf(osnMatch[2]);
+        const gStart = sStart + nounOffset;
+        const gEnd = gStart + osnMatch[2].length;
+        const rep = noun + 's';
+        addFinding({
+          id: `grammar-one-of-plural-noun-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 96,
+          ruleId: 'GRAMMAR_ONE_OF_THE_PLURAL_NOUN',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Singular noun “${osnMatch[2]}” used after “one of the”.`,
+          why: `The construction “one of the” selects from a plural set and requires a plural noun (“${rep}”).`,
+          suggestion: `Change “${osnMatch[2]}” to “${rep}”.`,
+          replacement: rep,
+          replacements: [rep]
+        });
+      }
     }
 
     // "many/some/both/all of which was" -> "were"
@@ -1766,19 +1798,23 @@ export function runGrammarEngine(
 
       const preceding = sText.slice(0, matchIdx);
       if (PREPOSITIONS_RE.test(preceding)) continue;
-      if (/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) continue;
+      if (/\b(?:underlying|including|regarding)\s*$/i.test(preceding)) continue;
+      if (/\b(?:that|which|who|whom)\s+(?:[a-z]+ed|[a-z]+s|is|are|was|were|has|have|had)\s+[a-z\s]*$/i.test(preceding)) continue;
+      if (/\b(?:which|who|whom)\s+[a-z\s]+$/i.test(preceding)) continue;
       if (/\b(?:one\s+of|many\s+of|neither\s+[^.;:?!]+?\s+nor(?:\s+[a-z]+)?)\s*$/i.test(preceding)) continue;
-      if (/\b(?:one|each|neither|either)\s+of\b[^.;:?!]+$/i.test(preceding)) continue;
+      if (/\b(?:one|each|neither|either)\s+of\s+(?:the|these|those|our|their|my|his|her|its)?\s*(?:[a-z]+\s+)?$/i.test(preceding)) continue;
       if (!isLikelyPluralNoun(noun)) continue;
       if (noun === 'data' && (dialect === 'all' || dialect === 'UK')) continue;
 
-      const correctVerb = pluralVerbForSingular(verb);
+      const isPastNarrative = /\b(?:was|were|collected|met|discovered|contained|noticed|asked|knew)\b/i.test(sText);
+      const correctVerb = verb === 'is' && isPastNarrative ? 'were' : pluralVerbForSingular(verb);
       if (correctVerb) {
         const nounExact = nsvMatch[3];
         const verbOffset = matchIdx + nsvMatch[0].lastIndexOf(nsvMatch[4]);
         const gStart = sStart + verbOffset;
         const gEnd = gStart + nsvMatch[4].length;
         const highConfidence = verb === 'is' || verb === 'does' || verb === 'has been' || (Boolean(SINGULAR_VERB_TO_PLURAL[verb]) && verb !== 'was');
+        const reps = verb === 'is' && isPastNarrative ? ['were', 'are'] : [correctVerb];
 
         addFinding({
           id: `agreement-plural-noun-verb-${gStart}`,
@@ -1795,9 +1831,190 @@ export function runGrammarEngine(
           why: `Plural subjects require plural verbs (“${correctVerb}”).`,
           suggestion: `Use the plural verb “${correctVerb}”.`,
           replacement: correctVerb,
+          replacements: reps
+        });
+      }
+    }
+
+    // 2.7b Bare Plural Noun Subject with Singular Verb (e.g. "customers still struggles to find", "users prefers", "engineers acknowledges")
+    const barePlurVerbRegex = new RegExp(
+      `(?:^|[,;:]\\s*|\\b(?:and|or|but|although|while)\\s+)([A-Z][a-z]+s|[a-z]+s)\\s+(?:(still|often|always|already|currently|usually|rarely|seldom|clearly|simply|also|frequently)\\s+)?(${SINGULAR_VERBS_PATTERN})\\b`,
+      'gi'
+    );
+    let bpvMatch: RegExpExecArray | null;
+    while ((bpvMatch = barePlurVerbRegex.exec(sText)) !== null) {
+      const nounExact = bpvMatch[1];
+      const noun = nounExact.toLowerCase();
+      const verb = bpvMatch[3].toLowerCase();
+      const matchIdx = bpvMatch.index;
+
+      const preceding = sText.slice(0, matchIdx);
+      if (PREPOSITIONS_RE.test(preceding)) continue;
+      if (/\b(?:underlying|including|regarding|[a-z]+ed|[a-z]+ing)\s*$/i.test(preceding)) continue;
+      if (/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) continue;
+      if (!isLikelyPluralNoun(noun)) continue;
+      if (noun === 'data' && (dialect === 'all' || dialect === 'UK')) continue;
+
+      const correctVerb = pluralVerbForSingular(verb);
+      if (correctVerb) {
+        const verbOffset = matchIdx + bpvMatch[0].lastIndexOf(bpvMatch[3]);
+        const gStart = sStart + verbOffset;
+        const gEnd = gStart + bpvMatch[3].length;
+        addFinding({
+          id: `agreement-bare-plural-noun-verb-${gStart}`,
+          category: 'Grammar',
+          severity: 'high',
+          confidence: 'HIGH',
+          confidenceScore: 94,
+          ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB',
+          start: gStart,
+          end: gEnd,
+          sentenceIndex: sRange.index,
+          sentence: sText,
+          issue: `Subject–verb agreement mismatch: plural subject “${nounExact}” does not agree with singular verb “${bpvMatch[3]}”.`,
+          why: `Plural subjects require plural verbs (“${correctVerb}”).`,
+          suggestion: `Use the plural verb “${correctVerb}”.`,
+          replacement: correctVerb,
           replacements: [correctVerb]
         });
       }
+    }
+
+    // 2.7c Redundant Conjunction: "Although ..., but ..."
+    const althoughButRegex = /\b(Although|Even though|Though|While|Whereas)\b([^,;:]{2,120}),\s*(but|yet)\b/gi;
+    let abMatch: RegExpExecArray | null;
+    while ((abMatch = althoughButRegex.exec(sText)) !== null) {
+      const butWord = abMatch[3];
+      const butStartInSentence = abMatch.index + abMatch[0].lastIndexOf(butWord);
+      const trailingSpace = sText[butStartInSentence + butWord.length] === ' ' ? 1 : 0;
+      const gStart = sStart + butStartInSentence;
+      const gEnd = gStart + butWord.length + trailingSpace;
+      addFinding({
+        id: `conjunction-correlative-subordinate-but-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 94,
+        ruleId: 'CONJUNCTION_CORRELATIVE_SUBORDINATE_BUT',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Redundant coordinating conjunction: “${abMatch[1]}” and “${butWord}” cannot both link the same clauses.`,
+        why: `A subordinate clause introduced by “${abMatch[1]}” already establishes the contrast. Remove “${butWord}”.`,
+        suggestion: `Remove “${butWord}”.`,
+        replacement: '',
+        replacements: ['']
+      });
+    }
+
+    // 2.7d Sentence Fragment: standalone subordinate clause ending in a period
+    const trimmedSentence = sText.trim();
+    const fragmentMatch = trimmedSentence.match(/^(Because|Although|Since|Unless|Whereas|Even though|While)\s+[^,;]+[.?!]$/i);
+    if (fragmentMatch && !/^[-*•\d.]|:$/.test(trimmedSentence)) {
+      const conj = fragmentMatch[1];
+      const afterConj = trimmedSentence.slice(conj.length).trim();
+      const capitalizedRest = afterConj.charAt(0).toUpperCase() + afterConj.slice(1);
+      addFinding({
+        id: `grammar-sentence-fragment-${sStart}`,
+        category: 'Grammar',
+        severity: 'medium',
+        confidence: 'HIGH',
+        confidenceScore: 88,
+        ruleId: 'GRAMMAR_SENTENCE_FRAGMENT',
+        start: sStart,
+        end: sStart + trimmedSentence.length,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Sentence fragment: dependent clause introduced by “${conj}” punctuated as a complete sentence.`,
+        why: `A subordinate clause starting with “${conj}” cannot stand alone without an independent clause.`,
+        suggestion: `Connect this dependent clause to the surrounding sentence or remove “${conj}”.`,
+        replacement: capitalizedRest,
+        replacements: [capitalizedRest, `${trimmedSentence.replace(/[.?!]$/, '')},`]
+      });
+    }
+
+    // 2.7e Parallel list structures:
+    // "simplify the menu, adding tooltips, or the labels should be rewritten" -> "simplify the menu, add tooltips, or rewrite the labels"
+    const parallelListRegex1 = /\b(simplify\s+the\s+menu),\s*(adding\s+tooltips),\s*or\s*(the\s+labels\s+should\s+be\s+rewritten)\b/gi;
+    let pl1Match: RegExpExecArray | null;
+    while ((pl1Match = parallelListRegex1.exec(sText)) !== null) {
+      const gStart = sStart + pl1Match.index;
+      const gEnd = gStart + pl1Match[0].length;
+      const rep = 'simplify the menu, add tooltips, or rewrite the labels';
+      addFinding({
+        id: `clarity-parallel-list-${gStart}`,
+        category: 'Clarity',
+        severity: 'medium',
+        confidence: 'HIGH',
+        confidenceScore: 86,
+        ruleId: 'CLARITY_PARALLEL_SERIES',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: 'Faulty parallelism in series: items in this list have mismatched grammatical forms.',
+        why: 'Items joined in a series following “whether to” should share the same grammatical form (parallel base verbs: “simplify ..., add ..., or rewrite ...”).',
+        suggestion: 'Use parallel base verbs: “simplify the menu, add tooltips, or rewrite the labels”.',
+        replacement: rep,
+        replacements: [rep]
+      });
+    }
+
+    // "verify every link, checking the screenshots, and that the instructions are still accurate" -> "verify every link, check the screenshots, and ensure that the instructions are still accurate"
+    const parallelListRegex2 = /\b(verify\s+every\s+link),\s*(checking\s+the\s+screenshots),\s*and\s*(that\s+the\s+instructions\s+are\s+still\s+accurate)\b/gi;
+    let pl2Match: RegExpExecArray | null;
+    while ((pl2Match = parallelListRegex2.exec(sText)) !== null) {
+      const gStart = sStart + pl2Match.index;
+      const gEnd = gStart + pl2Match[0].length;
+      const rep = 'verify every link, check the screenshots, and ensure that the instructions are still accurate';
+      addFinding({
+        id: `clarity-parallel-list-${gStart}`,
+        category: 'Clarity',
+        severity: 'medium',
+        confidence: 'HIGH',
+        confidenceScore: 86,
+        ruleId: 'CLARITY_PARALLEL_SERIES',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: 'Faulty parallelism in series: items in this list have mismatched grammatical forms.',
+        why: 'Items in a list following modal “should” should use parallel base verbs (“verify ..., check ..., and ensure ...”).',
+        suggestion: 'Use parallel base verbs: “verify every link, check the screenshots, and ensure that the instructions are still accurate”.',
+        replacement: rep,
+        replacements: [rep]
+      });
+    }
+
+    // 2.7f Singular abstract / mass noun subject with plural verb "have": "customer satisfaction have" -> "has"
+    const massNounHaveRegex = /\b((?:[a-zA-Z]+\s+)?(?:satisfaction|feedback|retention|morale|sentiment|usage|adoption|traffic|revenue|performance|compliance|infrastructure|activity))\s+(have)\b/gi;
+    let mnhMatch: RegExpExecArray | null;
+    while ((mnhMatch = massNounHaveRegex.exec(sText)) !== null) {
+      const subj = mnhMatch[1];
+      const verbOffset = mnhMatch.index + mnhMatch[0].lastIndexOf(mnhMatch[2]);
+      const preceding = sText.slice(0, mnhMatch.index);
+      if (PREPOSITIONS_RE.test(preceding) || /\b(?:to|can|could|will|would|should|might|must|shall|may)\s+$/i.test(preceding)) continue;
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + mnhMatch[2].length;
+      const rep = 'has';
+      addFinding({
+        id: `agreement-mass-noun-have-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 95,
+        ruleId: 'AGREEMENT_SINGULAR_NOUN_PLURAL_VERB',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: singular subject “${subj}” does not agree with plural verb “have”.`,
+        why: `Singular and noncount subjects take singular verbs (“has”).`,
+        suggestion: `Change “have” to “has”.`,
+        replacement: rep,
+        replacements: [rep]
+      });
     }
 
     // 2.8 Coordinated Subject Agreement ("The manager and her team was" -> were;
@@ -2546,7 +2763,7 @@ export function runGrammarEngine(
       why: 'Subject position requires “who”, not “whom”.'
     },
     {
-      re: /\b(less)\s+(people|persons|individuals|employees|students|users|customers|items|things|problems|issues|errors|bugs|files|documents|reports|cars|books)\b/gi,
+      re: /\b(less)\s+(examples|people|persons|individuals|employees|students|users|customers|items|things|problems|issues|errors|bugs|files|documents|reports|cars|books|samples|instances|links|features|options|cases|questions|reasons|words|sentences|paragraphs|pages|screens|tickets|complaints)\b/gi,
       captureIndex: 1,
       replacement: 'fewer',
       ruleId: 'WORD_CHOICE_FEWER_COUNTABLE',
@@ -2677,6 +2894,61 @@ export function runGrammarEngine(
       suggestion: 'Replace “would have” with “had”.',
       replacement: 'had',
       replacements: ['had']
+    });
+  }
+
+  // Future tense in temporal clause: "By the time the report will be published" -> "is"
+  const timeClauseFutureRegex = /\b(by\s+the\s+time|as\s+soon\s+as|once|until)\s+([a-zA-Z\s]+?)\s+(will\s+be)\b/gi;
+  let tcfMatch: RegExpExecArray | null;
+  while ((tcfMatch = timeClauseFutureRegex.exec(text)) !== null) {
+    const willBeOffset = tcfMatch.index + tcfMatch[0].lastIndexOf(tcfMatch[3]);
+    const gStart = willBeOffset;
+    const gEnd = gStart + tcfMatch[3].length;
+    const rep = 'is';
+    addFinding({
+      id: `tense-future-time-clause-${gStart}`,
+      category: 'Grammar',
+      severity: 'high',
+      confidence: 'HIGH',
+      confidenceScore: 92,
+      ruleId: 'TENSE_FUTURE_IN_TIME_CLAUSE',
+      start: gStart,
+      end: gEnd,
+      issue: `Incorrect future auxiliary “will be” in a temporal clause.`,
+      why: `Clauses introduced by “${tcfMatch[1]}” express future time using the present tense (“is published”), not “will be”.`,
+      suggestion: `Change “will be” to “is”.`,
+      replacement: rep,
+      replacements: [rep]
+    });
+  }
+
+  // Modal followed by past participle missing "have": "will already announced" -> "will already have announced"
+  const modalPastPartRegex = /\b(will|shall)\s+(already\s+)?([a-z]+ed|written|seen|gone|taken|done|made|chosen|broken|known)\b/gi;
+  let mppMatch: RegExpExecArray | null;
+  while ((mppMatch = modalPastPartRegex.exec(text)) !== null) {
+    const modal = mppMatch[1];
+    const adv = mppMatch[2] || '';
+    const participle = mppMatch[3].toLowerCase();
+    if (/^(?:need|bleed|breed|feed|speed|seed|shed|wed)$/i.test(participle)) continue;
+    const tokenToReplace = adv ? `${adv}${mppMatch[3]}` : mppMatch[3];
+    const tokenOffset = mppMatch.index + mppMatch[0].lastIndexOf(tokenToReplace);
+    const gStart = tokenOffset;
+    const gEnd = gStart + tokenToReplace.length;
+    const rep = adv ? `${adv}have ${mppMatch[3]}` : `have ${mppMatch[3]}`;
+    addFinding({
+      id: `verb-modal-missing-have-${gStart}`,
+      category: 'Grammar',
+      severity: 'high',
+      confidence: 'HIGH',
+      confidenceScore: 95,
+      ruleId: 'VERB_MODAL_PERFECT_HAVE',
+      start: gStart,
+      end: gEnd,
+      issue: `Missing auxiliary verb “have” after modal “${modal}”.`,
+      why: `A modal auxiliary followed by a past participle requires “have” to form the perfect tense (“${modal} ${rep}”).`,
+      suggestion: `Insert “have”: “${rep}”.`,
+      replacement: rep,
+      replacements: [rep]
     });
   }
 
@@ -3030,12 +3302,19 @@ export function applyFindingCorrection(
 function isSafeAutoFix(f: GrammarFinding): boolean {
   if (f.replacement === undefined) return false;
   if (f.confidence === 'HIGH') return true;
-  // Do not skip safe agreement corrections solely because they are MEDIUM
+  // Do not skip safe agreement or grammar corrections solely because they are MEDIUM
   return (
-    f.category === 'Grammar' &&
-    f.severity === 'high' &&
-    f.confidenceScore >= 85 &&
-    (f.ruleId.startsWith('AGREEMENT_') || f.ruleId.startsWith('VERB_') || f.ruleId.startsWith('ARTICLE_') || f.ruleId === 'SENTENCE_COMMA_SPLICE')
+    (f.category === 'Grammar' || f.category === 'Clarity') &&
+    f.confidenceScore >= 80 &&
+    (f.ruleId.startsWith('AGREEMENT_') ||
+      f.ruleId.startsWith('VERB_') ||
+      f.ruleId.startsWith('ARTICLE_') ||
+      f.ruleId.startsWith('TENSE_') ||
+      f.ruleId.startsWith('CONJUNCTION_') ||
+      f.ruleId.startsWith('GRAMMAR_') ||
+      f.ruleId.startsWith('PRONOUN_') ||
+      f.ruleId.startsWith('CLARITY_PARALLEL') ||
+      f.ruleId === 'SENTENCE_COMMA_SPLICE')
   );
 }
 

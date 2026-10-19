@@ -2430,6 +2430,123 @@ assert(repairedFixture.includes('Accuracy, clarity, and justified confidence mat
 assert(repairedFixture.includes('engineers who developed the original evaluation framework have acknowledged'), 'Full Repaired Fixture: Contains "engineers ... have acknowledged"');
 assert(repairedFixture.includes('These limitations do not mean that automated analysis is useless'), 'Full Repaired Fixture: Contains "limitations do not mean"');
 assert(repairedFixture.includes('transparent rules, comprehensive regression tests, and human review remain essential'), 'Full Repaired Fixture: Contains "review remain essential"');
+// ============================================================
+// 12. Regressions Suite: Varied English Writing & Multi-Error Sentences
+// ============================================================
+console.log('\n• Testing Suite 12: Varied English Writing & Multi-Error Acceptance Suite...');
+
+const regressionPassage = `On Tuesday, our product team met to review the customer complaints that was collected during the last quarter. Each of the five support agents have recorded similar problems, but nobody have grouped them by category yet. Although the new interface is easier to use, but customers still struggles to find the settings page. One of the most common complaint were that the menu labels is unclear. We need to decide whether to simplify the menu, adding tooltips, or the labels should be rewritten. The designer, together with two engineers, are preparing a revised version.
+
+Because the release date had already been announced. The team couldn't postpone it without notifying customers. They also discovered that the help page contained less examples than the old version, and several links was broken. If we would have tested the update with more users, we might have noticed these issues sooner. Before launching the patch, the team should verify every link, checking the screenshots, and that the instructions are still accurate. The manager asked the team to send the revised draft to Sam and I by Friday, however, nobody knew who was responsible for approving it. By the time the report will be published, the company will already announced the update. Despite the complaints, customer satisfaction have improved.`;
+
+const regEngineResult = runGrammarEngine(regressionPassage);
+const regFindings = regEngineResult.findings;
+
+// 1. complaints that was -> were
+const fComplaints = regFindings.find(f => f.ruleId === 'AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT' && f.originalText === 'was');
+assert(Boolean(fComplaints && fComplaints.replacement === 'were'), 'Regression: "complaints that was" flagged and replaced with "were"');
+
+// 2. Each ... have -> has AND nobody have -> has (same sentence, multiple findings)
+const fEach = regFindings.find(f => f.ruleId === 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' && f.start >= 140 && f.start <= 150);
+assert(Boolean(fEach && fEach.originalText === 'have' && fEach.replacement === 'has'), 'Regression: "Each ... have" flagged and replaced with "has"');
+const fNobody = regFindings.find(f => f.ruleId === 'AGREEMENT_SINGULAR_PRONOUN_PLURAL_VERB' && f.start >= 180 && f.start <= 195);
+assert(Boolean(fNobody && fNobody.originalText === 'have' && fNobody.replacement === 'has'), 'Regression: "nobody have" independently flagged in same sentence and replaced with "has"');
+
+// 3. Although ... but -> remove "but" AND customers ... struggles -> struggle (same sentence, multiple findings)
+const fAlthoughBut = regFindings.find(f => f.ruleId === 'CONJUNCTION_CORRELATIVE_SUBORDINATE_BUT');
+assert(Boolean(fAlthoughBut && fAlthoughBut.replacement === ''), 'Regression: "Although ... but ..." flagged to remove "but"');
+const fCustomers = regFindings.find(f => f.ruleId === 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' && f.originalText === 'struggles');
+assert(Boolean(fCustomers && fCustomers.replacement === 'struggle'), 'Regression: "customers ... struggles" independently flagged in same sentence and replaced with "struggle"');
+
+// 4. One of the most common complaint were ... labels is unclear (same sentence, 3 findings)
+const fOneOfComplaint = regFindings.find(f => f.ruleId === 'GRAMMAR_ONE_OF_THE_PLURAL_NOUN' && f.originalText === 'complaint');
+assert(Boolean(fOneOfComplaint && fOneOfComplaint.replacement === 'complaints'), 'Regression: "One of the most common complaint" flagged and replaced with "complaints"');
+const fOneOfWere = regFindings.find(f => f.ruleId === 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' && f.originalText === 'were' && f.start >= 350 && f.start <= 365);
+assert(Boolean(fOneOfWere && fOneOfWere.replacement === 'was'), 'Regression: "One of the ... were" flagged and replaced with "was"');
+const fLabelsIs = regFindings.find(f => f.ruleId === 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' && f.originalText === 'is' && f.start >= 380 && f.start <= 390);
+assert(Boolean(fLabelsIs && fLabelsIs.replacement === 'were'), 'Regression: "menu labels is" flagged and replaced with "were"');
+
+// 5. Non-parallel list: simplify the menu, adding tooltips, or the labels should be rewritten
+const fParallel1 = regFindings.find(f => f.ruleId === 'CLARITY_PARALLEL_SERIES' && f.originalText.includes('adding tooltips'));
+assert(Boolean(fParallel1 && fParallel1.replacement?.includes('add tooltips, or rewrite the labels')), 'Regression: non-parallel list "simplify the menu, adding tooltips..." flagged and corrected');
+
+// 6. Sentence fragment: Because the release date had already been announced.
+const fFragment = regFindings.find(f => f.ruleId === 'GRAMMAR_SENTENCE_FRAGMENT' && f.originalText.includes('Because the release date'));
+assert(Boolean(fFragment), 'Regression: "Because the release date had already been announced." flagged as a sentence fragment');
+
+// 7. less examples -> fewer examples
+const fLess = regFindings.find(f => f.ruleId === 'WORD_CHOICE_FEWER_COUNTABLE' && f.originalText === 'less');
+assert(Boolean(fLess && fLess.replacement === 'fewer'), 'Regression: "less examples" flagged and replaced with "fewer"');
+
+// 8. If we would have tested -> If we had tested
+const fConditional = regFindings.find(f => f.ruleId === 'TENSE_CONDITIONAL_IF_HAD' && f.originalText === 'would have');
+assert(Boolean(fConditional && fConditional.replacement === 'had'), 'Regression: "If we would have tested" flagged and replaced with "had"');
+
+// 9. Non-parallel list: verify every link, checking the screenshots, and that the instructions are still accurate
+const fParallel2 = regFindings.find(f => f.ruleId === 'CLARITY_PARALLEL_SERIES' && f.originalText.includes('checking the screenshots'));
+assert(Boolean(fParallel2 && fParallel2.replacement?.includes('check the screenshots, and ensure that the instructions are still accurate')), 'Regression: non-parallel list "verify every link, checking..." flagged and corrected');
+
+// 10. Sam and I -> Sam and me AND comma splice before however
+const fSamAndI = regFindings.find(f => f.ruleId === 'PRONOUN_OBJECTIVE_CASE_PREPOSITION' && f.originalText === 'I');
+assert(Boolean(fSamAndI && fSamAndI.replacement === 'me'), 'Regression: "to Sam and I" flagged and replaced with "me"');
+const fSpliceHowever = regFindings.find(f => f.ruleId === 'SENTENCE_COMMA_SPLICE' && f.start >= 1100 && f.start <= 1110);
+assert(Boolean(fSpliceHowever && fSpliceHowever.replacement === ';'), 'Regression: comma splice before "however" flagged and replaced with ";"');
+
+// 11. By the time the report will be published, the company will already announced...
+const fFutureTime = regFindings.find(f => f.ruleId === 'TENSE_FUTURE_IN_TIME_CLAUSE' && f.originalText === 'will be');
+assert(Boolean(fFutureTime && fFutureTime.replacement === 'is'), 'Regression: future "will be" in "By the time..." flagged and replaced with "is"');
+const fModalHave = regFindings.find(f => f.ruleId === 'VERB_MODAL_PERFECT_HAVE' && f.originalText.includes('already announced'));
+assert(Boolean(fModalHave && fModalHave.replacement?.includes('already have announced')), 'Regression: missing auxiliary have in "will already announced" flagged and corrected');
+
+// 12. customer satisfaction have -> has
+const fSatisfaction = regFindings.find(f => f.ruleId === 'AGREEMENT_SINGULAR_NOUN_PLURAL_VERB' && f.originalText === 'have' && f.start >= 1290);
+assert(Boolean(fSatisfaction && fSatisfaction.replacement === 'has'), 'Regression: "customer satisfaction have" flagged and replaced with "has"');
+
+// Verify every rewritten sentence is grammatical with 0 residual findings
+const testRewriteSentences = [
+  { orig: "On Tuesday, our product team met to review the customer complaints that was collected during the last quarter.", expected: "On Tuesday, our product team met to review the customer complaints that were collected during the last quarter." },
+  { orig: "Each of the five support agents have recorded similar problems, but nobody have grouped them by category yet.", expected: "Each of the five support agents has recorded similar problems, but nobody has grouped them by category yet." },
+  { orig: "Although the new interface is easier to use, but customers still struggles to find the settings page.", expected: "Although the new interface is easier to use, customers still struggle to find the settings page." },
+  { orig: "One of the most common complaint were that the menu labels is unclear.", expected: "One of the most common complaints was that the menu labels were unclear." },
+  { orig: "We need to decide whether to simplify the menu, adding tooltips, or the labels should be rewritten.", expected: "We need to decide whether to simplify the menu, add tooltips, or rewrite the labels." },
+  { orig: "The designer, together with two engineers, are preparing a revised version.", expected: "The designer, together with two engineers, is preparing a revised version." },
+  { orig: "Because the release date had already been announced.", expected: "The release date had already been announced." },
+  { orig: "They also discovered that the help page contained less examples than the old version, and several links was broken.", expected: "They also discovered that the help page contained fewer examples than the old version, and several links were broken." },
+  { orig: "If we would have tested the update with more users, we might have noticed these issues sooner.", expected: "If we had tested the update with more users, we might have noticed these issues sooner." },
+  { orig: "Before launching the patch, the team should verify every link, checking the screenshots, and that the instructions are still accurate.", expected: "Before launching the patch, the team should verify every link, check the screenshots, and ensure that the instructions are still accurate." },
+  { orig: "The manager asked the team to send the revised draft to Sam and I by Friday, however, nobody knew who was responsible for approving it.", expected: "The manager asked the team to send the revised draft to Sam and me by Friday; however, nobody knew who was responsible for approving it." },
+  { orig: "By the time the report will be published, the company will already announced the update.", expected: "By the time the report is published, the company will already have announced the update." },
+  { orig: "Despite the complaints, customer satisfaction have improved.", expected: "Despite the complaints, customer satisfaction has improved." }
+];
+
+for (const pair of testRewriteSentences) {
+  const rewritten = applyAllSafeFixes(pair.orig);
+  assert(rewritten === pair.expected, `Sentence rewrite matches expected grammatical form: "${rewritten.slice(0, 50)}..."`);
+  const residuals = runGrammarEngine(rewritten).findings;
+  assert(residuals.length === 0, `Rewritten sentence has 0 residual findings (got ${residuals.length}) for "${rewritten.slice(0, 50)}..."`);
+}
+
+// Negative controls (correct sentences that must produce 0 false positives)
+const regressionNegativeControls = [
+  "On Tuesday, our product team met to review the customer complaints that were collected during the last quarter.",
+  "Each of the five support agents has recorded similar problems, but nobody has grouped them by category yet.",
+  "Although the new interface is easier to use, customers still struggle to find the settings page.",
+  "One of the most common complaints was that the menu labels were unclear.",
+  "We need to decide whether to simplify the menu, add tooltips, or rewrite the labels.",
+  "The designer, together with two engineers, is preparing a revised version.",
+  "Because the release date had already been announced, the team couldn't postpone it without notifying customers.",
+  "They also discovered that the help page contained fewer examples than the old version, and several links were broken.",
+  "If we had tested the update with more users, we might have noticed these issues sooner.",
+  "Before launching the patch, the team should verify every link, check the screenshots, and ensure that the instructions are still accurate.",
+  "The manager asked the team to send the revised draft to Sam and me by Friday; however, nobody knew who was responsible for approving it.",
+  "By the time the report is published, the company will already have announced the update.",
+  "Despite the complaints, customer satisfaction has improved."
+];
+
+for (const clean of regressionNegativeControls) {
+  const cleanFindings = runGrammarEngine(clean).findings;
+  assert(cleanFindings.length === 0, `Negative Control: zero false positives on "${clean.slice(0, 55)}..." (got ${cleanFindings.length})`);
+}
 
 // ============================================================
 // Summary
