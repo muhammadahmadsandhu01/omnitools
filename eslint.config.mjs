@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scratch artifacts, unpacked browser profiles, and test results:
+    "scratch/**",
+    "test-results/**",
   ]),
 ]);
 

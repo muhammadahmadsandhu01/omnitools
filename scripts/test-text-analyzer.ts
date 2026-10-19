@@ -2057,6 +2057,381 @@ for (const nc of targetNegativeControls) {
 }
 
 // ============================================================
+// Master Prompt Audit Suite — Phase 2-10 Comprehensive Coverage
+// ============================================================
+console.log('\n--- Master Prompt Audit Suite: Positive Cases & Controls ---');
+
+const masterAuditPositiveCases = [
+  {
+    input: 'Each of the explanations appear in the report.',
+    expected: 'Each of the explanations appears in the report.',
+    ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL'
+  },
+  {
+    input: 'The assumptions has not been verified.',
+    expected: 'The assumptions have not been verified.',
+    ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB'
+  },
+  {
+    input: 'Other investigations relies on the evidence.',
+    expected: 'Other investigations rely on the evidence.',
+    ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB'
+  },
+  {
+    input: 'The engineers has acknowledged the limitation.',
+    expected: 'The engineers have acknowledged the limitation.',
+    ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB'
+  },
+  {
+    input: 'Rules, tests, and human review remains essential.',
+    expected: 'Rules, tests, and human review remain essential.',
+    ruleId: 'AGREEMENT_COMPOUND_SUBJECT_CONJUNCTION'
+  },
+  {
+    input: 'Several participants withdrew before the final assessment, this reduced the sample size.',
+    expected: 'Several participants withdrew before the final assessment; this reduced the sample size.',
+    ruleId: 'SENTENCE_COMMA_SPLICE'
+  }
+];
+
+const masterAuditNegativeControls = [
+  'Each of the explanations appears in the report.',
+  'The assumptions have not been verified.',
+  'Other investigations rely on the evidence.',
+  'The engineers have acknowledged the limitation.',
+  'The list of findings is complete.',
+  'The findings in the report are clear.',
+  'Rules, tests, and human review remain essential.',
+  'Each of the explanations in the appendix appears in the report.',
+  'The research team have acknowledged the limitation.',
+  'Technical terminology or complex subordinate clauses are involved.'
+];
+
+for (const tc of masterAuditPositiveCases) {
+  const engineRes = runGrammarEngine(tc.input);
+  assert(engineRes.findings.length > 0, `Master Audit Positive: Detected error in "${tc.input}"`);
+  assert(engineRes.findings.some(f => f.ruleId === tc.ruleId), `Master Audit Positive: Triggered rule ${tc.ruleId}`);
+  const fixed = applyAllSafeFixes(tc.input);
+  assert(fixed === tc.expected, `Master Audit Positive: Exact fix generated for "${tc.input}"`, { got: fixed, expected: tc.expected });
+}
+
+for (const s of masterAuditNegativeControls) {
+  const engineRes = runGrammarEngine(s);
+  const grammarFindings = engineRes.findings.filter(f => f.category === 'Grammar');
+  assert(grammarFindings.length === 0, `Master Audit Negative Control: Zero false positives for "${s}" (got ${grammarFindings.length})`);
+  const fixed = applyAllSafeFixes(s);
+  assert(fixed === s, `Master Audit Negative Control: Input preserved unchanged for "${s}"`);
+}
+
+// Master Audit: Deterministic Keywords Tie-Breaking
+const tieBreakAnalysis = analyzeText('apple banana cherry date apple banana cherry date');
+const tieBreakKeywords = tieBreakAnalysis.keywords.map(k => k.word);
+assert(tieBreakKeywords.includes('apple') && tieBreakKeywords.includes('banana'), 'Master Audit: Deterministic tie-breaking preserves keywords');
+assert(tieBreakKeywords[0] === 'apple' && tieBreakKeywords[1] === 'banana', 'Master Audit: Alphabetical tie-breaker order is deterministic');
+
+// Master Audit: Illustrative Earnings Formula
+const zeroEarnings = analyzeText('one two three', 0).estimatedEarnings;
+assert(zeroEarnings === 0, 'Master Audit: Earnings with $0 rate is exactly 0');
+const calculatedEarnings = analyzeText('one two three four five', 0.05).estimatedEarnings;
+assert(Math.abs(calculatedEarnings - 0.25) < 1e-6, `Master Audit: Earnings matches word count * rate (got ${calculatedEarnings})`);
+const negativeRateEarnings = analyzeText('one two three', -0.10).estimatedEarnings;
+assert(negativeRateEarnings === 0, 'Master Audit: Negative rate safely clamped to 0');
+
+// Master Audit: Prepositional & Quantifier Determiner Hardening
+const masterPrepositionalAndDeterminers = [
+  // Intervening prepositional phrases
+  { input: 'Each of the explanations in the technical appendix appear in the report.', expected: 'Each of the explanations in the technical appendix appears in the report.', ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' },
+  { input: 'Each of the explanations under review appear in the report.', expected: 'Each of the explanations under review appears in the report.', ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' },
+  { input: 'Each of the explanations in section two appear in the report.', expected: 'Each of the explanations in section two appears in the report.', ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' },
+  { input: 'Each of the explanations show a clear trend.', expected: 'Each of the explanations shows a clear trend.', ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' },
+  { input: 'Each of the explanations indicate a limitation.', expected: 'Each of the explanations indicates a limitation.', ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL' },
+  // Quantifier determiners (other, many, few, both, all, such)
+  { input: 'Many participants was selected.', expected: 'Many participants were selected.', ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' },
+  { input: 'Few investigations relies on this.', expected: 'Few investigations rely on this.', ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' },
+  { input: 'Both methods produces errors.', expected: 'Both methods produce errors.', ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' },
+  { input: 'All indicators shows improvement.', expected: 'All indicators show improvement.', ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' },
+  { input: 'Such approaches fails to account for variance.', expected: 'Such approaches fail to account for variance.', ruleId: 'AGREEMENT_PLURAL_NOUN_SINGULAR_VERB' }
+];
+
+for (const tc of masterPrepositionalAndDeterminers) {
+  const engineRes = runGrammarEngine(tc.input);
+  assert(engineRes.findings.length > 0, `Hardening Audit Positive: Detected error in "${tc.input}"`);
+  assert(engineRes.findings.some(f => f.ruleId === tc.ruleId), `Hardening Audit Positive: Triggered rule ${tc.ruleId}`);
+  const fixed = applyAllSafeFixes(tc.input);
+  assert(fixed === tc.expected, `Hardening Audit Positive: Exact fix generated for "${tc.input}"`, { got: fixed, expected: tc.expected });
+}
+
+const masterHardeningNegativeControls = [
+  'Each of the explanations in the technical appendix appears in the report.',
+  'Each of the explanations under review appears in the report.',
+  'Each of the explanations in section two appears in the report.',
+  'Each of the explanations that appear in the report is valid.',
+  'Each of the explanations which appear in the report is valid.',
+  'Many participants were selected.',
+  'Few investigations rely on this.',
+  'Both methods produce errors.',
+  'All indicators show improvement.',
+  'Such approaches fail to account for variance.'
+];
+
+for (const s of masterHardeningNegativeControls) {
+  const engineRes = runGrammarEngine(s);
+  const grammarFindings = engineRes.findings.filter(f => f.category === 'Grammar');
+  assert(grammarFindings.length === 0, `Hardening Audit Negative Control: Zero false positives for "${s}" (got ${grammarFindings.length})`);
+  const fixed = applyAllSafeFixes(s);
+  assert(fixed === s, `Hardening Audit Negative Control: Input preserved unchanged for "${s}"`);
+}
+
+// ============================================================
+// Acceptance Fixture: Original 8-Paragraph Test Passage Audit
+// ============================================================
+
+export const ORIGINAL_EIGHT_PARAGRAPH_PASSAGE_FIXTURE = `Although the research team have collected thousands of observations, the results remains difficult to interpret because several important variables was not controlled during the experiment. The researchers who was responsible for analyzing the data has identified multiple inconsistencies, but neither the original report nor the supplementary documents explains why these discrepancies occurs.
+
+A further complication arises when independent researchers attempts to compare datasets that was collected under different conditions. Some studies uses standardized procedures, whereas other investigations relies on measurements that were recorded inconsistently. These differences does not necessarily invalidate the findings; however, they introduces uncertainty that requires careful examination.
+
+The committee, together with several external advisers, have reviewed the evidence and concluded that additional testing are necessary. Each of the proposed explanations appear plausible at first, but the assumptions underlying these interpretations has not been adequately justified. Researchers must distinguish between conclusions that are supported by direct evidence and claims that depends primarily on theoretical expectations.
+
+Although the initial results appears convincing, the sample size was relatively small. Several participants withdrew before the final assessment, this reduced the statistical power of the experiment. The remaining observations were analyzed separately, and the results were compared with those of an earlier investigation. Neither comparison revealed a consistent pattern, however, the authors continued to describe the findings as conclusive.
+
+The report should explain which interpretations depends on assumptions and which questions remains unresolved. Recommendations that ignores these limitations risks misleading readers, particularly when decision-makers treats numerical scores as definitive proof. Accuracy, clarity, and justified confidence matters more than the number of corrections generated by an automated system.
+
+Modern language-analysis tools can identify many grammatical errors, but they cannot reliably determine whether every sentence accurately represents the author's intended meaning. A system that automatically replaces unfamiliar expressions may introduce new mistakes, especially when technical terminology or complex subordinate clauses are involved. Consequently, automated suggestions should be evaluated in context rather than accepted simply because they sound more formal.
+
+The engineers who developed the original evaluation framework has acknowledged several limitations, including cases in which the software incorrectly flags grammatically valid sentences. These limitations does not mean that automated analysis is useless; instead, it demonstrates why transparent rules, comprehensive regression tests, and human review remains essential. If a correction changes the intended meaning, the user should be able to reject it without losing the original text.
+
+Ultimately, a reliable analyzer must do more than detect errors: it must explain the problem, propose a grammatically correct revision, and preserve the author's intended message. The quality of the system depends not only on how many errors it detects, but also on whether its suggestions are accurate, consistent, and genuinely useful.`;
+
+function verifyTargetFinding(
+  testLabel: string,
+  sourceText: string,
+  targetSubstring: string,
+  expectedRuleId: string,
+  expectedReplacement: string
+) {
+  const result = runGrammarEngine(sourceText);
+  const match = result.findings.find(f => {
+    const slice = sourceText.slice(f.start, f.end);
+    return slice === targetSubstring && (f.ruleId === expectedRuleId || !expectedRuleId);
+  });
+  assert(!!match, `${testLabel}: Detected error "${targetSubstring}"`);
+  if (match) {
+    assert(match.ruleId === expectedRuleId, `${testLabel}: Correct rule ID ${expectedRuleId} (got ${match.ruleId})`);
+    assert(sourceText.slice(match.start, match.end) === targetSubstring, `${testLabel}: Source offsets match substring "${targetSubstring}"`);
+    assert(match.replacement === expectedReplacement, `${testLabel}: Replacement is "${expectedReplacement}" (got "${match.replacement}")`);
+
+    // Verify application with character offsets
+    const corrected = applyFindingCorrection(sourceText, match);
+    assert(
+      corrected.slice(match.start, match.start + expectedReplacement.length) === expectedReplacement,
+      `${testLabel}: Proposed replacement applied correctly at offsets`
+    );
+    // Verify surrounding text is preserved exactly
+    assert(
+      corrected.slice(0, match.start) === sourceText.slice(0, match.start),
+      `${testLabel}: Left text preserved unchanged`
+    );
+    assert(
+      corrected.slice(match.start + expectedReplacement.length) === sourceText.slice(match.end),
+      `${testLabel}: Right text preserved unchanged`
+    );
+
+    // Verify that re-running on corrected clause does not re-flag the same error
+    const recheck = runGrammarEngine(corrected);
+    const recheckFinding = recheck.findings.find(f => f.ruleId === expectedRuleId && f.start === match.start);
+    assert(!recheckFinding, `${testLabel}: Re-running does not re-flag corrected construction`);
+  }
+}
+
+// 1. Sentence-by-sentence positive error evaluations
+// Paragraph 1
+const p1 = "Although the research team have collected thousands of observations, the results remains difficult to interpret because several important variables was not controlled during the experiment. The researchers who was responsible for analyzing the data has identified multiple inconsistencies, but neither the original report nor the supplementary documents explains why these discrepancies occurs.";
+verifyTargetFinding("P1 Error 1", p1, "remains", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "remain");
+verifyTargetFinding("P1 Error 2", p1, "was", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "were");
+verifyTargetFinding("P1 Error 3", p1, "was", "AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT", "were");
+verifyTargetFinding("P1 Error 4", p1, "has identified", "AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE", "have identified");
+verifyTargetFinding("P1 Error 5", p1, "explains", "AGREEMENT_CORRELATIVE_CONJUNCTION", "explain");
+verifyTargetFinding("P1 Error 6", p1, "occurs", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "occur");
+
+// Paragraph 2
+const p2 = "A further complication arises when independent researchers attempts to compare datasets that was collected under different conditions. Some studies uses standardized procedures, whereas other investigations relies on measurements that were recorded inconsistently. These differences does not necessarily invalidate the findings; however, they introduces uncertainty that requires careful examination.";
+verifyTargetFinding("P2 Error 1", p2, "attempts", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "attempt");
+verifyTargetFinding("P2 Error 2", p2, "was", "AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT", "were");
+verifyTargetFinding("P2 Error 3", p2, "uses", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "use");
+verifyTargetFinding("P2 Error 4", p2, "relies", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "rely");
+verifyTargetFinding("P2 Error 5", p2, "does", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "do");
+verifyTargetFinding("P2 Error 6", p2, "introduces", "AGREEMENT_PLURAL_PRONOUN_SINGULAR_VERB", "introduce");
+
+// Paragraph 3
+const p3 = "The committee, together with several external advisers, have reviewed the evidence and concluded that additional testing are necessary. Each of the proposed explanations appear plausible at first, but the assumptions underlying these interpretations has not been adequately justified. Researchers must distinguish between conclusions that are supported by direct evidence and claims that depends primarily on theoretical expectations.";
+verifyTargetFinding("P3 Error 1", p3, "are", "AGREEMENT_SINGULAR_NOUN_PLURAL_VERB", "is");
+verifyTargetFinding("P3 Error 2", p3, "appear", "AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL", "appears");
+verifyTargetFinding("P3 Error 3", p3, "has", "AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE", "have");
+verifyTargetFinding("P3 Error 4", p3, "depends", "AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT", "depend");
+
+// Paragraph 4
+const p4 = "Although the initial results appears convincing, the sample size was relatively small. Several participants withdrew before the final assessment, this reduced the statistical power of the experiment. The remaining observations were analyzed separately, and the results were compared with those of an earlier investigation. Neither comparison revealed a consistent pattern, however, the authors continued to describe the findings as conclusive.";
+verifyTargetFinding("P4 Error 1", p4, "appears", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "appear");
+verifyTargetFinding("P4 Error 2 (Comma Splice)", p4, ",", "SENTENCE_COMMA_SPLICE", ";");
+verifyTargetFinding("P4 Error 3 (Conjunctive Adverb Comma Splice)", p4, ",", "SENTENCE_COMMA_SPLICE", ";");
+
+// Paragraph 5
+const p5 = "The report should explain which interpretations depends on assumptions and which questions remains unresolved. Recommendations that ignores these limitations risks misleading readers, particularly when decision-makers treats numerical scores as definitive proof. Accuracy, clarity, and justified confidence matters more than the number of corrections generated by an automated system.";
+verifyTargetFinding("P5 Error 1", p5, "depends", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "depend");
+verifyTargetFinding("P5 Error 2", p5, "remains", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "remain");
+verifyTargetFinding("P5 Error 3", p5, "ignores", "AGREEMENT_RELATIVE_CLAUSE_PLURAL_ANTECEDENT", "ignore");
+verifyTargetFinding("P5 Error 4", p5, "risks", "AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE", "risk");
+verifyTargetFinding("P5 Error 5", p5, "treats", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "treat");
+verifyTargetFinding("P5 Error 6", p5, "matters", "AGREEMENT_COMPOUND_SUBJECT_CONJUNCTION", "matter");
+
+// Paragraph 7
+const p7 = "The engineers who developed the original evaluation framework has acknowledged several limitations, including cases in which the software incorrectly flags grammatically valid sentences. These limitations does not mean that automated analysis is useless; instead, it demonstrates why transparent rules, comprehensive regression tests, and human review remains essential. If a correction changes the intended meaning, the user should be able to reject it without losing the original text.";
+verifyTargetFinding("P7 Error 1", p7, "has acknowledged", "AGREEMENT_HEAD_NOUN_RELATIVE_CLAUSE", "have acknowledged");
+verifyTargetFinding("P7 Error 2", p7, "does", "AGREEMENT_PLURAL_NOUN_SINGULAR_VERB", "do");
+verifyTargetFinding("P7 Error 3 (Compound Subject)", p7, "remains", "AGREEMENT_COMPOUND_SUBJECT_CONJUNCTION", "remain");
+
+// 2. Negative controls from the passage
+const passageNegativeControls = [
+  "Although the research team have collected thousands of observations, the sample was verified.",
+  "The committee, together with several external advisers, has reviewed the evidence thoroughly.",
+  "Researchers must distinguish between conclusions that are supported by direct evidence.",
+  "The sample size was relatively small.",
+  "The remaining observations were analyzed separately, and the results were compared with those of an earlier investigation.",
+  "Modern language-analysis tools can identify many grammatical errors, but they cannot reliably determine whether every sentence accurately represents the author's intended meaning.",
+  "A system that automatically replaces unfamiliar expressions may introduce new mistakes, especially when technical terminology or complex subordinate clauses are involved.",
+  "Consequently, automated suggestions should be evaluated in context rather than accepted simply because they sound more formal.",
+  "The software accurately handles cases in which the software incorrectly flags grammatically valid sentences.",
+  "These limitations do not mean that automated analysis is useless; instead, it demonstrates why transparent rules, comprehensive regression tests, and human review remain essential.",
+  "If a correction changes the intended meaning, the user should be able to reject it without losing the original text.",
+  "Ultimately, a reliable analyzer must do more than detect errors: it must explain the problem, propose a grammatically correct revision, and preserve the author's intended message.",
+  "The quality of the system depends not only on how many errors it detects, but also on whether its suggestions are accurate, consistent, and genuinely useful."
+];
+
+for (const neg of passageNegativeControls) {
+  const res = runGrammarEngine(neg);
+  const grammarFindings = res.findings.filter(f => f.category === 'Grammar');
+  assert(grammarFindings.length === 0, `Passage Negative Control: Zero false positives for "${neg.slice(0, 60)}..." (got ${grammarFindings.length})`);
+}
+
+// 2b. Explicit negative controls: Valid singular, valid plural, British/American collective nouns, and subordinate-clause boundaries
+console.log('  -> Auditing explicit singular, plural, dialect, and clause boundary controls...');
+const validSingularControls = [
+  "Human review remains essential.",
+  "A transparent rule remains essential.",
+  "Comprehensive regression testing remains essential."
+];
+for (const sc of validSingularControls) {
+  const res = runGrammarEngine(sc);
+  const g = res.findings.filter(f => f.category === 'Grammar');
+  assert(g.length === 0, `Valid Singular Control: Zero false positives for "${sc}" (got ${g.length})`);
+}
+
+const validPluralControls = [
+  "These limitations do not mean that automated analysis is useless; instead, it demonstrates why transparent rules, comprehensive regression tests, and human review remain essential.",
+  "Transparent rules and regression tests remain essential.",
+  "Comprehensive regression tests remain essential."
+];
+for (const pc of validPluralControls) {
+  const res = runGrammarEngine(pc);
+  const g = res.findings.filter(f => f.category === 'Grammar');
+  assert(g.length === 0, `Valid Plural Control: Zero false positives for "${pc}" (got ${g.length})`);
+}
+
+const collectiveDialectControls = [
+  { text: "The committee has reviewed the evidence thoroughly.", options: { dialect: 'US' as const }, expectedErrors: 0, desc: "US dialect collective singular has reviewed" },
+  { text: "The committee have reviewed the evidence thoroughly.", options: { dialect: 'UK' as const }, expectedErrors: 0, desc: "UK dialect collective plural have reviewed" },
+  { text: "The research team has collected thousands of observations.", options: { dialect: 'US' as const }, expectedErrors: 0, desc: "US dialect team has collected" },
+  { text: "The research team have collected thousands of observations.", options: { dialect: 'UK' as const }, expectedErrors: 0, desc: "UK dialect team have collected" },
+  { text: "The committee, together with several external advisers, have reviewed the evidence thoroughly.", options: { dialect: 'UK' as const }, expectedErrors: 0, desc: "UK quasi-coordinator collective plural" }
+];
+for (const cdc of collectiveDialectControls) {
+  const res = runGrammarEngine(cdc.text, cdc.options);
+  const g = res.findings.filter(f => f.category === 'Grammar');
+  assert(g.length === cdc.expectedErrors, `Dialect Collective Control (${cdc.desc}): Expected ${cdc.expectedErrors} errors (got ${g.length})`);
+}
+
+const subordinateBoundaryControls = [
+  "A system that automatically replaces unfamiliar expressions may introduce new mistakes, especially when technical terminology or complex subordinate clauses are involved.",
+  "When the audit was complete, the team published the results, and the manager was pleased.",
+  "Although the deadline was extended, the engineers tested the module, and the service was deployed."
+];
+for (const sbc of subordinateBoundaryControls) {
+  const res = runGrammarEngine(sbc);
+  const g = res.findings.filter(f => f.category === 'Grammar');
+  assert(g.length === 0, `Subordinate Clause Boundary Control: Zero false positives for "${sbc.slice(0, 60)}..." (got ${g.length})`);
+}
+
+// 3. Exact metric calculations on ORIGINAL_EIGHT_PARAGRAPH_PASSAGE_FIXTURE
+const fixtureAnalysis = analyzeText(ORIGINAL_EIGHT_PARAGRAPH_PASSAGE_FIXTURE);
+assert(fixtureAnalysis.words === 444, `Fixture Words: Expected 444, got ${fixtureAnalysis.words}`);
+assert(fixtureAnalysis.chars === 3370, `Fixture Characters (with spaces): Expected 3370, got ${fixtureAnalysis.chars}`);
+assert(fixtureAnalysis.charsNoSpaces === 2920, `Fixture Characters (no spaces): Expected 2920, got ${fixtureAnalysis.charsNoSpaces}`);
+assert(fixtureAnalysis.graphemes === 3370, `Fixture Graphemes: Expected 3370, got ${fixtureAnalysis.graphemes}`);
+assert(fixtureAnalysis.sentences === 23, `Fixture Sentences: Expected 23, got ${fixtureAnalysis.sentences}`);
+assert(fixtureAnalysis.paragraphs === 8, `Fixture Paragraphs: Expected 8, got ${fixtureAnalysis.paragraphs}`);
+assert(fixtureAnalysis.syllables === 942, `Fixture Syllables: Expected 942, got ${fixtureAnalysis.syllables}`);
+assert(fixtureAnalysis.readingTimeSec === 118, `Fixture Reading Time: Expected 118s, got ${fixtureAnalysis.readingTimeSec}`);
+assert(fixtureAnalysis.speakingTimeSec === 178, `Fixture Speaking Time: Expected 178s, got ${fixtureAnalysis.speakingTimeSec}`);
+assert(fixtureAnalysis.flesch === 8, `Fixture Flesch: Expected 8, got ${fixtureAnalysis.flesch}`);
+assert(fixtureAnalysis.fkGrade === 17, `Fixture FK Grade: Expected 17, got ${fixtureAnalysis.fkGrade}`);
+assert(fixtureAnalysis.gradeLabel === 'Very Difficult', `Fixture Grade Label: Expected 'Very Difficult', got '${fixtureAnalysis.gradeLabel}'`);
+assert(fixtureAnalysis.tone.label === 'Mixed', `Fixture Tone Label: Expected 'Mixed', got '${fixtureAnalysis.tone.label}'`);
+assert(fixtureAnalysis.tone.positive === 1, `Fixture Positive Words: Expected 1, got ${fixtureAnalysis.tone.positive}`);
+assert(fixtureAnalysis.tone.negative === 5, `Fixture Negative Words: Expected 5, got ${fixtureAnalysis.tone.negative}`);
+assert(fixtureAnalysis.keywords[0].word === 'several' && fixtureAnalysis.keywords[0].count === 4, `Fixture Keyword 1: 'several' (4)`);
+assert(fixtureAnalysis.grammarScore !== null && fixtureAnalysis.grammarScore <= 60, `Fixture Grammar Score penalized for detected errors (got ${fixtureAnalysis.grammarScore})`);
+
+// 4. Zero and whitespace state scoring
+const emptyAnalysis = analyzeText('');
+assert(emptyAnalysis.grammarScore === null, 'Empty Text: grammarScore is null, not 100');
+assert(emptyAnalysis.clarityScore === null, 'Empty Text: clarityScore is null, not 100');
+assert(emptyAnalysis.consistencyScore === null, 'Empty Text: consistencyScore is null, not 100');
+assert(emptyAnalysis.writingScore === 0, 'Empty Text: writingScore is 0');
+
+const wsAnalysis = analyzeText('   \n\t  \n  ');
+assert(wsAnalysis.grammarScore === null, 'Whitespace Text: grammarScore is null, not 100');
+assert(wsAnalysis.clarityScore === null, 'Whitespace Text: clarityScore is null, not 100');
+assert(wsAnalysis.consistencyScore === null, 'Whitespace Text: consistencyScore is null, not 100');
+
+// 5. Complete Revised Passage Verification
+console.log('  -> Auditing complete revised 8-paragraph passage...');
+const repairedFixture = applyAllSafeFixes(ORIGINAL_EIGHT_PARAGRAPH_PASSAGE_FIXTURE);
+const pass2 = applyAllSafeFixes(repairedFixture);
+assert(repairedFixture.split(/\n\n+/).length === 8, 'Full Repaired Fixture: Paragraph count preserved as 8');
+assert(pass2 === repairedFixture, 'Full Repaired Fixture: Idempotent - repeating fixes leaves text unchanged');
+
+// Verify unedited clean sentences are preserved byte-for-byte in the revised passage
+const cleanParagraph6 = "Modern language-analysis tools can identify many grammatical errors, but they cannot reliably determine whether every sentence accurately represents the author's intended meaning. A system that automatically replaces unfamiliar expressions may introduce new mistakes, especially when technical terminology or complex subordinate clauses are involved. Consequently, automated suggestions should be evaluated in context rather than accepted simply because they sound more formal.";
+assert(repairedFixture.includes(cleanParagraph6), 'Full Repaired Fixture: Paragraph 6 (clean sentences) preserved byte-for-byte without mutation');
+
+const cleanParagraph8 = "Ultimately, a reliable analyzer must do more than detect errors: it must explain the problem, propose a grammatically correct revision, and preserve the author's intended message. The quality of the system depends not only on how many errors it detects, but also on whether its suggestions are accurate, consistent, and genuinely useful.";
+assert(repairedFixture.includes(cleanParagraph8), 'Full Repaired Fixture: Paragraph 8 (clean sentences) preserved byte-for-byte without mutation');
+
+// Verify targeted corrections appear in the revised passage
+assert(repairedFixture.includes('the results remain difficult to interpret'), 'Full Repaired Fixture: Contains "the results remain"');
+assert(repairedFixture.includes('several important variables were not controlled'), 'Full Repaired Fixture: Contains "variables were"');
+assert(repairedFixture.includes('researchers who were responsible'), 'Full Repaired Fixture: Contains "researchers who were"');
+assert(repairedFixture.includes('have identified multiple inconsistencies'), 'Full Repaired Fixture: Contains "have identified"');
+assert(repairedFixture.includes('supplementary documents explain why these discrepancies occur'), 'Full Repaired Fixture: Contains "documents explain ... discrepancies occur"');
+assert(repairedFixture.includes('when independent researchers attempt to compare datasets that were collected'), 'Full Repaired Fixture: Contains "researchers attempt ... datasets that were collected"');
+assert(repairedFixture.includes('Some studies use standardized procedures, whereas other investigations rely'), 'Full Repaired Fixture: Contains "studies use ... investigations rely"');
+assert(repairedFixture.includes('These differences do not necessarily invalidate the findings; however, they introduce uncertainty'), 'Full Repaired Fixture: Contains "differences do not ... they introduce"');
+assert(repairedFixture.includes('additional testing is necessary'), 'Full Repaired Fixture: Contains "additional testing is"');
+assert(repairedFixture.includes('Each of the proposed explanations appears plausible'), 'Full Repaired Fixture: Contains "Each ... appears"');
+assert(repairedFixture.includes('assumptions underlying these interpretations have not been adequately justified'), 'Full Repaired Fixture: Contains "assumptions ... have not"');
+assert(repairedFixture.includes('claims that depend primarily'), 'Full Repaired Fixture: Contains "claims that depend"');
+assert(repairedFixture.includes('initial results appear convincing'), 'Full Repaired Fixture: Contains "results appear"');
+assert(repairedFixture.includes('final assessment; this reduced'), 'Full Repaired Fixture: Contains comma splice fix "assessment; this"');
+assert(repairedFixture.includes('consistent pattern; however, the authors continued'), 'Full Repaired Fixture: Contains conjunctive adverb splice fix "pattern; however"');
+assert(repairedFixture.includes('which interpretations depend on assumptions and which questions remain unresolved'), 'Full Repaired Fixture: Contains "interpretations depend ... questions remain"');
+assert(repairedFixture.includes('Recommendations that ignore these limitations risk misleading readers'), 'Full Repaired Fixture: Contains "Recommendations that ignore ... risk"');
+assert(repairedFixture.includes('decision-makers treat numerical scores'), 'Full Repaired Fixture: Contains "decision-makers treat"');
+assert(repairedFixture.includes('Accuracy, clarity, and justified confidence matter more'), 'Full Repaired Fixture: Contains "confidence matter"');
+assert(repairedFixture.includes('engineers who developed the original evaluation framework have acknowledged'), 'Full Repaired Fixture: Contains "engineers ... have acknowledged"');
+assert(repairedFixture.includes('These limitations do not mean that automated analysis is useless'), 'Full Repaired Fixture: Contains "limitations do not mean"');
+assert(repairedFixture.includes('transparent rules, comprehensive regression tests, and human review remain essential'), 'Full Repaired Fixture: Contains "review remain essential"');
+
+// ============================================================
 // Summary
 // ============================================================
 console.log('\n' + '='.repeat(50));

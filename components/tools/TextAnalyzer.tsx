@@ -367,7 +367,7 @@ function phraseCounts(tokens: string[], size: number) {
     const k = p.join(' ');
     m.set(k, (m.get(k) || 0) + 1);
   }
-  return [...m.entries()].filter(([, c]) => c > 1).sort((a,b) => b[1]-a[1]).slice(0, 12)
+  return [...m.entries()].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12)
     .map(([phrase, count]) => ({ phrase, count }));
 }
 
@@ -1493,7 +1493,7 @@ export function analyzeText(
 
   const freq = new Map<string, number>();
   ws.filter(w => w.length > 2 && !KEYWORD_EXCLUSIONS.has(w)).forEach(w => freq.set(w, (freq.get(w) || 0) + 1));
-  const keywords = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([word, count]) => ({ word, count, pct: round1(count / Math.max(1, ws.length) * 100) }));
+  const keywords = [...freq.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12).map(([word, count]) => ({ word, count, pct: round1(count / Math.max(1, ws.length) * 100) }));
 
   const fillerMap = new Map<string, number>();
   for (const f of FILLERS) {
@@ -1865,7 +1865,8 @@ export default function TextAnalyzer() {
       `Flesch Reading Ease: ${stats.flesch ?? '—'} (${stats.gradeLabel})`,
       `Flesch-Kincaid Grade: ${stats.fkGrade ?? '—'}`,
       `Writing Quality Score: ${stats.writingScore}/100`,
-      `Tone: ${stats.tone.label}`,
+      `Tone: ${stats.tone.label} (keyword polarity heuristic: ${stats.tone.positive} pos, ${stats.tone.negative} neg)`,
+      `Estimated Earnings: $${stats.estimatedEarnings.toFixed(2)} (illustrative calculation: ${stats.words} words × $${Number(rate || 0).toFixed(2)}/word; not guaranteed income)`,
     ].join('\n');
     await navigator.clipboard.writeText(summary);
     setStatsCopied(true);
@@ -1965,11 +1966,11 @@ export default function TextAnalyzer() {
       `SMOG Index: ${stats.smog ?? '—'}`,
       `Coleman-Liau: ${stats.coleman ?? '—'}`,
       `Automated Readability Index (ARI): ${stats.ari ?? '—'}`,
-      `Vocabulary diversity: ${stats.vocabularyDiversity}%`,
-      `Lexical density: ${stats.lexicalDensity}%`,
-      `Estimated earnings (freelance @ $${Number(rate || 0).toFixed(2)}/word): $${stats.estimatedEarnings.toFixed(2)}`,
+      `Vocabulary diversity (type-token ratio): ${stats.vocabularyDiversity}%`,
+      `Lexical density (content words ratio): ${stats.lexicalDensity}%`,
+      `Estimated earnings: $${stats.estimatedEarnings.toFixed(2)} (illustrative calculation: ${stats.words} words × $${Number(rate || 0).toFixed(2)}/word; not guaranteed income)`,
       `Writing quality score: ${stats.writingScore}/100`,
-      `Tone: ${stats.tone.label} (${stats.tone.score})`,
+      `Tone: ${stats.tone.label} (${stats.tone.score} polarity index; ${stats.tone.positive} positive / ${stats.tone.negative} negative keywords)`,
       `Grammar score: ${stats.grammarScore == null ? "N/A" : `${stats.grammarScore}/100`}`,
       `Clarity score: ${stats.clarityScore == null ? "N/A" : `${stats.clarityScore}/100`}`,
       `Consistency score: ${stats.consistencyScore == null ? "N/A" : `${stats.consistencyScore}/100`}`,
@@ -2585,7 +2586,7 @@ export default function TextAnalyzer() {
           {metric('Words', stats.words)}
           {metric('Characters', stats.chars, `${stats.graphemes} visual glyphs`)}
           {metric('Unique Words', stats.uniqueWords)}
-          {metric('Vocabulary', `${stats.vocabularyDiversity}%`)}
+          {metric('Vocabulary', `${stats.vocabularyDiversity}%`, 'Type-token ratio')}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-xs text-slate-500 dark:text-slate-400 text-center">
@@ -2688,10 +2689,10 @@ export default function TextAnalyzer() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {metric('Writing Quality', `${stats.writingScore}/100`)}
-          {metric('Tone', stats.tone.label)}
-          {metric('Estimated Earnings', `$${stats.estimatedEarnings.toFixed(2)}`, `@ $${Number(rate || 0).toFixed(2)}/word (freelance)`)}
-          {metric('Lexical Density', `${stats.lexicalDensity}%`)}
+          {metric('Writing Quality', `${stats.writingScore}/100`, 'Holistic score')}
+          {metric('Tone', stats.tone.label, stats.words > 0 ? `${stats.tone.positive} pos / ${stats.tone.negative} neg (heuristic)` : undefined)}
+          {metric('Estimated Earnings', `$${stats.estimatedEarnings.toFixed(2)}`, `Illustrative: ${stats.words}w × $${Number(rate || 0).toFixed(2)}`)}
+          {metric('Lexical Density', `${stats.lexicalDensity}%`, 'Content words ratio')}
         </div>
 
         {/* Calibrated Score Explanation Breakdown */}

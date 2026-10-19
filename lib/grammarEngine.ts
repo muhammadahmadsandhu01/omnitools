@@ -366,9 +366,21 @@ export const SINGULAR_VERB_TO_PLURAL: Record<string, string> = {
   does: 'do',
   develops: 'develop',
   collects: 'collect',
-  compares: 'compare',
-  disputes: 'dispute'
+  disputes: 'dispute',
+  relies: 'rely',
+  occurs: 'occur'
 };
+
+export const PLURAL_VERB_TO_SINGULAR: Record<string, string> = {
+  are: 'is',
+  were: 'was',
+  have: 'has',
+  do: 'does',
+  ...Object.fromEntries(Object.entries(SINGULAR_VERB_TO_PLURAL).map(([s, p]) => [p, s]))
+};
+
+export const PLURAL_VERBS_PATTERN = Object.keys(PLURAL_VERB_TO_SINGULAR).join('|');
+export const SINGULAR_VERBS_PATTERN = 'is|was|does|has\\s+been|has|' + Object.keys(SINGULAR_VERB_TO_PLURAL).join('|');
 
 export const MODAL_AUXILIARIES = new Set([
   'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must'
@@ -551,7 +563,7 @@ const dependentLeadIns = /^(?:in order to|in order that|due to the fact that|due
 const prepositionalOpeners = /^(?:in|on|at|during|after|before|since|until|by|from|with|without|through|throughout|across|under|over|between|among|despite|according to|for|as of)\s+(?:early\s+|late\s+|mid-)?(?:\d{4}|[a-z0-9\s,-]+)\b/i;
 const participialLeadIn = /^(?:and\s+)?(?:finally\s+|eventually\s+|then\s+)?(?:reviewed|approved|released|designed|completed|tested|created|built|developed|provided|delayed)\s+by\b/i;
 
-const finiteVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might|needs?|needed|requires?|required|remains?|remained|seems?|seemed|looks?|looked|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|contained|shows?|showed|shown|begins?|began|begun|ends?|ended|works?|worked|failed|fails?|proves?|proved|proven|identifies?|identified|reviews?|reviewed|sends?|sent|discovers?|discovered|fixes?|fixed|contacts?|contacted|submits?|submitted|releases?|released|tests?|tested|develops?|developed|restarted|restarts?|launched|launches?|monitored|monitors?|approved|approves?|designed|designs?|completed|completes|recommended|recommends?|delayed|delays?|provided|provides?|made|makes?|took|takes?|taken|kept|keeps?|started|starts?|verified|verifies?|crashed|crashes?|resolved|resolves?|updated|updates?|built|builds?|created|creates?|deployed|deploys?|continued|continues?|write|writes|wrote|written|investigate|investigates|investigated|maintained|maintains?|argued|argues?|claimed|claims?|concluded|concludes?|reported|reports?|observed|observes?|acknowledged|acknowledges?|suggested|suggests?|indicated|indicates?|demonstrated|demonstrates?|explained|explains?|stated|states?|noted|notes?|disputed|disputes?|attempted|attempts?|introduced|introduces?|compared|compares?)\b/i;
+const finiteVerbs = /\b(?:am|is|are|was|were|has|have|had|do|does|did|can|could|will|would|shall|should|must|may|might|needs?|needed|requires?|required|remains?|remained|seems?|seemed|looks?|looked|appears?|appeared|became|becomes?|sounds?|sounded|feels?|felt|contains?|contained|shows?|showed|shown|begins?|began|begun|ends?|ended|works?|worked|failed|fails?|proves?|proved|proven|identifies?|identified|reviews?|reviewed|sends?|sent|discovers?|discovered|fixes?|fixed|contacts?|contacted|submits?|submitted|releases?|released|tests?|tested|develops?|developed|restarted|restarts?|launched|launches?|monitored|monitors?|approved|approves?|designed|designs?|completed|completes|recommended|recommends?|delayed|delays?|provided|provides?|made|makes?|took|takes?|taken|kept|keeps?|started|starts?|verified|verifies?|crashed|crashes?|resolved|resolves?|updated|updates?|built|builds?|created|creates?|deployed|deploys?|continued|continues?|write|writes|wrote|written|investigate|investigates|investigated|maintained|maintains?|argued|argues?|claimed|claims?|concluded|concludes?|reported|reports?|observed|observes?|acknowledged|acknowledges?|suggested|suggests?|indicated|indicates?|demonstrated|demonstrates?|explained|explains?|stated|states?|noted|notes?|disputed|disputes?|attempted|attempts?|introduced|introduces?|compared|compares?|withdrew|withdrawn|chose|chosen|spoke|spoken|lost|led|held|found|gave|given|went|gone|ran|paid|spent|met|sat|stood|rose|risen|fell|fallen|reduced|reduces?|increased|increases?|decreased|decreases?|caused|causes?|prevented|prevents?|allowed|allows?|produced|produces?|affected|affects?)\b/i;
 
 const pronounSubjects = /^(?:it|he|she|they|we|you|this|that|these|those|there|someone|somebody|nobody|everyone|others|both|neither|either|none|many|several|few|one)\b/i;
 const determinerSubjects = /^(?:the|a|an|some|several|many|few|each|every|our|your|their|his|her|its|my|two|three|four)\s+[a-z][a-z'’-]*\b/i;
@@ -655,6 +667,13 @@ export function findLikelyCommaSpliceInSentence(sentence: string): number {
     // where the immediate segment before the next comma does NOT have a finite verb
     if (clauseRight.includes(',')) {
       const firstSegment = clauseRight.slice(0, clauseRight.indexOf(',')).trim();
+      const conjAdvMatch = firstSegment.match(/^(?:however|therefore|moreover|furthermore|consequently|nevertheless|meanwhile)$/i);
+      if (conjAdvMatch) {
+        const remainder = clauseRight.slice(clauseRight.indexOf(',') + 1).trim();
+        if (matchesClauseSubject(remainder) && finiteVerbs.test(remainder)) {
+          return comma;
+        }
+      }
       if (!finiteVerbs.test(firstSegment)) {
         continue;
       }
@@ -1600,35 +1619,45 @@ export function runGrammarEngine(
       }
     }
 
-    // "each/every one/neither of the ... were/are/have"
-    const quantOfMatch = sText.match(/\b(each|neither|every\s+one)\s+of\s+((?:the|these|those|our|their)\s+(?:[a-z]+\s+)?([a-z]+s))\s+(were|are|have)\b/i);
-    if (quantOfMatch && quantOfMatch.index !== undefined) {
-      const quant = quantOfMatch[1];
-      const noun = quantOfMatch[3].toLowerCase();
-      const verb = quantOfMatch[4].toLowerCase();
-      if (!SINGULAR_S_NOUNS.has(noun) && !noun.endsWith('ss') && !noun.endsWith('us') && !noun.endsWith('is')) {
-        const verbOffset = quantOfMatch.index + quantOfMatch[0].lastIndexOf(quantOfMatch[4]);
-        const gStart = sStart + verbOffset;
-        const gEnd = gStart + quantOfMatch[4].length;
-        const correctVerb = verb === 'were' ? 'was' : verb === 'are' ? 'is' : 'has';
-        addFinding({
-          id: `agreement-quant-of-${gStart}`,
-          category: 'Grammar',
-          severity: 'high',
-          confidence: 'HIGH',
-          confidenceScore: 94,
-          ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL',
-          start: gStart,
-          end: gEnd,
-          sentenceIndex: sRange.index,
-          sentence: sText,
-          issue: `Subject–verb agreement mismatch: singular subject “${quant}” with plural verb “${verb}”.`,
-          why: `The subject is “${quant}” (singular), not the object of the prepositional phrase. It requires the singular verb “${correctVerb}”.`,
-          suggestion: `Change “${verb}” to “${correctVerb}”.`,
-          replacement: correctVerb,
-          replacements: [correctVerb]
-        });
-      }
+    // "each/every one/neither of the ... were/are/have/appear"
+    const quantOfRegex = new RegExp(
+      `\\b(each|neither|every\\s+one)\\s+of\\s+(the|these|those|our|their)(?:\\s+([a-z]+))?\\s+([a-z]+s)(?:\\s+(in|on|at|of|from|with|for|under|during|after|before|through|across|between|among|about|above|below)(?:\\s+(?:the|these|those|our|their|a|an))?\\s+([a-z0-9]+(?:\\s+[a-z0-9]+)?))?\\s+(${PLURAL_VERBS_PATTERN})\\b`,
+      'gi'
+    );
+    let qoMatch: RegExpExecArray | null;
+    while ((qoMatch = quantOfRegex.exec(sText)) !== null) {
+      const quant = qoMatch[1];
+      const noun = qoMatch[4].toLowerCase();
+      const verb = qoMatch[7].toLowerCase();
+      if (SINGULAR_VERB_TO_PLURAL[noun] || noun === 'is' || noun === 'was' || noun === 'has' || noun === 'does') continue;
+      if (SINGULAR_S_NOUNS.has(noun) || noun.endsWith('ss') || noun.endsWith('us') || noun.endsWith('is')) continue;
+
+      const correctVerb = PLURAL_VERB_TO_SINGULAR[verb];
+      if (!correctVerb) continue;
+
+      const verbOffset = qoMatch.index + qoMatch[0].lastIndexOf(qoMatch[7]);
+      const preceding = sText.slice(0, verbOffset);
+      if (/\b(?:to|can|could|will|would|shall|should|may|might|must|that|which|who)\s+$/i.test(preceding)) continue;
+
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + qoMatch[7].length;
+      addFinding({
+        id: `agreement-quant-of-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 94,
+        ruleId: 'AGREEMENT_INDEFINITE_PRONOUN_OF_PLURAL',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: singular subject “${quant}” with plural verb “${verb}”.`,
+        why: `The subject is “${quant}” (singular), not the object of the prepositional phrase. It requires the singular verb “${correctVerb}”.`,
+        suggestion: `Change “${verb}” to “${correctVerb}”.`,
+        replacement: correctVerb,
+        replacements: [correctVerb]
+      });
     }
 
     // "One of the ... are/were" -> "is/was"
@@ -1723,8 +1752,11 @@ export function runGrammarEngine(
     }
 
     // 2.7 Subject-Verb Agreement: General Plural Noun Phrases with Singular Verbs
-    // (e.g. "The recommendations was accepted", "these discrepancies does", "several sensors produces")
-    const nounSingVerbRegex = /\b(the|these|those|their|our|its|several|which|competing)\s+(?:([a-z]+)\s+)?([a-z]+s)\s+(is|was|does|has\s+been|[a-z]+s)\b/gi;
+    // (e.g. "The recommendations was accepted", "these discrepancies does", "several sensors produces", "other investigations relies", "both methods produces")
+    const nounSingVerbRegex = new RegExp(
+      `\\b(the|these|those|their|our|its|several|which|competing|other|many|few|both|all|such)\\s+(?:([a-z]+)\\s+)?([a-z]+s)\\s+(${SINGULAR_VERBS_PATTERN})\\b`,
+      'gi'
+    );
     let nsvMatch: RegExpExecArray | null;
     while ((nsvMatch = nounSingVerbRegex.exec(sText)) !== null) {
       const detExact = nsvMatch[1];
@@ -1735,7 +1767,7 @@ export function runGrammarEngine(
       const preceding = sText.slice(0, matchIdx);
       if (PREPOSITIONS_RE.test(preceding)) continue;
       if (/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) continue;
-      if (/\b(?:one\s+of|many\s+of|neither\s+[\s\S]+?\s+nor)\s+$/i.test(preceding)) continue;
+      if (/\b(?:one\s+of|many\s+of|neither\s+[^.;:?!]+?\s+nor(?:\s+[a-z]+)?)\s*$/i.test(preceding)) continue;
       if (/\b(?:one|each|neither|either)\s+of\b[^.;:?!]+$/i.test(preceding)) continue;
       if (!isLikelyPluralNoun(noun)) continue;
       if (noun === 'data' && (dialect === 'all' || dialect === 'UK')) continue;
@@ -1777,6 +1809,10 @@ export function runGrammarEngine(
       const second = csMatch[2].trim().toLowerCase();
       const verb = csMatch[3].toLowerCase();
       if (!/^(?:if|when|while|although|because|either|neither|between)\b/i.test(first) && !/^(?:both)\b/i.test(first)) {
+        // Compound subject must not cross into subordinate clauses or coordinated predicates
+        if (/\b(?:that|which|who|whom|whose|when|where|why|because|although|if|since|whether)\b/i.test(second)) continue;
+        if (/\b[a-z]+ed\b/i.test(second)) continue;
+        if (second.split(/\s+/).length > 3) continue;
         const preceding = sText.slice(0, csMatch.index);
         if (!PREPOSITIONS_RE.test(preceding) && !/\b(?:that|which|who|whom)\s+[a-z\s]+$/i.test(preceding)) {
           const correctVerb = pluralVerbForSingular(verb);
@@ -1810,10 +1846,30 @@ export function runGrammarEngine(
       }
     }
 
-    // Serial compound: "Accuracy, clarity, and justified confidence matters"
-    const serialCompoundRegex = /\b([A-Za-z][a-z]+),\s+([a-z]+),\s+and\s+((?:[a-z]+\s+)?[a-z]+)\s+(is|was|does|has|[a-z]+s)\b/g;
+    // Serial compound: "Accuracy, clarity, and justified confidence matters" / "transparent rules, comprehensive regression tests, and human review remains"
+    const serialCompoundRegex = /\b(?:why|that|whether|if|because|although)?\s*([A-Za-z][a-z]*(?:\s+[a-z]+){0,2}),\s+([a-z]+(?:\s+[a-z]+){0,2}),\s+and\s+([a-z]+(?:\s+[a-z]+){0,2})\s+(is|was|does|has|[a-z]+s)\b/gi;
     let scMatch: RegExpExecArray | null;
     while ((scMatch = serialCompoundRegex.exec(sText)) !== null) {
+      const np1 = scMatch[1].replace(/^(?:why|that|whether|if|because|although)\s+/i, '').trim();
+      const np2 = scMatch[2].trim();
+      const np3 = scMatch[3].trim();
+      // Guard 1: verb preceded by determiner in np3 (e.g. "and applied the updates" -> "updates" is a noun)
+      if (/\b(?:the|a|an|this|that|these|those|its|our|their|his|her)\s*$/i.test(np3)) {
+        continue;
+      }
+      // Guard 2: coordinated past-tense verbs ending in -ed
+      if (/\b[a-z]+ed\b/i.test(np1) && /\b[a-z]+ed\b/i.test(np2)) {
+        continue;
+      }
+      // Guard 3: auxiliary verbs in noun phrases
+      if (/\b(?:was|were|is|are|did|had|been|have|has)\b/i.test(np1 + ' ' + np2 + ' ' + np3)) {
+        continue;
+      }
+      // Guard 4: preceded by subject pronoun (e.g. "We parsed ..., validated ..., and ...")
+      const preceding = sText.slice(0, scMatch.index);
+      if (/\b(?:we|they|i|you|he|she)\s+$/i.test(preceding)) {
+        continue;
+      }
       const verb = scMatch[4].toLowerCase();
       const correctVerb = pluralVerbForSingular(verb);
       if (!correctVerb) continue;
@@ -1831,7 +1887,7 @@ export function runGrammarEngine(
         end: gEnd,
         sentenceIndex: sRange.index,
         sentence: sText,
-        issue: `Subject–verb agreement mismatch: compound subject “${scMatch[1]}, ${scMatch[2]}, and ${scMatch[3]}” takes plural verb “${correctVerb}”.`,
+        issue: `Subject–verb agreement mismatch: compound subject “${np1}, ${np2}, and ${np3}” takes plural verb “${correctVerb}”.`,
         why: `Subjects joined by commas and “and” form a plural subject and require a plural verb.`,
         suggestion: `Change “${scMatch[4]}” to “${correctVerb}”.`,
         replacement: correctVerb,
@@ -1916,6 +1972,11 @@ export function runGrammarEngine(
           });
         }
       } else {
+        if (COLLECTIVE_NOUNS.has(headNoun) && (verb === 'have' || verb === 'are' || verb === 'were')) {
+          if (dialect === 'UK') {
+            continue;
+          }
+        }
         let rep: string | null = null;
         if (verb === 'are') rep = 'is';
         else if (verb === 'were') rep = 'was';
@@ -1978,8 +2039,8 @@ export function runGrammarEngine(
       }
     }
 
-    // 2.9b Singular Count Noun with Plural Verb (e.g. "the manager were saying", "this user are", "the system were", "the entire system are", "the evidence are")
-    const singNounPluralVerbRegex = /\b(the|this|that|a|an)\s+(?:([a-z]+)\s+)?([a-z]+)\s+(were|are)\b/gi;
+    // 2.9b Singular Count Noun with Plural Verb (e.g. "the manager were saying", "this user are", "the system were", "the entire system are", "the evidence are", "additional testing are")
+    const singNounPluralVerbRegex = /\b(the|this|that|a|an|additional|further|such|more)\s+(?:([a-z]+)\s+)?([a-z]+)\s+(were|are)\b/gi;
     let snpvMatch: RegExpExecArray | null;
     while ((snpvMatch = singNounPluralVerbRegex.exec(sText)) !== null) {
       const det = snpvMatch[1].toLowerCase();
@@ -1990,9 +2051,10 @@ export function runGrammarEngine(
       const preceding = sText.slice(0, matchIdx);
       if (det === 'that' && /[a-z]+s\s*$/i.test(preceding)) continue;
       if (PREPOSITIONS_RE.test(preceding)) continue;
-      if (/\b(?:and|or|both)\b/i.test(preceding)) continue;
+      if (/\b(?:and|or|both)\s+$/i.test(preceding)) continue;
       if (/\b(?:if|as\s+if|as\s+though|wish(?:es|ed)?|whether|suppose)\s+[a-z\s]+$/i.test(preceding)) continue;
       if (/\b(?:the|these|those|our|their|its|two|three|several|many|few)\s+(?:[a-z]+s|people|children|men|women|criteria|data)\s+(?:that|which|who)\s+[a-z]+/i.test(preceding)) continue;
+      if (/^(?:who|which|that)$/i.test(noun) || /^(?:who|which|that)$/i.test(snpvMatch[2] || '')) continue;
       if (noun.endsWith('s') || IRREGULAR_PLURAL_NOUNS.has(noun) || COLLECTIVE_NOUNS.has(noun) || SINGULAR_S_NOUNS.has(noun)) continue;
 
       const verbOffset = matchIdx + snpvMatch[0].lastIndexOf(snpvMatch[4]);
@@ -2183,6 +2245,37 @@ export function runGrammarEngine(
       });
     }
 
+    // 2.10ee Plural head + present-participle modifier: "the assumptions underlying these interpretations has"
+    const presParticipleModRegex = /\b(the|these|those|their|our)\s+([a-z]+s)\s+([a-z]+ing)\s+(?:the|these|those|our|their|all)?\s*([a-z]+s)?\s+(is|was|does|has|[a-z]+s)\b/gi;
+    let ppmMatch: RegExpExecArray | null;
+    while ((ppmMatch = presParticipleModRegex.exec(sText)) !== null) {
+      const noun = ppmMatch[2].toLowerCase();
+      const verb = ppmMatch[5].toLowerCase();
+      if (!isLikelyPluralNoun(noun)) continue;
+      const correctVerb = pluralVerbForSingular(verb);
+      if (!correctVerb) continue;
+      const verbOffset = ppmMatch.index + ppmMatch[0].lastIndexOf(ppmMatch[5]);
+      const gStart = sStart + verbOffset;
+      const gEnd = gStart + ppmMatch[5].length;
+      addFinding({
+        id: `agreement-pres-participle-mod-${gStart}`,
+        category: 'Grammar',
+        severity: 'high',
+        confidence: 'HIGH',
+        confidenceScore: 94,
+        ruleId: 'AGREEMENT_HEAD_NOUN_PREPOSITIONAL_PHRASE',
+        start: gStart,
+        end: gEnd,
+        sentenceIndex: sRange.index,
+        sentence: sText,
+        issue: `Subject–verb agreement mismatch: plural subject “${ppmMatch[1]} ${ppmMatch[2]}” takes plural verb “${correctVerb}”.`,
+        why: `Post-nominal participial modifiers do not change the grammatical number of the plural head noun.`,
+        suggestion: `Change “${ppmMatch[5]}” to “${correctVerb}”.`,
+        replacement: correctVerb,
+        replacements: [correctVerb]
+      });
+    }
+
     // 2.11 Subjunctive Mood: "If I was you" -> "If I were you"
     const subjRegex = /\b(if\s+I)\s+(was)\b/gi;
     let sMatch: RegExpExecArray | null;
@@ -2240,7 +2333,7 @@ export function runGrammarEngine(
       let postRelClean = postRelRaw;
       postRelClean = postRelClean.replace(/,\s*which\s+[^,;]+,\s*/gi, (match) => ' '.repeat(match.length));
 
-      const matrixVerbRegex = /\b(has\s+discovered|have\s+discovered|remains?|risks?|requires?|produces?|indicates?|shows?|leads?|suggests?|proves?|are|is|were|was)\b/gi;
+      const matrixVerbRegex = /\b(has\s+(?:identified|acknowledged|discovered|demonstrated|shown|found|revealed|reported|concluded|provided|suggested|[a-z]{3,}(?:ed|en))|have\s+(?:identified|acknowledged|discovered|demonstrated|shown|found|revealed|reported|concluded|provided|suggested|[a-z]{3,}(?:ed|en))|remains?|risks?|requires?|produces?|indicates?|shows?|leads?|suggests?|proves?|are|is|were|was)\b/gi;
       let mvMatch: RegExpExecArray | null;
       while ((mvMatch = matrixVerbRegex.exec(postRelClean)) !== null) {
         const verbCandidate = mvMatch[1];
@@ -2251,6 +2344,14 @@ export function runGrammarEngine(
         // Must have non-trivial content between relative pronoun and matrix verb
         if (!between || /^(?:carefully|adequately|never|fully|often|already)$/i.test(between)) {
           continue;
+        }
+
+        // Clause boundary guards: stop scanning if between already crosses into another subordinate clause or has a modal predicate
+        if (/\b(?:when|while|because|although|though|if|unless|since|whereas)\b/i.test(between)) {
+          break;
+        }
+        if (/\b(?:can|could|will|would|shall|should|may|might|must)\s+[a-z]+/i.test(between)) {
+          break;
         }
 
         const verbOffset = relEndPos + verbOffsetInPost;
