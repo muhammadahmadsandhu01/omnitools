@@ -32,7 +32,7 @@ export async function generateMetadata({
   }
 
   const categoryTools = tools.filter(
-    (tool) => tool.categoryId === category.id
+    (tool) => tool.categoryId === category.id && !tool.hidden
   );
 
   const categoryTitle =
@@ -78,7 +78,7 @@ export default async function CategoryPage({
   }
 
   const categoryTools = tools.filter(
-    (tool) => tool.categoryId === category.id
+    (tool) => tool.categoryId === category.id && !tool.hidden
   );
 
   const Icon = category.icon;

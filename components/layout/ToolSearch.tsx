@@ -34,6 +34,7 @@ export default function ToolSearch({
     if (!normalizedQuery) return [];
 
     return tools
+      .filter((tool) => !tool.hidden)
       .map((tool) => {
         const category = categories.find(
           (item) => item.id === tool.categoryId

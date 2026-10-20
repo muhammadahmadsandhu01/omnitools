@@ -25,6 +25,7 @@ export interface Tool {
   description: string;
   isPopular?: boolean;
   status: ToolStatus;
+  hidden?: boolean;
   seoTitle?: string;
   seoDescription?: string;
   relatedToolSlugs?: string[];
@@ -184,6 +185,7 @@ export const tools: Tool[] = [
       'Estimate take-home salary after taxes and other deductions using the selected calculation assumptions.',
     isPopular: false,
     status: 'published',
+    hidden: true,
     seoTitle: 'Salary & Net Take-Home Pay Calculator',
     seoDescription: 'Estimate take-home salary after taxes and statutory deductions across 22 countries with customizable tax schedules and payroll assumptions.',
     relatedToolSlugs: ['mortgage-calculator', 'emi-calculator', 'invoice-generator', 'compound-interest'],
@@ -417,6 +419,7 @@ export const tools: Tool[] = [
       'Analyze word count, character count, readability, keyword density, speaking duration, and sentence metrics client-side in real time.',
     isPopular: true,
     status: 'published',
+    hidden: true,
     seoTitle: 'Word Counter & Text Analyzer — Readability, Characters & Pacing',
     seoDescription:
       'Free online text analyzer and word counter. Measure words, characters, sentences, readability scores (Flesch, FK), speaking pace, and keyword density client-side.',
@@ -491,7 +494,7 @@ export function getTool(categoryId: string, slug: string) {
  */
 export function getToolsByCategory(categoryId: CategoryId) {
   return tools.filter(
-    (tool) => tool.categoryId === categoryId
+    (tool) => tool.categoryId === categoryId && !tool.hidden
   );
 }
 
@@ -499,7 +502,7 @@ export function getToolsByCategory(categoryId: CategoryId) {
  * Get popular tools.
  */
 export function getPopularTools() {
-  return tools.filter((tool) => tool.isPopular);
+  return tools.filter((tool) => tool.isPopular && !tool.hidden);
 }
 
 /**
@@ -516,7 +519,7 @@ export function getRelatedTools(tool: Tool, limit = 4): Tool[] {
   if (tool.relatedToolSlugs && tool.relatedToolSlugs.length > 0) {
     const specified = tool.relatedToolSlugs
       .map((slug) => tools.find((t) => t.slug === slug))
-      .filter((t): t is Tool => Boolean(t && t.status === 'published'));
+      .filter((t): t is Tool => Boolean(t && t.status === 'published' && !t.hidden));
     if (specified.length > 0) {
       return specified.slice(0, limit);
     }
@@ -528,6 +531,7 @@ export function getRelatedTools(tool: Tool, limit = 4): Tool[] {
       (t) =>
         t.slug !== tool.slug &&
         t.status === 'published' &&
+        !t.hidden &&
         t.categoryId === tool.categoryId
     )
     .slice(0, limit);
