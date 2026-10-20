@@ -42,3 +42,9 @@ next-env.d.ts
 
 .vercel
 .env*
+
+scratch/
+repomix-output.xml
+/dist/
+.vinext/
+.cloudflare/
