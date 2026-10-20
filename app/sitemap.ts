@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { categories, getPublishedTools } from '@/config/toolsData';
+import { categories, getPublishedTools, tools } from '@/config/toolsData';
 import { SITE_URL } from '@/config/site';
 
 /**
@@ -32,13 +32,14 @@ const COUNTRY_SLUGS = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = SITE_URL;
-  const now = new Date();
+  // Stable release audit timestamp to prevent artificial, daily date churn
+  const lastModified = new Date('2026-10-20T00:00:00.000Z');
 
   // 1. Homepage
   const homeEntry: MetadataRoute.Sitemap = [
     {
       url: siteUrl,
-      lastModified: now,
+      lastModified,
       changeFrequency: 'daily',
       priority: 1.0,
     },
@@ -48,25 +49,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticEntries: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/about`,
-      lastModified: now,
+      lastModified,
       changeFrequency: 'monthly',
       priority: 0.6,
     },
     {
       url: `${siteUrl}/contact`,
-      lastModified: now,
+      lastModified,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${siteUrl}/privacy`,
-      lastModified: now,
+      lastModified,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
     {
       url: `${siteUrl}/terms`,
-      lastModified: now,
+      lastModified,
       changeFrequency: 'monthly',
       priority: 0.5,
     },
@@ -75,30 +76,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 3. Valid Category Pages
   const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
     url: `${siteUrl}/${category.id}`,
-    lastModified: now,
+    lastModified,
     changeFrequency: 'weekly',
     priority: 0.8,
   }));
 
-  // 4. Implemented and functional Tool Pages (excluding unimplemented tools)
-  const functionalTools = getPublishedTools();
+  // 4. Implemented and functional Tool Pages (excluding draft, coming-soon, or explicitly excluded tools)
+  const functionalTools = getPublishedTools().filter((tool) => !tool.excludeFromSitemap);
 
   const toolEntries: MetadataRoute.Sitemap = functionalTools.map((tool) => ({
     url: `${siteUrl}/${tool.categoryId}/${tool.slug}`,
-    lastModified: now,
+    lastModified,
     changeFrequency: 'weekly',
     priority: 0.9,
   }));
 
-  // 5. 22 Country Salary Calculator Pages
-  const countrySalaryEntries: MetadataRoute.Sitemap = COUNTRY_SLUGS.map(
-    (slug) => ({
-      url: `${siteUrl}/finance/salary-calculator/${slug}`,
-      lastModified: now,
-      changeFrequency: 'weekly',
-      priority: 0.85,
-    })
+  // 5. 22 Country Salary Calculator Pages (included as long as salary calculator is published & not excluded)
+  const salaryTool = tools.find((t) => t.slug === 'salary-calculator');
+  const includeSalaryCalculators = Boolean(
+    salaryTool && salaryTool.status === 'published' && !salaryTool.excludeFromSitemap
   );
+
+  const countrySalaryEntries: MetadataRoute.Sitemap = includeSalaryCalculators
+    ? COUNTRY_SLUGS.map((slug) => ({
+        url: `${siteUrl}/finance/salary-calculator/${slug}`,
+        lastModified,
+        changeFrequency: 'weekly',
+        priority: 0.85,
+      }))
+    : [];
 
   return [
     ...homeEntry,

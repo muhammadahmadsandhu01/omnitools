@@ -26,6 +26,7 @@ export interface Tool {
   isPopular?: boolean;
   status: ToolStatus;
   hidden?: boolean;
+  excludeFromSitemap?: boolean;
   seoTitle?: string;
   seoDescription?: string;
   relatedToolSlugs?: string[];
