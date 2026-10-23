@@ -483,6 +483,26 @@ async function runAll() {
       (indices) => indices[0] === firstTab0 && indices[1] === firstTab1,
     );
   });
+  test('CSV column values align under identical horizontal column offsets', () => {
+    const rawData = [
+      { department_name: 'IT', floor: 4, active: true },
+      { department_name: 'Infrastructure Engineering', floor: 12, active: false },
+    ];
+    const csv = jsonToCsv(rawData, ['department_name', 'floor', 'active']);
+    const lines = csv.replace(/^\uFEFF/, '').split('\r\n');
+    const commaIndices = lines.map((line) => {
+      const idxs: number[] = [];
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === ',') idxs.push(i);
+      }
+      return idxs;
+    });
+    const firstComma0 = commaIndices[0][0];
+    const firstComma1 = commaIndices[0][1];
+    return commaIndices.every(
+      (indices) => indices[0] === firstComma0 && indices[1] === firstComma1,
+    );
+  });
   test('Unicode text in CSV preserves UTF-8 characters', () => {
     const csv = jsonToCsv([{ city: 'لاہور', café: 'Café 🌟' }], ['city', 'café']);
     return csv.includes('لاہور') && csv.includes('Café 🌟');

@@ -350,6 +350,29 @@ async function main() {
     );
   });
 
+  await runCase('S3-6', 'CSV/Excel', 'CSV values align horizontally directly beneath column headers', () => {
+    const res = parseJsonToTable(JSON.stringify([
+      { department: 'Engineering', floor: 7, active: true },
+      { department: 'HR', floor: 1, active: false },
+    ]));
+    const csv = jsonToCsv(res.rows, res.columns);
+    const lines = csv.replace(/^\uFEFF/, '').split('\r\n');
+    const commaPositions = lines.map((line) => {
+      const pos: number[] = [];
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === ',') pos.push(i);
+      }
+      return pos;
+    });
+    return (
+      commaPositions.length === 3 &&
+      commaPositions[0][0] === commaPositions[1][0] &&
+      commaPositions[1][0] === commaPositions[2][0] &&
+      commaPositions[0][1] === commaPositions[1][1] &&
+      commaPositions[1][1] === commaPositions[2][1]
+    );
+  });
+
   // ==========================================================================
   // SECTION 4: YAML, XML, JSONL
   // ==========================================================================

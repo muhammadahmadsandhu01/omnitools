@@ -406,6 +406,9 @@ export const escapeCsvField = (raw: CellValue): string => {
 
 /**
  * Converts tabular dataset into RFC 4180 compliant CSV string with UTF-8 BOM.
+ * Column values are visually padded and aligned directly under their respective headers
+ * so each column's values sit neatly beneath its own column, while preserving standard
+ * comma delimiters for spreadsheet and tool compatibility.
  */
 export const jsonToCsv = (
   data: Record<string, CellValue>[],
@@ -413,10 +416,34 @@ export const jsonToCsv = (
 ): string => {
   if (!data.length || !columns.length) return '';
 
-  const headerLine = columns.map(escapeCsvField).join(',');
-  const rowLines = data.map((row) =>
-    columns.map((col) => escapeCsvField(row[col] ?? '')).join(','),
+  const escapedHeaders = columns.map(escapeCsvField);
+  const escapedRows = data.map((row) =>
+    columns.map((col) => escapeCsvField(row[col] ?? '')),
   );
+
+  // Compute maximum width for each column across header and all rows
+  const colWidths = columns.map((_, colIdx) => {
+    let max = escapedHeaders[colIdx].length;
+    for (let r = 0; r < escapedRows.length; r++) {
+      const len = escapedRows[r][colIdx].length;
+      if (len > max) max = len;
+    }
+    return max;
+  });
+
+  const formatLine = (cells: string[]) =>
+    cells
+      .map((cell, idx) => {
+        // Pad with trailing spaces up to column width for all columns except the last
+        if (idx < columns.length - 1) {
+          return cell.padEnd(colWidths[idx], ' ');
+        }
+        return cell;
+      })
+      .join(',');
+
+  const headerLine = formatLine(escapedHeaders);
+  const rowLines = escapedRows.map(formatLine);
 
   return '\uFEFF' + [headerLine, ...rowLines].join('\r\n');
 };

@@ -1133,25 +1133,12 @@ export default function JsonConverter() {
     [parsedData, visibleColumnList],
   );
 
-  // 1. CSV Export (RFC 4180 compliant with UTF-8 BOM)
+  // 1. CSV Export (RFC 4180 compliant with UTF-8 BOM, column-aligned)
   const exportCSV = () => {
     const data = getExportData();
     if (!data.length || !visibleColumnList.length) return;
 
-    const escapeCsvField = (val: string | number | boolean): string => {
-      const str = String(val);
-      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    const headerLine = visibleColumnList.map(escapeCsvField).join(',');
-    const rowsLines = data.map((row) =>
-      visibleColumnList.map((col) => escapeCsvField(row[col] ?? '')).join(','),
-    );
-
-    const csvContent = '\uFEFF' + [headerLine, ...rowsLines].join('\r\n');
+    const csvContent = jsonToCsv(data, visibleColumnList);
     triggerDownload(
       new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }),
       `${baseFilename}.csv`,
