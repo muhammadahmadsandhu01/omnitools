@@ -60,7 +60,7 @@ export const formatBytes = (bytes: number): string => {
 export const sanitizeFilename = (filename: string): string => {
   if (!filename || typeof filename !== 'string') return 'kivarotools_export';
   let cleaned = filename.trim().replace(/\.\.+/g, '_').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
-  cleaned = cleaned.replace(/[. ]+$/, '');
+  cleaned = cleaned.replace(/^[._ ]+/, '').replace(/[._ ]+$/, '');
   return cleaned.slice(0, 80) || 'kivarotools_export';
 };
 
@@ -166,8 +166,13 @@ export const flattenObject = (
       return;
     }
 
-    if (value === null || value === undefined) {
-      put(key, '');
+    if (value === null) {
+      put(key, null);
+      return;
+    }
+
+    if (value === undefined) {
+      put(key, undefined);
       return;
     }
 
@@ -232,6 +237,11 @@ export const normaliseRoot = (
   options: FlattenOptions = DEFAULT_OPTIONS,
 ): Record<string, CellValue>[] => {
   if (Array.isArray(parsed)) {
+    if (parsed.length > MAX_ROOT_ROWS) {
+      throw new Error(
+        `JSON contains ${parsed.length.toLocaleString()} root rows, exceeding the safe limit of ${MAX_ROOT_ROWS.toLocaleString()} rows. Split the input into smaller batches.`,
+      );
+    }
     if (parsed.length === 0) return [];
 
     return parsed.map((item) => {
@@ -413,6 +423,9 @@ export const jsonToCsv = (
 
 /**
  * Converts tabular dataset into TSV (Tab-separated values) with UTF-8 BOM.
+ * Column values are visually padded and aligned directly under their respective headers
+ * so each column's values sit neatly beneath its own column, while preserving standard
+ * tab delimiters for spreadsheet and tool compatibility.
  */
 export const jsonToTsv = (
   data: Record<string, CellValue>[],
@@ -428,10 +441,34 @@ export const jsonToTsv = (
     return str;
   };
 
-  const headerLine = columns.map(escapeTsvField).join('\t');
-  const rowLines = data.map((row) =>
-    columns.map((col) => escapeTsvField(row[col] ?? '')).join('\t'),
+  const escapedHeaders = columns.map(escapeTsvField);
+  const escapedRows = data.map((row) =>
+    columns.map((col) => escapeTsvField(row[col] ?? '')),
   );
+
+  // Compute maximum width for each column across header and all rows
+  const colWidths = columns.map((_, colIdx) => {
+    let max = escapedHeaders[colIdx].length;
+    for (let r = 0; r < escapedRows.length; r++) {
+      const len = escapedRows[r][colIdx].length;
+      if (len > max) max = len;
+    }
+    return max;
+  });
+
+  const formatLine = (cells: string[]) =>
+    cells
+      .map((cell, idx) => {
+        // Pad with trailing spaces up to column width for all columns except the last
+        if (idx < columns.length - 1) {
+          return cell.padEnd(colWidths[idx], ' ');
+        }
+        return cell;
+      })
+      .join('\t');
+
+  const headerLine = formatLine(escapedHeaders);
+  const rowLines = escapedRows.map(formatLine);
 
   return '\uFEFF' + [headerLine, ...rowLines].join('\r\n');
 };
@@ -523,8 +560,9 @@ export const jsonToYaml = (input: unknown, indent = 2): string => {
 
     return entries
       .map(([key, value], idx) => {
-        // Sanitize or quote YAML key if necessary
-        const safeKey = /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(key) ? key : JSON.stringify(key);
+        // Sanitize or quote YAML key if necessary (including reserved keywords true/false/null/yes/no)
+        const isReservedYamlKey = /^(true|false|null|~|yes|no|on|off)$/i.test(key);
+        const safeKey = !isReservedYamlKey && /^[a-zA-Z_][a-zA-Z0-9_-]*$/.test(key) ? key : JSON.stringify(key);
         const prefix = idx === 0 && isFirstInline ? '' : spaces;
 
         if (isPlainObject(value)) {
@@ -568,6 +606,7 @@ export const jsonToXml = (input: unknown, rootName = 'root', indent = 2): string
 
   const escapeXmlText = (str: unknown): string => {
     return String(str ?? '')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

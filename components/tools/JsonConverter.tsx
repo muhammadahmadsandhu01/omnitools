@@ -111,10 +111,9 @@ const formatBytes = (bytes: number): string => {
  * Removes path traversal, control chars, and invalid filesystem characters.
  */
 const sanitizeFilename = (filename: string): string => {
-  const cleaned = filename
-    .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
-    .replace(/\.+/g, '.')
-    .trim();
+  if (!filename || typeof filename !== 'string') return 'kivarotools_export';
+  let cleaned = filename.trim().replace(/\.\.+/g, '_').replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+  cleaned = cleaned.replace(/^[._ ]+/, '').replace(/[._ ]+$/, '');
   return cleaned.slice(0, 80) || 'kivarotools_export';
 };
 
@@ -203,8 +202,13 @@ const flattenObject = (
       return;
     }
 
-    if (value === null || value === undefined) {
-      put(key, '');
+    if (value === null) {
+      put(key, null);
+      return;
+    }
+
+    if (value === undefined) {
+      put(key, undefined);
       return;
     }
 
@@ -266,6 +270,11 @@ const flattenObject = (
  */
 const normaliseRoot = (parsed: unknown, options: FlattenOptions): Record<string, CellValue>[] => {
   if (Array.isArray(parsed)) {
+    if (parsed.length > MAX_ROOT_ROWS) {
+      throw new Error(
+        `JSON contains ${parsed.length.toLocaleString()} root rows, exceeding the safe limit of ${MAX_ROOT_ROWS.toLocaleString()} rows. Split the input into smaller batches.`,
+      );
+    }
     if (parsed.length === 0) return [];
 
     return parsed.map((item) => {
@@ -466,8 +475,13 @@ const WORKER_SCRIPT = String.raw`
         return;
       }
 
-      if (value === null || value === undefined) {
-        put(key, '');
+      if (value === null) {
+        put(key, null);
+        return;
+      }
+
+      if (value === undefined) {
+        put(key, undefined);
         return;
       }
 
@@ -1079,7 +1093,7 @@ export default function JsonConverter() {
   ) => {
     let type: string = typeof val;
     if (val === null) type = 'null';
-    else if (val === undefined) type = 'undefined';
+    else if (val === undefined) type = 'missing (undefined)';
 
     setSelectedCell({
       row: rowIdx,
@@ -1144,25 +1158,12 @@ export default function JsonConverter() {
     );
   };
 
-  // 2. TSV Export (Tab-separated with UTF-8 BOM)
+  // 2. TSV Export (Tab-separated with UTF-8 BOM, column-aligned)
   const exportTSV = () => {
     const data = getExportData();
     if (!data.length || !visibleColumnList.length) return;
 
-    const escapeTsvField = (val: string | number | boolean): string => {
-      const str = String(val);
-      if (str.includes('\t') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    };
-
-    const headerLine = visibleColumnList.map(escapeTsvField).join('\t');
-    const rowsLines = data.map((row) =>
-      visibleColumnList.map((col) => escapeTsvField(row[col] ?? '')).join('\t'),
-    );
-
-    const tsvContent = '\uFEFF' + [headerLine, ...rowsLines].join('\r\n');
+    const tsvContent = jsonToTsv(data, visibleColumnList);
     triggerDownload(
       new Blob([tsvContent], { type: 'text/tab-separated-values;charset=utf-8;' }),
       `${baseFilename}.tsv`,
@@ -1424,9 +1425,9 @@ tr:hover td { background: #f8fafc; }
       } else {
         const data = getExportData();
         if (format === 'csv') {
-          textToCopy = jsonToCsv(data, visibleColumnList);
+          textToCopy = jsonToCsv(data, visibleColumnList).replace(/^\uFEFF/, '');
         } else if (format === 'tsv') {
-          textToCopy = jsonToTsv(data, visibleColumnList);
+          textToCopy = jsonToTsv(data, visibleColumnList).replace(/^\uFEFF/, '');
         } else if (format === 'jsonl') {
           textToCopy = jsonToJsonl(data);
         }
@@ -1452,11 +1453,11 @@ tr:hover td { background: #f8fafc; }
           return jsonToXml(parsed);
         case 'csv': {
           const data = getExportData();
-          return jsonToCsv(data, visibleColumnList);
+          return jsonToCsv(data, visibleColumnList).replace(/^\uFEFF/, '');
         }
         case 'tsv': {
           const data = getExportData();
-          return jsonToTsv(data, visibleColumnList);
+          return jsonToTsv(data, visibleColumnList).replace(/^\uFEFF/, '');
         }
         case 'jsonl': {
           const data = getExportData();
@@ -1952,7 +1953,10 @@ tr:hover td { background: #f8fafc; }
               {/* Monospace Code Preview Box */}
               <div className="relative flex-grow min-h-[320px] max-h-[500px] overflow-auto rounded-xl border border-gray-200 dark:border-slate-800 bg-[#0f172a] text-slate-100 p-4 font-mono text-xs leading-relaxed [scrollbar-width:thin]">
                 {codePreviewContent ? (
-                  <pre className="whitespace-pre overflow-x-auto selection:bg-blue-500/30">
+                  <pre
+                    style={{ tabSize: 4 }}
+                    className="whitespace-pre overflow-x-auto selection:bg-blue-500/30"
+                  >
                     <code>{codePreviewContent}</code>
                   </pre>
                 ) : (
@@ -2032,9 +2036,13 @@ tr:hover td { background: #f8fafc; }
                                   ) : (
                                     String(val)
                                   )
-                                ) : (
+                                ) : val === null ? (
                                   <span className="text-gray-400 dark:text-slate-600 italic">
                                     null
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 dark:text-slate-700 italic select-none">
+                                    —
                                   </span>
                                 )}
                               </td>
@@ -2048,8 +2056,12 @@ tr:hover td { background: #f8fafc; }
                   <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-gray-500 dark:text-slate-500 gap-2 p-6 text-center">
                     <Table2 className="w-8 h-8 text-slate-300 dark:text-slate-700" />
                     <p className="font-medium">
-                      {parsedData.length > 0
+                      {parsedData.length > 0 && visibleColumnList.length === 0
                         ? 'All columns are currently unselected. Check columns above to view data.'
+                        : parsedData.length > 0 && allColumns.length === 0
+                        ? 'Empty object: The provided JSON is an empty object {} with no properties.'
+                        : parsedData.length === 0 && input.trim() && !error
+                        ? 'Empty dataset: The provided JSON contains 0 rows or records.'
                         : 'Interactive tabular preview will appear here once JSON is loaded.'}
                     </p>
                   </div>
