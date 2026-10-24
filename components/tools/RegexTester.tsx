@@ -623,7 +623,7 @@ export default function RegexTester() {
   const [search, setSearch] = useState('');
   const [cheatSearch, setCheatSearch] = useState('');
   const [cheatCategory, setCheatCategory] = useState<string>('All');
-  const [extractTarget, setExtractTarget] = useState<'match' | 'group1' | 'group2' | 'named'>('match');
+  const [extractTarget, setExtractTarget] = useState<'match' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named'>('match');
   const [currentPage, setCurrentPage] = useState(1);
   const [executionVersion, setExecutionVersion] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -1080,11 +1080,17 @@ export default function RegexTester() {
     if (extractTarget === 'match') {
       return matches.map((m) => m.match);
     }
+    if (extractTarget === 'allGroups') {
+      return matches.map((m) => m.groups.filter((g) => g !== undefined).join(' | '));
+    }
     if (extractTarget === 'group1') {
       return matches.map((m) => m.groups[0] ?? '');
     }
     if (extractTarget === 'group2') {
       return matches.map((m) => m.groups[1] ?? '');
+    }
+    if (extractTarget === 'group3') {
+      return matches.map((m) => m.groups[2] ?? '');
     }
     if (extractTarget === 'named') {
       return matches.map((m) => {
@@ -1382,7 +1388,23 @@ export default function RegexTester() {
               spellCheck={false}
               autoComplete="off"
             />
-            <span className="px-3 sm:px-4 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
+            <span className="px-1.5 sm:px-2 text-xl font-light text-slate-400 select-none" aria-hidden="true">/</span>
+            <label htmlFor="regex-flags-input" className="sr-only">Regular Expression Flags</label>
+            <input
+              id="regex-flags-input"
+              type="text"
+              value={flags}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                setFlags(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="flags"
+              maxLength={15}
+              className="w-16 sm:w-20 py-3.5 pr-3 bg-transparent font-mono text-sm text-slate-700 dark:text-blue-400 focus:outline-none placeholder-slate-400 shrink-0"
+              spellCheck={false}
+              autoComplete="off"
+              aria-label="Regular expression flags (e.g. g, i, m, s, u, y, d)"
+            />
           </div>
 
           <div
@@ -1842,13 +1864,15 @@ export default function RegexTester() {
                     <div className="flex items-center gap-2">
                       <select
                         value={extractTarget}
-                        onChange={(e) => setExtractTarget(e.target.value as 'match' | 'group1' | 'group2' | 'named')}
+                        onChange={(e) => setExtractTarget(e.target.value as 'match' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named')}
                         className="px-2.5 py-1 text-xs font-semibold bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 outline-none"
                         aria-label="Select extraction target"
                       >
                         <option value="match">Full Match ($0)</option>
+                        <option value="allGroups">All Groups (Group 1 | Group 2 ...)</option>
                         <option value="group1">Group 1 ($1)</option>
                         <option value="group2">Group 2 ($2)</option>
+                        <option value="group3">Group 3 ($3)</option>
                         <option value="named">All Named Groups</option>
                       </select>
                       <button
