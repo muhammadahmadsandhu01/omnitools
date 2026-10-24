@@ -73,7 +73,8 @@ export interface JsonPathMatch {
  * column, and character position from parser errors across V8, SpiderMonkey, and JSC.
  */
 export const parseJsonStrict = (source: string): JsonParseDiagnostic => {
-  if (!source || source.trim() === '') {
+  const clean = source ? source.replace(/^\uFEFF/, '') : '';
+  if (!clean || clean.trim() === '') {
     return {
       isValid: false,
       data: null,
@@ -86,7 +87,7 @@ export const parseJsonStrict = (source: string): JsonParseDiagnostic => {
   }
 
   try {
-    const data = JSON.parse(source) as JsonValue;
+    const data = JSON.parse(clean) as JsonValue;
     return {
       isValid: true,
       data,
@@ -112,13 +113,13 @@ export const parseJsonStrict = (source: string): JsonParseDiagnostic => {
       column = parseInt(lineColMatch[2], 10);
     } else if (posMatch) {
       position = parseInt(posMatch[1], 10);
-      const clampedPos = Math.min(position, source.length);
-      const lines = source.slice(0, clampedPos).split('\n');
+      const clampedPos = Math.min(position, clean.length);
+      const lines = clean.slice(0, clampedPos).split('\n');
       line = lines.length;
       column = lines[lines.length - 1].length + 1;
     }
 
-    const allLines = source.split('\n');
+    const allLines = clean.split('\n');
     const errorLineIdx = Math.max(0, line - 1);
     const startIdx = Math.max(0, errorLineIdx - 1);
     const endIdx = Math.min(allLines.length - 1, errorLineIdx + 1);

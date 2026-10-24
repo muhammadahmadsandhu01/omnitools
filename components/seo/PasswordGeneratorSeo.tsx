@@ -19,7 +19,7 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How is Shannon entropy in bits calculated for passwords and passphrases?',
     answer:
-      'Shannon entropy measures the uncertainty or unpredictability of a credential. For random character passwords, entropy is calculated using H = L × log2(R), where L is password length and R is character pool size (e.g., 94 for full ASCII). For EFF Diceware passphrases, entropy is calculated as H = W × log2(7776) ≈ W × 12.9248 bits, where W is the word count from the 7,776-word dictionary. A 6-word passphrase yields ~77.5 bits of true entropy.',
+      'Shannon entropy measures the uncertainty or unpredictability of a credential. For random character passwords, entropy is calculated using H = L × log2(R), where L is password length and R is character pool size (e.g., 94 for full ASCII). For passphrases, entropy is calculated using our curated 1,024-word dictionary (10 bits/word, plus ~13.29 bits when the 4-digit number suffix is enabled). A 5-word passphrase with numbers yields ~63.3 bits of true entropy.',
   },
   {
     question: 'Are generated passwords, secrets, or file checksums ever sent over a network?',
@@ -132,10 +132,10 @@ export default function PasswordGeneratorSeo() {
             Unlike deceptive visual strength bars that merely check for character classes, KivaroTools calculates mathematical <strong>Shannon entropy</strong> in bits:
           </p>
           <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-5 border border-slate-200 dark:border-slate-700 mb-6 text-center font-mono text-sm sm:text-base text-slate-900 dark:text-slate-100">
-            H = L × log<sub>2</sub>(R) &nbsp;|&nbsp; Passphrase: H = W × log<sub>2</sub>(7776) ≈ W × 12.92 bits
+            H = L × log<sub>2</sub>(R) &nbsp;|&nbsp; Passphrase: H = W × log<sub>2</sub>(1024) = W × 10.0 bits (+ 13.29 bits with number)
           </div>
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            Where <code>L</code> is character length, <code>R</code> is character pool size, and <code>W</code> is the number of randomized words chosen from the Electronic Frontier Foundation (EFF) large wordlist. An entropy score above <strong>128 bits</strong> guarantees resistance against multi-billion guess-per-second GPU brute-force attacks for decades.
+            Where <code>L</code> is character length, <code>R</code> is character pool size, and <code>W</code> is the number of randomized words chosen from our curated 1,024-word dictionary (10 bits/word, plus ~13.29 bits when the 4-digit number suffix is enabled). An entropy score above <strong>128 bits</strong> guarantees resistance against multi-billion guess-per-second GPU brute-force attacks for decades.
           </p>
 
           <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
