@@ -623,7 +623,7 @@ export default function RegexTester() {
   const [search, setSearch] = useState('');
   const [cheatSearch, setCheatSearch] = useState('');
   const [cheatCategory, setCheatCategory] = useState<string>('All');
-  const [extractTarget, setExtractTarget] = useState<'match' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named'>('match');
+  const [extractTarget, setExtractTarget] = useState<'match' | 'matchAndGroups' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named'>('match');
   const [currentPage, setCurrentPage] = useState(1);
   const [executionVersion, setExecutionVersion] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -1107,6 +1107,12 @@ export default function RegexTester() {
     if (matches.length === 0) return [];
     if (extractTarget === 'match') {
       return matches.map((m) => m.match);
+    }
+    if (extractTarget === 'matchAndGroups') {
+      return matches.map((m) => {
+        const valid = m.groups.filter((g) => g !== undefined);
+        return valid.length > 0 ? `Match: ${m.match}; Groups: ${valid.join(', ')}` : `Match: ${m.match}`;
+      });
     }
     if (extractTarget === 'allGroups') {
       return matches.map((m) => m.groups.filter((g) => g !== undefined).join(' | '));
@@ -1689,15 +1695,32 @@ export default function RegexTester() {
                               Match #{matchGlobalIndex}
                             </span>
                             <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-gray-200 dark:border-slate-700">
-                              UTF-16 Offset: {m.index}–{m.end}
+                              at {m.index} (Offset: {m.index}–{m.end})
                             </span>
                           </div>
                           <div className="p-3">
-                            <div className="font-mono text-sm text-slate-900 dark:text-slate-100 break-all mb-2">
+                            <div className="font-mono text-sm text-slate-900 dark:text-slate-100 break-all mb-2 whitespace-pre-wrap">
                               {m.match === '' ? (
-                                <span className="text-amber-600 dark:text-amber-400 font-semibold italic">∅ zero-width match</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-semibold italic">∅ zero-width match at position {m.index}</span>
                               ) : (
-                                `"${m.match}"`
+                                <span className="inline-flex items-center flex-wrap gap-2">
+                                  <span>{`"${m.match}"`}</span>
+                                  {/^ +$/.test(m.match) && (
+                                    <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold select-none">
+                                      {m.match.length === 1 ? '1 space' : `${m.match.length} spaces`}
+                                    </span>
+                                  )}
+                                  {m.match === '\t' && (
+                                    <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold select-none">
+                                      tab (\t)
+                                    </span>
+                                  )}
+                                  {m.match.includes('\n') && (
+                                    <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-gray-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold select-none">
+                                      contains newline (\n)
+                                    </span>
+                                  )}
+                                </span>
                               )}
                             </div>
 
@@ -1892,11 +1915,12 @@ export default function RegexTester() {
                     <div className="flex items-center gap-2">
                       <select
                         value={extractTarget}
-                        onChange={(e) => setExtractTarget(e.target.value as 'match' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named')}
+                        onChange={(e) => setExtractTarget(e.target.value as 'match' | 'matchAndGroups' | 'allGroups' | 'group1' | 'group2' | 'group3' | 'named')}
                         className="px-2.5 py-1 text-xs font-semibold bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 outline-none"
                         aria-label="Select extraction target"
                       >
                         <option value="match">Full Match ($0)</option>
+                        <option value="matchAndGroups">Match + Groups (Match: …; Groups: …)</option>
                         <option value="allGroups">All Groups (Group 1 | Group 2 ...)</option>
                         <option value="group1">Group 1 ($1)</option>
                         <option value="group2">Group 2 ($2)</option>
