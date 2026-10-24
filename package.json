@@ -19,7 +19,7 @@
     "test:regex": "tsx scripts/test-regex-tester-150-suite.ts && tsx scripts/test-user-regex-tester-suite.ts && tsx scripts/test-regex-tester.ts",
     "test:sip": "tsx scripts/test-sip-calculator.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
-    "test:svg": "tsx scripts/test-svg-optimizer.ts",
+    "test:svg": "tsx scripts/test-svg-optimizer-150-suite.ts && tsx scripts/test-user-svg-optimizer-suite.ts && tsx scripts/test-svg-optimizer.ts",
     "test:text-case": "tsx scripts/test-text-case-converter.ts",
     "test:webp": "tsx scripts/test-webp-to-jpg-png.ts",
     "test:invoice": "tsx scripts/test-invoice-generator.ts",

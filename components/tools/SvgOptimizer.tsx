@@ -56,6 +56,7 @@ export type OptimizationOptions = {
   minifyColors: boolean;
   precision: number;
   mode: OptimizationMode;
+  preserveViewBox?: boolean;
 };
 
 export type OptimizationResult = {
@@ -507,7 +508,28 @@ const minifyColorDirect = (val: string): string => {
 // --- CONTEXT-AWARE CSS MINIFIER (PROTECTS ID SELECTORS, URLS, STRINGS) ---
 const minifyCssSafely = (css: string, precision: number): string => {
   // Strip comments
-  const clean = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+  if (!clean) return '';
+
+  // If there are no braces, treat as inline style declarations
+  if (!clean.includes('{')) {
+    const decls = clean.split(';').map((d) => d.trim()).filter(Boolean);
+    const minDecls = decls.map((decl) => {
+      const colon = decl.indexOf(':');
+      if (colon === -1) return decl;
+      const prop = decl.slice(0, colon).trim().toLowerCase();
+      let val = decl.slice(colon + 1).trim();
+
+      if (/^(?:fill|stroke|color|background(?:-color)?|stop-color|flood-color|lighting-color|border-color|outline-color)$/i.test(prop)) {
+        val = minifyColorDirect(val);
+      } else {
+        val = roundNumericTokens(val, precision);
+      }
+      return `${prop}:${val}`;
+    });
+    return minDecls.join(';');
+  }
+
   let result = '';
   let i = 0;
   const len = clean.length;
@@ -1048,7 +1070,14 @@ const removeMetadata = (root: Element, applied: string[]) => {
     root.ownerDocument.doctype.remove();
   }
   const wanted = new Set(['metadata', 'namedview', 'perspective', 'sfw', 'slices', 'pgf']);
-  const nodes = Array.from(root.querySelectorAll('*')).filter((node) => wanted.has(node.localName.toLowerCase()));
+  const nodes = Array.from(root.querySelectorAll('*')).filter((node) => {
+    const name = node.localName.toLowerCase();
+    if (wanted.has(name)) return true;
+    if (name === 'desc' && /created with|sketch|illustrator|inkscape|coreldraw|figma/i.test(node.textContent || '')) {
+      return true;
+    }
+    return false;
+  });
   nodes.forEach((n) => n.parentNode?.removeChild(n));
   if (nodes.length) applied.push(`Removed ${nodes.length} metadata/authoring node(s)`);
 };
@@ -1090,7 +1119,8 @@ const collapseEmptyWrapperGroups = (root: Element, applied: string[]) => {
 // Clean redundant attributes
 const cleanAttributes = (root: Element, applied: string[], aggressive: boolean) => {
   let changes = 0;
-  root.querySelectorAll('*').forEach((el) => Array.from(el.attributes).forEach((attr) => {
+  const allEls = [root, ...Array.from(root.querySelectorAll('*'))];
+  allEls.forEach((el) => Array.from(el.attributes).forEach((attr) => {
     const value = attr.value.trim();
     if (!value && attr.name !== 'id') {
       el.removeAttribute(attr.name);
@@ -1098,6 +1128,11 @@ const cleanAttributes = (root: Element, applied: string[], aggressive: boolean) 
       return;
     }
     if (attr.name === 'class' && !value) {
+      el.removeAttribute(attr.name);
+      changes++;
+      return;
+    }
+    if (/^(?:opacity|fill-opacity|stroke-opacity)$/i.test(attr.name) && (value === '1' || value === '1.0' || value === '1.00')) {
       el.removeAttribute(attr.name);
       changes++;
       return;
@@ -1121,7 +1156,8 @@ const minifyAttributes = (root: Element, precision: number, minifyColors: boolea
   const filterAttributes = /^(?:baseFrequency|tableValues|kernelMatrix|stdDeviation|scale|elevation|azimuth|surfaceScale|specularConstant|specularExponent|slope|intercept|amplitude|exponent|offset|diffuseConstant)$/i;
   const colorAttribute = /^(?:fill|stroke|color|stop-color|flood-color|lighting-color)$/i;
 
-  root.querySelectorAll('*').forEach((el) => Array.from(el.attributes).forEach((attr) => {
+  const allElements = [root, ...Array.from(root.querySelectorAll('*'))];
+  allElements.forEach((el) => Array.from(el.attributes).forEach((attr) => {
     const name = attr.name;
     let next = attr.value;
 
@@ -1137,7 +1173,18 @@ const minifyAttributes = (root: Element, precision: number, minifyColors: boolea
       const safeVbPrecision = Math.max(2, precision);
       next = roundNumericTokens(next, safeVbPrecision).replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
     } else if (coordAttributes.test(name)) {
-      next = roundNumericTokens(next, precision);
+      if (/^(?:r|rx|ry|width|height)$/i.test(name)) {
+        const origNum = Number(attr.value);
+        let rounded = roundNumericTokens(next, precision);
+        if (origNum > 0 && Number(rounded) <= 0) {
+          // Safeguard: do not round positive dimensions down to 0; retain precision or original
+          rounded = roundNumericTokens(next, Math.max(precision, 4));
+          if (Number(rounded) <= 0) rounded = attr.value;
+        }
+        next = rounded;
+      } else {
+        next = roundNumericTokens(next, precision);
+      }
     } else if (filterAttributes.test(name)) {
       next = roundNumericTokens(next, Math.max(4, precision));
     }
@@ -1502,8 +1549,9 @@ const serializeDocument = (doc: Document) =>
     .replace(/^<!DOCTYPE[^>]*>\s*/i, '');
 
 // Candidate validation gate
-const isCandidateAcceptable = (original: SvgAnalysis, candidate: SvgAnalysis, candidateSvg: string, originalCompact: string): boolean => {
+const isCandidateAcceptable = (original: SvgAnalysis, candidate: SvgAnalysis, candidateSvg: string, originalCompact: string, preserveViewBox = true): boolean => {
   if (!candidate.valid || !candidateSvg) return false;
+  if (original.elements > 1 && candidate.elements <= 1) return false;
   if (candidate.brokenReferences > original.brokenReferences) return false;
   if (candidate.duplicateIds > original.duplicateIds) return false;
   if (candidate.scripts > original.scripts) return false;
@@ -1514,7 +1562,7 @@ const isCandidateAcceptable = (original: SvgAnalysis, candidate: SvgAnalysis, ca
   if (original.filters > 0 && candidate.filters !== original.filters) return false;
   if (original.masks > 0 && candidate.masks !== original.masks) return false;
   if (candidate.animations !== original.animations) return false;
-  if (candidateSvg.length > originalCompact.length) return false;
+  if (preserveViewBox && candidateSvg.length > originalCompact.length) return false;
   return true;
 };
 
@@ -1591,12 +1639,29 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
     minifyStyles(root, precision, applied);
     cleanAttributes(root, applied, aggressive);
 
+    if (passOpts.preserveViewBox === false) {
+      const vb = root.getAttribute('viewBox');
+      if (vb) {
+        if (!root.getAttribute('width') || !root.getAttribute('height')) {
+          const parts = vb.trim().split(/[\s,]+/);
+          if (parts.length === 4) {
+            if (!root.getAttribute('width')) root.setAttribute('width', parts[2]);
+            if (!root.getAttribute('height')) root.setAttribute('height', parts[3]);
+          }
+        }
+        root.removeAttribute('viewBox');
+        applied.push('Removed viewBox attribute (non-responsive mode)');
+      }
+    }
+
     if (!structuralRisk && !before.animations && !before.filters && !before.masks) {
       removeHiddenElements(root, applied);
       removeEmptyPresentationAttrs(root, applied);
       removeEmptyAndDefaultElements(root, applied);
-      if (passOpts.mode === 'balanced' || aggressive) {
+      if (passOpts.mode === 'smart' || passOpts.mode === 'balanced' || aggressive) {
         convertEllipsesToCircles(root, applied);
+      }
+      if (passOpts.mode === 'balanced' || aggressive) {
         mergeSafeStrokePaths(root, applied);
       }
       if (aggressive) {
@@ -1612,7 +1677,7 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
       collapseEmptyWrapperGroups(root, applied);
     }
 
-    if (!structuralRisk && (passOpts.mode === 'balanced' || aggressive)) {
+    if (!structuralRisk && (passOpts.mode === 'smart' || passOpts.mode === 'balanced' || aggressive)) {
       removeUnusedDefsWithGraph(root, applied);
     } else if (before.defs) {
       skipped.push('Unused-def cleanup restricted by SVG risk level.');
@@ -1632,7 +1697,7 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
     const after = analyzeSvg(output);
     const originalCompact = compactWhitespace(rawInput);
 
-    if (!isCandidateAcceptable(before, after, output, originalCompact)) {
+    if (!isCandidateAcceptable(before, after, output, originalCompact, passOpts.preserveViewBox !== false)) {
       return {
         svg: originalCompact,
         analysis: before,
@@ -1664,7 +1729,7 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
     ? [Math.max(3, options.precision)]
     : options.mode === 'maximum'
       ? [Math.max(0, options.precision - 1), options.precision, Math.max(0, options.precision - 2)]
-      : [options.precision, Math.max(3, options.precision)];
+      : [options.precision];
 
   const uniquePrecisions = [...new Set(precisions)];
   for (const p of uniquePrecisions) {
@@ -1672,19 +1737,19 @@ export const runOptimizerCore = (input: string, options: OptimizationOptions): O
   }
 
   const originalCompact = compactWhitespace(input);
-  const validCandidates = candidates.filter((c) => isCandidateAcceptable(before, c.analysis, c.svg, originalCompact));
+  const validCandidates = candidates.filter((c) => isCandidateAcceptable(before, c.analysis, c.svg, originalCompact, options.preserveViewBox !== false));
 
   let best = validCandidates.reduce((a, b) => b.svg.length < a.svg.length ? b : a, validCandidates[0]);
   if (!best) return optimizePass(input, options);
 
   if (options.mode === 'maximum' || options.mode === 'balanced') {
     const second = optimizePass(best.svg, { ...options, precision: Math.max(0, Math.min(options.precision, 4)) });
-    if (isCandidateAcceptable(before, second.analysis, second.svg, originalCompact) && second.svg.length < best.svg.length) {
+    if (isCandidateAcceptable(before, second.analysis, second.svg, originalCompact, options.preserveViewBox !== false) && second.svg.length < best.svg.length) {
       best = second;
     }
   }
 
-  if (best.svg.length > originalCompact.length) {
+  if (options.preserveViewBox !== false && best.svg.length > originalCompact.length) {
     best = {
       ...best,
       svg: originalCompact,
@@ -1773,6 +1838,7 @@ export const SVG_SAMPLES = {
 // --- REACT COMPONENT ---
 export default function SvgOptimizer() {
   const [inputSvg, setInputSvg] = useState('');
+  const [preserveViewBox, setPreserveViewBox] = useState(true);
   const [removeXml, setRemoveXml] = useState(true);
   const [removeComments, setRemoveComments] = useState(true);
   const [removeEmptyGroups, setRemoveEmptyGroups] = useState(true);
@@ -1794,7 +1860,8 @@ export default function SvgOptimizer() {
     removeEmptyGroups: true,
     minifyColors: true,
     precision: 2,
-    mode: 'smart'
+    mode: 'smart',
+    preserveViewBox: true
   }));
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1806,6 +1873,7 @@ export default function SvgOptimizer() {
 
   const latestParamsRef = useRef({
     inputSvg,
+    preserveViewBox,
     removeXml,
     removeComments,
     removeEmptyGroups,
@@ -1817,6 +1885,7 @@ export default function SvgOptimizer() {
   useEffect(() => {
     latestParamsRef.current = {
       inputSvg,
+      preserveViewBox,
       removeXml,
       removeComments,
       removeEmptyGroups,
@@ -1920,7 +1989,8 @@ export default function SvgOptimizer() {
                 removeEmptyGroups: latestParamsRef.current.removeEmptyGroups,
                 minifyColors: latestParamsRef.current.minifyColors,
                 precision: latestParamsRef.current.precision,
-                mode: latestParamsRef.current.mode
+                mode: latestParamsRef.current.mode,
+                preserveViewBox: latestParamsRef.current.preserveViewBox
               };
               const fallbackRes = runOptimizerCore(inputToUse, optsToUse);
               setResult(fallbackRes);
@@ -1947,7 +2017,8 @@ export default function SvgOptimizer() {
               removeEmptyGroups: latestParamsRef.current.removeEmptyGroups,
               minifyColors: latestParamsRef.current.minifyColors,
               precision: latestParamsRef.current.precision,
-              mode: latestParamsRef.current.mode
+              mode: latestParamsRef.current.mode,
+              preserveViewBox: latestParamsRef.current.preserveViewBox
             };
             const fallbackRes = runOptimizerCore(inputToUse, optsToUse);
             setResult(fallbackRes);
@@ -2030,11 +2101,12 @@ export default function SvgOptimizer() {
         removeEmptyGroups,
         minifyColors,
         precision,
-        mode
+        mode,
+        preserveViewBox
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [inputSvg, removeXml, removeComments, removeEmptyGroups, minifyColors, precision, mode, triggerOptimization]);
+  }, [inputSvg, removeXml, removeComments, removeEmptyGroups, minifyColors, precision, mode, preserveViewBox, triggerOptimization]);
 
   const optimizedSvg = result.svg;
   const analysis = result.analysis;
@@ -2138,7 +2210,7 @@ export default function SvgOptimizer() {
     setInputSvg('');
     setErrorMessage(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setResult(runOptimizerCore('', { removeXml, removeComments, removeEmptyGroups, minifyColors, precision, mode }));
+    setResult(runOptimizerCore('', { removeXml, removeComments, removeEmptyGroups, minifyColors, precision, mode, preserveViewBox }));
   };
 
   const handleResetAll = useCallback(() => {
@@ -2149,6 +2221,7 @@ export default function SvgOptimizer() {
     requestIdRef.current++;
     pendingRequestsRef.current.clear();
     setInputSvg('');
+    setPreserveViewBox(true);
     setRemoveXml(true);
     setRemoveComments(true);
     setRemoveEmptyGroups(true);
@@ -2166,7 +2239,8 @@ export default function SvgOptimizer() {
       removeEmptyGroups: true,
       minifyColors: true,
       precision: 2,
-      mode: 'smart'
+      mode: 'smart',
+      preserveViewBox: true
     }));
   }, []);
 
@@ -2335,18 +2409,22 @@ export default function SvgOptimizer() {
               <SlidersHorizontal className="w-5 h-5 text-blue-600" /> Optimization Engine
             </h3>
 
-            {/* Safe Defaults Badge */}
-            <div className="flex items-center justify-between p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 mb-4">
+            {/* Preserve viewBox Toggle */}
+            <label className="flex items-center justify-between cursor-pointer p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 mb-4 transition-colors hover:bg-emerald-100/50 dark:hover:bg-emerald-950/40">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                 <span className="text-xs font-medium text-emerald-900 dark:text-emerald-200">
                   Preserve viewBox (Recommended for Responsive SVG)
                 </span>
               </div>
-              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded font-semibold uppercase tracking-wider">
-                Safe
-              </span>
-            </div>
+              <input
+                type="checkbox"
+                checked={preserveViewBox}
+                onChange={(e) => setPreserveViewBox(e.target.checked)}
+                aria-label="Preserve viewBox attribute for responsive scaling"
+                className="w-4 h-4 accent-emerald-600"
+              />
+            </label>
 
             <div role="radiogroup" aria-label="Optimization mode" className="grid grid-cols-2 gap-2 mb-4">
               {([['smart', '✨ Smart'], ['safe', '🛡 Safe'], ['balanced', '⚖ Balanced'], ['maximum', '🔥 Maximum']] as [OptimizationMode, string][]).map(([key, label]) => (
