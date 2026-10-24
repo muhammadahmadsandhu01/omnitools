@@ -637,6 +637,18 @@ export default function RegexTester() {
   const executionTimeoutRef = useRef<number | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
 
+  const patternRef = useRef(pattern);
+  const flagsRef = useRef(flags);
+  const testStringRef = useRef(testString);
+  const replacementRef = useRef(replacement);
+
+  useEffect(() => {
+    patternRef.current = pattern;
+    flagsRef.current = flags;
+    testStringRef.current = testString;
+    replacementRef.current = replacement;
+  }, [pattern, flags, testString, replacement]);
+
   // Restore state from URL hash via event listener / subscription
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -834,7 +846,23 @@ export default function RegexTester() {
         setExecutionTimedOut(false);
       }
     };
-  }, [killCurrentWorker]);
+
+    created.worker.onerror = () => {
+      if (executionTimeoutRef.current !== null) {
+        window.clearTimeout(executionTimeoutRef.current);
+        executionTimeoutRef.current = null;
+      }
+      runningRef.current = false;
+      setRunning(false);
+      runSynchronousFallback(
+        requestRef.current,
+        patternRef.current,
+        flagsRef.current,
+        testStringRef.current,
+        replacementRef.current
+      );
+    };
+  }, [killCurrentWorker, runSynchronousFallback]);
 
   useEffect(() => {
     initFreshWorker();
