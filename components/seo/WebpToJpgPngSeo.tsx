@@ -121,10 +121,15 @@ export default function WebpToJpgPngSeo() {
       />
 
       {/* SECTION 1: OVERVIEW */}
-      <section className="space-y-4">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+      <section aria-labelledby="webp-to-jpg-png-webp-to-jpg-amp-png-conversion" className="space-y-4">
+        <h2 id="webp-to-jpg-png-webp-to-jpg-amp-png-conversion" className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           WebP to JPG &amp; PNG Conversion: Universal Compatibility &amp; Privacy
         </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-base">
           Google developed the <strong>WebP</strong> format to dramatically shrink image file sizes on the modern web. By utilizing advanced VP8 intra-frame predictive coding, WebP delivers comparable visual fidelity to legacy JPEG and PNG formats while reducing payload sizes by 25% to 35%. Despite universal support across modern web browsers, WebP still faces significant compatibility friction across desktop software, legacy photo viewers, social media uploaders, content management systems, print laboratories, and enterprise email clients.
         </p>
@@ -134,8 +139,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 2: STEP BY STEP GUIDE */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-how-to-convert-webp-to-jpg-or-" className="space-y-4">
+        <h2 id="webp-to-jpg-png-how-to-convert-webp-to-jpg-or-" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           How to Convert WebP to JPG or PNG Step-by-Step
         </h2>
         <ol className="list-decimal pl-6 space-y-3 text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -158,8 +163,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 3: FORMAT COMPARISON MATRIX */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-format-comparison-webp-vs-jpg-" className="space-y-4">
+        <h2 id="webp-to-jpg-png-format-comparison-webp-vs-jpg-" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Format Comparison: WebP vs JPG vs PNG
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -218,8 +223,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 4: TRANSPARENCY & BACKGROUND COMPOSITING */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-transparency-mechanics-convert" className="space-y-4">
+        <h2 id="webp-to-jpg-png-transparency-mechanics-convert" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Transparency Mechanics: Converting WebP to JPG vs PNG
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -249,8 +254,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 5: ANIMATED WEBP LIMITATIONS */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-animated-webp-behavior-amp-fra" className="space-y-4">
+        <h2 id="webp-to-jpg-png-animated-webp-behavior-amp-fra" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Animated WebP Behavior &amp; Frame Extraction
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -265,8 +270,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 6: FILE SIZE & QUALITY TRADE-OFFS */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-quality-controls-amp-file-size" className="space-y-4">
+        <h2 id="webp-to-jpg-png-quality-controls-amp-file-size" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Quality Controls &amp; File-Size Trade-Offs
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -286,8 +291,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 7: COMMON TROUBLESHOOTING */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-troubleshooting-common-webp-co" className="space-y-4">
+        <h2 id="webp-to-jpg-png-troubleshooting-common-webp-co" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Troubleshooting Common WebP Conversion Errors
         </h2>
         <div className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
@@ -321,8 +326,8 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 8: 100% LOCAL PRIVACY */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-client-side-privacy-why-browse" className="space-y-4">
+        <h2 id="webp-to-jpg-png-client-side-privacy-why-browse" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Client-Side Privacy: Why Browser-Based Conversion Matters
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-sm sm:text-base">
@@ -334,30 +339,30 @@ export default function WebpToJpgPngSeo() {
       </section>
 
       {/* SECTION 9: FAQS */}
-      <section className="space-y-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-frequently-asked-questions" className="space-y-4">
+        <h2 id="webp-to-jpg-png-frequently-asked-questions" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Frequently Asked Questions
         </h2>
         <div className="space-y-3">
           {WEBP_TO_JPG_PNG_FAQS.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30"
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
             >
-              <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base mb-1.5">
-                {faq.question}
-              </h3>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
               </p>
-            </div>
-          ))}
-        </div>
+            </details>
+          ))}        </div>
       </section>
 
       {/* SECTION 10: RELATED KivaroTools UTILITIES */}
-      <section className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+      <section aria-labelledby="webp-to-jpg-png-related-media-amp-image-utilit" className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+        <h2 id="webp-to-jpg-png-related-media-amp-image-utilit" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Related Media &amp; Image Utilities
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-300">

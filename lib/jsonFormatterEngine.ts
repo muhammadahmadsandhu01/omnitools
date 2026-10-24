@@ -511,7 +511,7 @@ export const replaceBareIdentifiers = (source: string): string => {
 export const repairJson = (source: string): string => {
   let repaired = stripJsonComments(source);
   repaired = convertSingleQuotedStrings(repaired);
-  repaired = repaired.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
+  repaired = repaired.replace(/([{,]\s*)([A-Za-z0-9_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
   repaired = replaceBareIdentifiers(repaired);
   repaired = repaired.replace(/(?:,\s*)+([}\]])/g, '$1');
 
@@ -524,7 +524,7 @@ export const repairJson = (source: string): string => {
 // 5. JSONPATH EVALUATION
 // ============================================================================
 
-const childPath = (path: string, key: string | number, array = false): string => {
+export const childPath = (path: string, key: string | number, array = false): string => {
   if (array || typeof key === 'number') return `${path}[${key}]`;
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(String(key))
     ? `${path}.${key}`
@@ -1003,4 +1003,196 @@ export const SAMPLE_JSON_PAYLOADS = {
     null,
     2,
   ),
+};
+
+// ============================================================================
+// 10. TREE & SEARCH UTILITIES
+// ============================================================================
+
+export interface VisibleTreeRow {
+  id: string;
+  path: string;
+  keyName: string | null;
+  value: JsonValue;
+  isContainer: boolean;
+  isArray: boolean;
+  itemCount: number;
+  depth: number;
+  isExpanded: boolean;
+  hasChildren: boolean;
+  isLast: boolean;
+  isClosing: boolean;
+}
+
+export const normalizeSearchTerm = (term: string): string => term.trim().toLowerCase();
+
+export const containsMatch = (key: string | null, value: JsonValue, term: string): boolean => {
+  if (key !== null && key.toLowerCase().includes(term)) return true;
+  if (value === null) return 'null'.includes(term);
+  if (typeof value === 'boolean') return (value ? 'true' : 'false').includes(term);
+  if (typeof value === 'number') return String(value).toLowerCase().includes(term);
+  if (typeof value === 'string') return value.toLowerCase().includes(term);
+  return false;
+};
+
+export const countSearchMatches = (value: JsonValue, term: string): number => {
+  const normalized = normalizeSearchTerm(term);
+  if (!normalized) return 0;
+
+  let matches = 0;
+  const stack: Array<{ keyName: string | null; value: JsonValue }> = [{ keyName: null, value }];
+
+  while (stack.length) {
+    const current = stack.pop()!;
+    if (containsMatch(current.keyName, current.value, normalized)) {
+      matches += 1;
+    }
+
+    if (Array.isArray(current.value)) {
+      for (let i = current.value.length - 1; i >= 0; i -= 1) {
+        stack.push({ keyName: null, value: current.value[i] });
+      }
+    } else if (current.value !== null && typeof current.value === 'object') {
+      const objectValue = current.value as Record<string, JsonValue>;
+      const entries = Object.entries(objectValue);
+      for (let i = entries.length - 1; i >= 0; i -= 1) {
+        const [key, child] = entries[i];
+        stack.push({ keyName: key, value: child });
+      }
+    }
+  }
+
+  return matches;
+};
+
+export const buildSearchIndex = (
+  value: JsonValue,
+  term: string,
+): { matches: Set<string>; expanded: Set<string> } => {
+  const normalized = normalizeSearchTerm(term);
+  const matches = new Set<string>();
+  const expanded = new Set<string>();
+  if (!normalized) return { matches, expanded };
+
+  const stack: Array<{ keyName: string | null; value: JsonValue; path: string }> = [
+    { keyName: null, value, path: '$' },
+  ];
+
+  while (stack.length) {
+    const current = stack.pop()!;
+    if (containsMatch(current.keyName, current.value, normalized)) {
+      matches.add(current.path);
+      let ancestor = current.path;
+      while (ancestor !== '$') {
+        const lastDot = ancestor.lastIndexOf('.');
+        const lastBracket = ancestor.lastIndexOf('[');
+        const cut = Math.max(lastDot, lastBracket);
+        ancestor = cut > 0 ? ancestor.slice(0, cut) : '$';
+        expanded.add(ancestor);
+      }
+    }
+
+    if (Array.isArray(current.value)) {
+      for (let i = current.value.length - 1; i >= 0; i -= 1) {
+        stack.push({ path: childPath(current.path, i, true), keyName: null, value: current.value[i] });
+      }
+    } else if (current.value !== null && typeof current.value === 'object') {
+      const objectValue = current.value as Record<string, JsonValue>;
+      const entries = Object.entries(objectValue);
+      for (let i = entries.length - 1; i >= 0; i -= 1) {
+        const [key, child] = entries[i];
+        stack.push({ path: childPath(current.path, key), keyName: key, value: child });
+      }
+    }
+  }
+
+  return { matches, expanded };
+};
+
+export const flattenVisibleTree = (
+  root: JsonValue,
+  expandedPaths: Set<string>,
+  maxRows = 60_000,
+  sortKeys = false,
+): VisibleTreeRow[] => {
+  const rows: VisibleTreeRow[] = [];
+
+  const walk = (val: JsonValue, path: string, keyName: string | null, depth: number, isLast: boolean) => {
+    if (rows.length >= maxRows) return;
+
+    const isObject = val !== null && typeof val === 'object' && !Array.isArray(val);
+    const isArray = Array.isArray(val);
+    const isCont = isObject || isArray;
+
+    if (!isCont) {
+      rows.push({
+        id: path,
+        path,
+        keyName,
+        value: val,
+        isContainer: false,
+        isArray: false,
+        itemCount: 0,
+        depth,
+        isExpanded: false,
+        hasChildren: false,
+        isLast,
+        isClosing: false,
+      });
+      return;
+    }
+
+    const rawKeys: string[] = isArray ? (val as JsonValue[]).map((_, i) => String(i)) : Object.keys(val as Record<string, JsonValue>);
+    const keys: string[] = !isArray && sortKeys
+      ? [...rawKeys].sort((a, b) => a.localeCompare(b))
+      : rawKeys;
+    const itemCount = keys.length;
+    const isExpanded = expandedPaths.has(path);
+
+    rows.push({
+      id: path,
+      path,
+      keyName,
+      value: val,
+      isContainer: true,
+      isArray,
+      itemCount,
+      depth,
+      isExpanded,
+      hasChildren: itemCount > 0,
+      isLast,
+      isClosing: false,
+    });
+
+    if (isExpanded && itemCount > 0) {
+      for (let i = 0; i < keys.length; i += 1) {
+        if (rows.length >= maxRows) break;
+        const k = keys[i];
+        const childVal = isArray ? (val as JsonValue[])[Number(k)] : (val as Record<string, JsonValue>)[k];
+        const cPath = childPath(path, isArray ? Number(k) : k, isArray);
+        const childIsLast = i === keys.length - 1;
+        walk(childVal, cPath, isArray ? null : k, depth + 1, childIsLast);
+      }
+
+      if (rows.length < maxRows) {
+        rows.push({
+          id: `${path}_close`,
+          path,
+          keyName: null,
+          value: val,
+          isContainer: true,
+          isArray,
+          itemCount,
+          depth,
+          isExpanded: true,
+          hasChildren: itemCount > 0,
+          isLast,
+          isClosing: true,
+        });
+      }
+    }
+  };
+
+  walk(root, '$', null, 0, true);
+  return rows;
 };

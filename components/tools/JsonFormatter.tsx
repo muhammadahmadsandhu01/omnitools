@@ -433,7 +433,7 @@ const replaceBareIdentifiers = (source: string) => {
 const repairJson = (source: string) => {
   let repaired = stripJsonComments(source);
   repaired = convertSingleQuotedStrings(repaired);
-  repaired = repaired.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
+  repaired = repaired.replace(/([{,]\s*)([A-Za-z0-9_$][A-Za-z0-9_$-]*)(\s*:)/g, '$1"$2"$3');
   repaired = replaceBareIdentifiers(repaired);
   repaired = repaired.replace(/(?:,\s*)+([}\]])/g, '$1');
 
@@ -877,6 +877,7 @@ const flattenVisibleTree = (
   root: JsonValue,
   expandedPaths: Set<string>,
   maxRows = MAX_VISIBLE_ROWS,
+  sortKeys = false,
 ): VisibleTreeRow[] => {
   const rows: VisibleTreeRow[] = [];
 
@@ -905,7 +906,10 @@ const flattenVisibleTree = (
       return;
     }
 
-    const keys: string[] = isArray ? (val as JsonValue[]).map((_, i) => String(i)) : Object.keys(val as { [key: string]: JsonValue });
+    const rawKeys: string[] = isArray ? (val as JsonValue[]).map((_, i) => String(i)) : Object.keys(val as { [key: string]: JsonValue });
+    const keys: string[] = !isArray && sortKeys
+      ? [...rawKeys].sort((a, b) => a.localeCompare(b))
+      : rawKeys;
     const itemCount = keys.length;
     const isExpanded = expandedPaths.has(path);
 
@@ -1057,6 +1061,10 @@ export default function JsonFormatter() {
   const [copied, setCopied] = useState(false);
   const [copiedMinified, setCopiedMinified] = useState(false);
   const [repairSuccess, setRepairSuccess] = useState(false);
+  const [repairInspection, setRepairInspection] = useState<{
+    repaired: string;
+    fixes: string[];
+  } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [filename, setFilename] = useState('formatted-json.json');
@@ -1095,8 +1103,9 @@ export default function JsonFormatter() {
 
   const searchIndex = useMemo(() => {
     if (parsedJson === null || !searchTerm.trim()) return { matches: new Set<string>(), expanded: new Set<string>() };
-    return buildSearchIndex(parsedJson, searchTerm);
-  }, [parsedJson, searchTerm]);
+    const target = sortKeysEnabled ? sortJsonKeys(parsedJson) : parsedJson;
+    return buildSearchIndex(target, searchTerm);
+  }, [parsedJson, searchTerm, sortKeysEnabled]);
 
   // Combine user-expanded paths with search-matched ancestor paths
   const effectiveExpandedPaths = useMemo(() => {
@@ -1109,8 +1118,9 @@ export default function JsonFormatter() {
   // Flatten currently visible rows
   const visibleRows = useMemo(() => {
     if (parsedJson === null) return [];
-    return flattenVisibleTree(parsedJson, effectiveExpandedPaths);
-  }, [parsedJson, effectiveExpandedPaths]);
+    const target = sortKeysEnabled ? sortJsonKeys(parsedJson) : parsedJson;
+    return flattenVisibleTree(target, effectiveExpandedPaths, MAX_VISIBLE_ROWS, sortKeysEnabled);
+  }, [parsedJson, effectiveExpandedPaths, sortKeysEnabled]);
 
   // Virtual windowing calculations
   const totalRows = visibleRows.length;
@@ -1330,15 +1340,59 @@ export default function JsonFormatter() {
   const handleRepair = () => {
     if (!input.trim()) return;
     try {
-      const repaired = repairJson(input);
-      setInput(JSON.stringify(JSON.parse(repaired), null, indentStyle === 'tab' ? '\t' : Number(indentStyle)));
+      const repairedRaw = repairJson(input);
+      const parsed = JSON.parse(repairedRaw) as JsonValue;
+      const indent = indentStyle === 'tab' ? '\t' : Number(indentStyle);
+      const formatted = JSON.stringify(sortKeysEnabled ? sortJsonKeys(parsed) : parsed, null, indent);
+
+      const fixes: string[] = [];
+      if (input.includes('//') || input.includes('/*')) fixes.push('Stripped JavaScript comments');
+      if (/'/.test(input)) fixes.push('Normalized single quotes to double quotes');
+      if (/(?:,\s*)+[}\]]/.test(input)) fixes.push('Removed trailing commas');
+      if (/\b(True|False|None|undefined|NaN|Infinity)\b/.test(input)) fixes.push('Replaced non-JSON literals (True/False/None)');
+      if (/[{,]\s*[A-Za-z0-9_$][A-Za-z0-9_$-]*\s*:/.test(input)) fixes.push('Enclosed unquoted object keys in double quotes');
+      if (fixes.length === 0) fixes.push('Normalized JSON formatting and structure');
+
+      if (input.trim() === formatted.trim()) {
+        setRepairSuccess(false);
+        setError('JSON is already valid; no syntax repairs were needed.');
+        setRepairInspection(null);
+        return;
+      }
+
+      setRepairInspection({
+        repaired: formatted,
+        fixes,
+      });
       setError(null);
-      setRepairSuccess(true);
-      window.setTimeout(() => setRepairSuccess(false), 3000);
     } catch (e) {
+      setRepairInspection(null);
       setRepairSuccess(false);
       setError(`Repair could not produce valid JSON: ${e instanceof Error ? e.message : 'Unknown error.'}`);
     }
+  };
+
+  const handleApplyRepaired = () => {
+    if (!repairInspection) return;
+    setInput(repairInspection.repaired);
+    setRepairInspection(null);
+    setRepairSuccess(true);
+    window.setTimeout(() => setRepairSuccess(false), 4000);
+  };
+
+  const handleCopyRepaired = async () => {
+    if (!repairInspection) return;
+    try {
+      await navigator.clipboard.writeText(repairInspection.repaired);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setError('Clipboard access was blocked by the browser.');
+    }
+  };
+
+  const handleDiscardRepaired = () => {
+    setRepairInspection(null);
   };
 
   const handleRemoveNulls = () => {
@@ -1431,6 +1485,27 @@ export default function JsonFormatter() {
     }
   };
 
+  const handleSortKeys = () => {
+    setSortKeysEnabled(true);
+    const indent = indentStyle === 'tab' ? '\t' : Number(indentStyle);
+    if (parsedJson !== null) {
+      const sorted = sortJsonKeys(parsedJson);
+      setInput(JSON.stringify(sorted, null, indent));
+      setParsedJson(sorted);
+      setError(null);
+    } else if (input.trim()) {
+      try {
+        const parsed = JSON.parse(input) as JsonValue;
+        const sorted = sortJsonKeys(parsed);
+        setInput(JSON.stringify(sorted, null, indent));
+        setParsedJson(sorted);
+        setError(null);
+      } catch (err) {
+        setError(parseJsonError(err, input));
+      }
+    }
+  };
+
   const handleCopy = async () => {
     if (parsedJson === null) return;
     try {
@@ -1479,6 +1554,7 @@ export default function JsonFormatter() {
     setCopied(false);
     setCopiedMinified(false);
     setRepairSuccess(false);
+    setRepairInspection(null);
     setQueryResult([]);
     setQueryError(null);
     setJsonPath('$');
@@ -1572,6 +1648,16 @@ export default function JsonFormatter() {
             </button>
 
             <button
+              onClick={handleSortKeys}
+              disabled={!input.trim()}
+              aria-label="Sort JSON keys"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-[#0B1120] text-slate-700 dark:text-slate-300 border border-gray-300 dark:border-slate-700 rounded-lg hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-xs font-semibold disabled:opacity-50"
+              title="Sort object keys alphabetically"
+            >
+              <ArrowDownAZ className="w-3.5 h-3.5 text-blue-500" /> Sort
+            </button>
+
+            <button
               onClick={handleMinify}
               disabled={!input.trim()}
               aria-label="Minify JSON"
@@ -1602,6 +1688,63 @@ export default function JsonFormatter() {
           }}
         />
 
+        {/* Non-Destructive Repair Inspection Preview */}
+        {repairInspection && (
+          <div className="flex flex-col gap-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border border-amber-300 dark:border-amber-700/60 p-4 rounded-2xl shadow-sm animate-in fade-in">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  Repaired JSON Preview — Inspect Changes Before Applying
+                </h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyRepaired}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-sm transition-all"
+                >
+                  <Check className="w-3.5 h-3.5" /> Apply to Editor
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyRepaired}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-400 dark:border-amber-700 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-200 text-xs font-semibold hover:bg-amber-100/50 dark:hover:bg-amber-900/40 transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy Repaired
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDiscardRepaired}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-medium transition-colors"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+
+            {/* Detected Fix Badges */}
+            {repairInspection.fixes.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 mr-1">Fixes detected:</span>
+                {repairInspection.fixes.map((fix) => (
+                  <span
+                    key={fix}
+                    className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 text-[10px] font-medium border border-amber-200 dark:border-amber-800"
+                  >
+                    {fix}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Monospace Repaired Preview */}
+            <div className="relative rounded-xl border border-amber-200 dark:border-amber-800/60 bg-white/90 dark:bg-slate-950/80 p-3 max-h-56 overflow-auto font-mono text-xs text-slate-800 dark:text-slate-200 [scrollbar-width:thin]">
+              <pre className="whitespace-pre-wrap break-all">{repairInspection.repaired}</pre>
+            </div>
+          </div>
+        )}
+
         <div
           onDragOver={(event) => {
             event.preventDefault();
@@ -1615,7 +1758,10 @@ export default function JsonFormatter() {
         >
           <textarea
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              if (repairInspection) setRepairInspection(null);
+            }}
             placeholder={'Paste your raw JSON payload here...\n{\n  "status": "success",\n  "data": [1, 2, 3]\n}'}
             className="w-full h-full min-h-[420px] lg:min-h-[620px] p-4 bg-transparent focus:outline-none text-slate-700 dark:text-slate-300 font-mono text-sm resize-none [scrollbar-width:thin]"
             spellCheck="false"
@@ -1727,8 +1873,8 @@ export default function JsonFormatter() {
 
             <button
               type="button"
-              onClick={() => setSortKeysEnabled((value) => !value)}
-              disabled={parsedJson === null}
+              onClick={handleSortKeys}
+              disabled={!input.trim() && parsedJson === null}
               className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-50 ${
                 sortKeysEnabled
                   ? 'border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'

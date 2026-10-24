@@ -25,7 +25,7 @@ export default function HomeClient() {
     useState<FilterCategory>('all');
 
   const filteredTools = useMemo(() => {
-    const visibleTools = tools.filter((tool) => !tool.hidden);
+    const visibleTools = tools.filter((tool) => tool.status === 'published' && !tool.hidden);
     if (activeCategory === 'all') {
       return visibleTools;
     }
@@ -34,7 +34,7 @@ export default function HomeClient() {
   }, [activeCategory]);
 
   const popularTools = useMemo(() => {
-    return tools.filter((tool) => tool.isPopular && !tool.hidden).slice(0, 6);
+    return tools.filter((tool) => tool.isPopular && tool.status === 'published' && !tool.hidden).slice(0, 6);
   }, []);
 
   const getCategory = (categoryId: CategoryId) =>
@@ -213,7 +213,7 @@ export default function HomeClient() {
               All Tools
             </button>
 
-            {categories.map((category) => {
+            {categories.filter((category) => !category.hidden).map((category) => {
               const Icon = category.icon;
               const isActive = activeCategory === category.id;
 

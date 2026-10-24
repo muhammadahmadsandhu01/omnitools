@@ -74,21 +74,24 @@ export default function EmiCalculatorSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* FAQ Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="emi-calculator-equated-monthly-installment-em" className="mb-8">
+        <h2 id="emi-calculator-equated-monthly-installment-em" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         Equated Monthly Installment (EMI) Guide: Formulas, Amortization &amp; Repayment Strategies
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         An <strong>Equated Monthly Installment (EMI)</strong> is a structured periodic payment made by a borrower to a financial institution on a fixed date each month. EMIs represent the standard mechanism for amortizing personal loans, auto loans, consumer retail credit, and residential mortgages. By balancing principal repayment and accrued interest across each installment, the borrower systematically extinguishes the entire debt obligation by the final maturity date.
       </p>
 
       {/* Section 1: How the Reducing-Balance EMI Calculation Works */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-1-how-the-reducing-balance-emi" className="mb-8">
+        <h3 id="emi-calculator-1-how-the-reducing-balance-emi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         1. How the Reducing-Balance EMI Formula Works
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -134,7 +137,10 @@ export default function EmiCalculatorSeo() {
       </div>
 
       {/* Section 2: Step-by-Step Worked Numerical Example */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-2-step-by-step-worked-numerica" className="mb-8">
+        <h3 id="emi-calculator-2-step-by-step-worked-numerica" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         2. Step-by-Step Worked Numerical Example
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -177,7 +183,10 @@ export default function EmiCalculatorSeo() {
       </div>
 
       {/* Section 3: Reducing Balance vs. Flat Rate Loans */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-3-reducing-balance-vs-flat-rat" className="mb-8">
+        <h3 id="emi-calculator-3-reducing-balance-vs-flat-rat" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         3. Reducing Balance vs. Flat Rate: The Borrowing Cost Trap
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -218,7 +227,10 @@ export default function EmiCalculatorSeo() {
       </div>
 
       {/* Section 4: Tenure vs. Interest Rate Trade-Offs */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-4-impact-of-loan-tenure-and-in" className="mb-8">
+        <h3 id="emi-calculator-4-impact-of-loan-tenure-and-in" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         4. Impact of Loan Tenure and Interest Rates on Total Repayment
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -234,7 +246,10 @@ export default function EmiCalculatorSeo() {
       </ul>
 
       {/* Section 5: Prepayment Optimization Strategies */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-5-prepayment-optimization-tenu" className="mb-8">
+        <h3 id="emi-calculator-5-prepayment-optimization-tenu" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         5. Prepayment Optimization: Tenure Reduction vs. Payment Reduction
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -256,7 +271,10 @@ export default function EmiCalculatorSeo() {
       </div>
 
       {/* Section 6: Payment Frequency Optimization */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-6-payment-frequency-optimizati" className="mb-8">
+        <h3 id="emi-calculator-6-payment-frequency-optimizati" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         6. Payment Frequency Optimization: Monthly vs. Accelerated Biweekly
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -264,7 +282,10 @@ export default function EmiCalculatorSeo() {
       </p>
 
       {/* Section 7: Origination & Recurring Fee Transparency */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-7-fee-transparency-origination" className="mb-8">
+        <h3 id="emi-calculator-7-fee-transparency-origination" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         7. Fee Transparency: Origination Fees and Monthly Service Charges
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -286,7 +307,10 @@ export default function EmiCalculatorSeo() {
       </div>
 
       {/* Section 8: Budgeting & Debt-to-Income Guidelines */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-8-practical-budgeting-amp-debt" className="mb-8">
+        <h3 id="emi-calculator-8-practical-budgeting-amp-debt" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         8. Practical Budgeting &amp; Debt-to-Income (DTI) Guidelines
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -299,27 +323,33 @@ export default function EmiCalculatorSeo() {
       </ul>
 
       {/* Section 9: Frequently Asked Questions */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-9-frequently-asked-questions" className="mb-8">
+        <h3 id="emi-calculator-9-frequently-asked-questions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         9. Frequently Asked Questions
       </h3>
-      <div className="space-y-4 mb-6">
-        {EMI_CALCULATOR_FAQS.map((faq, index) => (
-          <div
-            key={index}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
-          >
-            <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </p>
-          </div>
-        ))}
-      </div>
+      <div className="space-y-3">
+          {EMI_CALCULATOR_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}        </div>
 
       {/* Section 10: Related Financial Calculators */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="emi-calculator-10-related-financial-calculato" className="mb-8">
+        <h3 id="emi-calculator-10-related-financial-calculato" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         10. Related Financial Calculators on KivaroTools
       </h3>
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
@@ -365,6 +395,7 @@ export default function EmiCalculatorSeo() {
           This calculator provides deterministic mathematical projections for planning and educational purposes based on user-supplied parameters. It does not constitute formal financial, lending, or legal advice. Real loan contracts vary by financial institution, regional regulatory requirements, credit rating, day-count conventions, and loan origination policies. Always review the binding disclosure statement provided by your lender.
         </p>
       </div>
+      </section>
     </article>
   );
 }

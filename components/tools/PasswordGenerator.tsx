@@ -1022,44 +1022,79 @@ export default function PasswordGenerator() {
             <h2 id="heading-analyzer" className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2 border-b border-gray-200 dark:border-slate-800 pb-3">
               <ShieldAlert className="w-5 h-5 text-blue-600" /> Password Security Analyzer
             </h2>
-            <label htmlFor="textarea-analyzer" className="text-xs text-slate-500 dark:text-slate-400">
-              Paste or type a password to inspect its local composition:
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="textarea-analyzer" className="text-xs text-slate-500 dark:text-slate-400">
+                Paste or type a password to inspect its local composition:
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAnalysisInput(password)}
+                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Use Generated Password
+                </button>
+                {analysisInput && (
+                  <button
+                    type="button"
+                    onClick={() => setAnalysisInput('')}
+                    className="text-xs font-semibold text-red-500 hover:text-red-600 hover:underline ml-1"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
             <textarea
               id="textarea-analyzer"
               value={analysisInput}
               onChange={e => setAnalysisInput(e.target.value.slice(0, 4096))}
-              placeholder="Paste a password to analyze locally…"
+              placeholder="Paste or type a password to analyze locally…"
               className="w-full h-24 p-4 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white text-sm resize-none font-mono"
             />
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
               {(() => {
-                const a = analyzePassword(analysisInput || password);
+                const hasInput = analysisInput.length > 0;
+                const a = hasInput
+                  ? analyzePassword(analysisInput)
+                  : {
+                      score: 0,
+                      entropy: 0,
+                      length: 0,
+                      label: 'No password' as const,
+                      repeated: false,
+                      sequence: false,
+                      keyboard: false,
+                      dictionary: false,
+                      dateLike: false,
+                      common: false,
+                      warnings: ['Enter a password above to inspect strength and pattern vulnerabilities.'],
+                    };
                 return (
                   <>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Score</div>
-                      <div className="font-bold text-blue-600 dark:text-blue-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-0.5">
+                      <div className={`font-bold ${hasInput ? (a.score >= 75 ? 'text-emerald-600 dark:text-emerald-400' : a.score >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400') : 'text-slate-400 dark:text-slate-500'} text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-0.5`}>
                         <span>{a.score}</span>
-                        <span className="text-xs sm:text-sm font-semibold text-blue-500/80 dark:text-blue-400/80">/100</span>
+                        <span className="text-xs sm:text-sm font-semibold opacity-70">/100</span>
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Entropy</div>
-                      <div className="font-bold text-slate-800 dark:text-white text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-1">
-                        <span>~{a.entropy}</span>
+                      <div className={`font-bold ${hasInput ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500'} text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap flex items-baseline gap-1`}>
+                        <span>{hasInput ? `~${a.entropy}` : '0'}</span>
                         <span className="text-[11px] sm:text-xs font-normal text-slate-500 dark:text-slate-400">bits</span>
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Length</div>
-                      <div className="font-bold text-slate-800 dark:text-white text-base sm:text-lg tracking-tight leading-tight min-w-0 whitespace-nowrap">
+                      <div className={`font-bold ${hasInput ? 'text-slate-800 dark:text-white' : 'text-slate-400 dark:text-slate-500'} text-base sm:text-lg tracking-tight leading-tight min-w-0 whitespace-nowrap`}>
                         {a.length}
                       </div>
                     </div>
                     <div className="min-w-0 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between">
                       <div className="text-slate-500 dark:text-slate-400 text-[11px] font-medium leading-none mb-1">Verdict</div>
-                      <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap">
+                      <div className={`font-bold ${hasInput ? (a.score >= 75 ? 'text-emerald-600 dark:text-emerald-400' : a.score >= 50 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400') : 'text-slate-400 dark:text-slate-500'} text-sm sm:text-base tracking-tight leading-tight min-w-0 whitespace-nowrap`}>
                         {a.label}
                       </div>
                     </div>
@@ -1069,26 +1104,31 @@ export default function PasswordGenerator() {
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               {(() => {
-                const a = analyzePassword(analysisInput || password);
+                const hasInput = analysisInput.length > 0;
+                const a = hasInput ? analyzePassword(analysisInput) : null;
+                const criteria = [
+                  ['Repeated', a?.repeated ?? false],
+                  ['Sequence', a?.sequence ?? false],
+                  ['Keyboard pattern', a?.keyboard ?? false],
+                  ['Dictionary-like', a?.dictionary ?? false],
+                  ['Common password', a?.common ?? false],
+                  ['Date/year-like', a?.dateLike ?? false],
+                ] as const;
+
                 return (
                   <>
-                    {[
-                      ['Repeated', a.repeated],
-                      ['Sequence', a.sequence],
-                      ['Keyboard pattern', a.keyboard],
-                      ['Dictionary-like', a.dictionary],
-                      ['Common password', a.common],
-                      ['Date/year-like', a.dateLike],
-                    ].map(([lbl, bad]) => (
+                    {criteria.map(([lbl, bad]) => (
                       <div
                         key={String(lbl)}
                         className={`min-w-0 rounded-lg border px-2.5 py-1.5 text-xs break-words leading-tight flex items-center gap-1.5 ${
-                          bad
+                          !hasInput
+                            ? 'border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-900/30 text-slate-400 dark:text-slate-500'
+                            : bad
                             ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800/40 dark:bg-red-900/20 dark:text-red-300'
                             : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-300'
                         }`}
                       >
-                        <span className="shrink-0">{bad ? '⚠' : '✓'}</span>
+                        <span className="shrink-0">{!hasInput ? '—' : bad ? '⚠' : '✓'}</span>
                         <span className="min-w-0 break-words">{String(lbl)}</span>
                       </div>
                     ))}
@@ -1096,9 +1136,15 @@ export default function PasswordGenerator() {
                 );
               })()}
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Local heuristic analysis — not an unhackability guarantee. High scores indicate high search space, not absolute immunity.
-            </p>
+            {!analysisInput ? (
+              <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+                Awaiting input: Enter or paste a password above to evaluate entropy, dictionary patterns, and heuristic resilience.
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Local heuristic analysis — not an unhackability guarantee. High scores indicate high search space, not absolute immunity.
+              </p>
+            )}
           </section>
 
           {/* DEVELOPER SECRET GENERATOR */}

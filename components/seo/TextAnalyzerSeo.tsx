@@ -71,10 +71,15 @@ export default function TextAnalyzerSeo() {
       />
 
       {/* Overview Section */}
-      <section className="mb-10">
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
+      <section aria-labelledby="text-analyzer-comprehensive-text-analysis-am" className="mb-10">
+        <h2 id="text-analyzer-comprehensive-text-analysis-am" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
           Comprehensive Text Analysis &amp; Readability Studio
         </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4 text-base sm:text-lg">
           Whether drafting an editorial article, university essay, keynote speech, novel manuscript, or search-optimized
           blog post, hitting precise length and comprehension targets is essential for clear communication. The KivaroTools{' '}
@@ -90,8 +95,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* How to Use Section */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-how-to-use-the-text-analyzer" className="mb-10">
+        <h2 id="text-analyzer-how-to-use-the-text-analyzer" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
           How to Use the Text Analyzer
         </h2>
@@ -136,8 +141,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Counting Conventions Section */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-core-counting-conventions-amp-" className="mb-10">
+        <h2 id="text-analyzer-core-counting-conventions-amp-" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <Layers className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
           Core Counting Conventions &amp; Definitions
         </h2>
@@ -170,8 +175,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Readability Formulas & Benchmarks */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-readability-formulas-amp-educa" className="mb-10">
+        <h2 id="text-analyzer-readability-formulas-amp-educa" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
           Readability Formulas &amp; Educational Scoring Benchmarks
         </h2>
@@ -251,8 +256,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Reading Time & Speaking Time */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-reading-time-amp-speaking-time" className="mb-10">
+        <h2 id="text-analyzer-reading-time-amp-speaking-time" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
           Reading Time &amp; Speaking Time Calculation Standards
         </h2>
@@ -282,8 +287,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Keyword Density & Repetition */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-keyword-density-amp-content-re" className="mb-10">
+        <h2 id="text-analyzer-keyword-density-amp-content-re" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
           Keyword Density &amp; Content Repetition Analysis
         </h2>
@@ -310,8 +315,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Digital Publishing & Character Limits */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <section aria-labelledby="text-analyzer-digital-publishing-amp-charact" className="mb-10">
+        <h2 id="text-analyzer-digital-publishing-amp-charact" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Digital Publishing &amp; Character Limits Reference
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -327,8 +332,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Practical Applications */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <section aria-labelledby="text-analyzer-practical-applications-across-" className="mb-10">
+        <h2 id="text-analyzer-practical-applications-across-" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Practical Applications Across Disciplines
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-6">
@@ -360,8 +365,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Accuracy & Limitations */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+      <section aria-labelledby="text-analyzer-accuracy-guarantees-amp-langua" className="mb-10">
+        <h2 id="text-analyzer-accuracy-guarantees-amp-langua" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Accuracy Guarantees &amp; Language Limitations
         </h2>
         <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
@@ -378,8 +383,8 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Privacy Guarantee */}
-      <section className="mb-10 p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 not-prose">
-        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
+      <section aria-labelledby="text-analyzer-100-client-side-privacy-guaran" className="mb-10 p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 not-prose">
+        <h2 id="text-analyzer-100-client-side-privacy-guaran" className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
           100% Client-Side Privacy Guarantee
         </h2>
@@ -403,22 +408,25 @@ export default function TextAnalyzerSeo() {
       </section>
 
       {/* Frequently Asked Questions */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
+      <section aria-labelledby="text-analyzer-frequently-asked-questions" className="mb-10">
+        <h2 id="text-analyzer-frequently-asked-questions" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
           Frequently Asked Questions
         </h2>
-        <dl className="space-y-6">
+        <div className="space-y-3">
           {TEXT_ANALYZER_FAQS.map((faq, index) => (
-            <div key={index} className="border-b border-gray-100 dark:border-slate-800 pb-5 last:border-b-0">
-              <dt className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {faq.question}
-              </dt>
-              <dd className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
-              </dd>
-            </div>
-          ))}
-        </dl>
+              </p>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Related Content & Developer Utilities */}

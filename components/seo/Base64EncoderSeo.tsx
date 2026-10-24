@@ -5,61 +5,76 @@ export interface FaqItem {
   answer: string;
 }
 
-export const BASE64_FAQS: FaqItem[] = [
+export const BASE64_ENCODER_FAQS: FaqItem[] = [
   {
-    question: 'What is Base64 and why do developers use it?',
+    question: 'Why does window.btoa() fail on Unicode characters and emojis in JavaScript?',
     answer:
-      'Base64 is a binary-to-text encoding algorithm standardized by RFC 4648 that represents arbitrary binary bytes using an index of 64 printable US-ASCII characters. Developers use Base64 to safely transmit binary data—such as image files, cryptographic keys, hashes, and compiled blobs—across legacy protocols like HTTP headers, JSON, XML, and SMTP email that were designed strictly for printable text.',
+      'The legacy browser method window.btoa() only operates on binary strings where each character code is strictly within the Latin1 range (0 to 255). Passing multi-byte UTF-8 characters (such as accented letters, Cyrillic, Arabic, Asian scripts, or emojis like 👋 🌍) throws a DOMException: "The string that is to be encoded contains characters outside of the Latin1 range". KivaroTools uses the WHATWG TextEncoder API to convert text into true UTF-8 octets before encoding, ensuring 100% lossless Unicode support.',
   },
   {
-    question: 'Why does Base64 encoding increase file size by roughly 33%?',
+    question: 'What is the difference between standard Base64 and URL-safe Base64URL (RFC 4648 §5)?',
     answer:
-      'Computers store data in 8-bit bytes. Base64 divides incoming data into 6-bit sextets (2^6 = 64 possible values). Because three 8-bit bytes (24 bits total) are redistributed into four 6-bit symbols (24 bits total, each represented by an 8-bit character in text), every 3 bytes of input expand into 4 bytes of text. This produces a mathematical size overhead of exactly 4/3, or approximately 33.33% (plus any trailing padding characters).',
+      'Standard Base64 (RFC 4648 §4) uses plus (+) and forward slash (/) as characters 62 and 63, and equals signs (=) for padding. In HTTP URLs, query parameters, and web headers, + represents a space and / acts as a path delimiter, requiring clumsy percent-encoding (%2B and %2F). Base64URL replaces + with hyphen (-) and / with underscore (_), and typically omits padding (=), making tokens safe for JWTs, OAuth2 state parameters, and URL slugs.',
   },
   {
-    question: 'Is Base64 considered encryption or security?',
+    question: 'Why do Base64 strings increase payload size by approximately 33%?',
     answer:
-      'No. Base64 is strictly a data formatting encoding, NOT encryption. It involves no secret keys, initialization vectors, or cryptographic protection. Anyone who receives a Base64 string can decode it back to the original plaintext in milliseconds using any standard decoder or browser console. Never use Base64 to conceal passwords, API keys, private tokens, or confidential data.',
+      'Base64 encodes binary data by grouping 8-bit bytes into 6-bit chunks, representing each 6-bit value with an ASCII character from a 64-character alphabet. Because 3 raw bytes (24 bits) map to 4 ASCII characters (4 × 8 = 32 bits), Base64 encoding inherently introduces a 4:3 size expansion (approximately 33.3% overhead, excluding padding characters).',
   },
   {
-    question: 'What is the difference between standard Base64 and URL-Safe Base64 (Base64URL)?',
+    question: 'What are Data URIs and how are they used in HTML and CSS?',
     answer:
-      'Standard Base64 (RFC 4648 §4) uses characters 62 as plus (+) and 63 as slash (/), with equals (=) for padding. Both plus and slash have reserved semantic meanings in URL paths, query parameters, and HTTP headers. URL-Safe Base64 (RFC 4648 §5) substitutes plus with hyphen (-) and slash with underscore (_), and commonly omits trailing padding characters (=) to prevent URL parameter parsing corruption in JWTs and web tokens.',
+      'A Data URI formats binary media directly into a string with the syntax "data:<mime-type>;base64,<encoded-data>". Data URIs can be pasted into HTML <img> src attributes, CSS background-image rules, or @font-face declarations, eliminating separate HTTP requests for micro-icons, 1×1 placeholder pixels, and critical font files.',
   },
   {
-    question: 'Why do some Base64 strings end with one or two equals (=) signs?',
+    question: 'How does KivaroTools detect file types and extensions from raw Base64 strings?',
     answer:
-      'Base64 processes binary data in 3-byte blocks. When the input length is not an exact multiple of 3, the final block contains only 1 or 2 bytes. The encoder pads the final 6-bit sextet with zero bits to reach a boundary, and then appends one (=) or two (==) padding characters so the total string length remains an exact multiple of 4. Decoders use these padding markers to discard the filler bits and restore the original byte count.',
+      'KivaroTools inspects the first several decoded bytes (known as magic numbers or file signatures). For example, finding 0x89 0x50 0x4E 0x47 indicates a PNG image, 0xFF 0xD8 0xFF indicates a JPEG, 0x25 0x50 0x44 0x46 indicates a PDF, and 0x50 0x4B 0x03 0x04 indicates a ZIP archive. The tool automatically infers the MIME type and sets the correct file extension upon download.',
   },
   {
-    question: 'Can Base64 be safely decoded without trailing equals (=) padding?',
+    question: 'What is the difference between Tolerant and Strict (RFC 4648 §3.5) decoding?',
     answer:
-      'Yes. In URL-safe environments like JSON Web Tokens (JWT, RFC 7519), padding is intentionally omitted because the length modulo 4 can be used to mathematically deduce whether 1 or 2 padding characters were omitted. KivaroTools includes a Tolerant Decoding mode that automatically recalculates and restores missing padding characters before decoding.',
+      'Tolerant decoding automatically strips newlines, spaces, and invalid non-alphabet characters before processing, which is helpful when decoding messy email bodies or log dumps. Strict decoding strictly enforces RFC 4648 Section 3.5: it mandates valid alphabet characters, exact 4-character block lengths, and correct terminal padding (= or ==), instantly flagging corrupted or tampered payloads.',
   },
   {
-    question: 'How does KivaroTools handle multi-byte UTF-8 Unicode, accents, and emoji?',
+    question: 'What are the line wrapping options (76-char MIME vs 64-char PEM)?',
     answer:
-      'Legacy JavaScript window.btoa only accepts 8-bit Latin-1 characters (code points 0 to 255) and throws an InvalidCharacterError when encountering characters outside that range. KivaroTools uses the modern WHATWG TextEncoder and TextDecoder Web APIs to serialize text into raw UTF-8 binary bytes before encoding. This guarantees 100% character fidelity for accented Latin, Cyrillic, Arabic, Hebrew, CJK, and modern multi-byte emojis.',
+      'RFC 2045 specifies a 76-character line wrap limit for MIME email bodies to prevent transmission lines from exceeding legacy mail server buffer limits. RFC 1421 and RFC 7468 specify a 64-character line wrap limit for Privacy Enhanced Mail (PEM) certificates (such as SSL/TLS X.509 certs and SSH public keys). KivaroTools supports None (single line), 76-character MIME, and 64-character PEM line wrapping.',
   },
   {
-    question: 'What is a Base64 Data URI and when should you use it?',
+    question: 'Are my confidential files, certificates, or tokens uploaded to any server?',
     answer:
-      'A Data URI (RFC 2397) embeds file content directly into HTML or CSS markup using the syntax "data:<mediatype>;base64,<data>". It eliminates extra HTTP network requests for tiny assets, making it ideal for 1x1 spacer pixels, critical splash icons, or self-contained HTML email templates. However, larger assets (over 15–20 KB) should be served as standalone files because Base64 carries ~33% size overhead and Data URIs cannot be cached independently by browser caches or CDNs.',
+      'No. 100% of encoding, decoding, magic-byte inspection, image preview generation, and file downloading execute locally in your browser memory using Web APIs and typed arrays. No files, tokens, credentials, or strings are ever uploaded to any server or external service.',
   },
   {
-    question: 'Are my files or sensitive strings uploaded to any remote server?',
+    question: 'Is Base64 encoding the same as encryption?',
     answer:
-      'No. KivaroTools Base64 Encoder & Decoder executes 100% client-side in your web browser using modern Web APIs (Uint8Array, FileReader, TextEncoder, and TextDecoder). No text strings, files, or binary buffers are uploaded to remote servers or stored externally.',
+      'No. Base64 is an encoding format designed to transport binary data over text-only protocols without corruption; it is NOT encryption. Anyone with a Base64 decoder can immediately reconstruct the original data without a key. Never rely on Base64 alone to protect confidential passwords, API keys, or private records.',
   },
   {
-    question: 'Why is my decoded output showing garbled text or broken symbols?',
+    question: 'How does the 6,144-byte chunked fallback prevent browser call stack overflow?',
     answer:
-      'If you decode a Base64 string that represents compiled binary data—such as a PNG image, PDF document, or ZIP archive—into text mode, the UTF-8 decoder attempts to interpret arbitrary binary bytes as printable text characters, producing unreadable replacement characters (like ). Switch the tool to File Mode or Auto Detect to download the binary file with its detected file extension.',
+      'Naive implementations of binary-to-string conversion pass large arrays directly to String.fromCharCode.apply(null, uint8Array). For files larger than ~64 KB, this triggers a "Maximum call stack size exceeded" error. KivaroTools uses a chunked slice iterator in 6,144-byte blocks, ensuring seamless encoding for binary files up to 25 MB.',
   },
   {
-    question: 'What is Strict Validation versus Tolerant Mode in Base64 decoding?',
+    question: 'What is the maximum file and text size supported by the tool?',
     answer:
-      'Strict Mode enforces RFC 4648 Section 3.5 compliance: it rejects illegal characters, validates padding placement, and ensures that unused pad bits in the final sextet are strictly zero. Tolerant Mode is forgiving: it automatically strips spaces, line breaks, and tabs, converts URL-safe hyphens and underscores to standard Base64, and restores missing padding for quick developer workflows.',
+      'KivaroTools supports files up to 25 MB in File Mode, and raw text strings up to 12 MB in Text Mode. All transformations take advantage of native Uint8Array.prototype.toBase64 and fromBase64 where supported by modern browsers.',
+  },
+  {
+    question: 'How do I decode a Kubernetes secret or Docker config token using this tool?',
+    answer:
+      'Kubernetes secrets store configuration values as standard Base64 in their YAML data blocks. Paste the encoded string into KivaroTools in Text Decode mode with "Auto-Detect" selected to instantly reveal the plaintext configuration with zero server leakage.',
+  },
+  {
+    question: 'Can I preview decoded images directly in the browser?',
+    answer:
+      'Yes. If the decoded output matches an image format (PNG, JPEG, WebP, GIF, or SVG), KivaroTools displays a secure, isolated visual thumbnail preview above the file download button so you can verify the image before saving.',
+  },
+  {
+    question: 'What happens when a Base64 string contains URL-encoded percent signs (%2B or %3D)?',
+    answer:
+      'When Base64 strings are passed through web browsers or query parameters without proper URL-safe encoding, plus signs become %2B and equals signs become %3D. KivaroTools detects percent-encoded characters and automatically decodes them before executing Base64 validation.',
   },
 ];
 
@@ -67,7 +82,7 @@ export default function Base64EncoderSeo() {
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: BASE64_FAQS.map((faq) => ({
+    mainEntity: BASE64_ENCODER_FAQS.map((faq) => ({
       '@type': 'Question',
       name: faq.question,
       acceptedAnswer: {
@@ -78,297 +93,317 @@ export default function Base64EncoderSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#070b14] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* FAQ Schema */}
+    <>
+      {/* FAQPage JSON-LD Structured Data for Google Rich Snippets */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
-        Base64 Encoding &amp; Decoding Guide: RFC 4648, UTF-8 Unicode, Base64URL &amp; Data URIs
-      </h2>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        <strong>Base64</strong> is a family of binary-to-text encoding algorithms standardized by <strong>RFC 4648</strong>.
-        It converts arbitrary binary data—ranging from compiled executables and image bitmaps to multi-byte UTF-8 text—into
-        an alphabet of 64 printable US-ASCII characters. Base64 is essential for transporting binary assets across
-        protocols that are strictly designed for printable text, such as JSON payloads, HTTP headers, XML feeds, and MIME emails.
-      </p>
-
-      {/* Security Warning Notice */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 sm:p-5 dark:border-amber-500/20 dark:bg-amber-500/5 mb-8">
-        <h3 className="text-base font-bold text-amber-900 dark:text-amber-300 flex items-center gap-2 mb-1">
-          <span>⚠️ Important Security Notice: Base64 Is Encoding, Not Encryption</span>
-        </h3>
-        <p className="text-xs sm:text-sm text-amber-800 dark:text-amber-400 leading-relaxed">
-          Base64 does not use a secret key, mathematical cipher, or password. Anyone who encounters a Base64 string can
-          decode it back to the exact original bytes instantly. Never use Base64 to protect confidential data, passwords,
-          private keys, or sensitive API secrets. If you need confidentiality, use strong authenticated encryption algorithms (like AES-GCM or ChaCha20-Poly1305) before encoding the resulting ciphertext.
-        </p>
-      </div>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        How Base64 Works: The 24-Bit to 4-Character Grouping Algorithm
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Computers store binary information in 8-bit bytes (octets). Base64 processes incoming bytes in groups of three (24 bits total)
-        and redistributes them into four 6-bit units known as <em>sextets</em>. Because 2<sup>6</sup> equals 64, each sextet
-        maps cleanly to an index in the standard Base64 character set (A–Z, a–z, 0–9, +, /).
-      </p>
-
-      {/* Practical step-by-step bit example */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900 mb-6 font-mono text-xs overflow-x-auto text-slate-800 dark:text-slate-200">
-        <p className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-          Step-by-Step Bit Conversion Example: The ASCII Word &quot;Man&quot;
-        </p>
-        <p className="text-slate-600 dark:text-slate-400">1. Input Characters: &apos;M&apos; (decimal 77), &apos;a&apos; (decimal 97), &apos;n&apos; (decimal 110)</p>
-        <p className="text-slate-600 dark:text-slate-400">2. 8-Bit Binary Stream: 01001101 01100001 01101110 (24 bits total)</p>
-        <p className="text-slate-600 dark:text-slate-400">3. 6-Bit Sextet Regrouping: 010011 | 010110 | 000101 | 101110</p>
-        <p className="text-slate-600 dark:text-slate-400">4. Decimal Sextet Values: 19 | 22 | 5 | 46</p>
-        <p className="text-blue-600 dark:text-blue-400 font-semibold">5. Base64 Alphabet Lookup: &apos;T&apos; | &apos;W&apos; | &apos;F&apos; | &apos;u&apos; &rarr; &quot;TWFu&quot;</p>
-      </div>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Worked Examples &amp; Official RFC 4648 Vectors
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        The table below demonstrates standard RFC 4648 test vectors, padding mechanics, multi-byte UTF-8 encoding, and URL-safe Base64URL equivalents:
-      </p>
-
-      <div className="overflow-x-auto mb-8">
-        <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Input Data</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Hex / UTF-8 Bytes</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Standard Base64 (RFC 4648 §4)</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">URL-Safe (Base64URL §5)</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Padding Reason</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400 font-mono">
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;&quot; (Empty)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0 bytes</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400 dark:text-slate-600">&quot;&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400 dark:text-slate-600">&quot;&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">No bytes to process</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;f&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0x66 (1 byte)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">Zg==</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Zg</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">1 byte requires 2 padding chars (==)</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;fo&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0x66 0x6F (2 bytes)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">Zm8=</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Zm8</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">2 bytes require 1 padding char (=)</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;foo&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0x66 0x6F 0x6F (3 bytes)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">Zm9v</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Zm9v</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">Exact 3-byte multiple (no padding needed)</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;Hello, World!&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">13 bytes</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">SGVsbG8sIFdvcmxkIQ==</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">SGVsbG8sIFdvcmxkIQ</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">13 mod 3 = 1 byte remaining (==)</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">&quot;café&quot; (Unicode)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0x63 0x61 0x66 0xC3 0xA9 (5 bytes)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">Y2Fmw6k=</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Y2Fmw6k</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">&apos;é&apos; expands to 2 UTF-8 bytes (C3 A9)</td>
-            </tr>
-            <tr>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans font-semibold text-slate-800 dark:text-slate-200">Binary [251, 255, 191]</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0xFB 0xFF 0xBF (3 bytes)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">+/+/</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">-_-_</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-sans text-xs">Demonstrates + &rarr; - and / &rarr; _</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Standard Base64 versus URL-Safe Base64 (Base64URL)
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        When Base64 is placed into web URLs, query strings, or HTTP headers, characters 62 (<code>+</code>) and 63 (<code>/</code>) create severe conflicts.
-        In URL query strings, <code>+</code> is decoded as an ASCII space by web servers, while <code>/</code> is interpreted as a directory separator in file paths.
-        To solve this, <strong>RFC 4648 Section 5</strong> introduced the <strong>Base64URL</strong> variant:
-      </p>
-
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Encoding Scheme</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Character Set (0–61)</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Index 62</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Index 63</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Padding (=)</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Primary Applications</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Standard Base64 (RFC 4648 §4)</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">A–Z, a–z, 0–9</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">+ (plus)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">/ (slash)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">= (required)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">MIME email, PEM certs, Data URIs, XML feeds</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Base64URL (RFC 4648 §5)</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">A–Z, a–z, 0–9</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">- (hyphen)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">_ (underscore)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Omitted / Optional</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">JWT tokens, OAuth state, URL slugs, filenames</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Data URI Anatomy &amp; Inline Asset Embedding (RFC 2397)
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        A <strong>Data URI</strong> allows you to embed binary media inline directly inside HTML documents, CSS stylesheets,
-        or JSON responses using the standard RFC 2397 format:
-      </p>
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900 mb-4 font-mono text-xs overflow-x-auto text-slate-800 dark:text-slate-200">
-        data:[&lt;mediatype&gt;][;base64],&lt;data&gt;
-      </div>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        For instance, an inline transparent 1×1 PNG pixel can be embedded in an <code>&lt;img&gt;</code> tag without triggering an external HTTP round-trip:
-      </p>
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900 mb-6 font-mono text-xs overflow-x-auto text-blue-600 dark:text-blue-400">
-        data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=
-      </div>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Common Developer Use Cases &amp; Practical Applications
-      </h3>
-      <ul className="list-disc pl-5 space-y-2 text-slate-600 dark:text-slate-400 mb-6">
-        <li>
-          <strong>JSON &amp; REST APIs:</strong> JSON does not natively support binary octet arrays. Binary images, files, or signatures are commonly transmitted within JSON payloads as Base64 strings.
-        </li>
-        <li>
-          <strong>JWT (JSON Web Tokens, RFC 7519):</strong> JWT headers and claims payloads are encoded in URL-safe Base64URL without padding. Note: decoding a JWT inspects its claims, but does <em>not</em> cryptographically verify the signature.
-        </li>
-        <li>
-          <strong>MIME &amp; SMTP Email (RFC 2045):</strong> Email attachments are encoded in Base64 wrapped strictly at 76 characters per line to comply with email protocol message limits.
-        </li>
-        <li>
-          <strong>HTTP Basic Authentication (RFC 7617):</strong> Browsers encode credentials as <code>Authorization: Basic base64(username:password)</code>. Because Base64 is not encryption, this header is only secure when wrapped inside an encrypted HTTPS/TLS tunnel.
-        </li>
-        <li>
-          <strong>X.509 Certificates &amp; PEM Keys:</strong> Cryptographic keys and certificates (such as <code>-----BEGIN CERTIFICATE-----</code>) encapsulate DER binary data inside Base64 blocks with 64-character line wrapping.
-        </li>
-      </ul>
-
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-        Troubleshooting Common Base64 Errors &amp; Pitfalls
-      </h3>
-      <div className="space-y-4 text-slate-600 dark:text-slate-400 mb-8">
-        <div>
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100">1. Why does my output contain trailing &apos;=&apos; signs?</h4>
-          <p className="text-sm mt-1">
-            Trailing equals signs are padding markers. If your input byte count is not evenly divisible by 3, the encoder appends <code>=</code> (for 2 remainder bytes) or <code>==</code> (for 1 remainder byte) so the total length is divisible by 4.
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+        {/* Zone 2: Deep-Dive Architecture & Engine Sections */}
+        <section aria-labelledby="base64-architecture" className="mb-8">
+          <h2 id="base64-architecture" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Base64 Encoding Architecture, RFC 4648 Standards &amp; UTF-8 Byte Mechanics
+          </h2>
+          <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+            <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+              <strong>100% Client-Side In-Browser Execution:</strong> All string encoding, binary file decoding, magic-byte inspection, and Data URI generation execute locally on your machine. Confidential certificates, authorization headers, and files never leave your device.
+            </p>
+          </blockquote>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            <strong>Base64</strong> is a group of binary-to-text encoding schemes formalized in <strong>RFC 4648</strong> that represent binary data in an ASCII string format. By mapping 24 bits (3 octets) of input data into four 6-bit digits chosen from an index of 64 printable characters (<code>A–Z</code>, <code>a–z</code>, <code>0–9</code>, <code>+</code>, and <code>/</code>), Base64 ensures that raw binary assets can traverse legacy 7-bit communication channels (such as SMTP email, HTTP headers, JSON payloads, and XML documents) without byte corruption.
           </p>
-        </div>
-        <div>
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100">2. Why does emoji or non-English text fail in some encoders?</h4>
-          <p className="text-sm mt-1">
-            Older tools rely directly on JavaScript&apos;s native <code>window.btoa()</code>, which throws an <code>InvalidCharacterError</code> when given characters outside Latin-1 (code points &gt; 255). KivaroTools passes all input through a WHATWG-compliant <code>TextEncoder</code>, converting characters to raw UTF-8 bytes first.
+          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+            However, naive web implementations routinely fail on modern developer workloads—crashing on multi-byte UTF-8 emojis, corrupting URL parameters, or throwing call stack exceptions on large binary files. KivaroTools implements a high-performance, RFC-compliant engine engineered for enterprise security and developer reliability.
           </p>
-        </div>
-        <div>
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100">3. Why is my decoded output unreadable or showing replacement characters?</h4>
-          <p className="text-sm mt-1">
-            If you decode a binary file (such as a PDF, JPEG, or ZIP archive) using Text Mode, the UTF-8 decoder cannot map arbitrary binary bytes to valid text characters. Use <strong>File Mode</strong> or <strong>Auto Detect</strong> to download the restored binary asset.
-          </p>
-        </div>
-        <div>
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100">4. What is the difference between Strict Validation and Tolerant Decoding?</h4>
-          <p className="text-sm mt-1">
-            Strict Mode (RFC 4648 §3.5) verifies that unused pad bits in the final sextet are strictly zero and rejects invalid characters. Tolerant Mode automatically cleans newlines, spaces, and tabs, normalizes Base64URL characters, and restores missing padding.
-          </p>
-        </div>
-      </div>
 
-      <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-200">
-        Frequently Asked Questions
-      </h3>
-      <dl className="space-y-6 mb-8">
-        {BASE64_FAQS.map((faq, index) => (
-          <div key={index} className="border-b border-gray-100 dark:border-slate-800/80 pb-4 last:border-b-0">
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {faq.question}
-            </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Lossless Multi-Byte UTF-8 &amp; Emoji Handling via WHATWG TextEncoder
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            The traditional browser method <code>window.btoa()</code> throws a fatal <code>DOMException: String contains invalid character</code> whenever input text includes characters outside the Latin1 range (code points &gt; 255). KivaroTools eliminates this failure mode by routing text through the standard <strong>WHATWG TextEncoder &amp; TextDecoder APIs</strong>. Multi-byte sequences (including Japanese Kanji, Arabic, Cyrillic, and compound emojis like 👩‍💻) are cleanly transformed into binary octets before encoding, guaranteeing 100% lossless fidelity upon decode.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Native TypedArray Engines with 6,144-Byte Chunked Fallback
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            In modern browsers supporting ECMAScript 2024+, KivaroTools leverages high-speed native <code>Uint8Array.prototype.toBase64</code> and <code>Uint8Array.prototype.fromBase64</code>. For environments requiring fallback processing, it runs a chunked binary stream processor in <strong>6,144-byte blocks</strong> (a multiple of 3 and 4), preventing <code>Maximum call stack size exceeded</code> errors on files up to <strong>25 MB</strong>.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Magic-Byte Binary Signature Inspection &amp; Live Image Preview
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            When decoding arbitrary Base64 strings, developers frequently do not know the original file format. KivaroTools automatically inspects leading <strong>magic bytes</strong> (e.g. <code>89 50 4E 47</code> for PNG, <code>FF D8 FF</code> for JPEG, <code>25 50 44 46</code> for PDF, <code>50 4B 03 04</code> for ZIP). If the file is an image, a secure, isolated thumbnail preview is rendered, and clicking &quot;Download File&quot; automatically applies the verified filename extension.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            RFC 4648 §5 URL-Safe Base64URL &amp; Flexible Padding Controls
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Standard Base64 characters (<code>+</code> and <code>/</code>) and padding characters (<code>=</code>) break when placed inside URL parameters, query strings, or JSON Web Tokens (JWTs). With one click, you can toggle <strong>RFC 4648 §5 Base64URL</strong> mode (swapping to <code>-</code> and <code>_</code>) and strip terminal <code>=</code> padding characters for direct use in web routing and token authentication.
+          </p>
+        </section>
+
+        {/* Zone 3: Interactive Feature & Use-Case Grid */}
+        <section aria-labelledby="base64-use-cases" className="mb-8">
+          <h2 id="base64-use-cases" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Production Engineering Workflows &amp; Specialized Use Cases
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Kubernetes &amp; Cloud Secret Decoding
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Safely inspect and decode base64-encoded credentials from Kubernetes Secret YAML files, Docker <code>config.json</code> auth tokens, and cloud configuration maps without sending secrets to third-party logging servers.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                HTTP Basic Authentication Header Generation
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Generate standard <code>Authorization: Basic &lt;credentials&gt;</code> headers by encoding <code>username:password</code> strings for cURL scripts, Postman collections, and microservice testing.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Data URI Generation for HTML &amp; CSS Embeds
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Convert small vector icons, 1×1 transparent PNG spacers, and WOFF2 web fonts into clean <code>data:&lt;mime&gt;;base64,...</code> strings to embed directly into CSS stylesheets and single-file HTML templates.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                JWT Header &amp; Payload Inspection
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Decode URL-safe Base64URL segments from JSON Web Tokens (JWT) to inspect expiration timestamps, issuer claims, and algorithm headers without verifying or revealing private signatures.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                PEM Certificate &amp; SSH Key Formatting
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Format single-line raw base64 strings into standard 64-character PEM lines for X.509 SSL/TLS certificates, GPG keys, and SSH public keys using our Line Wrapping selector.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                25 MB Binary File to Base64 Conversion
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Drag and drop PDF documents, WAV audio clips, ZIP archives, or photos up to 25 MB to convert them into base64 strings or reconstruct downloadable binary files client-side.
+              </p>
+            </div>
           </div>
-        ))}
-      </dl>
+        </section>
 
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-400 mb-3">
-          Related Developer Utilities
-        </h4>
-        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          <Link
-            href="/developer/json-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            JSON Formatter &amp; Validator &rarr;
-          </Link>
-          <Link
-            href="/developer/password-generator"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            Password &amp; Hash Generator &rarr;
-          </Link>
-          <Link
-            href="/developer/regex-tester"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            Regex Tester &amp; Generator &rarr;
-          </Link>
-          <Link
-            href="/seo/text-case-converter"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            Text Case Converter &rarr;
-          </Link>
-          <Link
-            href="/developer/json-converter"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            JSON to CSV / Excel &rarr;
-          </Link>
-          <Link
-            href="/developer/sql-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-          >
-            SQL Query Formatter &rarr;
-          </Link>
-        </div>
-      </div>
-    </article>
+        {/* Zone 4: Technical Specification & Comparison Matrices */}
+        <section aria-labelledby="base64-specifications" className="mb-8">
+          <h2 id="base64-specifications" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Technical Specification: Base64 Dialects &amp; Variants Comparison
+          </h2>
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Variant</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Chars 62 &amp; 63</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Padding (=)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Line Wrap</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Primary RFC &amp; Use Case</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Standard Base64</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">+ and /</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Required (1–2)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">None (single line)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">RFC 4648 §4; HTTP Basic Auth, JSON payloads</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Base64URL</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">- and _</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Omitted / Optional</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">None (single line)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">RFC 4648 §5; JWT tokens, URL query params</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">MIME Base64</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">+ and /</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Required</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">76 characters</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">RFC 2045; Email MIME attachments</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">PEM Certificate</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">+ and /</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Required</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">64 characters</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">RFC 1421 / RFC 7468; SSL/TLS &amp; SSH keys</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Zone 5: Developer Troubleshooting & Error Reference */}
+        <section aria-labelledby="base64-troubleshooting" className="mb-8">
+          <h2 id="base64-troubleshooting" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Common Base64 Encoding &amp; Decoding Errors &amp; Fixes
+          </h2>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                DOMException: String Contains Invalid Character in btoa()
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Calling native JavaScript <code>window.btoa()</code> on text containing Unicode characters, accents, non-Latin alphabets, or emojis.
+                <br />
+                <strong>Fix:</strong> KivaroTools automatically routes text through WHATWG <code>TextEncoder</code>, converting characters into multi-byte UTF-8 octets before encoding.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Invalid Base64 Length: Input String is Not a Multiple of 4
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> The Base64 string is missing terminal <code>=</code> or <code>==</code> padding characters, or was truncated during copying.
+                <br />
+                <strong>Fix:</strong> Switch validation mode to <strong>Tolerant</strong>, or restore terminal padding by appending <code>=</code> until the character count is a multiple of 4.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Percent-Encoded Characters (%2B, %2F, %3D) Break Decoding
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> A standard Base64 string containing <code>+</code>, <code>/</code>, or <code>=</code> was passed through a URL and percent-encoded.
+                <br />
+                <strong>Fix:</strong> KivaroTools detects percent-encoded substrings and auto-normalizes them prior to running strict RFC validation.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Data URI Prefix Included in Raw Decoder Input
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Pasting a full Data URI string (e.g. <code>data:image/png;base64,iVBORw0...</code>) into a raw decoder expecting bare base64.
+                <br />
+                <strong>Fix:</strong> KivaroTools automatically strips leading <code>data:*/*;base64,</code> metadata headers, decoding the underlying payload seamlessly.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                PowerShell Base64 Adding Null Bytes (UTF-16LE vs UTF-8)
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> PowerShell&apos;s <code>[Convert]::ToBase64String()</code> defaults to Windows 16-bit Unicode (UTF-16LE), inserting null bytes between characters.
+                <br />
+                <strong>Fix:</strong> When decoding PowerShell output, KivaroTools detects 16-bit null-byte padding and normalizes output into clean UTF-8 text.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Maximum Call Stack Size Exceeded on Large Binary Files
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Naive implementations calling <code>String.fromCharCode.apply</code> with hundreds of thousands of byte arguments.
+                <br />
+                <strong>Fix:</strong> KivaroTools uses a 6,144-byte chunked iterator, safely processing binary files up to 25 MB with zero stack overflow risk.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 6: Frequently Asked Questions */}
+        <section aria-labelledby="base64-frequently-asked-questions" className="mb-8">
+          <h2 id="base64-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
+            {BASE64_ENCODER_FAQS.map((faq, index) => (
+              <details
+                key={index}
+                className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+              >
+                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                  <span>{faq.question}</span>
+                  <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* Internal Cross-Linking Block */}
+        <section aria-labelledby="base64-related-utilities" className="mb-8">
+          <h2 id="base64-related-utilities" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Related Client-Side Developer Workflows
+          </h2>
+          <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+            Explore our complete suite of browser-based developer utilities:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+            <li>
+              <Link href="/developer/password-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Cryptographic Password &amp; Secret Generator
+              </Link>{' '}
+              — Create high-entropy Base64URL secrets, HMAC tokens, and 1 GB file checksums locally.
+            </li>
+            <li>
+              <Link href="/developer/json-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON Formatter, Validator &amp; Tree Viewer
+              </Link>{' '}
+              — Beautify and inspect decoded JSON payloads and API tokens with 64-bit integer protection.
+            </li>
+            <li>
+              <Link href="/developer/svg-optimizer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SVG Optimizer &amp; Cleaner
+              </Link>{' '}
+              — Minify vector graphics before converting them into lightweight CSS background Data URIs.
+            </li>
+            <li>
+              <Link href="/developer/sql-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQL Query Formatter &amp; Linter
+              </Link>{' '}
+              — Format, lint, and analyze database queries across 19 dialects with zero server logging.
+            </li>
+            <li>
+              <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON to CSV &amp; Excel Converter
+              </Link>{' '}
+              — Flatten nested JSON payloads into spreadsheets and YAML manifests with formula defense.
+            </li>
+            <li>
+              <Link href="/developer/regex-tester" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Regex Tester &amp; Code Generator
+              </Link>{' '}
+              — Test regular expression patterns in real-time with capture groups and ReDoS guardrails.
+            </li>
+          </ul>
+        </section>
+      </article>
+    </>
   );
 }

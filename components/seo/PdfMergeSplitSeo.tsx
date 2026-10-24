@@ -59,15 +59,15 @@ export default function PdfMergeSplitSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-8 md:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* FAQ Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
-      <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="pdf-merge-split-in-browser-pdf-management-fast" className="mb-8">
+        <h2 id="pdf-merge-split-in-browser-pdf-management-fast" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         In-Browser PDF Management: Fast, Private Document Merging &amp; Splitting
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Managing Portable Document Format (PDF) files should not require expensive software subscriptions, command-line complexity,
         or uploading confidential information to third-party cloud servers. The KivaroTools <strong>PDF Merge &amp; Split Tool</strong>{' '}
@@ -77,7 +77,10 @@ export default function PdfMergeSplitSeo() {
       </p>
 
       {/* WORKFLOW COMPARISON TABLE */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-supported-pdf-workflows-at-a-g" className="mb-8">
+        <h3 id="pdf-merge-split-supported-pdf-workflows-at-a-g" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Supported PDF Workflows at a Glance
       </h3>
       <div className="overflow-x-auto mb-8">
@@ -120,7 +123,10 @@ export default function PdfMergeSplitSeo() {
       </div>
 
       {/* STEP BY STEP GUIDES */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-step-by-step-instructions" className="mb-8">
+        <h3 id="pdf-merge-split-step-by-step-instructions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Step-by-Step Instructions
       </h3>
 
@@ -166,7 +172,10 @@ export default function PdfMergeSplitSeo() {
       </div>
 
       {/* HOW CLIENT-SIDE ENGINE WORKS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-how-client-side-pdf-processing" className="mb-8">
+        <h3 id="pdf-merge-split-how-client-side-pdf-processing" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         How Client-Side PDF Processing Works
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -197,7 +206,10 @@ export default function PdfMergeSplitSeo() {
       </ul>
 
       {/* REAL-WORLD USE CASES */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-practical-real-world-use-cases" className="mb-8">
+        <h3 id="pdf-merge-split-practical-real-world-use-cases" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Practical Real-World Use Cases
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-sm">
@@ -228,7 +240,10 @@ export default function PdfMergeSplitSeo() {
       </div>
 
       {/* TROUBLESHOOTING & COMMON ERRORS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-troubleshooting-common-pdf-iss" className="mb-8">
+        <h3 id="pdf-merge-split-troubleshooting-common-pdf-iss" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Troubleshooting Common PDF Issues
       </h3>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">
@@ -248,21 +263,27 @@ export default function PdfMergeSplitSeo() {
       </ul>
 
       {/* FREQUENTLY ASKED QUESTIONS */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="pdf-merge-split-frequently-asked-questions" className="mb-8">
+        <h3 id="pdf-merge-split-frequently-asked-questions" className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
-      <dl className="space-y-6 mb-8">
-        {PDF_MERGE_SPLIT_FAQS.map((faq, index) => (
-          <div key={index}>
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {faq.question}
-            </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="space-y-3">
+          {PDF_MERGE_SPLIT_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}        </div>
 
       {/* RELATED TOOLS */}
       <div className="pt-6 border-t border-gray-200 dark:border-slate-800">
@@ -299,6 +320,7 @@ export default function PdfMergeSplitSeo() {
           </Link>
         </div>
       </div>
+      </section>
     </article>
   );
 }

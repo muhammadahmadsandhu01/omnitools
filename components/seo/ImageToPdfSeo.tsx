@@ -117,10 +117,15 @@ export default function ImageToPdfSeo() {
       </p>
 
       {/* Section 2: Step-by-Step Instructions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-how-to-convert-images-to-pdf-i" className="mb-10">
+        <h3 id="image-to-pdf-how-to-convert-images-to-pdf-i" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           How to Convert Images to PDF in 4 Simple Steps
         </h3>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <ol className="list-decimal pl-6 space-y-3 text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
           <li>
             <strong>Add Your Images:</strong> Drag and drop up to 100 images onto the upload zone, or click to browse. The converter accepts
@@ -142,8 +147,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 3: Supported Formats & Engine Handling */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-supported-image-formats-amp-en" className="mb-10">
+        <h3 id="image-to-pdf-supported-image-formats-amp-en" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Supported Image Formats &amp; Encoding Pipeline
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -196,8 +201,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 4: Page Geometry & Dimensions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-page-geometry-standard-paper-p" className="mb-10">
+        <h3 id="image-to-pdf-page-geometry-standard-paper-p" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Page Geometry, Standard Paper Presets &amp; Custom Sizing
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -215,8 +220,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 5: Orientation Intelligence */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-orientation-intelligence-auto-" className="mb-10">
+        <h3 id="image-to-pdf-orientation-intelligence-auto-" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Orientation Intelligence: Auto, Portrait, and Landscape Modes
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -232,8 +237,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 6: Image Fitting Modes */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-image-placement-contain-vs-cov" className="mb-10">
+        <h3 id="image-to-pdf-image-placement-contain-vs-cov" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Image Placement: Contain vs. Cover vs. Actual Size
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -262,8 +267,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 7: Empirical Benchmark Table */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-empirical-benchmark-results-on" className="mb-10">
+        <h3 id="image-to-pdf-empirical-benchmark-results-on" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Empirical Benchmark Results on Test Corpus Fixtures
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -320,8 +325,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 8: Privacy & Zero Upload Architecture */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-privacy-disclosures-amp-zero-u" className="mb-10">
+        <h3 id="image-to-pdf-privacy-disclosures-amp-zero-u" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Privacy Disclosures &amp; Zero-Upload Architecture
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -337,8 +342,8 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 9: Competitor Comparison Matrix */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-kivarotools-vs-legacy-cloud-pd" className="mb-10">
+        <h3 id="image-to-pdf-kivarotools-vs-legacy-cloud-pd" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           KivaroTools vs. Legacy Cloud PDF Converters
         </h3>
         <div className="overflow-x-auto">
@@ -391,22 +396,25 @@ export default function ImageToPdfSeo() {
       </section>
 
       {/* Section 10: Frequently Asked Questions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-to-pdf-frequently-asked-questions-abo" className="mb-10">
+        <h3 id="image-to-pdf-frequently-asked-questions-abo" className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
           Frequently Asked Questions About Image to PDF Conversion
         </h3>
-        <dl className="space-y-6">
+        <div className="space-y-3">
           {IMAGE_TO_PDF_FAQS.map((faq, index) => (
-            <div key={index} className="border-b border-gray-100 dark:border-slate-800/80 pb-5">
-              <dt className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {faq.question}
-              </dt>
-              <dd className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
-              </dd>
-            </div>
-          ))}
-        </dl>
+              </p>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Section 11: Related Utilities */}

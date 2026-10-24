@@ -82,8 +82,8 @@ export default function PreciousMetalsSeo() {
       </p>
 
       {/* How to use the calculator */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-how-to-use-the-precious-metals" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-how-to-use-the-precious-metals" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           How to Use the Precious Metals Calculator
         </h3>
         <ol className="list-decimal pl-6 space-y-2.5 text-sm sm:text-base text-slate-600 dark:text-slate-400">
@@ -106,8 +106,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Input Breakdown */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-understanding-calculator-input" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-understanding-calculator-input" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Understanding Calculator Inputs &amp; Valuation Parameters
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
@@ -139,8 +139,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Melt Value Formula & Worked Numerical Examples */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-mathematical-formulas-amp-work" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-mathematical-formulas-amp-work" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Mathematical Formulas &amp; Worked Numerical Examples
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
@@ -206,8 +206,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Purity Standards Across 4 Metals */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-supported-metals-amp-purity-st" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-supported-metals-amp-purity-st" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Supported Metals &amp; Purity Standards
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
@@ -309,8 +309,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Troy Ounce vs Avoirdupois Ounce Comparison */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-troy-ounces-vs-kitchen-ounces-" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-troy-ounces-vs-kitchen-ounces-" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Troy Ounces vs. Kitchen Ounces: The Critical Distinction
         </h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
@@ -364,8 +364,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Practical Use Cases */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-practical-use-cases-supported-" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-practical-use-cases-supported-" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Practical Use Cases Supported by KivaroTools
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
@@ -405,8 +405,8 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* Common Pitfalls & Troubleshooting */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
+      <section aria-labelledby="precious-metals-troubleshooting-amp-common-val" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-troubleshooting-amp-common-val" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
           Troubleshooting &amp; Common Valuation Pitfalls
         </h3>
         <ul className="list-disc pl-6 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -426,22 +426,25 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* FAQ Section */}
-      <section className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
+      <section aria-labelledby="precious-metals-frequently-asked-questions" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h3 id="precious-metals-frequently-asked-questions" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
           Frequently Asked Questions
         </h3>
-        <dl className="space-y-6">
+        <div className="space-y-3">
           {PRECIOUS_METALS_FAQS.map((faq, index) => (
-            <div key={index}>
-              <dt className="text-base font-bold text-slate-900 dark:text-slate-100">
-                {faq.question}
-              </dt>
-              <dd className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
-              </dd>
-            </div>
-          ))}
-        </dl>
+              </p>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Internal Links to Related Utilities */}

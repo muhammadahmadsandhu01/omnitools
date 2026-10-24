@@ -30,6 +30,7 @@ export interface Tool {
   seoTitle?: string;
   seoDescription?: string;
   relatedToolSlugs?: string[];
+  applicationCategory?: string;
 }
 
 export interface ToolCategory {
@@ -37,6 +38,7 @@ export interface ToolCategory {
   name: string;
   icon: typeof Calculator;
   color: string;
+  hidden?: boolean;
 }
 
 /**
@@ -78,6 +80,7 @@ export const categories: ToolCategory[] = [
     name: 'Health & Fitness',
     icon: Heart,
     color: 'text-red-500',
+    hidden: true,
   },
 ];
 
@@ -187,6 +190,7 @@ export const tools: Tool[] = [
     isPopular: false,
     status: 'published',
     hidden: true,
+    excludeFromSitemap: true,
     seoTitle: 'Salary & Net Take-Home Pay Calculator',
     seoDescription: 'Estimate take-home salary after taxes and statutory deductions across 22 countries with customizable tax schedules and payroll assumptions.',
     relatedToolSlugs: ['mortgage-calculator', 'emi-calculator', 'invoice-generator', 'compound-interest'],
@@ -201,6 +205,8 @@ export const tools: Tool[] = [
       'Estimate monthly car payments, total repayment, and interest over the selected loan term.',
     isPopular: false,
     status: 'coming-soon',
+    hidden: true,
+    excludeFromSitemap: true,
     relatedToolSlugs: ['emi-calculator', 'mortgage-calculator'],
   },
 
@@ -225,104 +231,106 @@ export const tools: Tool[] = [
 
   {
     id: 'json-formatter',
-    name: 'JSON Formatter & Validator',
+    name: 'JSON Formatter, Validator & Virtual Tree Viewer',
     slug: 'json-formatter',
     categoryId: 'developer',
     description:
-      'Format, validate, and minify JSON data quickly in your browser.',
+      'Format, validate, beautify, minify, and auto-repair JSON up to 25 MB 100% client-side with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON Formatter & Validator — Beautify & Minify',
-    seoDescription: 'Free online JSON formatter, validator, and beautifier. Inspect, minify, and fix JSON with instant error detection and 100% private in-browser processing.',
+    seoTitle: 'JSON Formatter, Validator & Tree Viewer — Beautify, Minify & Repair',
+    seoDescription:
+      'Free client-side JSON formatter, validator, beautifier, and minifier. Explore 25MB payloads in a 60,000-node virtual tree, auto-repair broken JSON, run JSONPath queries, detect 64-bit BigInt precision loss, and generate TypeScript or Draft-07 Schema locally.',
     relatedToolSlugs: ['json-converter', 'base64-encoder', 'sql-formatter', 'regex-tester'],
   },
 
   {
     id: 'svg-optimizer',
-    name: 'SVG Optimizer & Cleaner',
+    name: 'SVG Optimizer, Code Cleaner & Vector Minifier',
     slug: 'svg-optimizer',
     categoryId: 'developer',
     description:
-      'Optimize SVG markup by stripping redundant editor metadata, formatting path coordinates, collapsing empty groups, and reducing file size directly in your browser.',
+      'Compress SVG markup, strip Figma & Illustrator bloat, prune unreferenced defs, and round path coordinates locally in your browser with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SVG Optimizer & Cleaner — Compress & Minify Vector Graphics Online',
+    seoTitle: 'SVG Optimizer, Cleaner & Minifier — Compress Vector Graphics Locally',
     seoDescription:
-      'Free online SVG optimizer and cleaner. Strip redundant metadata, minify coordinates, remove unused defs, and reduce file size with local in-browser processing (no server uploads).',
+      'Optimize, clean, and compress SVG files up to 10MB 100% client-side in your browser. Strip Figma & Illustrator metadata, prune unused <defs> via BFS traversal, round path coordinates (0–4 decimals), preserve viewBox, and preview in an XSS-safe sandbox.',
     relatedToolSlugs: ['image-compressor', 'webp-to-jpg-png', 'sql-formatter', 'json-formatter', 'base64-encoder'],
   },
 
   {
     id: 'password-generator',
-    name: 'Secure Password & Secret Generator',
+    name: 'Cryptographic Password, Passphrase, API Secret & Hash Generator',
     slug: 'password-generator',
     categoryId: 'developer',
     description:
-      'Generate cryptographically secure passwords, multi-word passphrases, API secrets, and file hashes client-side in your browser with zero server uploads.',
+      'Create zero-bias CSPRNG passwords, multi-word passphrases, Hex/Base64URL developer secrets, HMAC digests, and 1 GB streaming file checksums locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Secure Password Generator — Random Passwords, Passphrases & Secrets',
+    seoTitle: 'Secure Password, Passphrase, API Secret & SHA-256 Hash Generator',
     seoDescription:
-      'Free client-side password generator. Create cryptographically secure random passwords, memorable passphrases, API tokens, and file hashes with zero modulo bias and zero tracking.',
+      'Generate cryptographically secure passwords, EFF Diceware passphrases, 128-to-512 bit API/JWT secrets, HMAC-SHA256 tokens, and 1GB file checksums 100% in your browser via Web Crypto API with zero modulo bias and k-Anonymity breach checks.',
     relatedToolSlugs: ['base64-encoder', 'regex-tester', 'json-formatter', 'sql-formatter'],
   },
 
   {
     id: 'json-converter',
-    name: 'JSON Converter',
+    name: 'JSON Converter — Transform JSON to CSV, Excel (.xlsx), YAML, XML & JSONL',
     slug: 'json-converter',
     categoryId: 'developer',
     description:
-      'Convert JSON data into CSV, Excel, YAML, XML, TSV, or JSONL directly in your browser with zero server uploads.',
+      'Flatten deeply nested JSON payloads up to 50 MB (200,000 rows) into spreadsheets and structured formats directly in your browser with CSV Formula Injection defense.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON Converter — Convert JSON to CSV, Excel, YAML & XML',
+    seoTitle: 'JSON Converter — Convert JSON to CSV, Excel (.xlsx), YAML, XML & JSONL',
     seoDescription:
-      'Free client-side JSON converter. Convert JSON to CSV, Excel (.xlsx), YAML, XML, TSV, and JSONL in your browser with zero server uploads and formula defense.',
+      'Convert and flatten nested JSON up to 50MB into CSV, native Excel (.xlsx), YAML, XML, TSV, and JSONL 100% client-side. Features custom path separators, array exploding, column selection, UTF-8 BOM, and CSV Formula Injection defense.',
     relatedToolSlugs: ['json-formatter', 'sql-formatter', 'base64-encoder', 'text-analyzer'],
   },
 
   {
     id: 'base64-encoder',
-    name: 'Base64 Encoder & Decoder',
+    name: 'Base64 Encoder & Decoder — UTF-8 Text, Base64URL, Data URI & Files',
     slug: 'base64-encoder',
     categoryId: 'developer',
     description:
-      'Encode text to Base64 or decode Base64 strings directly in your browser.',
+      'Encode and decode UTF-8 text, emojis, Base64URL tokens, Data URIs, and binary files up to 25 MB locally in your browser with RFC 4648 strict validation.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Base64 Encoder & Decoder — UTF-8, URL-Safe & Files',
-    seoDescription: 'Encode and decode Base64 client-side with full UTF-8 Unicode, Base64URL, Data URIs, binary file support, and RFC 4648 strict validation. 100% private in-browser tool.',
+    seoTitle: 'Base64 Encoder & Decoder — UTF-8, Base64URL, Data URI & Binary Files',
+    seoDescription:
+      'Encode and decode Base64 strings, URL-safe Base64URL tokens, Data URIs, and binary files up to 25MB 100% client-side. Features lossless WHATWG UTF-8 Unicode handling, RFC 4648 strict validation, MIME/PEM line wrapping, and magic-byte file detection.',
     relatedToolSlugs: ['json-formatter', 'password-generator', 'regex-tester', 'text-case-converter', 'json-converter'],
   },
 
   {
     id: 'sql-formatter',
-    name: 'SQL Query Formatter',
+    name: 'SQL Query Formatter, Beautifier, Linter & AST Analyzer',
     slug: 'sql-formatter',
     categoryId: 'developer',
     description:
-      'Format and clean SQL queries for improved readability and easier development.',
+      'Format, beautify, minify, lint, and analyze SQL queries across 19 database dialects 100% locally in your browser with zero query logging.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SQL Formatter & Beautifier — Format, Clean & Minify SQL Online',
+    seoTitle: 'SQL Query Formatter, Beautifier & Linter — 19 Dialects (PostgreSQL, BigQuery, T-SQL)',
     seoDescription:
-      'Format, beautify, and minify SQL queries client-side with support for 19 dialects including PostgreSQL, MySQL, BigQuery, Snowflake, and T-SQL. Custom casing, indentation, and query analysis in your browser.',
+      'Format, beautify, minify, lint, and analyze SQL queries 100% client-side across 19 dialects (PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle PL/SQL, DuckDB). Includes static anti-pattern linting, AST complexity analysis, SQL diff, and JS/Python code export.',
     relatedToolSlugs: ['json-formatter', 'regex-tester', 'json-converter', 'base64-encoder'],
   },
 
   {
     id: 'regex-tester',
-    name: 'Regex Tester & Code Generator',
+    name: 'Regex Tester, Debugger, AST Explainer & Polyglot Code Generator',
     slug: 'regex-tester',
     categoryId: 'developer',
     description:
-      'Test regular expressions with live matching and generate code examples for supported languages.',
+      'Test regular expressions in real time with capture group extraction, live replace/split previews, ReDoS catastrophic backtracking analysis, and ready-to-use code snippets.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Regex Tester & Code Generator — Test, Debug & Explain Regex Online',
+    seoTitle: 'Regex Tester, Debugger, Visualizer & Code Generator (JS, Python, Go, Java)',
     seoDescription:
-      'Test regular expressions in real time with capture groups, syntax explanations, split and replacement testing, ReDoS safety heuristics, and export-ready code snippets. 100% private in-browser evaluation.',
+      'Test, debug, and explain regular expressions in real time 100% client-side. Features 7 ECMAScript flags (g, i, m, s, u, y, d), capture group tables, live replace & split testing, ReDoS vulnerability scoring with 1.2s Web Worker guard, and JS, Python, Go & Java code generation.',
     relatedToolSlugs: ['text-analyzer', 'text-case-converter', 'json-formatter', 'sql-formatter', 'base64-encoder'],
   },
 
@@ -421,6 +429,7 @@ export const tools: Tool[] = [
     isPopular: true,
     status: 'published',
     hidden: true,
+    excludeFromSitemap: true,
     seoTitle: 'Word Counter & Text Analyzer — Readability, Characters & Pacing',
     seoDescription:
       'Free online text analyzer and word counter. Measure words, characters, sentences, readability scores (Flesch, FK), speaking pace, and keyword density client-side.',
@@ -468,6 +477,8 @@ export const tools: Tool[] = [
       'Calculate BMI and estimate daily calorie needs using the selected personal inputs and calculation method.',
     isPopular: true,
     status: 'coming-soon',
+    hidden: true,
+    excludeFromSitemap: true,
     relatedToolSlugs: ['emi-calculator', 'compound-interest'],
   },
 ];
@@ -477,6 +488,13 @@ export const tools: Tool[] = [
  */
 export function getCategoryById(categoryId: CategoryId) {
   return categories.find((category) => category.id === categoryId);
+}
+
+/**
+ * Get all visible categories for navigation and directories.
+ */
+export function getVisibleCategories() {
+  return categories.filter((category) => !category.hidden);
 }
 
 /**
@@ -495,7 +513,10 @@ export function getTool(categoryId: string, slug: string) {
  */
 export function getToolsByCategory(categoryId: CategoryId) {
   return tools.filter(
-    (tool) => tool.categoryId === categoryId && !tool.hidden
+    (tool) =>
+      tool.categoryId === categoryId &&
+      tool.status === 'published' &&
+      !tool.hidden
   );
 }
 
@@ -503,7 +524,7 @@ export function getToolsByCategory(categoryId: CategoryId) {
  * Get popular tools.
  */
 export function getPopularTools() {
-  return tools.filter((tool) => tool.isPopular && !tool.hidden);
+  return tools.filter((tool) => tool.isPopular && tool.status === 'published' && !tool.hidden);
 }
 
 /**
@@ -511,6 +532,13 @@ export function getPopularTools() {
  */
 export function getPublishedTools(): Tool[] {
   return tools.filter((tool) => tool.status === 'published');
+}
+
+/**
+ * Get all publicly discoverable, functional tools (published and not hidden).
+ */
+export function getPublicTools(): Tool[] {
+  return tools.filter((tool) => tool.status === 'published' && !tool.hidden);
 }
 
 /**

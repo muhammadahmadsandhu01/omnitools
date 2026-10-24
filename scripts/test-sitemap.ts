@@ -64,9 +64,10 @@ assert(
 console.log('\n• Testing app/sitemap.ts Output...');
 const entries = sitemap();
 
-// Expected total: 1 home + 4 static + 6 categories + 23 published tools + 22 country salary = 56
-const publishedTools = getPublishedTools().filter((t) => !t.excludeFromSitemap);
-const expectedTotal = 1 + 4 + categories.length + publishedTools.length + 22;
+// Expected total: 1 home + 4 static + 5 active categories + 21 active tools = 31
+const activeCategories = categories.filter((c) => !c.hidden);
+const activePublishedTools = getPublishedTools().filter((t) => !t.excludeFromSitemap && !t.hidden);
+const expectedTotal = 1 + 4 + activeCategories.length + activePublishedTools.length;
 
 assert(
   entries.length === expectedTotal,
@@ -98,36 +99,41 @@ for (const path of expectedStatic) {
   assert(exists, `Static page 'https://kivarotools.com${path}' is present`);
 }
 
-// Verify Categories
-for (const cat of categories) {
+// Verify Active Categories
+for (const cat of activeCategories) {
   const exists = entries.some((e) => e.url === `https://kivarotools.com/${cat.id}`);
   assert(exists, `Category '${cat.id}' ('https://kivarotools.com/${cat.id}') is present`);
 }
 
-// Verify All Published Tools (including UI-hidden but publicly indexable tools)
-for (const tool of publishedTools) {
+// Verify Health category is excluded
+assert(
+  !entries.some((e) => e.url === 'https://kivarotools.com/health'),
+  `Hidden category 'health' ('https://kivarotools.com/health') is excluded from sitemap`
+);
+
+// Verify All 21 Active Published Tools are present
+for (const tool of activePublishedTools) {
   const exists = entries.some((e) => e.url === `https://kivarotools.com/${tool.categoryId}/${tool.slug}`);
   assert(
     exists,
-    `Published tool '${tool.slug}' ('https://kivarotools.com/${tool.categoryId}/${tool.slug}') is present in sitemap`
+    `Active tool '${tool.slug}' ('https://kivarotools.com/${tool.categoryId}/${tool.slug}') is present in sitemap`
   );
 }
 
-// Verify Salary Calculator and Text Analyzer specifically remain indexable
-assert(
-  entries.some((e) => e.url === 'https://kivarotools.com/finance/salary-calculator'),
-  `Salary Calculator ('https://kivarotools.com/finance/salary-calculator') is present and indexable`
-);
-assert(
-  entries.some((e) => e.url === 'https://kivarotools.com/seo/text-analyzer'),
-  `Text Analyzer ('https://kivarotools.com/seo/text-analyzer') is present and indexable`
-);
+// Verify Hidden Tools are excluded from sitemap
+const hiddenTools = ['/finance/salary-calculator', '/seo/text-analyzer', '/finance/auto-loan-calculator', '/health/bmi-calculator'];
+for (const path of hiddenTools) {
+  assert(
+    !entries.some((e) => e.url === `https://kivarotools.com${path}`),
+    `Hidden tool '${path}' is excluded from sitemap`
+  );
+}
 
-// Verify 22 Country Salary Calculators
+// Verify All 22 Country Salary Calculators are excluded from sitemap
 const countrySalaryEntries = entries.filter((e) => e.url.includes('/finance/salary-calculator/'));
 assert(
-  countrySalaryEntries.length === 22,
-  `All 22 Country Salary Calculator pages are present in sitemap (found: ${countrySalaryEntries.length})`
+  countrySalaryEntries.length === 0,
+  `All 22 Country Salary Calculator pages are excluded from sitemap (found: ${countrySalaryEntries.length})`
 );
 
 // Verify Meaningful lastModified and changeFrequency
@@ -163,8 +169,8 @@ console.log(`\n--- Sitemap Audit Summary ---`);
 console.log(`Total URLs in Sitemap: ${entries.length}`);
 console.log(`  • Homepage:                  1`);
 console.log(`  • Static Pages:              ${expectedStatic.length}`);
-console.log(`  • Category Pages:            ${categories.length}`);
-console.log(`  • Public Tool Pages:         ${publishedTools.length}`);
+console.log(`  • Category Pages:            ${activeCategories.length}`);
+console.log(`  • Public Tool Pages:         ${activePublishedTools.length}`);
 console.log(`  • Country Salary Variations: ${countrySalaryEntries.length}`);
 
 if (failed) {

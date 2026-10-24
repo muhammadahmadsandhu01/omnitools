@@ -107,7 +107,7 @@ export default function MetaGeneratorSeo() {
   };
 
   return (
-    <div className="mt-16 space-y-12">
+    <article className="mt-16 space-y-12">
       {/* Structured Data Script (FAQPage) */}
       <script
         type="application/ld+json"
@@ -115,10 +115,10 @@ export default function MetaGeneratorSeo() {
       />
 
       {/* 1. Executive Overview */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <section aria-labelledby="meta-generator-understanding-html-meta-tags-s" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <h2 id="meta-generator-understanding-html-meta-tags-s" className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Understanding HTML Meta Tags & Search Crawler Architecture
             </h2>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
@@ -171,8 +171,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 2. Step-by-Step Instructions */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-step-by-step-guide-how-to-gene" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-step-by-step-guide-how-to-gene" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Step-by-Step Guide: How to Generate, Customize, and Deploy Tags on KivaroTools
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -231,8 +231,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 3. Supported Tags Specification Reference */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-supported-output-tags-complete" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-supported-output-tags-complete" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Supported Output Tags & Complete Specification Reference
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -352,8 +352,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 4. Title vs. Description vs. Social Differentiation */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-title-vs-description-vs-social" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-title-vs-description-vs-social" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Title vs. Description vs. Social Metadata: Decoupling and Customization
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -390,8 +390,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 5. Social Image Engineering Standard */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-the-social-preview-image-engin" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-the-social-preview-image-engin" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           The Social Preview Image Engineering Standard (1200 × 630 px)
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -423,8 +423,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 6. Before-and-After Code Comparison */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-real-before-and-after-code-exa" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-real-before-and-after-code-exa" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Real Before-and-After Code Example
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
@@ -488,8 +488,8 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 7. Installation Guide & Duplicate Tag Warning */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <section aria-labelledby="meta-generator-where-to-install-generated-tag" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+        <h2 id="meta-generator-where-to-install-generated-tag" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
           Where to Install Generated Tags (Static HTML, Next.js, WordPress)
         </h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -541,10 +541,10 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 8. Security & SSRF Architecture */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <section aria-labelledby="meta-generator-security-privacy-by-design" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h2 id="meta-generator-security-privacy-by-design" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Security & Privacy by Design
           </h2>
         </div>
@@ -592,33 +592,36 @@ export default function MetaGeneratorSeo() {
       </section>
 
       {/* 9. Frequently Asked Questions (14 Items matching FAQPage JSON-LD) */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <section aria-labelledby="meta-generator-frequently-asked-questions" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <HelpCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h2 id="meta-generator-frequently-asked-questions" className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Frequently Asked Questions
           </h2>
         </div>
 
-        <div className="mt-6 divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="space-y-3">
           {META_GENERATOR_FAQS.map((faq, index) => (
-            <div key={index} className="py-4 first:pt-0 last:pb-0">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                {faq.question}
-              </h3>
-              <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
               </p>
-            </div>
-          ))}
-        </div>
+            </details>
+          ))}        </div>
       </section>
 
       {/* 10. Related Tools Recommendation */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+      <section aria-labelledby="meta-generator-related-tools-for-web-develope" className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+          <h2 id="meta-generator-related-tools-for-web-develope" className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             Related Tools for Web Developers & SEO Professionals
           </h2>
         </div>
@@ -672,6 +675,6 @@ export default function MetaGeneratorSeo() {
           </Link>
         </div>
       </section>
-    </div>
+    </article>
   );
 }

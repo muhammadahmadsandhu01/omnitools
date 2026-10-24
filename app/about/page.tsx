@@ -135,7 +135,7 @@ export default function AboutPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {categories.map((cat) => {
+            {categories.filter((cat) => !cat.hidden).map((cat) => {
               const Icon = cat.icon;
               return (
                 <Link

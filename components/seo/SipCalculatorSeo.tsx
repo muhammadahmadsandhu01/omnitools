@@ -105,20 +105,15 @@ export default function SipCalculatorSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* Structured Data: FAQPage & BreadcrumbList */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-
-      {/* Main Section Header */}
-      <h2 className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">
+      <section aria-labelledby="sip-calculator-systematic-investment-plan-sip" className="mb-8">
+        <h2 id="sip-calculator-systematic-investment-plan-sip" className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">
         Systematic Investment Plan (SIP) Guide: Mathematics, Compounding &amp; Wealth Architecture
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-base">
         A <strong>Systematic Investment Plan (SIP)</strong> is a disciplined wealth accumulation strategy where an investor commits a recurring, automated allocation into mutual funds, exchange-traded funds (ETFs), or equity index instruments at regular intervals (monthly, quarterly, or yearly). Rather than attempting to time cyclical market tops and bottoms, SIP investors leverage <em>dollar-cost averaging</em> and <em>geometric compound interest</em> to build substantial financial security over multi-decade horizons.
       </p>
@@ -156,7 +151,10 @@ export default function SipCalculatorSeo() {
       </div>
 
       {/* Section: The Mathematics of SIP Returns */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-the-mathematical-sip-future-va" className="mb-8">
+        <h3 id="sip-calculator-the-mathematical-sip-future-va" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         The Mathematical SIP Future Value Formulas
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -240,7 +238,10 @@ export default function SipCalculatorSeo() {
       </div>
 
       {/* Section: Worked Numerical Example */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-independently-verified-worked-" className="mb-8">
+        <h3 id="sip-calculator-independently-verified-worked-" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         Independently Verified Worked Numerical Example
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -304,7 +305,10 @@ export default function SipCalculatorSeo() {
       </div>
 
       {/* Section: Step-Up SIP Dynamics */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-step-up-top-up-sip-the-multipl" className="mb-8">
+        <h3 id="sip-calculator-step-up-top-up-sip-the-multipl" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         Step-Up (Top-Up) SIP: The Multiplier for Salaried Investors
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -358,7 +362,10 @@ export default function SipCalculatorSeo() {
       </div>
 
       {/* Section: Dollar-Cost Averaging During Downturns */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-dollar-cost-averaging-the-beha" className="mb-8">
+        <h3 id="sip-calculator-dollar-cost-averaging-the-beha" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         Dollar-Cost Averaging: The Behavioral Shield in Bear Markets
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -384,7 +391,10 @@ export default function SipCalculatorSeo() {
       </div>
 
       {/* Section: Fee and Tax Drag */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-the-compounding-drag-expense-r" className="mb-8">
+        <h3 id="sip-calculator-the-compounding-drag-expense-r" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         The Compounding Drag: Expense Ratios, Entry Fees &amp; Capital Gains Tax
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -404,7 +414,10 @@ export default function SipCalculatorSeo() {
       </ul>
 
       {/* Section: Inflation Discounting */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-inflation-discounting-measurin" className="mb-8">
+        <h3 id="sip-calculator-inflation-discounting-measurin" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
         Inflation Discounting: Measuring Real Future Purchasing Power
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -420,27 +433,33 @@ export default function SipCalculatorSeo() {
       </p>
 
       {/* Section: Frequently Asked Questions */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-frequently-asked-questions-abo" className="mb-8">
+        <h3 id="sip-calculator-frequently-asked-questions-abo" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions About SIP Investing
       </h3>
-      <div className="space-y-4 mb-8 not-prose">
-        {SIP_CALCULATOR_FAQS.map((faq, index) => (
-          <div
-            key={index}
-            className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/60 dark:bg-slate-900/40"
-          >
-            <h4 className="font-bold text-slate-900 dark:text-white text-base mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </p>
-          </div>
-        ))}
-      </div>
+      <div className="space-y-3">
+          {SIP_CALCULATOR_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}        </div>
 
       {/* Section: Contextual Internal Links */}
-      <h3 className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="sip-calculator-explore-related-financial-amp-" className="mb-8">
+        <h3 id="sip-calculator-explore-related-financial-amp-" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
         Explore Related Financial &amp; Investment Calculators
       </h3>
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
@@ -497,6 +516,7 @@ export default function SipCalculatorSeo() {
       <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
         <strong>Statutory Notice &amp; Financial Disclaimer:</strong> The calculations, projections, and simulation scenarios generated by this tool are purely hypothetical estimates for educational and illustrative planning purposes. They do not constitute financial, investment, legal, or tax advice. Market investments are subject to market risks, including the potential loss of principal. Past performance of mutual funds, indices, or asset classes does not guarantee future results. Consult a licensed financial advisor or registered investment consultant before committing capital.
       </div>
+      </section>
     </article>
   );
 }

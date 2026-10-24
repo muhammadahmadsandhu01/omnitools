@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -8,73 +7,78 @@ export interface FaqItem {
 
 export const REGEX_TESTER_FAQS: FaqItem[] = [
   {
-    question: 'How does the Web Worker protect against browser freezes during catastrophic backtracking?',
+    question: 'How does KivaroTools protect against Regular Expression Denial of Service (ReDoS)?',
     answer:
-      'Regular expressions are compiled and executed inside an isolated background Web Worker rather than on the browser main UI thread. The host thread enforces a strict 1,200 ms execution timeout. If a pattern enters an exponential backtracking loop, the worker thread is terminated and a fresh worker is initialized, keeping text input, page scrolling, and the user interface completely responsive.',
+      'Catastrophic backtracking (ReDoS) occurs when nested quantifiers or overlapping alternations (such as (a+)+ or (a|a)+) cause backtracking engines to evaluate an exponential number of permutations, freezing the CPU. KivaroTools executes regular expression evaluation inside an isolated background Web Worker with a strict 1,200 ms timeout watchdog. If a pattern stalls, the worker terminates safely, preventing browser tab freezes.',
   },
   {
-    question: 'Does the static regex risk scanner guarantee complete immunity against Regular Expression Denial of Service (ReDoS)?',
+    question: 'What do the 7 ECMAScript regex flags (g, i, m, s, u, y, d) do?',
     answer:
-      'No. The static risk analyzer is an early-warning heuristic that scans for common high-risk structures—such as nested quantifiers like (a+)+, overlapping alternations under repetition like (a|ab)+, and broad unanchored wildcard repetitions. While effective at catching common pitfalls, static heuristics cannot mathematically prove that an arbitrary regular expression is completely ReDoS-safe under all adversarial inputs.',
+      'The flags control matching behavior: (1) g (Global) finds all matches rather than stopping at the first; (2) i (Ignore Case) enables case-insensitive matching; (3) m (Multiline) causes ^ and $ anchors to match start and end of each line; (4) s (DotAll) allows . to match newline characters; (5) u (Unicode) enables full Unicode code point handling; (6) y (Sticky) matches only starting at the exact lastIndex position; and (7) d (Indices) generates exact [start, end] substring boundary coordinates for all capture groups.',
   },
   {
-    question: 'What is the difference between greedy and lazy (reluctant) quantifiers?',
+    question: 'How does the ReDoS Risk Analyzer score regular expressions from 0 to 100?',
     answer:
-      'Greedy quantifiers (*, +, {n,}) consume as many characters as possible and only backtrack when subsequent pattern tokens fail to match. Appending a question mark makes the quantifier lazy (*?, +?, {n,}?), instructing the engine to consume the absolute minimum number of characters necessary to satisfy the expression before proceeding.',
+      'The ReDoS analyzer inspects your pattern AST for structural vulnerability signatures: nested repetitions (e.g. (.*)*), overlapping alternations with shared prefixes, unanchored wildcards, and excessive greedy branches. It computes a risk score from 0 to 100, assigns a severity rating (Low, Moderate, High), and suggests safer token alternatives.',
   },
   {
-    question: 'How do lookaround assertions work, and do they consume characters in the match?',
+    question: 'How do replacement tokens work ($1, $&, $`, $\', and $<name>)?',
     answer:
-      'Lookarounds are zero-width assertions: they inspect the text immediately following (lookahead) or preceding (lookbehind) the current match index without advancing the search pointer or capturing characters into the final matched string ($0). For example, (?<=\\$)\\d+ matches digits only when preceded by a dollar sign, but the dollar sign is not included in the matched string.',
+      'In the Replace panel, replacement strings support standard substitution tokens: $& inserts the entire matched substring, $1 and $2 insert numbered capture groups, $<name> inserts named groups, $` inserts the text preceding the match, $\' inserts the text following the match, and $$ inserts a literal dollar sign.',
   },
   {
-    question: 'Why do named capture groups written in JavaScript fail when ported to Python?',
+    question: 'What is the difference between ECMAScript (V8), Python (re), Go (RE2), and Java regex?',
     answer:
-      'JavaScript conforms to ECMAScript syntax (?<name>...) and backreferences \\k<name>. Standard Python re uses PCRE-style syntax (?P<name>...) and backreferences (?P=name) or \\g<name> in replacements. KivaroTools provides an automated code generation tab that exports your expression into Python syntax with these conversions applied.',
+      'JavaScript V8, Python re, and Java java.util.regex use backtracking engines supporting lookaheads, lookbehinds, and backreferences. In contrast, Go uses Google\'s RE2 engine, which guarantees linear O(n) execution time by intentionally omitting backreferences and lookaround assertions to prevent ReDoS. The Cross-Engine Compatibility Matrix highlights which tokens are portable across these languages.',
   },
   {
-    question: 'How does String.prototype.split() behave when the regex contains capturing parentheses?',
+    question: 'How does the automatic infinite loop guard handle zero-width matches?',
     answer:
-      'In ECMAScript, if your split delimiter pattern contains capturing parentheses (e.g., \\s*([,;])\\s*), the captured delimiter characters are spliced directly into the returned output array alongside the split text segments. To split text without retaining the delimiters, use non-capturing groups (?:[,;]).',
+      'Patterns that match empty strings (such as ^, $, \\b, or a*) can cause infinite loops in global matching if lastIndex fails to advance. KivaroTools detects zero-width matches and automatically advances the search offset by one UTF-16 code unit, preventing thread lockup.',
   },
   {
-    question: 'Are my regular expressions or test strings uploaded to a server?',
+    question: 'Are my regular expressions, test strings, or log snippets uploaded to any server?',
     answer:
-      'No. All regular expression compilation, pattern explanation, replacement evaluation, split testing, and benchmarking execute locally inside your browser runtime. Confidential logs, proprietary text, and test fixtures never leave your device.',
+      'No. 100% of pattern compilation, string matching, syntax explanation, ReDoS analysis, and polyglot code generation execute locally in your browser memory inside a dedicated Web Worker. Confidential log files and test inputs are never uploaded to any server or cloud API.',
   },
   {
-    question: 'How are match start and end character offsets measured?',
+    question: 'Can I share a regex pattern and test string with colleagues without saving to a database?',
     answer:
-      'In accordance with the ECMAScript specification, match start and end indices are measured as zero-indexed UTF-16 code units. For standard ASCII and BMP characters, each character equals one code unit. Astral plane characters (such as emojis or rare historical scripts) occupy two UTF-16 code units (surrogate pairs).',
+      'Yes. Clicking "Share via URL Hash" compresses your pattern, active flags, and test string directly into the client-side URL fragment (#pattern=...&flags=...). You can share this link with teammates, and when opened, the workbench reconstructs the entire session client-side with zero server storage.',
+  },
+  {
+    question: 'What is the maximum test string length and match limit supported?',
+    answer:
+      'KivaroTools supports test strings up to 150,000 characters and patterns up to 4,000 characters. The engine records up to 10,000 total matches and displays the first 300 visual highlight spans simultaneously in the syntax overlay.',
+  },
+  {
+    question: 'How does the Plain English AST Explainer work?',
+    answer:
+      'The Explain tab deconstructs your regular expression into its component grammar tokens. It provides natural-language descriptions for every character class, quantifier, assertion, and group (e.g., explaining \\b[A-Za-z0-9._%+-]+ as "Word boundary followed by one or more letters, digits, or allowed email symbols").',
+  },
+  {
+    question: 'What programming languages can I generate code for?',
+    answer:
+      'The Code tab generates production-ready boilerplate code with one-click copy buttons for: (1) JavaScript (RegExp.exec and matchAll), (2) Python (re.finditer and re.search), (3) Java (java.util.regex.Pattern and Matcher), and (4) Go (regexp.MustCompile and FindAllStringSubmatch).',
+  },
+  {
+    question: 'How does the Match Breakdown table display capture groups?',
+    answer:
+      'The Breakdown panel paginates matches (50 per page) in an interactive table showing match index, character range [start, end], full matched text, numbered capture groups ($1, $2), and named groups (?<name>), with one-click copying for any extracted value.',
+  },
+  {
+    question: 'What built-in pattern presets are available in the library?',
+    answer:
+      'The preset library includes 12 battle-tested patterns: RFC 5322 Email, Strong Password (lookahead policy), RFC 3986 URL, IPv4 Address, HTML Tags, ISO 8601 Date (YYYY-MM-DD), UUID v4, Hex Color, Currency, Semantic Versioning (SemVer), North American Phone, and Quoted String.',
+  },
+  {
+    question: 'How does the Split panel help with text parsing and data extraction?',
+    answer:
+      'The Split tab evaluates your regular expression as a delimiter to split the test string into an indexed array of substrings, allowing you to test complex log parsing and CSV extraction logic before writing backend code.',
   },
 ];
 
 export default function RegexTesterSeo() {
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: `${SITE_URL}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Developer Tools',
-        item: `${SITE_URL}/developer`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: 'Regex Tester & Code Generator',
-        item: `${SITE_URL}/developer/regex-tester`,
-      },
-    ],
-  };
-
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -89,220 +93,330 @@ export default function RegexTesterSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* Structured Data: BreadcrumbList & FAQPage */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+    <>
+      {/* FAQPage JSON-LD Structured Data for Google Rich Snippets (BreadcrumbList emitted by shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Regular Expression (Regex) Guide: ECMAScript Engine, Flag Mechanics &amp; Safe Testing
-      </h2>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        <strong>Regular Expressions (Regex)</strong> are declarative patterns used for pattern matching, validation,
-        find-and-replace transformations, and string tokenization. Modern web browsers evaluate regular expressions using
-        high-performance <strong>ECMAScript</strong> regex engines (such as V8 in Chromium, SpiderMonkey in Firefox, and
-        JavaScriptCore in WebKit). Because backtracking regex engines evaluate non-deterministic finite automata (NFA),
-        flawed patterns can trigger severe performance degradation or catastrophic backtracking.
-      </p>
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+        {/* Zone 2: Deep-Dive Architecture & Engine Sections */}
+        <section aria-labelledby="regex-tester-architecture" className="mb-8">
+          <h2 id="regex-tester-architecture" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Real-Time Regular Expression Engineering, ReDoS Safety &amp; AST Analysis
+          </h2>
+          <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+            <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+              <strong>100% Client-Side In-Browser Execution:</strong> All regular expression evaluation, syntax explanation, ReDoS analysis, and polyglot code generation run locally on your device. Proprietary log snippets, customer inputs, and regex patterns are never uploaded to any server.
+            </p>
+          </blockquote>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            <strong>Regular Expressions (Regex)</strong> are algebraic patterns used for string validation, lexical tokenization, and text substitution. While indispensable across software engineering, writing correct regular expressions is notoriously error-prone. A single unanchored quantifier or misplaced alternation can cause unexpected false positives, corrupt capture groups, or introduce catastrophic backtracking vulnerabilities that crash backend servers.
+          </p>
+          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+            KivaroTools provides a modern, privacy-first <strong>Regex Tester, Debugger &amp; Code Generator</strong> engineered for software developers. Powered by an isolated Web Worker with real-time match highlighting, 7 ECMAScript flags, automated ReDoS vulnerability analysis, and multi-language code generation, it transforms complex regex development into a deterministic, visual experience.
+          </p>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Execution Architecture &amp; Client-Side Safeguards
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        KivaroTools executes regular expressions with multiple client-side safety measures:
-      </p>
-      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li>
-          <strong>Isolated Web Worker Execution:</strong> All evaluation runs inside a dedicated background Web Worker, ensuring that text input, scrolling, and tab switching remain responsive even during intensive evaluations. If Blob workers are restricted, a guarded synchronous fallback prevents application errors.
-        </li>
-        <li>
-          <strong>1,200 ms Timeout Guard:</strong> If a regex fails to complete within 1,200 milliseconds, the host thread forcefully terminates the worker and reports an execution timeout, preventing infinite CPU spinning.
-        </li>
-        <li>
-          <strong>Zero-Width Match Protection:</strong> Empty matches (such as <code className="text-xs">\b</code>, <code className="text-xs">^</code>, or <code className="text-xs">(?=...)</code>) automatically advance the regex search index with full Unicode surrogate pair awareness, preventing infinite loops.
-        </li>
-        <li>
-          <strong>Structural Risk Heuristic:</strong> The static analyzer scans for known catastrophic backtracking shapes: nested quantifiers (e.g. <code className="text-xs">(a+)+</code>), ambiguous alternations (e.g. <code className="text-xs">(a|ab)+</code>), and broad unanchored wildcard repetitions. <em>Note: This heuristic serves as an early-warning diagnostic, not a formal mathematical proof of immunity under all adversarial inputs.</em>
-        </li>
-        <li>
-          <strong>Formula Injection Defense:</strong> All match data exported as CSV is sanitized to neutralize spreadsheet formula prefixes (<code className="text-xs">=</code>, <code className="text-xs">+</code>, <code className="text-xs">-</code>, <code className="text-xs">@</code>).
-        </li>
-      </ul>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Web Worker Sandbox with 1,200 ms ReDoS Watchdog Timer
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Catastrophic backtracking (Regular Expression Denial of Service or ReDoS) occurs when ambiguous nested quantifiers (like <code>(a+)+$</code> or <code>([a-zA-Z]+)*</code>) force the regex engine into an exponential search tree when matching non-matching inputs. In traditional online tools, this freezes the browser tab. KivaroTools isolates all evaluation inside a dedicated <strong>Web Worker</strong> guarded by a <strong>1,200 ms execution timer</strong>. If a pattern stalls, the worker terminates instantly and highlights the catastrophic backtracking hazard.
+          </p>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        ECMAScript Regular Expression Flags
-      </h3>
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Flag</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Name</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Behavior</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">g</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Global</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Finds all matches throughout the text rather than stopping after the first occurrence.</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">i</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Ignore Case</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Treats uppercase and lowercase characters as equivalent ([a-z] matches [A-Z]).</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">m</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Multiline</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Anchors ^ and $ match the start and end of every line (\n), not just start and end of string.</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">s</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">DotAll</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Allows the dot (.) wildcard to match newline characters (\n, \r).</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">u</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Unicode</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Enables full Unicode code point support, surrogate pair stepping, and Unicode property escapes (\p&#123;Letter&#125;).</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">y</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Sticky</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Matches only from the exact position indicated by the lastIndex property.</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">d</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Indices</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Generates precise character start and end offsets for each capture group in match.indices.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            7 ECMAScript Flags Including Flag d (hasIndices) Substring Coordinates
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            KivaroTools supports all 7 ECMAScript regex flags: <code>g</code> (global search), <code>i</code> (case-insensitive), <code>m</code> (multiline anchors), <code>s</code> (dotAll wildcards matching newlines), <code>u</code> (full Unicode code points), <code>y</code> (sticky matching at lastIndex), and the modern ECMAScript <code>d</code> flag (hasIndices). Enabling <code>d</code> extracts exact <code>[start, end]</code> character indices for the full match and every individual capture group.
+          </p>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Lookaround Assertions: Syntax &amp; Usage
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Lookarounds match positions without consuming characters, making them invaluable for validation requirements:
-      </p>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            ReDoS Risk Scoring &amp; Cross-Engine Compatibility Matrix
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            The Analyze panel computes an automated <strong>ReDoS Risk Score (0 to 100)</strong> by auditing your pattern for nested quantifiers, overlapping character classes, and ambiguous alternations. Alongside the risk score, a Cross-Engine Compatibility Matrix displays whether your tokens (lookaheads, lookbehinds, named groups) are portable across <strong>JavaScript (V8)</strong>, <strong>Python (re)</strong>, <strong>Go (RE2)</strong>, and <strong>Java (java.util.regex)</strong>.
+          </p>
 
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Assertion Type</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Syntax</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Meaning</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Positive Lookahead</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-emerald-600 dark:text-emerald-400">q(?=u)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Matches &quot;q&quot; only if followed immediately by &quot;u&quot;.</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Negative Lookahead</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">q(?!u)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Matches &quot;q&quot; only if NOT followed immediately by &quot;u&quot;.</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Positive Lookbehind</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-emerald-600 dark:text-emerald-400">(?&lt;=\$)\d+</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Matches digits only if preceded immediately by a dollar sign ($).</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Negative Lookbehind</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-red-600 dark:text-red-400">(?&lt;!\\)&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Matches a quotation mark only if NOT preceded by a backslash.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Infinite Loop Guard for Zero-Width Matches
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Patterns matching zero-width assertions (such as <code>^</code>, <code>$</code>, <code>\b</code>, or <code>a*</code>) can cause infinite loops when evaluated globally. KivaroTools incorporates an automatic index incrementer: whenever a match has zero length, the pointer advances by one code unit, preventing browser freezing while capturing all boundary positions.
+          </p>
+        </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Cross-Language Compatibility Considerations
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        While ECMAScript syntax is widely used, regular expression engines differ significantly across language runtimes:
-      </p>
-      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li>
-          <strong>Python (<code>re</code> module):</strong> Uses <code className="text-xs">(?P&lt;name&gt;...)</code> for named groups and <code className="text-xs">(?P=name)</code> for pattern backreferences. Standard Python requires fixed-width lookbehind assertions and does not support the <code className="text-xs">\p&#123;...&#125;</code> syntax without the third-party <code className="text-xs">regex</code> package.
-        </li>
-        <li>
-          <strong>Java (<code>java.util.regex</code>):</strong> Supports <code className="text-xs">(?&lt;name&gt;...)</code> named groups since Java 7. Java has no global flag; iteration is handled with <code className="text-xs">while (matcher.find())</code>.
-        </li>
-        <li>
-          <strong>Go (<code>regexp</code> package):</strong> Uses the Google RE2 engine, which guarantees linear-time <code className="text-xs">O(n)</code> execution. To prevent exponential backtracking, RE2 intentionally omits support for lookarounds and backreferences.
-        </li>
-      </ul>
+        {/* Zone 3: Interactive Feature & Use-Case Grid */}
+        <section aria-labelledby="regex-tester-panels" className="mb-8">
+          <h2 id="regex-tester-panels" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            7 Interactive Analysis &amp; Productivity Panels
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                1. Match Breakdown Table
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Paginated match inspector (50 per page, up to 10,000 matches) displaying exact character offsets <code>[start, end]</code>, full match values, numbered groups (<code>$1, $2</code>), and named groups (<code>(?&lt;name&gt;)</code>).
+              </p>
+            </div>
 
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-        Frequently Asked Questions
-      </h3>
-      <dl className="space-y-6 mb-6">
-        {REGEX_TESTER_FAQS.map((faq, index) => (
-          <div key={index}>
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {faq.question}
-            </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                2. Live Replacement Preview
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Test replacement patterns in real-time with full support for standard substitution tokens: <code>$$</code> (dollar), <code>$&amp;</code> (full match), <code>$`</code> (before match), <code>$&apos;</code> (after match), <code>$1</code> (group), and <code>$&lt;name&gt;</code>.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                3. Delimiter Split Array Viewer
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Evaluate your regular expression as a split delimiter, rendering an indexed array of extracted segments for log line parsing and CSV delimiter testing.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                4. Searchable Interactive Cheatsheet
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Integrated quick reference categorized into Character Classes, Quantifiers (Greedy vs Lazy), Anchors, Lookarounds, Flags, and Replacement backreferences with instant copy-to-editor actions.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                5. Plain English AST Explainer
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Translates cryptic regular expression tokens into natural-language English explanations, breaking down lookaheads, word boundaries, and character sets for rapid code reviews.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                6. Polyglot Code Snippet Generator
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Export tested patterns as copyable boilerplate for JavaScript (<code>RegExp.exec / matchAll</code>), Python (<code>re.finditer / search</code>), Java (<code>Pattern / Matcher</code>), and Go (<code>regexp.MustCompile</code>).
+              </p>
+            </div>
           </div>
-        ))}
-      </dl>
+        </section>
 
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
-          Related Developer &amp; SEO Utilities
-        </h4>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/seo/text-analyzer"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Word Counter &amp; Text Analyzer &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/seo/text-case-converter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Text Case Converter &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/json-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            JSON Formatter &amp; Validator &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/sql-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            SQL Query Formatter &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/base64-encoder"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Base64 Encoder &amp; Decoder &rarr;
-          </Link>
-        </div>
-      </div>
-    </article>
+        {/* Zone 4: Technical Specification & Comparison Matrices */}
+        <section aria-labelledby="regex-tester-compatibility" className="mb-8">
+          <h2 id="regex-tester-compatibility" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Technical Specification: Cross-Engine Regular Expression Compatibility
+          </h2>
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Feature / Token</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">JavaScript (V8)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Python (re)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Go (RE2)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Java (regex)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Engine Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Positive Lookahead (?=...)</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-medium">Unsupported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Go RE2 rejects lookarounds for linear time safety</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Lookbehind (?&lt;=...)</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (V8)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400 font-medium">Fixed Width Only</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-medium">Unsupported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Python requires fixed-length pattern in lookbehind</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Named Groups (?&lt;name&gt;...)</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (ES2018)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (?P&lt;name&gt;)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (?P&lt;name&gt;)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (Java 7+)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Python &amp; Go use (?P&lt;name&gt;) syntax variant</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Backreferences (\\1, \\2)</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-medium">Unsupported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Backreferences make matching NP-complete</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Unicode Escapes (\\p&#123;L&#125;)</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported (u flag)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400 font-medium">regex module only</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Supported</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Python built-in re requires third-party regex library</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Zone 5: Developer Troubleshooting & Error Reference */}
+        <section aria-labelledby="regex-tester-troubleshooting" className="mb-8">
+          <h2 id="regex-tester-troubleshooting" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Common Regular Expression Errors &amp; Fixes
+          </h2>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Catastrophic Backtracking (ReDoS) Freezes Application
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Nested repetitions like <code>(a+)+</code> or <code>(.*a)+b</code> cause exponential backtracking iterations when matched against long non-matching strings.
+                <br />
+                <strong>Fix:</strong> KivaroTools flags ReDoS vulnerabilities. Refactor nested quantifiers by anchoring strings with <code>^...$</code>, making quantifiers possessive or atomic, or using character class negation like <code>[^a]*</code>.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Unescaped Literal Dot Matches Any Character
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Writing <code>filename.txt</code> or <code>192.168.1.1</code> without escaping dots allows any character (e.g. <code>filename-txt</code> or <code>192X168Y1Z1</code>) to match.
+                <br />
+                <strong>Fix:</strong> Always escape literal periods with backslashes (<code>filename\.txt</code> or <code>192\.168\.1\.1</code>).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Greedy Quantifier Matches Across Entire Multiline Payload
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Using greedy wildcard matches like <code>&lt;div&gt;.*&lt;/div&gt;</code> consumes everything from the first opening tag to the final closing tag on the page.
+                <br />
+                <strong>Fix:</strong> Use lazy quantifiers (<code>&lt;div&gt;.*?&lt;/div&gt;</code>) or inverted character classes (<code>&lt;div&gt;[^&lt;]*&lt;/div&gt;</code>).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Word Boundary \b Fails on Non-ASCII Unicode Names
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Standard <code>\b</code> boundaries only treat ASCII alphanumeric characters (<code>[a-zA-Z0-9_]</code>) as word characters, failing on accents or international names (e.g. René or Müller).
+                <br />
+                <strong>Fix:</strong> Enable the <code>u</code> flag and use Unicode property escapes like <code>(?&lt;=\s|^)\p&#123;L&#125;+(?=\s|$)</code> for international language matching.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Partial Match Passes Validation Due to Missing Anchors
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Writing <code>\d&#123;5&#125;</code> to validate a 5-digit postal code erroneously passes strings like <code>abc12345xyz</code> because the substring matches.
+                <br />
+                <strong>Fix:</strong> Anchor validation patterns with <code>^</code> (start of string) and <code>$</code> (end of string): <code>^\d&#123;5&#125;$</code>.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Go RE2 Runtime Panic on Lookarounds and Backreferences
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Hazard:</strong> Testing patterns with lookahead assertions (<code>(?=...)</code>) and copying them into Go code causes <code>regexp.Compile</code> to error out at runtime.
+                <br />
+                <strong>Fix:</strong> Consult the Compatibility Matrix in the Analyze panel to verify that your pattern is valid for Go RE2 before deploying backend code.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 6: Frequently Asked Questions */}
+        <section aria-labelledby="regex-tester-frequently-asked-questions" className="mb-8">
+          <h2 id="regex-tester-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
+            {REGEX_TESTER_FAQS.map((faq, index) => (
+              <details
+                key={index}
+                className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+              >
+                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                  <span>{faq.question}</span>
+                  <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* Internal Cross-Linking Block */}
+        <section aria-labelledby="regex-tester-related-utilities" className="mb-8">
+          <h2 id="regex-tester-related-utilities" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Related Client-Side Developer Workflows
+          </h2>
+          <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+            Explore our integrated developer toolchain for full-stack engineering:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+            <li>
+              <Link href="/developer/sql-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQL Query Formatter &amp; Linter
+              </Link>{' '}
+              — Format database queries, CTEs, and regex filters across 19 dialects with static anti-pattern detection.
+            </li>
+            <li>
+              <Link href="/developer/password-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Cryptographic Password &amp; Secret Generator
+              </Link>{' '}
+              — Test password complexity patterns and generate high-entropy secrets and 1 GB file checksums via Web Crypto.
+            </li>
+            <li>
+              <Link href="/developer/json-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON Formatter, Validator &amp; Tree Viewer
+              </Link>{' '}
+              — Validate API payloads up to 25 MB with 64-bit BigInt precision loss detection and auto-repair.
+            </li>
+            <li>
+              <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON to CSV &amp; Excel Converter
+              </Link>{' '}
+              — Flatten nested JSON data into spreadsheets and YAML manifests with formula injection protection.
+            </li>
+            <li>
+              <Link href="/developer/base64-encoder" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Base64 Encoder &amp; Decoder
+              </Link>{' '}
+              — Safely encode and decode UTF-8 text, emojis, Base64URL tokens, and binary files up to 25 MB.
+            </li>
+            <li>
+              <Link href="/developer/svg-optimizer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SVG Optimizer &amp; Cleaner
+              </Link>{' '}
+              — Clean bloated vector graphics and sanitize malicious scripts with sandboxed visual previewing.
+            </li>
+          </ul>
+        </section>
+      </article>
+    </>
   );
 }

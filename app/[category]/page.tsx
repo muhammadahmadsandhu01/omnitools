@@ -15,6 +15,14 @@ type CategoryPageProps = {
   }>;
 };
 
+export function generateStaticParams() {
+  return categories
+    .filter((cat) => !cat.hidden)
+    .map((cat) => ({
+      category: cat.id,
+    }));
+}
+
 export async function generateMetadata({
   params,
 }: CategoryPageProps): Promise<Metadata> {
@@ -32,7 +40,7 @@ export async function generateMetadata({
   }
 
   const categoryTools = tools.filter(
-    (tool) => tool.categoryId === category.id && !tool.hidden
+    (tool) => tool.categoryId === category.id && tool.status === 'published' && !tool.hidden
   );
 
   const categoryTitle =
@@ -46,6 +54,15 @@ export async function generateMetadata({
     alternates: {
       canonical: `/${category.id}`,
     },
+    robots: category.hidden
+      ? {
+          index: false,
+          follow: true,
+        }
+      : {
+          index: true,
+          follow: true,
+        },
     openGraph: {
       title: `${categoryTitle} — KivaroTools`,
       description: `Explore free ${category.name.toLowerCase()} from KivaroTools.`,
@@ -78,7 +95,7 @@ export default async function CategoryPage({
   }
 
   const categoryTools = tools.filter(
-    (tool) => tool.categoryId === category.id && !tool.hidden
+    (tool) => tool.categoryId === category.id && tool.status === 'published' && !tool.hidden
   );
 
   const Icon = category.icon;

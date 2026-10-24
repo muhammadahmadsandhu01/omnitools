@@ -91,10 +91,15 @@ export default function CompoundInterestSeo() {
       />
 
       {/* Section 1: Introduction */}
-      <section className="mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="compound-interest-the-foundations-of-compound-in" className="mb-10">
+        <h2 id="compound-interest-the-foundations-of-compound-in" className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
           The Foundations of Compound Interest: Mechanics, Mathematics &amp; Long-Term Growth
         </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Compound interest is widely regarded as the cornerstone of personal financial planning and modern wealth creation. Unlike linear systems where interest is calculated strictly on the initial deposit, compound growth reinvests every cycle&apos;s earnings back into the capital base. As a result, subsequent interest is earned on both the original principal and all prior accumulated returns.
         </p>
@@ -104,8 +109,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 2: Calculator Instructions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-how-to-use-the-kivarotools-com" className="mb-10">
+        <h3 id="compound-interest-how-to-use-the-kivarotools-com" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           How to Use the KivaroTools Compound Interest Calculator
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -137,8 +142,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 3: Results Explained */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-understanding-your-calculation" className="mb-10">
+        <h3 id="compound-interest-understanding-your-calculation" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Understanding Your Calculation Outputs
         </h3>
         <div className="overflow-x-auto mb-6">
@@ -187,8 +192,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 4: Mathematical Formulas & Variables */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-mathematical-formulas-amp-vari" className="mb-10">
+        <h3 id="compound-interest-mathematical-formulas-amp-vari" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Mathematical Formulas &amp; Variable Glossary
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -248,8 +253,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 5: Compounding Frequencies Compared */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-compounding-frequency-comparis" className="mb-10">
+        <h3 id="compound-interest-compounding-frequency-comparis" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Compounding Frequency Comparison: $10,000 at 8% for 10 Years
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -315,8 +320,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 6: Worked Examples */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-four-reproducible-worked-examp" className="mb-10">
+        <h3 id="compound-interest-four-reproducible-worked-examp" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Four Reproducible Worked Examples
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-6">
@@ -391,8 +396,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 7: Practical Financial Planning Applications */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-practical-real-world-applicati" className="mb-10">
+        <h3 id="compound-interest-practical-real-world-applicati" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Practical Real-World Applications
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -427,8 +432,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 8: Disclosures & Assumptions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-model-assumptions-amp-importan" className="mb-10">
+        <h3 id="compound-interest-model-assumptions-amp-importan" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Model Assumptions &amp; Important Financial Disclosures
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -443,30 +448,30 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 9: Frequently Asked Questions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-frequently-asked-questions" className="mb-10">
+        <h3 id="compound-interest-frequently-asked-questions" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Frequently Asked Questions
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {COMPOUND_INTEREST_FAQS.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
             >
-              <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-2">
-                {faq.question}
-              </h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
               </p>
-            </div>
-          ))}
-        </div>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Section 10: Related Tools */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="compound-interest-related-financial-planning-too" className="mb-10">
+        <h3 id="compound-interest-related-financial-planning-too" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
           Related Financial Planning Tools
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
@@ -520,8 +525,8 @@ export default function CompoundInterestSeo() {
       </section>
 
       {/* Section 11: Sources & Editorial Governance */}
-      <section className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-2">
-        <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+      <section aria-labelledby="compound-interest-authoritative-references-amp-a" className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+        <h4 id="compound-interest-authoritative-references-amp-a" className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
           Authoritative References &amp; Academic Sources
         </h4>
         <p>

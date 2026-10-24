@@ -24,7 +24,7 @@ export const JSON_FORMATTER_FAQS: FaqItem[] = [
   {
     question: 'What happens when JSON syntax is invalid and how does KivaroTools highlight errors?',
     answer:
-      'When syntax is malformed, KivaroTools intercepts the parser diagnostic, extracts the exact line number, column index, and character byte offset, and renders an visual code frame. A directional caret (^) points directly to the erroneous token alongside a descriptive explanation (such as "Unexpected token , at line 4 column 12"), allowing developers to immediately spot and fix syntax mistakes.',
+      'When syntax is malformed, KivaroTools intercepts the parser diagnostic, extracts the exact line number, column index, and character byte offset, and renders an instant visual code frame with a directional caret (^) pointing directly to the erroneous token alongside a descriptive explanation (such as "Unexpected token , at line 4 column 12").',
   },
   {
     question: 'How does minification differ from formatting and what are the performance impacts?',
@@ -34,7 +34,7 @@ export const JSON_FORMATTER_FAQS: FaqItem[] = [
   {
     question: 'Does formatting or beautifying change the underlying JSON data?',
     answer:
-      'No. Standard formatting only alters lexical whitespace outside quotation marks; the parsed semantics, types, and values remain completely identical. However, if an optional feature like "Sort Object Keys Alphabetically" or "Strip Null Values" is explicitly enabled, keys are rearranged or null properties are purged. Standard formatting without optional transforms guarantees zero data loss.',
+      'No. Standard formatting only alters lexical whitespace outside quotation marks; the parsed semantics, types, and values remain completely identical. However, if an optional feature like "Sort Object Keys Alphabetically" or "Clean Nulls" is explicitly enabled, keys are rearranged or null properties are purged. Standard formatting without optional transforms guarantees zero data loss.',
   },
   {
     question: 'What do the 2-space, 4-space, and tab indentation settings do?',
@@ -72,6 +72,11 @@ export const JSON_FORMATTER_FAQS: FaqItem[] = [
       'Your data never leaves your device. All JSON formatting, strict syntax validation, minification, tree rendering, and diffing occur 100% locally in your client browser memory using Web Workers and JavaScript APIs. No payloads, tokens, customer records, or API responses are transmitted to any backend server, telemetry endpoint, or external analytics tracker.',
   },
   {
+    question: 'How do the JSONPath query evaluator, TypeScript interface generator, and JSON Schema creator work?',
+    answer:
+      'KivaroTools integrates three advanced developer tools directly into the workbench: a live JSONPath evaluator (allowing queries like $.items[*].price with instant match highlighting), a TypeScript interface generator that infers typed declarations from arbitrary JSON structures, and a Draft-07 JSON Schema generator that produces validation schemas with zero server uploads.',
+  },
+  {
     question: 'Which related tool should I use if I need to convert JSON into CSV, Excel, or SQL?',
     answer:
       'If your workflow requires converting structured JSON data into tabular formats or database queries, use our dedicated companion tools: the KivaroTools JSON to CSV/Excel Converter for tabular reporting, or the SQL Query Formatter for formatting database schema definitions and SQL queries.',
@@ -93,347 +98,317 @@ export default function JsonFormatterSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* Schema.org FAQPage Structured Data */}
+    <>
+      {/* FAQPage JSON-LD Structured Data for Google Rich Snippets */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Understanding JSON Formatting, Beautification &amp; Pretty Printing (RFC 8259 Standard)
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        <strong>JavaScript Object Notation (JSON)</strong> is the foundational open standard for structured data interchange on the modern web, formalized in <strong>RFC 8259</strong> by the Internet Engineering Task Force (IETF) and <strong>ECMA-404</strong> by Ecma International. Despite its origins in JavaScript syntax, JSON is completely language-independent and universally supported across Python, Go, Rust, Java, C#, PHP, Ruby, and modern database engines.
-      </p>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        In high-throughput microservices, REST APIs, and CDN edge networks, JSON payloads are transmitted in <em>minified</em> form—stripped of all line breaks, spaces, and indentation to minimize payload sizes and network latency. However, minified strings are virtually impossible for human developers to read, verify, or debug. A <strong>JSON Formatter</strong> (often referred to as a <strong>JSON Beautifier</strong> or <strong>Pretty Printer</strong>) parses that raw character stream and formats it into a clear, nested hierarchy with uniform indentation and visual clarity.
-      </p>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Step-by-Step Guide: How to Format, Validate, and Inspect JSON on KivaroTools
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Paste or Upload Raw JSON</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Paste your minified API response, configuration file, or database export into the editor. You can also drag-and-drop a <code>.json</code> file or click <strong>Load Sample</strong> to test the workflow.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">2</span>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Select Desired Indentation</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Choose between <strong>2 spaces</strong> (industry standard for TypeScript &amp; Web), <strong>4 spaces</strong> (standard for Python &amp; backend services), or <strong>Tabs</strong> based on your project conventions.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">3</span>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Review Diagnostics &amp; Trees</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            KivaroTools automatically verifies syntax, scans for duplicate object keys, highlights 64-bit integer precision boundaries, and opens an interactive virtualized tree viewer.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</span>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base">Copy, Download or Export</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Click <strong>Copy Output</strong> to transfer formatted JSON to your clipboard, or click <strong>Download</strong> to save a clean <code>.json</code> file. You can also generate TypeScript interfaces or JSON Schemas instantly.
-          </p>
-        </div>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Minification vs. Formatting vs. Validation vs. Conservative Repair
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Developer workflows frequently conflate these four operations, but each serves an independent and critical stage in software engineering:
-      </p>
-
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Operation</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Primary Objective</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Byte Size Impact</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Semantic Mutability</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Formatting</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Maximizes readability, code review clarity, and debugging efficiency</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">+20% to +50% (adds indentation &amp; newlines)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">Immutable (values preserved strictly)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Minification</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Minimizes HTTP transfer overhead, cloud bandwidth costs, and disk storage</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">-20% to -40% (strips non-essential whitespace)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">Immutable (values preserved strictly)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Validation</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Verifies strict conformance to RFC 8259 syntax specifications</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">0% (non-destructive inspection)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">Read-only (no modifications)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Conservative Repair</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Fixes developer typos (trailing commas, comments, single quotes, unquoted keys)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Varies slightly depending on fixed tokens</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-blue-600 dark:text-blue-400">Controlled (user-initiated fix)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        RFC 8259 Syntax Rules: What Is and Isn&apos;t Allowed in Valid JSON
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        JavaScript object literals in browser code or Node.js are extremely forgiving, leading many engineers to inadvertently produce invalid JSON. Here is the definitive specification reference:
-      </p>
-
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Feature</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">RFC 8259 Valid Syntax</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Disallowed / Syntax Error</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Quotes</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;title&quot;: &quot;KivaroTools&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">&apos;title&apos;: &apos;KivaroTools&apos; (single quotes disallowed)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Object Keys</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;status&quot;: &quot;active&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">status: &quot;active&quot; (unquoted key disallowed)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Trailing Commas</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">[1, 2, 3]</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">[1, 2, 3,] (trailing comma triggers error)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Comments</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;notes&quot;: &quot;Production&quot;</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">{'// comment or /* block */ disallowed'}</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Undefined Values</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;val&quot;: null</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">&quot;val&quot;: undefined (undefined is invalid)</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Special Floats</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">&quot;score&quot;: 0.0</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-red-600 dark:text-red-400">&quot;score&quot;: NaN, Infinity (prohibited in JSON)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        The IEEE 754 64-Bit Integer Problem (Snowflake IDs &amp; BigInt Precision Loss)
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        A critical, silent failure mode in distributed microservices occurs when communicating 64-bit integer identifiers—such as PostgreSQL <code>BIGINT</code> primary keys or Twitter/Discord Snowflake IDs (e.g., <code>1740284918239019234</code>).
-      </p>
-      <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-5 border border-slate-200 dark:border-slate-700 mb-6 text-center font-mono text-sm sm:text-base text-slate-900 dark:text-slate-100">
-        Number.MAX_SAFE_INTEGER = 2<sup>53</sup> - 1 = 9,007,199,254,740,991
-      </div>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        JavaScript engines use IEEE 754 double-precision floating-point numbers. Any integer larger than <code>9,007,199,254,740,991</code> or smaller than <code>-9,007,199,254,740,991</code> loses precision, causing the browser to silently alter the least significant digits during native <code>JSON.parse()</code>. KivaroTools features an automated pre-parse lexical diagnostic scanner that flags unsafe integers before parsing, advising you to serialize 64-bit IDs as strings (e.g., <code>&quot;1740284918239019234&quot;</code>) in your API endpoints.
-      </p>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Hidden Trap: Duplicate Object Keys and Lexical Scanning
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Under RFC 8259, JSON object keys should be unique within an object. When a payload contains duplicate keys (such as <code>&#123;&quot;role&quot;: &quot;admin&quot;, &quot;role&quot;: &quot;guest&quot;&#125;</code>), the ECMAScript <code>JSON.parse()</code> specification dictates that the last encountered value overwrites earlier values silently. This silent overwrite can mask catastrophic security vulnerabilities and configuration regressions.
-      </p>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        KivaroTools executes an independent, non-destructive lexical analysis across raw input strings before ingestion. It detects duplicate keys and reports their exact line and column coordinates, alerting you before silent data masking occurs.
-      </p>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Real Before-and-After Formatting Examples
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-2">Before: Minified API Response (Single Line)</h3>
-          <pre className="p-3 bg-slate-900 text-slate-100 rounded-xl text-xs overflow-x-auto font-mono">
-            {`{"status":200,"data":{"user":{"id":1042,"name":"Alex Rivera","roles":["engineer","admin"],"verified":true,"meta":{"loginCount":42,"lastIp":null}}}}`}
-          </pre>
-        </div>
-        <div>
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-2">After: Beautified with 2-Space Indentation</h3>
-          <pre className="p-3 bg-slate-900 text-slate-100 rounded-xl text-xs overflow-x-auto font-mono">
-            {`{
-  "status": 200,
-  "data": {
-    "user": {
-      "id": 1042,
-      "name": "Alex Rivera",
-      "roles": [
-        "engineer",
-        "admin"
-      ],
-      "verified": true,
-      "meta": {
-        "loginCount": 42,
-        "lastIp": null
-      }
-    }
-  }
-}`}
-          </pre>
-        </div>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Privacy &amp; Security Architecture: 100% Client-Side In-Browser Execution
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        In an enterprise software environment, JSON payloads often contain sensitive production data—including authentication tokens, customer personal identifiable information (PII), proprietary business logic, or confidential financial records. Many legacy online formatting tools transmit payloads to backend servers for processing or inject third-party ad networks that inspect form fields.
-      </p>
-      <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 p-5 bg-emerald-50/50 dark:bg-emerald-950/20 mb-6">
-        <h3 className="font-bold text-emerald-900 dark:text-emerald-300 text-base mb-2">KivaroTools Zero-Upload Guarantee</h3>
-        <ul className="list-disc pl-5 text-sm space-y-1 text-emerald-800 dark:text-emerald-400">
-          <li><strong>Zero Network Calls:</strong> All parsing, validation, formatting, minification, and diffing occur exclusively in your local browser sandbox via JavaScript and Web Workers.</li>
-          <li><strong>No Server Logs or Telemetry:</strong> Payload contents are never sent to remote logging services, databases, or analytics platforms.</li>
-          <li><strong>Fully Offline Capable:</strong> Once loaded, the tool functions without an active internet connection.</li>
-        </ul>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Competitive Analysis: KivaroTools vs. 28 Online JSON Utilities
-      </h2>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        We audited 28 distinct developer utilities across the web (including JSONLint, JSONFormatter.org, CodeBeautify, JSON Editor Online, JSON Crack, and jqplay) to identify where standard formatters fail modern developer workflows:
-      </p>
-
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Tool</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Execution Privacy</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Large Payloads</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Specialized Diagnostics</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Modern Developer Features</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr className="bg-blue-50/40 dark:bg-blue-950/20 font-medium">
-              <th scope="row" className="p-3 font-bold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-blue-900 dark:text-blue-300">KivaroTools (This Tool)</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">100% Client-Side (Zero Uploads)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Web Worker + 60k Node Virtual Tree</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Duplicate Keys + BigInt 64-bit Scanning</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">TypeScript generator, JSON Schema, JSONPath, Diff</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">JSONLint</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Client-side; ad-supported</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Freezes on multi-megabyte payloads</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Basic syntax validator only</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Basic reformat only</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">JSONFormatter.org</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Heavy third-party advertising scripts</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Moderate; DOM lag on large arrays</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">No BigInt or duplicate key detection</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Tree view, file upload/download</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">JSON Editor Online</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Client-side; cloud storage optional</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Good table/tree performance</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Lossless numbers mode supported</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Querying, text/tree dual mode</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">JSON Crack</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Client-side graph generator</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Graph layout struggles above 1 MB</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Graph visualization only</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Visual node graph, image export</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Frequently Asked Questions
-      </h2>
-      <div className="space-y-4 mb-6">
-        {JSON_FORMATTER_FAQS.map((faq, index) => (
-          <div
-            key={index}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
-          >
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
-              {faq.question}
-            </h3>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              {faq.answer}
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+        {/* Zone 2: Deep-Dive Architecture & Engine Sections */}
+        <section aria-labelledby="json-formatter-understanding-json-formatting-" className="mb-8">
+          <h2 id="json-formatter-understanding-json-formatting-" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Understanding JSON Formatting, Beautification &amp; Pretty Printing (RFC 8259 Standard)
+          </h2>
+          <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+            <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+              <strong>Privacy First &amp; Secure:</strong> All JSON formatting, validation, repair, and minification execute 100% client-side in your local browser sandbox. No payloads, authorization tokens, or sensitive enterprise records are ever sent to an external server.
             </p>
-          </div>
-        ))}
-      </div>
+          </blockquote>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            <strong>JavaScript Object Notation (JSON)</strong> is the foundational open standard for structured data interchange across modern web architectures, formalized in <strong>RFC 8259</strong> by the Internet Engineering Task Force (IETF) and <strong>ECMA-404</strong> by Ecma International. Despite its historical lineage within JavaScript, JSON is completely language-independent and universally supported across Python, Go, Rust, Java, C#, PHP, Ruby, and modern SQL/NoSQL databases.
+          </p>
+          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+            In high-throughput microservices, REST APIs, and CDN edge networks, JSON payloads are transmitted in <em>minified</em> form—stripped of all line breaks, spaces, and indentation to minimize payload sizes and network latency. However, minified strings are virtually impossible for human developers to read, verify, or debug. A <strong>JSON Formatter</strong> (often referred to as a <strong>JSON Beautifier</strong>, <strong>JSON Viewer</strong>, or <strong>JSON Pretty Printer</strong>) parses that raw character stream and formats it into a clear, nested hierarchy with uniform indentation, syntax highlighting, and visual clarity.
+          </p>
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Related Developer Utilities
-      </h2>
-      <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-        Need to transform or validate data across other programming formats? Explore our companion developer tools:
-      </p>
-      <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
-        <li>
-          <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-            JSON to CSV, Excel &amp; YAML Converter
-          </Link>{' '}
-          — Convert JSON data structures into tabular spreadsheets, CSV files, and YAML manifests.
-        </li>
-        <li>
-          <Link href="/developer/sql-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-            SQL Query Formatter
-          </Link>{' '}
-          — Beautify and standardize SQL queries across PostgreSQL, MySQL, SQLite, and Transact-SQL dialects.
-        </li>
-        <li>
-          <Link href="/developer/base64-encoder" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-            Base64 Encoder &amp; Decoder
-          </Link>{' '}
-          — Safely encode and decode binary assets, authentication headers, and URL-safe data strings.
-        </li>
-        <li>
-          <Link href="/developer/regex-tester" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-            Regex Tester &amp; Debugger
-          </Link>{' '}
-          — Test regular expressions in real-time with syntax highlighting, capture groups, and code generation.
-        </li>
-      </ul>
-    </article>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Web Worker Non-Blocking Parsing for Large Payloads up to 25 MB
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Standard browser-based JSON tools freeze the main UI thread when parsing multi-megabyte payloads, causing frustrating frame drops and browser tab crashes. KivaroTools solves this with an isolated background <strong>Web Worker</strong> engine (configured in <code>lib/jsonFormatterEngine.ts</code>). Payloads exceeding 256 KB are automatically delegated off the main thread, parsing up to <strong>25 MB</strong> of dense JSON with instant progress feedback and zero user interface latency.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            60,000-Node Virtualized Tree Viewer with Keyboard Navigation
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Rendering tens of thousands of DOM elements for complex JSON hierarchies degrades browser memory. KivaroTools utilizes a high-performance <strong>virtualized tree explorer</strong> that recycles DOM rows at a constant 28px height with 12 overscan rows. It comfortably navigates up to <strong>60,000 nodes</strong>, featuring instant Expand All / Collapse All controls, real-time key/value text search with match counters, and full keyboard accessibility (Arrow keys to traverse nodes, and <code>Enter</code> to copy the exact JSONPath pointer).
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            IEEE-754 64-Bit BigInt Precision Loss Scanner
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            JavaScript native numbers conform to IEEE 754 double-precision floating-point format, capping safe integers at <code>Number.MAX_SAFE_INTEGER</code> (9,007,199,254,740,991 or 2<sup>53</sup> - 1). When APIs return 64-bit identifiers—such as Twitter/Discord Snowflake IDs, Stripe IDs, or PostgreSQL <code>BIGINT</code> keys—standard browser formatters silently truncate the least significant digits. KivaroTools runs a lexical pre-parse scanner that detects integers exceeding safe limits and warns you before silent float truncation corrupts your database keys.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Non-Destructive JSON Auto-Repair Inspection Modal
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Developers frequently copy malformed JSON snippets from logs or JavaScript code containing trailing commas, single-quoted keys, unquoted identifiers, or unescaped characters. Rather than silently modifying your raw input, our <strong>Auto-Repair</strong> tool opens an interactive comparison modal displaying a side-by-side diff of repaired JSON, letting you inspect every corrected token before applying or copying the clean output.
+          </p>
+        </section>
+
+        {/* Zone 3: Interactive Feature & Use-Case Grid */}
+        <section aria-labelledby="json-formatter-interactive-use-cases" className="mb-8">
+          <h2 id="json-formatter-interactive-use-cases" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Modern Developer Workflows &amp; Specialized Use Cases
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                REST API &amp; Webhook Debugging
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Inspect and beautify minified responses from Postman, cURL, Stripe webhooks, GitHub Actions, and AWS API Gateway. Rapidly verify payload schema structures and pinpoint nested values using real-time search.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                TypeScript Interface &amp; Type Generation
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Instantly convert any active JSON payload into accurate, strongly typed TypeScript interface declarations with optional property inference, ready to paste into full-stack web applications.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Draft-07 JSON Schema Generator
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Generate production-ready Draft-07 JSON Schema definitions directly from complex sample data, complete with property types, required fields, and array item schema definitions.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Live JSONPath Query Testing
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Evaluate complex JSONPath expressions (e.g. <code>$.items[*].price</code> or <code>$..store.book[?(@.price &lt; 10)]</code>) against deep objects with instant match highlighting and extracted sub-trees.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Alphabetical Key Sorting for Clean Git Diffs
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Normalize disorganized configuration files (such as <code>package.json</code>, <code>tsconfig.json</code>, or Kubernetes configmaps) by sorting keys alphabetically (A-Z) recursively to eliminate noisy version control diffs.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                Recursive Clean Nulls Utility
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Purge unnecessary <code>null</code> fields and empty properties across nested structures to produce compact, production-ready payloads for bandwidth-constrained mobile clients and IoT endpoints.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 4: Technical Specification & Comparison Matrices */}
+        <section aria-labelledby="json-formatter-comparison-matrices" className="mb-8">
+          <h2 id="json-formatter-comparison-matrices" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Technical Specification: Formatting vs. Minification vs. Repair
+          </h2>
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Operation Mode</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Primary Objective</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Payload Byte Delta</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Semantic Mutability</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">RFC Conformance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">2-Space Beautify</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Compact hierarchical readability for TypeScript/JS</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">+20% to +35%</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Immutable</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Strict RFC 8259</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">4-Space Beautify</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Expanded hierarchy for Python, Java &amp; backend logs</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">+35% to +55%</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Immutable</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Strict RFC 8259</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">One-Line Minify</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Removes non-essential whitespace for network transmission</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">-25% to -50%</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Immutable</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Strict RFC 8259</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Conservative Repair</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Fixes trailing commas, quotes, and comments via diff modal</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Minimal delta</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-medium">User Confirmed</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Emits RFC 8259</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Zone 5: Developer Troubleshooting & Error Reference */}
+        <section aria-labelledby="json-formatter-troubleshooting-guide" className="mb-8">
+          <h2 id="json-formatter-troubleshooting-guide" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Common JSON Errors, Edge Cases &amp; Instant Fixes
+          </h2>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                SyntaxError: Unexpected token , in JSON at position ...
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Trailing comma after the final property in an object or array (e.g. <code>&#123;&quot;a&quot;: 1,&#125;</code>). While permitted in ECMAScript object literals, trailing commas are strictly forbidden in RFC 8259 JSON.
+                <br />
+                <strong>Fix:</strong> Click the <strong>Repair</strong> button in KivaroTools to automatically strip all trailing commas via our non-destructive diff modal.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                SyntaxError: Unexpected token &apos; in JSON (Single-Quoted Strings)
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Wrapping keys or string values in single quotes (<code>&apos;name&apos;: &apos;value&apos;</code>). JSON requires double quotation marks (<code>&quot;...&quot;</code>).
+                <br />
+                <strong>Fix:</strong> Click <strong>Repair</strong> to convert single quotes into standard escaped double quotes without altering inner string text.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Unquoted Object Keys Copied from JavaScript Code
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Pasting object literals where keys are unquoted identifiers (e.g. <code>&#123;status: &quot;ok&quot;&#125;</code>).
+                <br />
+                <strong>Fix:</strong> The KivaroTools repair engine automatically wraps bare alphanumeric keys in double quotes while preserving values.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Silent Float Truncation on 64-Bit Snowflake IDs
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Numbers exceeding <code>9007199254740991</code> lose precision when parsed as JavaScript numbers.
+                <br />
+                <strong>Fix:</strong> KivaroTools flags precision warnings. Wrap large 64-bit BigInt IDs in double quotes as strings (e.g. <code>&quot;18239019234918239&quot;</code>) to guarantee lossless transmission.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Unescaped Control Characters and Multiline Strings
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Raw unescaped newlines or tab characters inside string values. JSON requires escape sequences (<code>\n</code>, <code>\t</code>).
+                <br />
+                <strong>Fix:</strong> KivaroTools automatically locates unescaped control characters and normalizes them into RFC-compliant escape sequences.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Unexpected Byte Order Mark (UTF-8 BOM) at File Start
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Files exported from Windows text editors often begin with an invisible UTF-8 BOM character (<code>\uFEFF</code>), causing parser failure at line 1 column 1.
+                <br />
+                <strong>Fix:</strong> KivaroTools strips leading BOM characters automatically before feeding payloads to the validator.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 6: Frequently Asked Questions */}
+        <section aria-labelledby="json-formatter-frequently-asked-questions" className="mb-8">
+          <h2 id="json-formatter-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
+            {JSON_FORMATTER_FAQS.map((faq, index) => (
+              <details
+                key={index}
+                className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+              >
+                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                  <span>{faq.question}</span>
+                  <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* Internal Cross-Linking Block */}
+        <section aria-labelledby="json-formatter-related-developer-utilities" className="mb-8">
+          <h2 id="json-formatter-related-developer-utilities" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Related Client-Side Developer Workflows
+          </h2>
+          <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+            Enhance your development toolchain with our companion client-side developer utilities:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+            <li>
+              <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON Converter (CSV, Excel, YAML, XML &amp; JSONL)
+              </Link>{' '}
+              — Flatten nested JSON into spreadsheets, native Excel workbooks, and YAML configuration manifests.
+            </li>
+            <li>
+              <Link href="/developer/sql-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQL Query Formatter &amp; Linter
+              </Link>{' '}
+              — Format, lint, and analyze SQL queries across 19 database dialects including PostgreSQL, MySQL, and BigQuery.
+            </li>
+            <li>
+              <Link href="/developer/base64-encoder" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Base64 Encoder &amp; Decoder
+              </Link>{' '}
+              — Safely encode and decode UTF-8 text, emojis, Base64URL tokens, and binary assets with zero server uploads.
+            </li>
+            <li>
+              <Link href="/developer/regex-tester" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Regex Tester &amp; Code Generator
+              </Link>{' '}
+              — Test regular expressions in real-time with capture groups, ReDoS risk scoring, and multi-language code export.
+            </li>
+            <li>
+              <Link href="/developer/password-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Cryptographic Password &amp; Secret Generator
+              </Link>{' '}
+              — Create high-entropy passwords, API secrets, and 1 GB file checksums via Web Crypto API.
+            </li>
+            <li>
+              <Link href="/developer/svg-optimizer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SVG Optimizer &amp; Cleaner
+              </Link>{' '}
+              — Strip bloated vector metadata, prune unused defs, and minify SVG markup with sandboxed preview.
+            </li>
+          </ul>
+        </section>
+      </article>
+    </>
   );
 }

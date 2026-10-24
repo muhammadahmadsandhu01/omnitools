@@ -9,7 +9,6 @@ import {
   Calculator,
   Search,
   Heart,
-  Settings2,
   Mail,
   ShieldCheck,
 } from 'lucide-react';
@@ -19,6 +18,7 @@ import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { SITE_URL } from '@/config/site';
+import { KtMonogram } from '@/components/brand/KivaroLogo';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -83,7 +83,13 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
 
   verification: {
@@ -120,11 +126,6 @@ const footerCategories = [
     href: '/seo',
     icon: Search,
   },
-  {
-    name: 'Health',
-    href: '/health',
-    icon: Heart,
-  },
 ];
 
 function SiteFooter() {
@@ -137,25 +138,32 @@ function SiteFooter() {
           <div className="lg:col-span-1">
             <Link
               href="/"
-              className="inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2.5"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600">
-                <Settings2 className="h-5 w-5 text-white" />
-              </span>
+              <KtMonogram className="h-9 w-9 shrink-0" />
 
-              <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Kivaro<span className="text-blue-600">Tools</span>
+              <span className="font-sans text-2xl font-extrabold tracking-tight">
+                <span className="text-2xl font-extrabold tracking-tight text-slate-900 transition-colors dark:text-white">
+                  Kivaro
+                </span>
+                <span className="text-2xl font-extrabold tracking-tight text-blue-600 transition-colors dark:text-blue-500">
+                  Tools
+                </span>
               </span>
             </Link>
 
-            <p className="mt-4 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              PRIVATE BY DESIGN • POWERFUL TOOLS FOR EVERYONE
+            </p>
+
+            <p className="mt-3 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
               Free online tools for developers, creators, businesses,
               and everyday tasks.
             </p>
 
-            <div className="mt-5 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-              <ShieldCheck className="h-4 w-4 text-blue-600" />
-              Privacy-conscious by design
+            <div className="mt-4 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+              Client-side processing • Zero data uploaded
             </div>
           </div>
 
@@ -284,6 +292,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          src="https://analytics.ahrefs.com/analytics.js"
+          data-key="twpg3hiqDH4n7rhyfDlD2Q"
+          async
+        ></script>
+      </head>
       <body
         className={`${inter.variable} ${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100`}
       >

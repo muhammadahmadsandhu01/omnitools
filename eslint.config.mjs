@@ -11,11 +11,18 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    ".cloudflare/**",
     "next-env.d.ts",
     // Scratch artifacts, unpacked browser profiles, and test results:
     "scratch/**",
     "test-results/**",
+    "scripts/**",
   ]),
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

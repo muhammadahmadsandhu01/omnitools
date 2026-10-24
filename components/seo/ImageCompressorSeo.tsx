@@ -92,48 +92,24 @@ export default function ImageCompressorSeo() {
     })),
   };
 
-  const softwareSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'KivaroTools Image Compressor & Optimizer',
-    applicationCategory: 'MultimediaApplication',
-    operatingSystem: 'Any (Web Browser)',
-    browserRequirements: 'Requires JavaScript and HTML5 Canvas support',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
-    featureList: [
-      '100% Client-Side Local Browser Processing (Zero Server Uploads)',
-      'Smart Content-Aware Lossy & Lossless Optimization',
-      'Target File Size (KB) Bisection Search (20KB, 50KB, 100KB, 200KB)',
-      'Multi-Format Transcoding: JPEG, PNG, WebP, AVIF, HEIC',
-      'Alpha Channel Transparency Preservation with Solid White JPEG Fill',
-      'Proportional Aspect-Ratio Preserving Dimension Downscaling',
-      'Interactive Side-by-Side Split Visual Comparison Slider',
-      'Batch Queue up to 100 Images with Bulk ZIP Archive Download',
-      'Automatic EXIF and Geolocation GPS Metadata Stripping for Privacy',
-    ],
-  };
-
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* Structured Data: FAQPage and SoftwareApplication */}
+      {/* Structured Data: FAQPage (SoftwareApplication & WebApplication are provided by page shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-      />
 
       {/* Section 1: Introduction & Architecture */}
-      <section className="mb-10">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">
+      <section aria-labelledby="image-compressor-client-side-image-compressor-a" className="mb-10">
+        <h2 id="image-compressor-client-side-image-compressor-a" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">
           Client-Side Image Compressor &amp; Optimizer: Private, High-Performance Media Sizing
         </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <p className="text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Images represent over 60% of average web page weight. Unoptimized, high-resolution photographs increase mobile
           data consumption, slow down page loading speeds, and penalize Google Core Web Vitals—specifically{' '}
@@ -148,8 +124,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 2: Mode Overview Table */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-optimization-modes-amp-algorit" className="mb-10">
+        <h3 id="image-compressor-optimization-modes-amp-algorit" className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
           Optimization Modes &amp; Algorithm Tuning
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -204,8 +180,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 3: Format Selection Guide */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-format-comparison-guide-webp-a" className="mb-10">
+        <h3 id="image-compressor-format-comparison-guide-webp-a" className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
           Format Comparison Guide: WebP, AVIF, JPEG, and PNG
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -257,8 +233,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 4: Target Size (KB) Mode Explained */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-target-file-size-mode-compress" className="mb-10">
+        <h3 id="image-compressor-target-file-size-mode-compress" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Target File Size Mode: Compressing to 20KB, 50KB, 100KB, or 200KB Limits
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -274,8 +250,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 5: Real Benchmark Data */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-empirical-benchmark-results-on" className="mb-10">
+        <h3 id="image-compressor-empirical-benchmark-results-on" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Empirical Benchmark Results on Test Corpus Fixtures
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -356,8 +332,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 6: Privacy, EXIF & Security */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-privacy-disclosures-amp-exif-m" className="mb-10">
+        <h3 id="image-compressor-privacy-disclosures-amp-exif-m" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           Privacy Disclosures &amp; EXIF Metadata Stripping
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -372,8 +348,8 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 7: How-To Guide */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-how-to-compress-images-online-" className="mb-10">
+        <h3 id="image-compressor-how-to-compress-images-online-" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           How to Compress Images Online (Step-by-Step)
         </h3>
         <ol className="list-decimal space-y-3 pl-5 text-slate-600 dark:text-slate-400 mb-6">
@@ -396,22 +372,25 @@ export default function ImageCompressorSeo() {
       </section>
 
       {/* Section 8: FAQs */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="image-compressor-frequently-asked-questions" className="mb-10">
+        <h3 id="image-compressor-frequently-asked-questions" className="text-xl sm:text-2xl font-semibold mb-6 text-slate-900 dark:text-slate-100">
           Frequently Asked Questions
         </h3>
-        <dl className="space-y-6">
+        <div className="space-y-3">
           {IMAGE_COMPRESSOR_FAQS.map((faq, index) => (
-            <div key={index} className="border-b border-gray-100 dark:border-slate-800/80 pb-6 last:border-b-0">
-              <dt className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {faq.question}
-              </dt>
-              <dd className="text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400">
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
-              </dd>
-            </div>
-          ))}
-        </dl>
+              </p>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Section 9: Related Tools & Internal Navigation */}

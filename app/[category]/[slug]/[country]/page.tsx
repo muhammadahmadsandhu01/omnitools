@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import AdUnit from '@/components/ads/AdUnit';
 import { SITE_URL } from '@/config/site';
+import SchemaMarkup from '@/components/SchemaMarkup';
 
 // 22 Country Calculators
 import PakistanSalaryCalculator, { PK_METADATA } from '@/components/tools/salary/PakistanSalaryCalculator';
@@ -290,6 +291,31 @@ export function generateStaticParams() {
   }));
 }
 
+const countryLocales: Record<string, string> = {
+  'united-states': 'en-US',
+  'united-kingdom': 'en-GB',
+  'germany': 'en-DE',
+  'india': 'en-IN',
+  'canada': 'en-CA',
+  'australia': 'en-AU',
+  'singapore': 'en-SG',
+  'united-arab-emirates': 'en-AE',
+  'saudi-arabia': 'en-SA',
+  'pakistan': 'en-PK',
+  'france': 'en-FR',
+  'japan': 'en-JP',
+  'switzerland': 'en-CH',
+  'netherlands': 'en-NL',
+  'ireland': 'en-IE',
+  'new-zealand': 'en-NZ',
+  'spain': 'en-ES',
+  'italy': 'en-IT',
+  'south-africa': 'en-ZA',
+  'brazil': 'en-BR',
+  'mexico': 'en-MX',
+  'south-korea': 'en-KR',
+};
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category, slug, country } = await params;
 
@@ -311,13 +337,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const taxYear = (entry.meta && entry.meta.defaultTaxYear) || DEFAULT_TAX_YEARS[entry.code] || '2026';
   const title = `${entry.name} Salary Calculator ${taxYear}`;
   const description = `Calculate ${entry.name} salary take-home pay using applicable ${taxYear} statutory income tax, employee contributions, and payroll rules. See gross pay, deductions, net salary, and employer cost.`;
-  const canonicalUrl = `/finance/salary-calculator/${entry.slug}`;
+  const canonicalUrl = `${SITE_URL}/finance/salary-calculator/${entry.slug}`;
 
   return {
     title,
     description,
     alternates: {
       canonical: canonicalUrl,
+      languages: {
+        'x-default': `${SITE_URL}/finance/salary-calculator/united-states`,
+        ...Object.keys(countryLocales).reduce((acc, c) => {
+          acc[countryLocales[c]] = `${SITE_URL}/finance/salary-calculator/${c}`;
+          return acc;
+        }, {} as Record<string, string>),
+      },
+    },
+    robots: {
+      index: false,
+      follow: true,
     },
     openGraph: {
       title: `${entry.name} Salary Calculator ${taxYear} — KivaroTools`,
@@ -348,31 +385,40 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
   const ToolComponent = entry.tool;
   const SeoComponent = entry.seo;
   const taxYear = (entry.meta && entry.meta.defaultTaxYear) || DEFAULT_TAX_YEARS[entry.code] || '2026';
+  const toolName = `${entry.name} Salary Calculator ${taxYear}`;
+  const toolDescription = `Calculate ${entry.name} salary take-home pay using applicable ${taxYear} statutory income tax, employee contributions, and payroll rules. See gross pay, deductions, net salary, and employer cost.`;
+  const canonicalUrl = `${SITE_URL}/finance/salary-calculator/${entry.slug}`;
 
-  const jsonLd = {
+  const breadcrumbSchema = {
     '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: `${entry.name} Salary Calculator ${taxYear}`,
-    url: `${SITE_URL}/finance/salary-calculator/${entry.slug}`,
-    applicationCategory: 'FinanceApplication',
-    operatingSystem: 'All',
-    description: `Calculate ${entry.name} net take-home pay, statutory deductions, income tax, and employer contributions for ${taxYear}.`,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: entry.meta?.currency || 'USD',
-    },
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Finance', item: `${SITE_URL}/finance` },
+      { '@type': 'ListItem', position: 3, name: 'Salary Calculator', item: `${SITE_URL}/finance/salary-calculator` },
+      { '@type': 'ListItem', position: 4, name: entry.name, item: canonicalUrl },
+    ],
   };
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
       <div className="min-h-screen bg-slate-50 dark:bg-[#0b1120] py-8 sm:py-12 transition-colors">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          {/* Structured Data (GEO / AEO) */}
+          <SchemaMarkup
+            name={toolName}
+            description={toolDescription}
+            category="finance"
+            applicationCategory="BusinessApplication"
+            url={canonicalUrl}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(breadcrumbSchema),
+            }}
+          />
+
           {/* Breadcrumb Navigation */}
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">

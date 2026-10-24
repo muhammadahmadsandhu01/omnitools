@@ -8,6 +8,7 @@ import AdUnit from '@/components/ads/AdUnit';
 import { SITE_URL } from '@/config/site';
 
 import { toolComponents, seoComponents } from '@/config/toolRegistry';
+import SchemaMarkup from '@/components/SchemaMarkup';
 
 type PageProps = {
   params: Promise<{
@@ -15,6 +16,15 @@ type PageProps = {
     slug: string;
   }>;
 };
+
+export function generateStaticParams() {
+  return tools
+    .filter((tool) => tool.status === 'published')
+    .map((tool) => ({
+      category: tool.categoryId,
+      slug: tool.slug,
+    }));
+}
 
 /**
  * Generate dynamic SEO metadata for each tool page.
@@ -53,12 +63,23 @@ export async function generateMetadata({
   const metaTitle = tool.seoTitle || tool.name;
   const metaDescription = tool.seoDescription || tool.description;
 
+  const isPublicAndPublished = !tool.hidden && tool.status === 'published';
+
   return {
     title: metaTitle,
     description: metaDescription,
     alternates: {
       canonical: `/${resolvedCategory}/${resolvedSlug}`,
     },
+    robots: isPublicAndPublished
+      ? {
+          index: true,
+          follow: true,
+        }
+      : {
+          index: false,
+          follow: true,
+        },
     openGraph: {
       title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
@@ -122,35 +143,40 @@ export default async function ToolPage({ params }: PageProps) {
     seoComponents[tool.slug] ||
     seoComponents[resolvedSlug];
 
-  /**
-   * Structured data for search engines.
-   */
-  const jsonLd = {
+  const metaDescription = tool.seoDescription || tool.description;
+
+  const breadcrumbSchema = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: tool.name,
-    description: tool.description,
-    url: `${SITE_URL}/${resolvedCategory}/${resolvedSlug}`,
-    applicationCategory: 'UtilitiesApplication',
-    operatingSystem: 'All',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: categoryData.name, item: `${SITE_URL}/${categoryData.id}` },
+      { '@type': 'ListItem', position: 3, name: tool.name, item: `${SITE_URL}/${resolvedCategory}/${resolvedSlug}` },
+    ],
   };
 
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
-        {/* Structured Data */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLd),
-          }}
-        />
+        {/* Structured Data (GEO / AEO) */}
+        {tool.status === 'published' && (
+          <>
+            <SchemaMarkup
+              name={tool.name}
+              description={metaDescription}
+              category={resolvedCategory}
+              applicationCategory={tool.applicationCategory}
+              url={`${SITE_URL}/${resolvedCategory}/${resolvedSlug}`}
+            />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(breadcrumbSchema),
+              }}
+            />
+          </>
+        )}
 
         {/* Breadcrumbs */}
         <nav

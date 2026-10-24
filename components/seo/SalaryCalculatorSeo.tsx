@@ -1,17 +1,25 @@
 export default function SalaryCalculatorSeo() {
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="salary-calculator-salary-calculator-by-country-c" className="mb-8">
+        <h2 id="salary-calculator-salary-calculator-by-country-c" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         Salary Calculator by Country: Country & Territory Directory of 212 Jurisdictions
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Choose a country to calculate estimated salary, taxes, deductions, and take-home pay using the applicable payroll assumptions. KivaroTools provides a comprehensive directory of <strong>212 jurisdictions</strong>,
         combining verified statutory tax engines (Pakistan, United Kingdom, Germany, India, Australia, and more),
         limited statutory models (United States, Canada, Singapore, United Arab Emirates, Saudi Arabia, France, Japan),
         and transparent <strong>Custom Estimate modeling across the global catalogue</strong>.
       </p>
+      </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="salary-calculator-the-gross-to-net-payroll-deduc" className="mb-8">
+        <h3 id="salary-calculator-the-gross-to-net-payroll-deduc" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         The Gross-to-Net Payroll Deduction Waterfall
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -63,8 +71,10 @@ export default function SalaryCalculatorSeo() {
           </tbody>
         </table>
       </div>
+      </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="salary-calculator-pay-period-normalization-exact" className="mb-8">
+        <h3 id="salary-calculator-pay-period-normalization-exact" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Pay Period Normalization: Exact Frequency Periods
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -80,8 +90,10 @@ export default function SalaryCalculatorSeo() {
         <li><strong>Daily:</strong> Standardized on 260 working business days (52 weeks × 5 days).</li>
         <li><strong>Hourly:</strong> Standardized on 2,080 working hours (52 weeks × 40 standard weekly hours).</li>
       </ul>
+      </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="salary-calculator-jurisdiction-status-model-stat" className="mb-8">
+        <h3 id="salary-calculator-jurisdiction-status-model-stat" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Jurisdiction Status Model & Statutory Architecture
       </h3>
       <div className="space-y-4 mb-6 text-slate-600 dark:text-slate-400">
@@ -162,8 +174,10 @@ export default function SalaryCalculatorSeo() {
           </p>
         </div>
       </div>
+      </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="salary-calculator-total-cost-of-employment-emplo" className="mb-8">
+        <h3 id="salary-calculator-total-cost-of-employment-emplo" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Total Cost of Employment (Employer Side Reconciliation)
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -174,8 +188,10 @@ export default function SalaryCalculatorSeo() {
       <div className="p-4 bg-gray-50 dark:bg-[#0a0f1a] rounded-2xl border border-gray-200 dark:border-slate-800 text-sm font-mono mb-6 text-slate-700 dark:text-slate-300">
         Total Employer Cost = Contractual Gross Compensation + Statutory Employer Social Security + Pension Match + Employer Healthcare & Benefits
       </div>
+      </section>
 
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="salary-calculator-statutory-freshness-provenance" className="mb-8">
+        <h3 id="salary-calculator-statutory-freshness-provenance" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Statutory Freshness, Provenance & Privacy Standard
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -190,6 +206,7 @@ export default function SalaryCalculatorSeo() {
         not formal legal, accounting, or tax advisory. Actual withholding tax schedules and net pay may vary depending on
         individual payroll cycles, localized municipal taxes, specialized tax codes, and personal filing elections.
       </div>
+      </section>
     </article>
   );
 }

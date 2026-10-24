@@ -72,36 +72,6 @@ export const TEXT_CASE_FAQS: FaqItem[] = [
 export default function TextCaseConverterSeo() {
   const canonicalUrl = `${SITE_URL}/seo/text-case-converter`;
 
-  // SoftwareApplication Schema
-  const softwareAppSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: 'KivaroTools Text Case Converter',
-    operatingSystem: 'Any (Web Browser)',
-    applicationCategory: 'UtilityApplication',
-    url: canonicalUrl,
-    description:
-      'Free client-side text case converter. Transform text between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, and 15 writing and programming identifier formats with zero server uploads.',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-    },
-    featureList: [
-      '100% Client-side browser execution with zero server network calls',
-      '7 Standard writing cases: UPPERCASE, lowercase, Sentence case, Title Case, Capitalized Case, aLtErNaTiNg cAsE, InVeRsE cAsE',
-      '8 Developer identifier conventions: camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, dot.case, path/case, COBOL-CASE',
-      'Advanced developer tokenizer recognizing acronyms (e.g. XMLHttpRequest -> xmlHttpRequest)',
-      '191 ISO 639-1 & ISO 639-3 languages supported in searchable locale registry',
-      'Specialized orthography rules: Turkish dotted/dotless I, German ß -> SS, Dutch IJ digraph, Greek sigma final ς handling',
-      'Unicameral script advisory for Arabic, Hebrew, Devanagari, and CJK characters',
-      'Multiline preservation toggle for lists of database columns and code variables',
-      'Quick cleanup actions: Trim Outer Whitespace, Normalize Single Spaces, Remove Blank Lines, Trim Lines',
-      'Live text statistics: Characters, Characters Without Spaces, Words, Lines, Sentences, Paragraphs',
-      'One-click Async Clipboard copy with selection fallback and plaintext (.txt) file download',
-    ],
-  };
-
   // BreadcrumbList Schema
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -147,10 +117,6 @@ export default function TextCaseConverterSeo() {
       {/* Schema Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
-      />
-      <script
-        type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <script
@@ -159,10 +125,15 @@ export default function TextCaseConverterSeo() {
       />
 
       {/* SECTION 1: INTRODUCTION & OVERVIEW */}
-      <section className="mb-10">
-        <h2 className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight">
+      <section aria-labelledby="text-case-converter-professional-text-case-convert" className="mb-10">
+        <h2 id="text-case-converter-professional-text-case-convert" className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight">
           Professional Text Case Converter: Standard Writing & Developer Formats
         </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Changing the capitalization and naming format of text is a fundamental daily requirement across modern digital disciplines. Writers and book editors routinely need to format headlines and essay titles in compliance with standard editorial styles. Software developers, database architects, and API designers continuously refactor variable names, database column schemas, and URL slugs between disparate casing paradigms like <code>camelCase</code>, <code>PascalCase</code>, <code>snake_case</code>, and <code>kebab-case</code>.
         </p>
@@ -172,8 +143,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 2: QUICK START WORKFLOW */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-quick-start-guide-how-to-conve" className="mb-10">
+        <h2 id="text-case-converter-quick-start-guide-how-to-conve" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Quick Start Guide: How to Convert Text in Your Browser
         </h2>
         <ol className="list-decimal pl-6 space-y-3 text-slate-600 dark:text-slate-300">
@@ -196,8 +167,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 3: COMPREHENSIVE CASE MODES TABLE */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-comprehensive-guide-to-support" className="mb-10">
+        <h2 id="text-case-converter-comprehensive-guide-to-support" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Comprehensive Guide to Supported Case Formats
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
@@ -310,8 +281,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 4: EDITORIAL DIFFERENCES: TITLE CASE VS CAPITALIZED VS SENTENCE */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-title-case-vs-capitalized-case" className="mb-10">
+        <h2 id="text-case-converter-title-case-vs-capitalized-case" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Title Case vs. Capitalized Case vs. Sentence Case: Key Differences
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -362,8 +333,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 5: DEVELOPER TOKENIZATION ENGINE */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-developer-naming-conventions-c" className="mb-10">
+        <h2 id="text-case-converter-developer-naming-conventions-c" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Developer Naming Conventions: camelCase, PascalCase, snake_case & Beyond
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -390,8 +361,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 6: INTERNATIONALIZATION & UNICODE RULES */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-internationalization-unicode-c" className="mb-10">
+        <h2 id="text-case-converter-internationalization-unicode-c" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Internationalization & Unicode Casing: Turkish, German, Dutch & Greek Rules
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -438,8 +409,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 7: CLIENT-SIDE PRIVACY */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-client-side-security-amp-priva" className="mb-10">
+        <h2 id="text-case-converter-client-side-security-amp-priva" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Client-Side Security &amp; Privacy: Zero Server Transmissions
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -456,8 +427,8 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 8: LIMITATIONS & HUMAN REVIEW */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-limitations-human-review-guide" className="mb-10">
+        <h2 id="text-case-converter-limitations-human-review-guide" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Limitations & Human Review Guidelines
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
@@ -477,30 +448,30 @@ export default function TextCaseConverterSeo() {
       </section>
 
       {/* SECTION 9: FAQS */}
-      <section className="mb-10">
-        <h2 className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-frequently-asked-questions-faq" className="mb-10">
+        <h2 id="text-case-converter-frequently-asked-questions-faq" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Frequently Asked Questions (FAQ)
         </h2>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {TEXT_CASE_FAQS.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 bg-slate-50/50 dark:bg-slate-800/30"
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
             >
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-2">
-                {faq.question}
-              </h3>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
               </p>
-            </div>
-          ))}
-        </div>
+            </details>
+          ))}        </div>
       </section>
 
       {/* SECTION 10: RELATED KivaroTools UTILITIES */}
-      <section className="pt-6 border-t border-slate-200 dark:border-slate-800">
-        <h2 className="text-lg sm:text-xl font-bold mb-3 text-slate-900 dark:text-white">
+      <section aria-labelledby="text-case-converter-related-kivarotools-utilities" className="pt-6 border-t border-slate-200 dark:border-slate-800">
+        <h2 id="text-case-converter-related-kivarotools-utilities" className="text-lg sm:text-xl font-bold mb-3 text-slate-900 dark:text-white">
           Related KivaroTools Utilities
         </h2>
         <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">

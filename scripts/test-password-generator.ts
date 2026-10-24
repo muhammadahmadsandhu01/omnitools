@@ -545,7 +545,7 @@ console.log('\n--- 11. Testing Invariants, RFC 4122 & Cryptographic Fallback ---
 // 12. UI INVARIANTS, RESPONSIVE LAYOUT & SCORE-CARD OVERFLOW SAFEGUARDS
 console.log('\n--- 12. Testing UI Invariants, Responsive Layout & Overflow Safeguards ---');
 {
-  const tsxPath = path.join(__dirname, '..', 'components', 'tools', 'PasswordGenerator.tsx');
+  const tsxPath = path.join(process.cwd(), 'components', 'tools', 'PasswordGenerator.tsx');
   assert(fs.existsSync(tsxPath), 'PasswordGenerator.tsx component file exists');
   const source = fs.readFileSync(tsxPath, 'utf8');
 

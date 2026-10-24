@@ -81,8 +81,8 @@ export default function CryptoConverterSeo() {
       />
 
       {/* Section 1: Introduction */}
-      <section className="mb-10">
-        <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="crypto-converter-currency-amp-cryptocurrency-co" className="mb-10">
+        <h2 id="crypto-converter-currency-amp-cryptocurrency-co" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Currency &amp; Cryptocurrency Converter: Mid-Market Exchange Rates &amp; Fee Simulation
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
@@ -91,8 +91,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 2: How Currency Conversion Works & Formulas */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-how-currency-conversion-works-" className="mb-10">
+        <h3 id="crypto-converter-how-currency-conversion-works-" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           How Currency Conversion Works: The Core Mathematical Formula
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -116,8 +116,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 3: Worked Conversion Examples with Transparent Arithmetic */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-worked-conversion-examples-wit" className="mb-10">
+        <h3 id="crypto-converter-worked-conversion-examples-wit" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Worked Conversion Examples with Transparent Arithmetic
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-6">
@@ -180,8 +180,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 4: Anatomy of Conversion Costs & Spreads */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-the-anatomy-of-exchange-rate-c" className="mb-10">
+        <h3 id="crypto-converter-the-anatomy-of-exchange-rate-c" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           The Anatomy of Exchange Rate Costs: Where the Hidden Fees Hide
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -241,8 +241,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 5: Fiat vs. Crypto Comparison */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-fiat-currencies-vs-cryptocurre" className="mb-10">
+        <h3 id="crypto-converter-fiat-currencies-vs-cryptocurre" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Fiat Currencies vs. Cryptocurrencies: Key Microstructure Differences
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -273,8 +273,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 6: Data Sourcing & Provenance Architecture */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-data-sourcing-amp-reliability-" className="mb-10">
+        <h3 id="crypto-converter-data-sourcing-amp-reliability-" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Data Sourcing &amp; Reliability Architecture
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
@@ -289,8 +289,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 7: Popular Currency & Crypto Conversion Pairs */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-popular-currency-amp-crypto-co" className="mb-10">
+        <h3 id="crypto-converter-popular-currency-amp-crypto-co" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
           Popular Currency &amp; Crypto Conversion Pairs
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-xs sm:text-sm mb-4">
@@ -334,30 +334,30 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 8: Frequently Asked Questions */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-frequently-asked-questions" className="mb-10">
+        <h3 id="crypto-converter-frequently-asked-questions" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Frequently Asked Questions
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {CRYPTO_CONVERTER_FAQS.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
             >
-              <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-2">
-                {faq.question}
-              </h4>
-              <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                 {faq.answer}
               </p>
-            </div>
-          ))}
-        </div>
+            </details>
+          ))}        </div>
       </section>
 
       {/* Section 9: Related Financial Planning Tools */}
-      <section className="mb-10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="crypto-converter-related-financial-amp-planning" className="mb-10">
+        <h3 id="crypto-converter-related-financial-amp-planning" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
           Related Financial &amp; Planning Utilities
         </h3>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
@@ -433,8 +433,8 @@ export default function CryptoConverterSeo() {
       </section>
 
       {/* Section 10: Regulatory & Disclaimers */}
-      <section className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-2">
-        <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+      <section aria-labelledby="crypto-converter-regulatory-disclosures-amp-inf" className="pt-6 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-2">
+        <h4 id="crypto-converter-regulatory-disclosures-amp-inf" className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
           Regulatory Disclosures &amp; Informational Limitations
         </h4>
         <p>

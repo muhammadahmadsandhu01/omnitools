@@ -48,3 +48,7 @@ repomix-output.xml
 /dist/
 .vinext/
 .cloudflare/
+kivarotools-public/
+test-results/
+verify-seo.js
+scripts/apply-all-seo-upgrades.js

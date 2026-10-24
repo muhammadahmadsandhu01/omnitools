@@ -84,21 +84,24 @@ export default function MortgageCalculatorSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* FAQ Schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-
-      <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="mortgage-calculator-mortgage-amp-home-loan-master-" className="mb-8">
+        <h2 id="mortgage-calculator-mortgage-amp-home-loan-master-" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         Mortgage &amp; Home Loan Master Guide: PITI Breakdown, Amortization &amp; Payoff Strategies
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Securing a residential mortgage is the largest financial transaction most individuals undertake in a lifetime. Accurately projecting your monthly housing expenditure requires understanding how principal repayment, periodic interest, property taxes, homeowners insurance, private mortgage insurance (PMI), and closing fees interact. KivaroTools delivers a deterministic mathematical modeling engine designed to analyze the complete lifecycle of your mortgage with zero ads, zero lead capture, and complete in-browser privacy.
       </p>
 
       {/* STEP-BY-STEP USER GUIDE */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-how-to-use-the-kivarotools-mor" className="mb-8">
+        <h3 id="mortgage-calculator-how-to-use-the-kivarotools-mor" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         How to Use the KivaroTools Mortgage Calculator: Step-by-Step
       </h3>
       <ol className="list-decimal pl-5 space-y-2 mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
@@ -132,7 +135,10 @@ export default function MortgageCalculatorSeo() {
       </ol>
 
       {/* CORE FORMULA & MATHEMATICAL DEFINITION */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-the-core-mortgage-amortization" className="mb-8">
+        <h3 id="mortgage-calculator-the-core-mortgage-amortization" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         The Core Mortgage Amortization Formula Explained
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -155,7 +161,10 @@ export default function MortgageCalculatorSeo() {
       </ul>
 
       {/* TWO WORKED EXAMPLES */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-independently-verified-worked-" className="mb-8">
+        <h3 id="mortgage-calculator-independently-verified-worked-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Independently Verified Worked Calculations
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -213,7 +222,10 @@ export default function MortgageCalculatorSeo() {
       </div>
 
       {/* COMPLETE PITI TABLE */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-the-anatomy-of-a-piti-mortgage" className="mb-8">
+        <h3 id="mortgage-calculator-the-anatomy-of-a-piti-mortgage" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         The Anatomy of a PITI Mortgage Payment
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -260,7 +272,10 @@ export default function MortgageCalculatorSeo() {
       </div>
 
       {/* PMI DYNAMICS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-private-mortgage-insurance-pmi" className="mb-8">
+        <h3 id="mortgage-calculator-private-mortgage-insurance-pmi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Private Mortgage Insurance (PMI) Cancellation Dynamics
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -268,7 +283,10 @@ export default function MortgageCalculatorSeo() {
       </p>
 
       {/* 15-YR VS 30-YR COMPARISON */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-15-year-vs-30-year-fixed-mortg" className="mb-8">
+        <h3 id="mortgage-calculator-15-year-vs-30-year-fixed-mortg" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         15-Year vs. 30-Year Fixed Mortgages: Financial Trade-offs
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -284,7 +302,10 @@ export default function MortgageCalculatorSeo() {
       </ul>
 
       {/* COMMON MISTAKES */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-common-mortgage-calculation-mi" className="mb-8">
+        <h3 id="mortgage-calculator-common-mortgage-calculation-mi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Common Mortgage Calculation Mistakes to Avoid
       </h3>
       <ul className="list-disc pl-5 space-y-2 mb-6 text-sm text-slate-600 dark:text-slate-400">
@@ -303,7 +324,10 @@ export default function MortgageCalculatorSeo() {
       </ul>
 
       {/* ASSUMPTIONS & LIMITATIONS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-calculator-assumptions-exclusi" className="mb-8">
+        <h3 id="mortgage-calculator-calculator-assumptions-exclusi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Calculator Assumptions, Exclusions &amp; Limitations
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
@@ -317,24 +341,27 @@ export default function MortgageCalculatorSeo() {
       </ul>
 
       {/* FAQS SECTION */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-frequently-asked-questions" className="mb-8">
+        <h3 id="mortgage-calculator-frequently-asked-questions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
-      <div className="space-y-4 mb-6">
-        {MORTGAGE_CALCULATOR_FAQS.map((faq, index) => (
-          <div
-            key={index}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30"
-          >
-            <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </p>
-          </div>
-        ))}
-      </div>
+      <div className="space-y-3">
+          {MORTGAGE_CALCULATOR_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}        </div>
 
       {/* FINANCIAL DISCLAIMER */}
       <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 mb-6 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
@@ -342,7 +369,10 @@ export default function MortgageCalculatorSeo() {
       </div>
 
       {/* RELATED FINANCIAL CALCULATORS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-related-financial-calculators-" className="mb-8">
+        <h3 id="mortgage-calculator-related-financial-calculators-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Related Financial Calculators &amp; Utilities
       </h3>
       <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
@@ -368,6 +398,7 @@ export default function MortgageCalculatorSeo() {
         </Link>
         .
       </p>
+      </section>
     </article>
   );
 }

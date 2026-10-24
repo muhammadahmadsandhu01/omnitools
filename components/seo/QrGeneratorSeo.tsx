@@ -91,20 +91,15 @@ export default function QrGeneratorSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-10">
-      {/* Structured Data: FAQ & Breadcrumbs */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-
-      {/* SECTION 1: INTRODUCTION & PURPOSE */}
-      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="qr-generator-free-online-qr-code-generator-" className="mb-8">
+        <h2 id="qr-generator-free-online-qr-code-generator-" className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
         Free Online QR Code Generator: Custom Colors, Logos, Static Durability &amp; Vector Downloads
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-base sm:text-lg">
         <strong>Quick Response (QR) codes</strong> are two-dimensional matrix barcodes defined by the international <strong>ISO/IEC 18004</strong> standard.
         Whether you are printing product packaging, displaying digital restaurant menus, configuring guest Wi-Fi access, or printing conference business cards,
@@ -112,9 +107,11 @@ export default function QrGeneratorSeo() {
         embedded brand logos, real-time scannability analysis, and multi-format exports including vector SVG and print-ready PDF.
       </p>
 
+      </section>
+
       {/* SECTION 2: HOW TO CREATE A QR CODE */}
-      <div className="my-8 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 not-prose">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+      <section aria-labelledby="qr-generator-how-to-create-a-custom-qr-code" className="my-8 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 id="qr-generator-how-to-create-a-custom-qr-code" className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <span>How to Create a Custom QR Code in 4 Simple Steps</span>
         </h3>
@@ -136,10 +133,11 @@ export default function QrGeneratorSeo() {
             <span className="text-slate-600 dark:text-slate-300">Run the in-browser scanner verification and download in SVG vector, print-ready PDF, PNG, JPEG, or WebP.</span>
           </li>
         </ol>
-      </div>
+      </section>
 
       {/* SECTION 3: STATIC VS DYNAMIC QR CODES */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      <section aria-labelledby="qr-generator-static-vs-dynamic-qr-codes-why" className="mb-8">
+        <h3 id="qr-generator-static-vs-dynamic-qr-codes-why" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Static vs. Dynamic QR Codes: Why Unexpiring Static Codes Protect Your Business
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -188,7 +186,10 @@ export default function QrGeneratorSeo() {
       </div>
 
       {/* SECTION 4: SUPPORTED PAYLOAD TYPES & DATA SCHEMAS */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="qr-generator-supported-qr-code-payloads-amp" className="mb-8">
+        <h3 id="qr-generator-supported-qr-code-payloads-amp" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Supported QR Code Payloads &amp; Real-World Applications
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -258,7 +259,10 @@ export default function QrGeneratorSeo() {
       </div>
 
       {/* SECTION 5: REED-SOLOMON ERROR CORRECTION */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="qr-generator-reed-solomon-error-correction-" className="mb-8">
+        <h3 id="qr-generator-reed-solomon-error-correction-" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Reed-Solomon Error Correction &amp; Center Logo Placement
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -310,7 +314,10 @@ export default function QrGeneratorSeo() {
       </p>
 
       {/* SECTION 6: PRINT SIZING & OPTICAL SCANNABILITY FORMULA */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="qr-generator-physical-printing-sizing-amp-t" className="mb-8">
+        <h3 id="qr-generator-physical-printing-sizing-amp-t" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Physical Printing Sizing &amp; The 10:1 Scannability Rule
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -362,7 +369,10 @@ export default function QrGeneratorSeo() {
       </div>
 
       {/* SECTION 7: EXPORT FORMATS COMPARED */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="qr-generator-export-formats-compared-when-t" className="mb-8">
+        <h3 id="qr-generator-export-formats-compared-when-t" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200">
         Export Formats Compared: When to Use PNG, SVG, PDF, JPEG, or WebP
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -387,7 +397,10 @@ export default function QrGeneratorSeo() {
       </ul>
 
       {/* SECTION 8: PRIVACY & CLIENT-SIDE ARCHITECTURE */}
-      <h3 className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200 flex items-center gap-2">
+      </section>
+
+      <section aria-labelledby="qr-generator-privacy-by-design-100-in-brows" className="mb-8">
+        <h3 id="qr-generator-privacy-by-design-100-in-brows" className="text-xl font-bold mb-3 text-slate-800 dark:text-slate-200 flex items-center gap-2">
         <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         <span>Privacy by Design: 100% In-Browser Execution</span>
       </h3>
@@ -400,25 +413,33 @@ export default function QrGeneratorSeo() {
       </p>
 
       {/* SECTION 9: FAQS */}
-      <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="qr-generator-frequently-asked-questions" className="mb-8">
+        <h3 id="qr-generator-frequently-asked-questions" className="text-xl font-bold mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
-      <dl className="space-y-5 mb-8 not-prose">
-        {QR_GENERATOR_FAQS.map((faq, index) => (
-          <div key={index} className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-            <dt className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-              {faq.question}
-            </dt>
-            <dd className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="space-y-3">
+          {QR_GENERATOR_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}
+        </div>
+      </section>
 
       {/* SECTION 10: CALL TO ACTION */}
-      <div className="my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
-        <h3 className="text-xl sm:text-2xl font-bold mb-2">Ready to Create Your Free, Permanent QR Code?</h3>
+      <section aria-labelledby="qr-generator-ready-to-create-your-free-perm" className="my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
+        <h3 id="qr-generator-ready-to-create-your-free-perm" className="text-xl sm:text-2xl font-bold mb-2">Ready to Create Your Free, Permanent QR Code?</h3>
         <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto mb-5 leading-relaxed">
           Generate an unexpiring, high-precision QR code for your website, Wi-Fi network, or vCard contact right now in your browser.
         </p>
@@ -429,11 +450,11 @@ export default function QrGeneratorSeo() {
           <span>Open QR Code Studio</span>
           <ArrowUpRight className="w-4 h-4" />
         </a>
-      </div>
+      </section>
 
       {/* SECTION 11: RELATED TOOLS INTERNAL LINKING */}
-      <div className="pt-6 border-t border-gray-200 dark:border-slate-800 not-prose">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+      <section aria-labelledby="qr-generator-related-tools" className="pt-6 border-t border-gray-200 dark:border-slate-800 not-prose">
+        <h4 id="qr-generator-related-tools" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
           Related SEO, Document &amp; Developer Tools
         </h4>
         <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
@@ -459,7 +480,7 @@ export default function QrGeneratorSeo() {
           </Link>
           <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
-            href="/media/image-to-pdf"
+            href="/document/image-to-pdf"
             className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
           >
             Image to PDF Converter &rarr;
@@ -472,7 +493,7 @@ export default function QrGeneratorSeo() {
             Base64 Encoder &amp; Decoder &rarr;
           </Link>
         </div>
-      </div>
+      </section>
     </article>
   );
 }

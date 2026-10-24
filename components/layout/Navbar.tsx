@@ -5,7 +5,6 @@ import {
   Menu,
   Moon,
   Search,
-  Settings2,
   Sun,
   X,
 } from 'lucide-react';
@@ -14,6 +13,7 @@ import { useEffect, useState } from 'react';
 
 import { categories } from '@/config/toolsData';
 import ToolSearch from '@/components/layout/ToolSearch';
+import { KtMonogram } from '@/components/brand/KivaroLogo';
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -71,15 +71,15 @@ export default function Navbar() {
           aria-label="KivaroTools home"
           className="group flex shrink-0 items-center gap-2.5"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 shadow-sm shadow-blue-600/20 transition-transform duration-200 group-hover:scale-105">
-            <Settings2
-              aria-hidden="true"
-              className="h-5 w-5 text-white"
-            />
-          </span>
+          <KtMonogram className="h-9 w-9 shrink-0 transition-transform duration-200 group-hover:scale-105" />
 
-          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
-            Kivaro<span className="text-blue-600">Tools</span>
+          <span className="font-sans text-2xl font-extrabold tracking-tight">
+            <span className="text-2xl font-extrabold tracking-tight text-slate-900 transition-colors dark:text-white">
+              Kivaro
+            </span>
+            <span className="text-2xl font-extrabold tracking-tight text-blue-600 transition-colors dark:text-blue-500">
+              Tools
+            </span>
           </span>
         </Link>
 
@@ -177,7 +177,7 @@ export default function Navbar() {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {categories.map((category) => {
+            {categories.filter((category) => !category.hidden).map((category) => {
               const Icon = category.icon;
 
               return (

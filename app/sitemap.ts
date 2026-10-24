@@ -73,16 +73,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // 3. Valid Category Pages
-  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
-    url: `${siteUrl}/${category.id}`,
-    lastModified,
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
+  // 3. Valid Category Pages (excluding hidden categories)
+  const categoryEntries: MetadataRoute.Sitemap = categories
+    .filter((category) => !category.hidden)
+    .map((category) => ({
+      url: `${siteUrl}/${category.id}`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
 
-  // 4. Implemented and functional Tool Pages (excluding draft, coming-soon, or explicitly excluded tools)
-  const functionalTools = getPublishedTools().filter((tool) => !tool.excludeFromSitemap);
+  // 4. Implemented and functional Tool Pages (excluding draft, coming-soon, or explicitly excluded/hidden tools)
+  const functionalTools = getPublishedTools().filter(
+    (tool) => !tool.excludeFromSitemap && !tool.hidden
+  );
 
   const toolEntries: MetadataRoute.Sitemap = functionalTools.map((tool) => ({
     url: `${siteUrl}/${tool.categoryId}/${tool.slug}`,
@@ -91,10 +95,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.9,
   }));
 
-  // 5. 22 Country Salary Calculator Pages (included as long as salary calculator is published & not excluded)
+  // 5. 22 Country Salary Calculator Pages (included only when salary calculator is published, not hidden, & not excluded)
   const salaryTool = tools.find((t) => t.slug === 'salary-calculator');
   const includeSalaryCalculators = Boolean(
-    salaryTool && salaryTool.status === 'published' && !salaryTool.excludeFromSitemap
+    salaryTool &&
+    salaryTool.status === 'published' &&
+    !salaryTool.excludeFromSitemap &&
+    !salaryTool.hidden
   );
 
   const countrySalaryEntries: MetadataRoute.Sitemap = includeSalaryCalculators

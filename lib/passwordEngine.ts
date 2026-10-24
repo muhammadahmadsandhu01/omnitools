@@ -472,8 +472,11 @@ export function analyzePassword(value: string): PasswordAnalysis {
     /[^A-Za-z0-9]/.test(value) ? 33 : 0,
   ];
   const charset = pools.reduce((a, b) => a + b, 0);
-  const entropy = charset > 1 ? value.length * Math.log2(charset) : 0;
-  const repeated = /(.)\1{2,}/.test(value) || new Set(value).size <= Math.max(2, Math.floor(value.length / 3));
+  const distinctChars = new Set(value).size;
+  const isSingleChar = distinctChars === 1;
+  const isLowDiversity = distinctChars <= 2 && value.length >= 4;
+  const entropy = isSingleChar ? 0 : charset > 1 ? value.length * Math.log2(charset) : 0;
+  const repeated = /(.)\1{2,}/.test(value) || distinctChars <= Math.max(2, Math.floor(value.length / 3));
   const sequence = /(0123|1234|2345|3456|4567|5678|6789|abcd|bcde|cdef|defg|qwer|wert|erty|asdf|sdfg|zxcv)/i.test(value);
   const keyboard = KEYBOARD_PATTERNS.some(pattern => lower.includes(pattern));
   const common = COMMON_WEAK_PASSWORDS.has(lower);
@@ -481,16 +484,19 @@ export function analyzePassword(value: string): PasswordAnalysis {
   const dateLike = /(?:19|20)\d{2}/.test(value) || /(?:0?[1-9]|[12]\d|3[01])(?:0?[1-9]|1[0-2])(?:19|20)?\d{2}/.test(value);
 
   let score = 100;
-  if (value.length < 12) score -= 25;
+  if (value.length < 8) score -= 40;
+  else if (value.length < 12) score -= 25;
   else if (value.length < 16) score -= 10;
   if (entropy < 50) score -= 25;
   else if (entropy < 70) score -= 12;
-  if (repeated) score -= 12;
-  if (sequence) score -= 12;
-  if (keyboard) score -= 18;
-  if (common) score -= 45;
-  if (dictionary) score -= 30;
-  if (dateLike) score -= 8;
+  if (repeated) score -= 25;
+  if (isSingleChar) score -= 50;
+  else if (isLowDiversity) score -= 35;
+  if (sequence) score -= 20;
+  if (keyboard) score -= 25;
+  if (common) score -= 50;
+  if (dictionary) score -= 35;
+  if (dateLike) score -= 12;
   score = Math.max(0, Math.min(100, Math.round(score)));
 
   let label: PasswordAnalysis['label'] = 'Very weak';
@@ -501,7 +507,9 @@ export function analyzePassword(value: string): PasswordAnalysis {
 
   const warnings: string[] = [];
   if (value.length < 16) warnings.push('Use 16+ characters for a stronger general-purpose password.');
-  if (repeated) warnings.push('Repeated characters reduce effective unpredictability.');
+  if (isSingleChar) warnings.push('Password consists of a single repeating character.');
+  else if (isLowDiversity) warnings.push('Extremely low character diversity makes this easily guessable.');
+  else if (repeated) warnings.push('Repeated characters reduce effective unpredictability.');
   if (sequence) warnings.push('Sequential character patterns are easier to guess.');
   if (keyboard) warnings.push('Keyboard walk patterns are commonly targeted by automated attack dictionaries.');
   if (common || dictionary) warnings.push('This resembles a known dictionary word or frequently breached password.');
@@ -560,3 +568,76 @@ export function constantTimeTextEqual(a: string, b: string): boolean {
   }
   return diff === 0;
 }
+
+// ============================================================================
+// 6. CRYPTOGRAPHIC DIGESTS & HMAC UTILITIES
+// ============================================================================
+
+export type HashAlgorithm = 'sha256' | 'sha384' | 'sha512' | 'sha1' | 'md5';
+export const MAX_TEXT_HASH_BYTES = 8 * 1024 * 1024; // 8 MB
+
+export async function sha1Hex(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const cryptoInstance = getCrypto();
+  const buffer = await cryptoInstance.subtle.digest('SHA-1', bytes);
+  return bytesToHex(new Uint8Array(buffer));
+}
+
+export async function digestText(algorithm: HashAlgorithm, input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  if (bytes.byteLength > MAX_TEXT_HASH_BYTES) {
+    throw new Error('Text input is limited to 8 MB for browser-safe client-side processing.');
+  }
+  if (algorithm === 'md5') {
+    const { default: CryptoJS } = await import('crypto-js');
+    return CryptoJS.MD5(input).toString();
+  }
+  const cryptoInstance = getCrypto();
+  const algoName = algorithm === 'sha256' ? 'SHA-256' : algorithm === 'sha384' ? 'SHA-384' : algorithm === 'sha512' ? 'SHA-512' : 'SHA-1';
+  const buffer = await cryptoInstance.subtle.digest(algoName, bytes);
+  return bytesToHex(new Uint8Array(buffer));
+}
+
+export async function hmacText(algorithm: HashAlgorithm, input: string, secret: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  if (bytes.byteLength > MAX_TEXT_HASH_BYTES) {
+    throw new Error('Text input is limited to 8 MB for browser-safe client-side processing.');
+  }
+  const { default: CryptoJS } = await import('crypto-js');
+  if (algorithm === 'md5') return CryptoJS.HmacMD5(input, secret).toString();
+  if (algorithm === 'sha1') return CryptoJS.HmacSHA1(input, secret).toString();
+  if (algorithm === 'sha256') return CryptoJS.HmacSHA256(input, secret).toString();
+  if (algorithm === 'sha384') return CryptoJS.HmacSHA384(input, secret).toString();
+  return CryptoJS.HmacSHA512(input, secret).toString();
+}
+
+export async function checkPwnedPassword(passwordValue: string): Promise<number> {
+  if (!passwordValue) throw new Error('Enter a password to check.');
+  const fullHash = (await sha1Hex(passwordValue)).toUpperCase();
+  const prefix = fullHash.slice(0, 5);
+  const suffix = fullHash.slice(5);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      method: 'GET',
+      headers: { 'Add-Padding': 'true' },
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Breach check service returned HTTP ${response.status}.`);
+    const text = await response.text();
+    for (const line of text.split(/\r?\n/)) {
+      const [returnedSuffix, countText] = line.trim().split(':');
+      if (returnedSuffix && returnedSuffix.toUpperCase() === suffix) {
+        return Number(countText) || 0;
+      }
+    }
+    return 0;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+

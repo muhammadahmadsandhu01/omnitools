@@ -7,54 +7,74 @@ export interface FaqItem {
 
 export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
-    question: 'How does Cryptographically Secure Pseudorandom Number Generation (CSPRNG) differ from Math.random()?',
+    question: 'How does KivaroTools generate cryptographically secure passwords and secrets?',
     answer:
-      'Standard Math.random() relies on deterministic pseudorandom algorithms (such as xoshiro128+ in modern JavaScript engines) engineered for rapid execution in non-security contexts like simulations and gaming. Because these algorithms maintain small internal states, an adversary who observes past outputs can deduce future values. In contrast, KivaroTools uses the browser-native Web Cryptography API (crypto.getRandomValues), which sources entropy directly from the host operating system kernel (e.g., Linux /dev/urandom or Windows BCryptGenRandom/CNG), guaranteeing cryptographically unpredictable outputs.',
+      'KivaroTools uses the standard Web Cryptography API (window.crypto.getRandomValues) implemented in modern browser engines (V8, JavaScriptCore, SpiderMonkey). Unlike pseudo-random generators like Math.random() that rely on predictable linear congruential algorithms, crypto.getRandomValues interfaces directly with OS-level entropy pools (/dev/urandom on Linux/macOS or CryptGenRandom / BCryptGenRandom on Windows) to generate cryptographically unpredictable bytes.',
   },
   {
-    question: 'What is rejection sampling, and why is it necessary to eliminate modulo bias?',
+    question: 'What is modulo bias and how does rejection sampling eliminate it?',
     answer:
-      'When mapping a 32-bit unsigned random integer (0 to 4,294,967,295) onto an arbitrary character pool of size N using standard modulo division (rand % N), numbers in the incomplete final bucket receive slightly higher probability of selection whenever N does not evenly divide 2^32. KivaroTools eliminates modulo bias through strict rejection sampling: any 32-bit random integer equal to or greater than 2^32 - (2^32 % N) is discarded and resampled, ensuring every character in your chosen pool has a mathematically identical selection probability.',
+      'Modulo bias is a subtle mathematical flaw in naive random generators where mapping random 32-bit unsigned integers to an alphabet length that does not divide 2^32 evenly creates a non-uniform distribution, biasing certain characters over others. KivaroTools implements rejection sampling: random numbers that fall into the biased remainder zone are discarded and re-drawn, mathematically guaranteeing true uniform probability across all permitted characters.',
   },
   {
-    question: 'How is password entropy calculated mathematically?',
+    question: 'How is Shannon entropy in bits calculated for passwords and passphrases?',
     answer:
-      'Password entropy is quantified in bits using Shannon information entropy. For character passwords, E = L * log2(R), where L is length and R is the active pool size. For passphrases of W words sampled without replacement from an N-word dictionary, the ordered permutation keyspace is P(N, W) = N! / (N - W)!, giving entropy E = sum(log2(N - i)) for i = 0 to W - 1. If a 4-digit suffix (0000–9999) is appended, it adds log2(10000) ≈ 13.29 bits. Theoretical entropy measures the mathematical keyspace size under uniform random generation; it is not a guaranteed real-world crack-time estimate, which depends on offline vs online rate limits, GPU cluster capabilities, dictionary attack heuristics, and the specific key derivation function used (e.g. Argon2id vs fast unsalted digests).',
+      'Shannon entropy measures the uncertainty or unpredictability of a credential. For random character passwords, entropy is calculated using H = L × log2(R), where L is password length and R is character pool size (e.g., 94 for full ASCII). For EFF Diceware passphrases, entropy is calculated as H = W × log2(7776) ≈ W × 12.9248 bits, where W is the word count from the 7,776-word dictionary. A 6-word passphrase yields ~77.5 bits of true entropy.',
   },
   {
-    question: 'Why does NIST SP 800-63B recommend multi-word passphrases over complex short passwords?',
+    question: 'Are generated passwords, secrets, or file checksums ever sent over a network?',
     answer:
-      'The National Institute of Standards and Technology (NIST) Digital Identity Guidelines (SP 800-63B Rev. 4) emphasize that length provides exponential security gains, whereas forced character composition rules (such as mandating one symbol and one digit) lead users to predictable substitutions (e.g., replacing E with 3 or appending !1 at the end). Multi-word passphrases (e.g., 5 or 6 random dictionary words) deliver high mathematical entropy while remaining human-memorable and resilient against shoulder-surfing and keyboard-walk attacks.',
+      'No. All cryptographic generation, Shannon entropy calculation, HMAC hashing, constant-time comparison, and streaming checksum calculation execute 100% locally in your browser memory. Zero credentials, hashes, or file bytes are ever uploaded to any backend server, telemetry endpoint, or external database.',
   },
   {
-    question: 'Why do some websites and legacy systems reject passwords containing certain symbols?',
+    question: 'How does the Have I Been Pwned breach check protect privacy using k-Anonymity?',
     answer:
-      'Certain legacy web applications and enterprise backends pass credentials into SQL queries, LDAP directories, or shell commands without adequate parameterization. To prevent command injection or database syntax errors, these systems restrict symbols like quotes, ampersands, semicolons, or angle brackets (<, >, \', ", &). KivaroTools allows you to disable symbol inclusion or exclude ambiguous characters to satisfy restrictive platform requirements.',
+      'The breach checker uses the mathematical k-Anonymity model designed by Troy Hunt and Cloudflare. The password is first hashed locally with SHA-1. Only the first 5 hexadecimal characters of the hash are queried against https://api.pwnedpasswords.com/range/{prefix} with the "Add-Padding: true" header. The API returns a list of matching hash suffixes, and KivaroTools searches that list locally in your browser. The full hash and plaintext password never leave your machine.',
   },
   {
-    question: 'Are my generated passwords, secrets, or file hashes saved or sent to a server?',
+    question: 'What is constant-time comparison in the hash comparison module and why is it needed?',
     answer:
-      'No. All pseudorandom sampling, passphrase generation, developer secret creation, and cryptographic hashing (Web Cryptography API crypto.subtle.digest) execute 100% locally within your browser client session. Generated credentials are never transmitted over the network, saved to external databases, or written to browser storage.',
+      'Standard string comparison operators (like === or strcmp) terminate early upon finding the first differing character. Attackers can measure tiny variations in execution time (timing attacks) to guess credentials character-by-character. KivaroTools implements bitwise XOR constant-time comparison (cryptoConstantTimeCompare), evaluating every byte identically regardless of match position to eliminate timing side-channels.',
   },
   {
-    question: 'Why is reusing passwords across different online accounts extremely dangerous?',
+    question: 'What secret formats and byte lengths are supported in the Developer Secret Generator?',
     answer:
-      'When an online service suffers a data breach, cybercriminals extract credential tables and launch automated credential stuffing attacks across thousands of popular websites (banking, email, social media, shopping). If you reuse the same password across multiple services, a single compromised platform grants attackers access to your entire digital identity. Every distinct account must possess a unique, cryptographically random password.',
+      'The Developer Secret Generator produces production-ready tokens in Hexadecimal, Standard Base64, URL-Safe Base64URL, and RFC 4122 UUID v4 formats. You can generate keys from 16 bytes (128-bit) up to 64 bytes (512-bit), ideal for NextAuth secrets, JWT HS256/HS512 signing keys, AES-256 encryption keys, Django secret_key, and Rails secret_key_base.',
   },
   {
-    question: 'What is the fundamental difference between cryptographic hashing (SHA-256) and password encryption?',
+    question: 'How does the 1 GB file integrity checksum generator work without freezing the browser?',
     answer:
-      'Encryption is a two-way mathematical process that scrambles plaintext using a cryptographic key so it can later be decrypted back to its original form. Cryptographic hashing (such as SHA-256 or SHA-512) is a one-way deterministic function that maps arbitrary input data into a fixed-length fingerprint that cannot be reversed. Fast cryptographic hashes are intended for data integrity and signatures; for storing passwords, systems must use dedicated, memory-hard key derivation functions like Argon2id or bcrypt.',
+      'Computing SHA-256 or SHA-512 hashes for large files can easily exceed browser memory limits. KivaroTools uses a chunked streaming reader inside a dedicated Web Worker, processing files in 64 KB slices via crypto.subtle.digest. It comfortably hashes files up to 1 GB (1,024 MB) with a real-time progress bar while keeping the main browser UI completely responsive.',
   },
   {
-    question: 'How does the local heuristic vulnerability analyzer evaluate password strength without sending data to servers?',
+    question: 'Why are EFF multi-word passphrases considered superior to traditional passwords?',
     answer:
-      'The heuristic analyzer evaluates candidate passwords locally in your browser memory using regular expressions, Shannon information entropy formulas, and a curated set of known keyboard walks, sequential characters, and common weak passwords. All checks execute entirely within the client session without transmitting credentials or queries over the network.',
+      'Short passwords with random punctuation are difficult for humans to remember and prone to insecure habits like writing them on sticky notes. Diceware passphrases made of 4 to 8 randomized words (e.g. "correct-horse-battery-staple") offer immense entropy against brute-force attacks while remaining effortless for human brains to recall without cognitive strain.',
   },
   {
-    question: 'Can I generate passwords in bulk or create developer API tokens?',
+    question: 'What are ambiguous characters and why should I exclude them?',
     answer:
-      'Yes. KivaroTools includes a built-in Bulk Password Generator supporting batches of 5, 10, 20, or 50 passwords with one-click "Copy All" and individual copy buttons. Additionally, the Developer Secret Generator produces cryptographically secure Hex keys, Base64 tokens, Base64URL strings (for JWTs and OAuth), and RFC 4122 v4 UUIDs with proper version and variant bits.',
+      'Ambiguous characters are lookalike glyphs that are visually indistinguishable in standard monospace fonts (such as 0, O, o, 1, I, l, |, and `). Excluding ambiguous characters eliminates costly user authentication errors, server CLI typos, and customer support confusion when credentials must be manually transcribed.',
+  },
+  {
+    question: 'Can I generate bulk passwords and export them at once?',
+    answer:
+      'Yes. KivaroTools includes a Bulk Generator option allowing you to generate 5, 10, 20, or 50 independent passwords simultaneously with a single click. You can copy individual items or use "Copy All" to export the entire list for staging database seeding or team credential provisioning.',
+  },
+  {
+    question: 'What is HMAC and how does the keyed hash generator work?',
+    answer:
+      'A Hash-based Message Authentication Code (HMAC) combines a cryptographic hash function (such as SHA-256 or SHA-512) with a secret cryptographic key. It verifies both data integrity and authentication authenticity. KivaroTools lets you input any secret key and message (up to 8 MB) to instantly generate verified HMAC digests for webhook signatures (e.g. Stripe, GitHub, Shopify).',
+  },
+  {
+    question: 'What password strength threshold does NIST SP 800-63B recommend?',
+    answer:
+      'NIST Special Publication 800-63B guidelines emphasize password length over complex arbitrary composition rules. A minimum length of 16 characters or a 5-to-6 word passphrase with at least 64 to 80 bits of Shannon entropy provides robust resistance against offline brute-force cracking using modern GPU clusters.',
+  },
+  {
+    question: 'What hashing algorithms are supported in the text and file hash modules?',
+    answer:
+      'KivaroTools supports SHA-256, SHA-384, SHA-512, SHA-1, and MD5 for text hashing and HMAC calculation, and SHA-256, SHA-384, and SHA-512 for streaming file integrity checksum verification.',
   },
 ];
 
@@ -73,219 +93,323 @@ export default function PasswordGeneratorSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 md:p-12 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-sm">
-      {/* FAQ Schema */}
+    <>
+      {/* FAQPage JSON-LD Structured Data for Google Rich Snippets */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <h2 className="text-2xl md:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Password Security &amp; Cryptography Guide: CSPRNG Entropy, NIST Standards &amp; Hashing
-      </h2>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        Modern credential security depends on sound information-theoretic principles rather than arbitrary complexity rules.
-        A password, cryptographic token, or master passphrase is only as strong as its <strong>information entropy</strong>—the
-        measure of unpredictability and mathematical search space. Weak pseudorandom generators or biased sampling undermine security
-        even when passwords appear complex to human eyes.
-      </p>
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+        {/* Zone 2: Deep-Dive Architecture & Engine Sections */}
+        <section aria-labelledby="password-generator-architecture" className="mb-8">
+          <h2 id="password-generator-architecture" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Cryptographic Foundations: CSPRNG, Zero Modulo Bias &amp; Web Crypto API
+          </h2>
+          <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+            <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+              <strong>Zero-Trust Cryptographic Security:</strong> All random numbers, secrets, HMAC tokens, and file hashes are generated 100% client-side via the browser Web Crypto API. No generated strings, keys, or hashes are ever logged or transmitted over a network.
+            </p>
+          </blockquote>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Generating production credentials requires mathematical randomness. Most web applications and simple online generators mistakenly rely on JavaScript&apos;s native <code>Math.random()</code>, which utilizes a pseudo-random number generator (such as the xoshiro128+ or v8:MathRandom PRNG). PRNGs are deterministic and susceptible to state-recovery attacks, rendering them completely unsuitable for cryptographic keys, authentication tokens, or enterprise passwords.
+          </p>
+          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+            KivaroTools exclusively leverages the <strong>Web Cryptography API</strong> (<code>window.crypto.getRandomValues</code> and <code>crypto.subtle.digest</code>), interfacing directly with operating system entropy seeds (Linux/macOS <code>/dev/urandom</code>, Windows <code>BCryptGenRandom</code>).
+          </p>
 
-      {/* STEP BY STEP USAGE INSTRUCTIONS */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How to Use the KivaroTools Password Generator (Step-by-Step)
-      </h3>
-      <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li>
-          <strong>Choose Your Mode:</strong> Select <em>Random Characters</em> for high-security accounts, API tokens, and service credentials, or <em>Memorable Passphrase</em> for master passwords, Wi-Fi networks, and credentials requiring frequent manual typing.
-        </li>
-        <li>
-          <strong>Select Password Length:</strong> Use the interactive slider or click a quick preset (12, 16, 20, 24, 32, or 64). Industry standards recommend a minimum of <strong>16 to 20 characters</strong> for general online accounts.
-        </li>
-        <li>
-          <strong>Configure Character Classes:</strong> Enable or disable uppercase letters (A–Z), lowercase letters (a–z), numbers (0–9), and symbols (!@#$). Enable <em>Exclude Ambiguous</em> if you need to visually read and retype the password without confusing characters like <code>0/O</code> or <code>1/l/I</code>.
-        </li>
-        <li>
-          <strong>Generate &amp; Review:</strong> Click <em>Generate New</em>. Inspect the real-time Shannon entropy meter and heuristic strength rating.
-        </li>
-        <li>
-          <strong>Copy Securely:</strong> Click the copy button to transfer the credential to your operating system clipboard, paste it immediately into your encrypted password manager vault, and clear session history.
-        </li>
-      </ol>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Eliminating Modulo Bias with Rejection Sampling
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            When mapping a 32-bit unsigned random integer (0 to 4,294,967,295) to an arbitrary character set (e.g. 62 alphanumeric characters), using the modulo operator (<code>rand % 62</code>) introduces <strong>modulo bias</strong>. Because 4,294,967,296 is not evenly divisible by 62, the first remainder values have a slightly higher probability of being chosen. KivaroTools implements <strong>rejection sampling</strong>: integers falling in the excess remainder window are rejected and regenerated, guaranteeing perfectly uniform probability across every selected character.
+          </p>
 
-      {/* CSPRNG & REJECTION SAMPLING */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        CSPRNG Generation &amp; Rejection Sampling Without Modulo Bias
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        KivaroTools generates random characters and passphrases using the browser-native <strong>Web Cryptography API</strong>{' '}
-        (<code className="text-xs font-mono">crypto.getRandomValues</code>). This interface taps into hardware entropy gathered by the underlying
-        operating system kernel (such as Linux <code className="text-xs font-mono">/dev/urandom</code> or Windows CNG CryptoAPI).
-      </p>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Furthermore, naive generators introduce <strong>modulo bias</strong> when scaling large random integers down to smaller pool sizes.
-        KivaroTools applies strict <strong>rejection sampling</strong>: any generated 32-bit unsigned integer falling in the incomplete upper range
-        (<code className="text-xs font-mono">2^32 - (2^32 % poolSize)</code>) is discarded and re-drawn, ensuring every character in your pool
-        has an identical probability of selection.
-      </p>
-
-      {/* SHANNON ENTROPY */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Password Entropy Mathematical Formulas &amp; Strength Tiers
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Shannon entropy is calculated by multiplying character count by the logarithm base-2 of the pool size:
-      </p>
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900 mb-4 font-mono text-xs overflow-x-auto text-blue-600 dark:text-blue-400">
-        E = L * log2(R)
-      </div>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Where <code className="text-xs font-mono">L</code> is password length and <code className="text-xs font-mono">R</code> is the character pool size:
-      </p>
-
-      <div className="overflow-x-auto mb-6">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Entropy Level</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Bits of Entropy</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Brute Force Search Space</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommendation</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-red-600 dark:text-red-400">Weak</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">&lt; 40 bits</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">&lt; 10^12 combinations</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Vulnerable to instant offline cracking via standard GPUs</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">Fair</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">40–59 bits</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">10^12 to 10^18 combinations</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Acceptable for low-risk casual accounts with rate-limiting</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400">Strong</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">60–79 bits</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">10^18 to 10^24 combinations</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Recommended baseline for personal email and banking logins</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">Very Strong</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">&ge; 80 bits</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">&gt; 10^24 combinations</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Required for root servers, master password managers, and API secrets</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* NIST SP 800-63B GUIDANCE */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        NIST SP 800-63B Guidelines &amp; Multi-Word Passphrases
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        In its <em>Digital Identity Guidelines (Special Publication 800-63B Rev. 4)</em>, the <strong>National Institute of Standards and Technology (NIST)</strong>
-        discourages legacy complexity rules that force users to include special symbols or change passwords every 90 days.
-        Instead, NIST advocates for <strong>longer, memorable passphrases</strong> and backend screening against known breach databases.
-      </p>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        KivaroTools includes a dedicated Passphrase Generator using a curated 1,024-word English dictionary. Because an ordered sequence of <code className="text-xs font-mono">W</code> words is sampled uniformly without replacement, the total permutation search space is <code className="text-xs font-mono">P(1024, W) = 1024! / (1024 - W)!</code>, yielding exact Shannon entropy <code className="text-xs font-mono">sum(log2(1024 - i))</code>:
-      </p>
-      <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li><strong>3 words:</strong> ~30 bits dictionary entropy (~43 bits with 4-digit number)</li>
-        <li><strong>4 words:</strong> ~40 bits dictionary entropy (~53 bits with 4-digit number)</li>
-        <li><strong>5 words:</strong> ~50 bits dictionary entropy (~63 bits with 4-digit number, default)</li>
-        <li><strong>6 words:</strong> ~60 bits dictionary entropy (~73 bits with 4-digit number, master password baseline)</li>
-        <li><strong>7 words:</strong> ~70 bits dictionary entropy (~83 bits with 4-digit number)</li>
-        <li><strong>8 words:</strong> ~80 bits dictionary entropy (~93 bits with 4-digit number, disk encryption tier)</li>
-      </ul>
-      <p className="mb-6 leading-relaxed text-xs text-slate-500 dark:text-slate-400">
-        Appending a 4-digit suffix adds <code className="text-xs font-mono">log2(10000) ≈ 13.29 bits</code>. Deterministic transformations (capitalization and separator symbols) add zero bits of random entropy. Theoretical entropy measures search space size and is not an absolute real-world crack-time guarantee.
-      </p>
-
-      {/* CREDENTIAL REUSE & ZERO LEAKAGE */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Credential Stuffing Defense &amp; Client-Side Zero-Leakage Privacy
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        When online databases are breached, attackers extract compromised username and password combinations and test them
-        against banking portals, email providers, and corporate VPNs in automated <strong>credential stuffing</strong> campaigns.
-        Reusing even a complex 25-character password across two websites exposes both services if one is compromised.
-      </p>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        To protect user confidentiality, KivaroTools enforces a strict <strong>zero-leakage architecture</strong>: password generation,
-        secret token assembly, and cryptographic hashing take place entirely within your browser&rsquo;s JavaScript runtime.
-        Freshly generated credentials are never sent to external servers, logged in telemetry, or stored in browser storage.
-      </p>
-
-      {/* CRYPTOGRAPHIC HASHING */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Cryptographic Hashing, HMAC &amp; File Checksums
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Beyond password generation, the tool computes cryptographic digests client-side using the native
-        <code className="text-xs font-mono">crypto.subtle.digest</code> API for modern algorithms:
-      </p>
-      <ul className="list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-400 mb-6">
-        <li><strong>SHA-256 (256-bit):</strong> FIPS 180-4 standard used in Bitcoin, TLS certificates, and modern authentication tokens.</li>
-        <li><strong>SHA-512 (512-bit):</strong> High-security variant optimal for 64-bit architectures and high-throughput hashing.</li>
-        <li><strong>SHA-1 &amp; MD5:</strong> Provided strictly for legacy file checksum and integrity verification against historic repositories.</li>
-      </ul>
-
-      {/* FAQ SECTION */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-        Frequently Asked Questions
-      </h3>
-      <dl className="space-y-6 mb-6">
-        {PASSWORD_GENERATOR_FAQS.map((faq, index) => (
-          <div key={index}>
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {faq.question}
-            </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            Shannon Entropy &amp; Real-Time Strength Meter
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Unlike deceptive visual strength bars that merely check for character classes, KivaroTools calculates mathematical <strong>Shannon entropy</strong> in bits:
+          </p>
+          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/60 p-5 border border-slate-200 dark:border-slate-700 mb-6 text-center font-mono text-sm sm:text-base text-slate-900 dark:text-slate-100">
+            H = L × log<sub>2</sub>(R) &nbsp;|&nbsp; Passphrase: H = W × log<sub>2</sub>(7776) ≈ W × 12.92 bits
           </div>
-        ))}
-      </dl>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Where <code>L</code> is character length, <code>R</code> is character pool size, and <code>W</code> is the number of randomized words chosen from the Electronic Frontier Foundation (EFF) large wordlist. An entropy score above <strong>128 bits</strong> guarantees resistance against multi-billion guess-per-second GPU brute-force attacks for decades.
+          </p>
 
-      {/* RELATED DEVELOPER UTILITIES */}
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
-          Related Developer Utilities
-        </h4>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/developer/base64-encoder"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Base64 Encoder &amp; Decoder &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/regex-tester"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Regex Tester &amp; Code Generator &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/json-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            JSON Formatter &amp; Validator &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/sql-formatter"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            SQL Query Formatter &rarr;
-          </Link>
-        </div>
-      </div>
-    </article>
+          <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+            1 GB Streaming File Checksum Engine via Web Workers
+          </h3>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Verifying software installer binaries, ISO images, or database dumps requires high-throughput hashing. KivaroTools executes SHA-256, SHA-384, and SHA-512 streaming file hashing inside a background <strong>Web Worker</strong>. By reading files in progressive 64 KB chunks, it hashes files up to <strong>1 GB (1,024 MB)</strong> without exhausting browser memory or causing tab crashes.
+          </p>
+        </section>
+
+        {/* Zone 3: Interactive Feature & Use-Case Grid */}
+        <section aria-labelledby="password-generator-modules" className="mb-8">
+          <h2 id="password-generator-modules" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            6 Specialized Cryptographic Modules in One Workbench
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                1. Password &amp; Memorable Passphrase Generator
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Generate random passwords up to 128 characters with granular character toggles, ambiguous character exclusion (0, O, 1, I, l), and EFF Diceware passphrases (3–10 words) with customizable separators.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                2. Developer Secret &amp; API Token Generator
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Create cryptographically secure secrets in Hexadecimal, Base64, URL-Safe Base64URL, and UUID v4 from 16 bytes (128-bit) to 64 bytes (512-bit) for NextAuth, JWT, Django, and Rails keys.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                3. Text Hash &amp; Keyed HMAC Generator
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Compute SHA-256, SHA-384, SHA-512, SHA-1, and MD5 digests across text inputs up to 8 MB. Toggle HMAC mode to generate keyed authentication signatures for webhooks and API requests.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                4. 1 GB Streaming File Integrity Checksum
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Verify downloaded OS binaries, container images, and software packages up to 1,024 MB using progressive SHA-256, SHA-384, or SHA-512 streaming hash calculation with live progress tracking.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                5. Constant-Time Hash Comparison
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Compare two cryptographic hashes using a constant-time bitwise XOR equality check (<code>cryptoConstantTimeCompare</code>) to prevent timing side-channel attacks during security audits.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-2">
+                6. Local Heuristic &amp; k-Anonymity Breach Checker
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Detect repeated characters, keyboard walks (qwerty), dictionary words, and run zero-knowledge Have I Been Pwned checks using 5-character SHA-1 prefixes with zero credential leakage.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 4: Technical Specification & Comparison Matrices */}
+        <section aria-labelledby="password-generator-strength-matrix" className="mb-8">
+          <h2 id="password-generator-strength-matrix" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Technical Specification: Entropy, Crack Times &amp; Security Ratings
+          </h2>
+          <div className="overflow-x-auto mb-6">
+            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Format / Length</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Character Pool</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Entropy</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Crack Time (100B guesses/sec)</th>
+                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Use</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">12 Characters</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Letters + Numbers (62)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">~71 bits</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">~1.5 hours</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Low-risk throwaway accounts</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">16 Characters</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Full ASCII (94)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">~104 bits</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">~6.4 million years</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Standard user accounts &amp; logins</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">5-Word Passphrase</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">EFF Wordlist (7,776)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">~64.6 bits</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">~8.8 years</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Memorable user login credentials</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">6-Word Passphrase</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">EFF Wordlist (7,776)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">~77.5 bits</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">~68,000 years</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Master passwords &amp; disk encryption</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">32-Byte Secret</th>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Base64 / Hex (256-bit)</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">256 bits</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">Exceeds age of universe</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">API keys, NextAuth, JWT HS256</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* Zone 5: Developer Troubleshooting & Error Reference */}
+        <section aria-labelledby="password-generator-troubleshooting" className="mb-8">
+          <h2 id="password-generator-troubleshooting" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Common Password &amp; Secret Configuration Pitfalls
+          </h2>
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Database Connection URLs Break Due to Unencoded Symbols
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Including special characters like <code>@</code>, <code>:</code>, <code>/</code>, <code>#</code>, or <code>?</code> in passwords used inside database connection strings (e.g. <code>postgres://user:pass@host/db</code>) causes URI parser syntax errors.
+                <br />
+                <strong>Fix:</strong> Generate alphanumeric passwords or use URL-Safe Base64URL secrets when configuring database environment variables.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                JWT Signing Key Length Too Short (HS256 Secret Errors)
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> RFC 7518 specifies that HMAC-SHA256 signing keys must be at least 256 bits (32 bytes). Using shorter strings causes authentication libraries to throw runtime warnings or reject tokens.
+                <br />
+                <strong>Fix:</strong> In the Developer Secret module, select the <strong>32 bytes (256-bit)</strong> preset in Hexadecimal or Base64URL format.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Bash History &amp; CLI Leaks when Using OpenSSL
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Running commands like <code>openssl rand -base64 32</code> inside terminal shells records the command or generated output in local <code>.bash_history</code> logs.
+                <br />
+                <strong>Fix:</strong> Use KivaroTools in-browser secret generator with zero server upload to generate and copy production secrets directly to your clipboard.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Ambiguous Characters Cause Mobile Login Failures
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Passwords containing lookalike characters (such as digit <code>0</code> vs capital letter <code>O</code>, or lowercase <code>l</code> vs digit <code>1</code>) trigger user frustration during manual entry.
+                <br />
+                <strong>Fix:</strong> Enable the <strong>Exclude Ambiguous Characters</strong> toggle to strip lookalikes from the character generation pool.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Timing Attack Vulnerability in Hash Comparison
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Using standard equality checks (<code>hash1 === hash2</code>) allows side-channel analysis based on how quickly the comparison returns false.
+                <br />
+                <strong>Fix:</strong> Use our <strong>Constant-Time Hash Comparison</strong> module, which compares every byte using bitwise XOR operations regardless of character mismatch location.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-base mb-1">
+                Browser Memory Exhaustion During Large File Hashing
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Cause:</strong> Attempting to load multi-gigabyte ISOs or video files into a single in-memory Uint8Array crashes the browser tab.
+                <br />
+                <strong>Fix:</strong> KivaroTools uses chunked FileReader streaming inside a Web Worker to hash files up to 1 GB sequentially in 64 KB slices.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Zone 6: Frequently Asked Questions */}
+        <section aria-labelledby="password-generator-frequently-asked-questions" className="mb-8">
+          <h2 id="password-generator-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Frequently Asked Questions
+          </h2>
+          <div className="space-y-3">
+            {PASSWORD_GENERATOR_FAQS.map((faq, index) => (
+              <details
+                key={index}
+                className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+              >
+                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                  <span>{faq.question}</span>
+                  <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* Internal Cross-Linking Block */}
+        <section aria-labelledby="password-generator-related-utilities" className="mb-8">
+          <h2 id="password-generator-related-utilities" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Related Client-Side Developer Workflows
+          </h2>
+          <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
+            Explore companion utilities for security engineering and full-stack development:
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
+            <li>
+              <Link href="/developer/base64-encoder" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Base64 Encoder &amp; Decoder
+              </Link>{' '}
+              — Encode tokens into URL-safe Base64URL strings or decode JWT headers and SAML assertions client-side.
+            </li>
+            <li>
+              <Link href="/developer/regex-tester" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Regex Tester &amp; Code Generator
+              </Link>{' '}
+              — Test password validation regexes and strong policy lookaheads with live match feedback.
+            </li>
+            <li>
+              <Link href="/developer/json-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON Formatter, Validator &amp; Tree Viewer
+              </Link>{' '}
+              — Safely inspect API tokens and confidential JSON payloads without remote server logging.
+            </li>
+            <li>
+              <Link href="/developer/sql-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQL Query Formatter &amp; Linter
+              </Link>{' '}
+              — Format database migration scripts and SQL queries across 19 dialects with zero query tracking.
+            </li>
+            <li>
+              <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JSON to CSV &amp; Excel Converter
+              </Link>{' '}
+              — Flatten nested JSON data with built-in formula injection defense for enterprise security.
+            </li>
+            <li>
+              <Link href="/developer/svg-optimizer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SVG Optimizer &amp; Cleaner
+              </Link>{' '}
+              — Sanitize vector graphics, remove XSS scripts, and minify SVG markup with sandboxed previewing.
+            </li>
+          </ul>
+        </section>
+      </article>
+    </>
   );
 }

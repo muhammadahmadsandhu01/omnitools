@@ -110,19 +110,15 @@ export default function InvoiceGeneratorSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
-      {/* Structured Data (JSON-LD: FAQPage & BreadcrumbList; SoftwareApplication is emitted by page shell) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
-
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <section aria-labelledby="invoice-generator-free-professional-invoice-gene" className="mb-8">
+        <h2 id="invoice-generator-free-professional-invoice-gene" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         Free Professional Invoice Generator: Multi-Currency PDF Billing &amp; Local Auto-Save
       </h2>
+      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+        </p>
+      </blockquote>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
         Creating accurate, compliant invoices is critical for freelancers, consultants, contractors, and growing businesses.
         KivaroTools <strong>Invoice Generator</strong> delivers an enterprise-grade billing workspace directly in your web browser.
@@ -131,7 +127,10 @@ export default function InvoiceGeneratorSeo() {
       </p>
 
       {/* 1. Structural Elements Table */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-invoice-structure-amp-mandator" className="mb-8">
+        <h3 id="invoice-generator-invoice-structure-amp-mandator" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Invoice Structure &amp; Mandatory Commercial Elements
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -178,7 +177,10 @@ export default function InvoiceGeneratorSeo() {
       </div>
 
       {/* 2. Payment Terms Guide */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-standard-commercial-payment-te" className="mb-8">
+        <h3 id="invoice-generator-standard-commercial-payment-te" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Standard Commercial Payment Terms: Cash Flow &amp; Enforcement
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -203,7 +205,10 @@ export default function InvoiceGeneratorSeo() {
       </ul>
 
       {/* 3. Document Comparison Table */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-invoice-vs-receipt-vs-quotatio" className="mb-8">
+        <h3 id="invoice-generator-invoice-vs-receipt-vs-quotatio" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Invoice vs. Receipt vs. Quotation: Key Differences
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -243,7 +248,10 @@ export default function InvoiceGeneratorSeo() {
       </div>
 
       {/* 4. Calculation Order & Proportional Allocation */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-mathematical-calculation-order" className="mb-8">
+        <h3 id="invoice-generator-mathematical-calculation-order" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Mathematical Calculation Order &amp; Proportional Tax Allocation
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -274,7 +282,10 @@ export default function InvoiceGeneratorSeo() {
       </ol>
 
       {/* 5. A4 Pagination Engine */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-automatic-multi-page-a4-pagina" className="mb-8">
+        <h3 id="invoice-generator-automatic-multi-page-a4-pagina" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Automatic Multi-Page A4 Pagination Engine
       </h3>
       <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -293,7 +304,10 @@ export default function InvoiceGeneratorSeo() {
       </ul>
 
       {/* 6. Step-by-Step Guide */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-how-to-create-amp-export-your-" className="mb-8">
+        <h3 id="invoice-generator-how-to-create-amp-export-your-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         How to Create &amp; Export Your Invoice
       </h3>
       <ol className="list-decimal space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
@@ -315,7 +329,10 @@ export default function InvoiceGeneratorSeo() {
       </ol>
 
       {/* 7. Pitfalls Checklist */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-common-invoicing-pitfalls-amp-" className="mb-8">
+        <h3 id="invoice-generator-common-invoicing-pitfalls-amp-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Common Invoicing Pitfalls &amp; Pre-Flight Quality Checklist
       </h3>
       <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-6">
@@ -334,21 +351,27 @@ export default function InvoiceGeneratorSeo() {
       </ul>
 
       {/* 8. FAQs */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      </section>
+
+      <section aria-labelledby="invoice-generator-frequently-asked-questions" className="mb-8">
+        <h3 id="invoice-generator-frequently-asked-questions" className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
         Frequently Asked Questions
       </h3>
-      <dl className="space-y-6 mb-6">
-        {INVOICE_GENERATOR_FAQS.map((faq, index) => (
-          <div key={index}>
-            <dt className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {faq.question}
-            </dt>
-            <dd className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {faq.answer}
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <div className="space-y-3">
+          {INVOICE_GENERATOR_FAQS.map((faq, index) => (
+            <details
+              key={index}
+              className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
+            >
+              <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <span>{faq.question}</span>
+                <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                {faq.answer}
+              </p>
+            </details>
+          ))}        </div>
 
       {/* 9. Internal Linking Silo */}
       <div className="mt-8 pt-6 border-t border-gray-200 dark:border-slate-800">
@@ -399,6 +422,7 @@ export default function InvoiceGeneratorSeo() {
           </Link>
         </div>
       </div>
+      </section>
     </article>
   );
 }
