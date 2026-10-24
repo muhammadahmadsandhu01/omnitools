@@ -341,6 +341,15 @@ export const parseJsonToTable = (
     );
   }
 
+  if (!text.trim()) {
+    return {
+      rows: [],
+      columns: [],
+      totalCells: 0,
+      durationMs: 0,
+    };
+  }
+
   const parsed = JSON.parse(text);
 
   if (Array.isArray(parsed) && parsed.length > MAX_ROOT_ROWS) {

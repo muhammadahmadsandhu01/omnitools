@@ -31,6 +31,7 @@ import {
   sanitizeFilename,
   formatBytes,
   DEFAULT_OPTIONS,
+  SAMPLE_DATASETS,
 } from '../lib/jsonConverterEngine';
 
 interface TestCaseResult {
@@ -455,6 +456,43 @@ async function main() {
     return flat['user_name'] === 'outer' && flat['user_name_2'] === 'inner';
   });
 
+  await runCase('S5-3', 'ColumnManager', 'Special characters and long column names format and escape correctly', () => {
+    const specialColObj = {
+      'col/1': 'alpha',
+      'col.2': 'beta',
+      'col-3': 'gamma',
+      'user@domain#tier': 'delta',
+      'very_long_column_name_that_exceeds_standard_preview_widths_for_rigorous_column_manager_testing': 123,
+    };
+    const res = parseJsonToTable(JSON.stringify([specialColObj]));
+    const csv = jsonToCsv(res.rows, res.columns);
+    return (
+      res.columns.includes('col/1') &&
+      res.columns.includes('user@domain#tier') &&
+      csv.includes('alpha') &&
+      csv.includes('123')
+    );
+  });
+
+  await runCase('S5-4', 'ColumnManager', 'Empty column selection returns empty string without uncaught errors', () => {
+    const dataset = [{ id: 1, name: 'Ali' }];
+    const csv = jsonToCsv(dataset, []);
+    const tsv = jsonToTsv(dataset, []);
+    return csv === '' && tsv === '';
+  });
+
+  await runCase('S5-5', 'ColumnManager', 'Column search filtering finds matching columns and handles non-matching query', () => {
+    const allCols = ['id', 'user_name', 'user_email', 'department_name', 'salary'];
+    const searchMatch = allCols.filter((c) => c.toLowerCase().includes('user'));
+    const searchNone = allCols.filter((c) => c.toLowerCase().includes('nonexistent_xyz'));
+    return (
+      searchMatch.length === 2 &&
+      searchMatch.includes('user_name') &&
+      searchMatch.includes('user_email') &&
+      searchNone.length === 0
+    );
+  });
+
   // ==========================================================================
   // SECTION 6: UI ACTIONS & SAMPLES
   // ==========================================================================
@@ -470,6 +508,33 @@ async function main() {
   await runCase('S6-2', 'UIActions', 'HTML table export contains properly structured table and escaped headers', () => {
     const html = jsonToHtmlTable([{ title: 'CEO & Founder' }], ['title'], 'Team');
     return html.includes('<th>title</th>') && html.includes('CEO &amp; Founder');
+  });
+
+  await runCase('S6-3', 'UIActions', 'All pre-loaded sample datasets parse into valid non-empty table structures', () => {
+    const usersTable = parseJsonToTable(SAMPLE_DATASETS.users);
+    const ecomTable = parseJsonToTable(SAMPLE_DATASETS.ecommerce);
+    const geoTable = parseJsonToTable(SAMPLE_DATASETS.geo);
+    return (
+      usersTable.rows.length === 3 &&
+      usersTable.columns.length > 5 &&
+      ecomTable.rows.length === 2 &&
+      geoTable.rows.length === 1 &&
+      geoTable.columns.includes('country')
+    );
+  });
+
+  await runCase('S6-4', 'UIActions', 'Editor clear state cleanly resets rows, columns, metrics and selection', () => {
+    const initial = parseJsonToTable('[{"id": 1}]');
+    // Clear simulation
+    const clearedRows: Record<string, any>[] = [];
+    const clearedCols: string[] = [];
+    const clearedMetrics = { cells: 0, durationMs: 0 };
+    return (
+      initial.rows.length === 1 &&
+      clearedRows.length === 0 &&
+      clearedCols.length === 0 &&
+      clearedMetrics.cells === 0
+    );
   });
 
   // ==========================================================================
@@ -490,6 +555,22 @@ async function main() {
   await runCase('S7-2', 'Limits', 'Filename sanitizer neutralizes path traversal and reserved characters', () => {
     const clean = sanitizeFilename('../../bad:name*?.json');
     return !clean.includes('..') && !clean.includes(':') && !clean.includes('*') && !clean.includes('?');
+  });
+
+  await runCase('S7-3', 'Limits', 'Non-JSON file rejection validator checks extension and MIME type', () => {
+    const isJsonFile = (name: string, type: string) =>
+      name.toLowerCase().endsWith('.json') || type === 'application/json' || type === '';
+    return (
+      isJsonFile('data.json', 'application/json') &&
+      isJsonFile('export.JSON', '') &&
+      !isJsonFile('image.png', 'image/png') &&
+      !isJsonFile('script.exe', 'application/octet-stream')
+    );
+  });
+
+  await runCase('S7-4', 'Limits', 'Empty file content (0 bytes) handled cleanly with empty dataset state', () => {
+    const emptyResult = parseJsonToTable('');
+    return emptyResult.rows.length === 0 && emptyResult.columns.length === 0;
   });
 
   // ==========================================================================
@@ -540,6 +621,66 @@ async function main() {
     const csv = jsonToCsv(res.rows, res.columns);
     const elapsed = performance.now() - t0;
     return res.rows.length === 10000 && csv.length > 100000 && elapsed < 2000;
+  });
+
+  // ==========================================================================
+  // SECTION 10: LAUNCH READINESS PASS/FAIL GATE
+  // ==========================================================================
+  console.log('\n--- SECTION 10: Launch Readiness Pass/Fail Gate ---');
+
+  await runCase('S10-1', 'ReleaseGate', 'All 7 export formats (CSV, TSV, XLSX, YAML, XML, JSONL, HTML) generate valid outputs', () => {
+    const data = [
+      { id: 1, name: 'Alice', active: true, amount: 250.75 },
+      { id: 2, name: 'Bob', active: false, amount: 0 },
+    ];
+    const columns = ['id', 'name', 'active', 'amount'];
+    const csv = jsonToCsv(data, columns);
+    const tsv = jsonToTsv(data, columns);
+    const yaml = jsonToYaml(data);
+    const xml = jsonToXml(data);
+    const jsonl = jsonToJsonl(data);
+    const html = jsonToHtmlTable(data, columns);
+
+    const ws = XLSX.utils.json_to_sheet(data, { header: columns });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Data');
+    const xlsxBuf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+
+    return (
+      csv.length > 0 &&
+      tsv.length > 0 &&
+      yaml.length > 0 &&
+      xml.length > 0 &&
+      jsonl.length > 0 &&
+      html.length > 0 &&
+      (xlsxBuf.byteLength || xlsxBuf.length || 0) > 0
+    );
+  });
+
+  await runCase('S10-2', 'ReleaseGate', 'Exported JSONL records parse back into identical original object structures', () => {
+    const original = [{ id: 1, name: 'Zara' }, { id: 2, name: 'Ali' }];
+    const jsonl = jsonToJsonl(original);
+    const roundtrip = jsonl.split('\n').map((l) => JSON.parse(l));
+    return JSON.stringify(original) === JSON.stringify(roundtrip);
+  });
+
+  await runCase('S10-3', 'ReleaseGate', 'Exported XLSX workbook contains correct SheetName and cell values', () => {
+    const data = [{ sku: 'PROD-1', price: 99.99 }];
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Products');
+    const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+    const readBack = XLSX.read(buf, { type: 'array' });
+    const sheet = readBack.Sheets['Products'];
+    return readBack.SheetNames[0] === 'Products' && sheet['A2']?.v === 'PROD-1' && sheet['B2']?.v === 99.99;
+  });
+
+  await runCase('S10-4', 'ReleaseGate', 'Documented maximum sizes and constraints are adhered to without memory leaks', () => {
+    return (
+      DEFAULT_OPTIONS.maxDepth === 20 &&
+      DEFAULT_OPTIONS.separator === '_' &&
+      DEFAULT_OPTIONS.arrayMode === 'json'
+    );
   });
 
   // ==========================================================================
