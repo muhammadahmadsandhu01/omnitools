@@ -150,14 +150,21 @@ async function main() {
             ${expr}
             return { ok: true };
           } catch (err) {
-            return { ok: false, error: (err && (err as Error).message) || String(err) };
+            return { ok: false, error: (err && err.message) ? err.message : String(err) };
           }
         })()`,
         returnByValue: true,
         awaitPromise: true,
       });
 
-      const res = evalRes.result?.value;
+      const typedEval = evalRes as unknown as {
+        result?: {
+          result?: { value?: { ok: boolean; error?: string } };
+          value?: { ok: boolean; error?: string };
+        };
+        value?: { ok: boolean; error?: string };
+      };
+      const res = typedEval?.result?.result?.value ?? typedEval?.result?.value ?? typedEval?.value;
       if (res && res.ok) {
         console.log(`  [PASS ${totalTests}] ${name}`);
         passedTests++;
