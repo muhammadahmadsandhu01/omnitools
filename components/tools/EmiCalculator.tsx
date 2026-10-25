@@ -42,6 +42,7 @@ import {
   generateYearlySummary,
   calculateLoan,
   compareScenarios,
+  parseCleanNumber,
   formatCurrencyAmount,
   formatDuration,
   serializeLoanUrl,
@@ -64,6 +65,7 @@ export type {
 
 export {
   WORLD_CURRENCIES,
+  parseCleanNumber,
   safeNumber,
   validateLoanParams,
   getPeriodsPerYear,

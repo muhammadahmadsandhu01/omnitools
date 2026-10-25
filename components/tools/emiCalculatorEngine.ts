@@ -143,13 +143,25 @@ export const WORLD_CURRENCIES: CurrencyItem[] = [
    3. VALIDATION & SANITIZATION HELPERS
    ========================================================================= */
 
+export function parseCleanNumber(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
+  if (typeof value !== 'string') return NaN;
+  const trimmed = value.trim();
+  if (trimmed === '') return NaN;
+  const cleaned = trimmed.replace(/[$€£¥₹\s,]/g, '');
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 export function safeNumber(value: unknown, fallback = 0, min = 0, max = Infinity): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || isNaN(value)) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || isNaN(parsed)) return fallback;
-    return Math.min(max, Math.max(min, parsed));
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || isNaN(value)) return fallback;
+    return Math.min(max, Math.max(min, value));
   }
-  return Math.min(max, Math.max(min, value));
+  const parsed = parseCleanNumber(value);
+  if (isNaN(parsed) || !Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 }
 
 export function validateLoanParams(params: Partial<LoanParams>): LoanParams {
@@ -223,6 +235,10 @@ export function calculateScheduledPayment(
     return principal / numberOfPeriods;
   }
   const factor = Math.pow(1 + periodicRate, numberOfPeriods);
+  if (!Number.isFinite(factor) || factor <= 1) {
+    const ordinaryPayment = principal * periodicRate;
+    return timing === 'beginning' ? ordinaryPayment / (1 + periodicRate) : ordinaryPayment;
+  }
   const ordinaryPayment = (principal * periodicRate * factor) / (factor - 1);
   return timing === 'beginning' ? ordinaryPayment / (1 + periodicRate) : ordinaryPayment;
 }
@@ -298,9 +314,10 @@ export function generateAmortizationSchedule(params: LoanParams): {
   let totalRecurringFees = 0;
   let appliedPrepayment = initialPrepaymentApplied;
   let period = 0;
+  const EPSILON = 1e-7;
   const maxPeriods = totalScheduledPeriods + 600;
 
-  while (balance > 0.005 && period < maxPeriods) {
+  while (balance > EPSILON && period < maxPeriods) {
     period += 1;
     const openingBalance = balance;
 
@@ -332,7 +349,7 @@ export function generateAmortizationSchedule(params: LoanParams): {
     let actualPrincipalPaid = 0;
     let actualExtraPaid = 0;
 
-    if (plannedPrincipal >= openingBalance) {
+    if (plannedPrincipal >= openingBalance - EPSILON) {
       // Final payoff reconciliation: cap principal paid at exact remaining balance
       actualPrincipalPaid = openingBalance;
       balance = 0;
@@ -346,13 +363,13 @@ export function generateAmortizationSchedule(params: LoanParams): {
     }
 
     // Handle re-cast mode after one-time prepayment (re-amortize over remaining periods)
-    if (prepMode === 'payment' && currentPeriodPrepayment > 0 && balance > 0.005) {
+    if (prepMode === 'payment' && currentPeriodPrepayment > 0 && balance > EPSILON) {
       const remainingPeriods = Math.max(1, totalScheduledPeriods - period);
       currentScheduledPayment = calculateScheduledPayment(balance, r, remainingPeriods, timing);
     }
 
-    // Numerical hygiene: if residual balance is less than half a cent, close strictly to 0
-    if (balance <= 0.005) {
+    // Numerical hygiene: if residual balance is less than epsilon, close strictly to 0
+    if (balance <= EPSILON) {
       balance = 0;
     }
 
@@ -372,7 +389,12 @@ export function generateAmortizationSchedule(params: LoanParams): {
       closingBalance: Math.max(0, balance),
     });
 
-    if (balance <= 0.005) break;
+    if (balance <= EPSILON) break;
+  }
+
+  // Ensure totalPrincipal strictly conserves P when loan is fully paid
+  if (balance <= EPSILON) {
+    totalPrincipal = P;
   }
 
   const unappliedPrepayment = Math.max(0, requestedPrepayment - appliedPrepayment);
@@ -692,7 +714,11 @@ export function deserializeLoanUrl(
 
 export function escapeCsvCell(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const str = String(value);
+  let str = String(value);
+  // Formula injection defense: prepend single quote if cell starts with dangerous symbols
+  if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
+    str = `'${str}`;
+  }
   if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

@@ -72,8 +72,59 @@ export default function EmiCalculatorSeo() {
     })),
   };
 
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Calculate Loan EMI, Total Interest, and Amortization Schedules',
+    description:
+      'Step-by-step instructions to calculate monthly loan EMI, interest charges, fee modeling, prepayments, and complete amortization schedules using KivaroTools.',
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Currency and Loan Principal',
+        text: 'Choose your currency and enter the principal borrowed amount. Formatted numbers with commas or symbols are cleanly supported.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Input Annual Interest Rate and Loan Tenure',
+        text: 'Specify the nominal annual interest rate (%) and loan tenure in years (supports decimal tenures like 2.5 years).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Choose Payment Frequency and Timing',
+        text: 'Select Monthly (12/yr), Biweekly (26/yr), or Weekly (52/yr), and choose between End of Period (In Arrears) or Beginning of Period (In Advance).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Configure Optional Fees and Prepayments',
+        text: 'Expand Advanced Options to model upfront origination fees, periodic servicing fees, recurring extra payments, or one-time lump-sum prepayments.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 5,
+        name: 'Inspect Breakdown and Export Schedule',
+        text: 'Review the principal vs. interest breakdown, total economic loan cost, yearly summary, and export your full RFC-4180 amortization CSV.',
+      },
+    ],
+  };
+
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+    <>
+      {/* FAQPage & HowTo JSON-LD Structured Data for Google Rich Snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
+      />
+
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
       <section aria-labelledby="emi-calculator-equated-monthly-installment-em" className="mb-8">
         <h2 id="emi-calculator-equated-monthly-installment-em" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
         Equated Monthly Installment (EMI) Guide: Formulas, Amortization &amp; Repayment Strategies
@@ -343,11 +394,89 @@ export default function EmiCalculatorSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
-
-      {/* Section 10: Related Financial Calculators */}
+          ))}
+        </div>
       </section>
 
+      {/* Feature & Technical Capabilities Matrix */}
+      <section aria-labelledby="emi-calculator-technical-capabilities-matrix" className="mb-8">
+        <h3 id="emi-calculator-technical-capabilities-matrix" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+          KivaroTools EMI Engine: Features &amp; Technical Capabilities Matrix
+        </h3>
+        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+          The following technical specification matrix details the computational architecture, inputs, and modeling capabilities implemented in the KivaroTools loan EMI calculator:
+        </p>
+        <div className="overflow-x-auto mb-6">
+          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Functional Module</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Supported Input Formats</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Calculation Engine Logic</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Output &amp; Visual Representation</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Principal Amount</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Numeric input &amp; slider ($0 to $100M). Cleanly parses formatted text with commas/currency symbols.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Standard reducing-balance principal. Non-negative validation with zero-principal safe guard.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Summary card, progress breakdown, &amp; balance timeline</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Interest Rate</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Nominal annual percentage rate (0% to 100%). Step 0.05%</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Periodic rate = Annual Rate &divide; 100 &divide; Periods/Yr. Safe linear fallback E = P / n for 0% loans.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Total Interest Paid card &amp; Interest % breakdown bar</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Tenure (Duration)</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Duration in years (0 to 50 years). Supports decimal durations (e.g. 2.5 yrs).</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Computes exact total periods: n = Math.round(years &times; periodsPerYear).</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Payoff duration card &amp; Amortization schedule rows</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Payment Frequency</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Monthly (12/yr), Biweekly (26/yr), or Weekly (52/yr)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Adjusts compounding cycles and payment divisor to reflect chosen payment schedule.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Dynamic Hero Payment Label &amp; Outflow summaries</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Payment Timing</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">End of Period (In Arrears) vs. Beginning of Period (In Advance)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Annuity Due formula E = Ordinary Payment &divide; (1 + r). Payment 1 occurs before interest accrual.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">&quot;In Advance&quot; badge &amp; reduced lifetime interest charges</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Loan Fees</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">One-time origination fee ($) and periodic recurring fee ($/period)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Origination fee added to cash cost once. Recurring fees added per payment cycle. Fully reconciled.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Total Loan Fees card &amp; Total Cost reconciliation breakdown</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Extra Prepayments</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Recurring extra payment ($) and one-time prepayment with mode and period</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Direct principal reduction. Modes: Term reduction (shorten loan) or Payment re-cast.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Accelerated Payoff Savings Banner (Interest, Time &amp; Cost Saved)</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Amortization Export</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Period-by-period schedule or Annual summary view</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Full audit schedule with balance tracking. RFC-4180 CSV export with formula injection defense.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Paginated table &amp; instant CSV file download</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Scenario Sharing</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">One-click deep URL scenario sharing</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Encodes all 11 loan parameters into shareable URL query parameters for instant scenario reconstruction.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Share Scenario button with auto-copy feedback</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Section 10: Related Financial Calculators */}
       <section aria-labelledby="emi-calculator-10-related-financial-calculato" className="mb-8">
         <h3 id="emi-calculator-10-related-financial-calculato" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         10. Related Financial Calculators on KivaroTools
@@ -397,5 +526,6 @@ export default function EmiCalculatorSeo() {
       </div>
       </section>
     </article>
+    </>
   );
 }

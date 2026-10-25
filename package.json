@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:registry": "tsx scripts/validate-registry.ts",
+    "test:emi": "tsx scripts/test-emi-150-suite.ts && tsx scripts/test-user-emi-suite.ts",
     "test:json-converter": "tsx scripts/test-json-converter-150-suite.ts && tsx scripts/test-user-json-converter-suite.ts",
     "test:base64": "tsx scripts/test-base64-decoder.ts",
     "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts",
