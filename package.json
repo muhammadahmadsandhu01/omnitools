@@ -19,7 +19,7 @@
     "test:image-to-pdf": "tsx scripts/test-image-to-pdf.ts",
     "test:qr": "tsx scripts/test-qr-generator.ts",
     "test:regex": "tsx scripts/test-regex-tester-150-suite.ts && tsx scripts/test-user-regex-tester-suite.ts && tsx scripts/test-regex-tester.ts",
-    "test:sip": "tsx scripts/test-sip-calculator.ts",
+    "test:sip": "tsx scripts/test-sip-150-suite.ts && tsx scripts/test-user-sip-suite.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
     "test:svg": "tsx scripts/test-svg-optimizer-150-suite.ts && tsx scripts/test-user-svg-optimizer-suite.ts && tsx scripts/test-svg-optimizer.ts",
     "test:text-case": "tsx scripts/test-text-case-converter.ts",

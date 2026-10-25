@@ -230,9 +230,15 @@ export function formatPercent(value: number, decimals = 2): string {
 }
 
 export function sanitizeCsvCell(value: string | number): string {
-  let str = String(value);
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  const str = String(value);
+  if (/^-?\d+(\.\d+)?$/.test(str.trim())) {
+    return str.trim();
+  }
   if (/^[=+\-@\t\r]/.test(str)) {
-    str = `'${str}`;
+    return `'${str}`;
   }
   return str;
 }
@@ -448,6 +454,7 @@ export function solveGoalContribution({
   contributionFeeRate = 0,
   taxRateOnGains = 0,
   inflationRate = 0,
+  maxContribution,
 }: {
   target: number;
   mode: Mode;
@@ -462,9 +469,22 @@ export function solveGoalContribution({
   contributionFeeRate?: number;
   taxRateOnGains?: number;
   inflationRate?: number;
+  maxContribution?: number;
 }): GoalPlanResult {
-  const targetAmount = Math.max(1, target);
   const frequencyLabel = mode === 'lumpsum' ? 'one-time' : frequency === 'monthly' ? 'monthly' : frequency === 'quarterly' ? 'quarterly' : 'yearly';
+
+  if (target <= 0) {
+    return {
+      target: Math.max(0, target),
+      requiredContribution: 0,
+      projectedValue: 0,
+      reachable: target === 0,
+      frequencyLabel,
+    };
+  }
+
+  const targetAmount = target;
+  const upperLimit = Math.max(1, maxContribution ?? 1e12);
 
   const projectWithCandidate = (candidateContribution: number) => {
     return projectInvestment({
@@ -496,12 +516,24 @@ export function solveGoalContribution({
     };
   }
 
+  // Check if target cannot be reached even with the configured maximum contribution
+  const maxContribResult = projectWithCandidate(upperLimit);
+  if (maxContribResult.futureValue < targetAmount) {
+    return {
+      target: targetAmount,
+      requiredContribution: 0,
+      projectedValue: maxContribResult.futureValue,
+      reachable: false,
+      frequencyLabel,
+    };
+  }
+
   // Upper bound bracket search
   let low = 0;
-  let high = targetAmount;
+  let high = Math.min(targetAmount, upperLimit);
   let maxSearchIterations = 60;
-  while (projectWithCandidate(high).futureValue < targetAmount && high < 1e15 && maxSearchIterations > 0) {
-    high *= 2;
+  while (projectWithCandidate(high).futureValue < targetAmount && high < upperLimit && maxSearchIterations > 0) {
+    high = Math.min(high * 2, upperLimit);
     maxSearchIterations--;
   }
 
@@ -509,7 +541,7 @@ export function solveGoalContribution({
     return {
       target: targetAmount,
       requiredContribution: 0,
-      projectedValue: 0,
+      projectedValue: projectWithCandidate(high).futureValue,
       reachable: false,
       frequencyLabel,
     };
@@ -1054,6 +1086,19 @@ export default function SipCalculator() {
             if (typeof data.inf === 'string') setInflation(String(data.inf));
             if (data.f === 'monthly' || data.f === 'quarterly' || data.f === 'yearly') setFrequency(data.f);
             if (data.t === 'beginning' || data.t === 'end') setContributionTiming(data.t);
+            if (data.rb === 'nominal' || data.rb === 'effective') setRateBasis(data.rb);
+            if (typeof data.af === 'string' && data.af.trim() !== '') {
+              setAnnualFee(String(data.af));
+              setShowPlanning(true);
+            }
+            if (typeof data.cf === 'string' && data.cf.trim() !== '') {
+              setContributionFee(String(data.cf));
+              setShowPlanning(true);
+            }
+            if (typeof data.tx === 'string' && data.tx.trim() !== '') {
+              setTaxRate(String(data.tx));
+              setShowPlanning(true);
+            }
           }
         }
       } catch {
@@ -1350,6 +1395,10 @@ export default function SipCalculator() {
       if (inflation) stateObj.inf = inflation;
       if (frequency !== 'monthly') stateObj.f = frequency;
       if (contributionTiming !== 'beginning') stateObj.t = contributionTiming;
+      if (rateBasis !== 'nominal') stateObj.rb = rateBasis;
+      if (annualFee) stateObj.af = annualFee;
+      if (contributionFee) stateObj.cf = contributionFee;
+      if (taxRate) stateObj.tx = taxRate;
 
       const encoded = btoa(encodeURIComponent(JSON.stringify(stateObj)));
       window.location.hash = `state=${encoded}`;
