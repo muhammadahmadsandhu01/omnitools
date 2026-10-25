@@ -7,39 +7,79 @@ export interface FaqItem {
 
 export const PDF_MERGE_SPLIT_FAQS: FaqItem[] = [
   {
-    question: 'How does client-side PDF processing protect document privacy?',
+    question: 'How does client-side PDF processing protect sensitive document privacy?',
     answer:
-      'Unlike traditional cloud converters that upload documents to external remote servers, KivaroTools executes all PDF parsing, page extraction, splitting, and merging 100% locally in your web browser memory via pdf-lib and Web APIs. Confidential contracts, legal briefs, tax filings, medical reports, and financial statements never travel across the internet or touch third-party disks.',
+      'Unlike cloud conversion services that transmit files across third-party networks to remote servers running Poppler or Ghostscript, KivaroTools processes documents 100% locally within your browser heap memory via pdf-lib and standard Web APIs (ArrayBuffer, Uint8Array, Blob). Confidential legal agreements, financial disclosures, tax filings, and medical records never traverse the internet or touch external storage drives.',
   },
   {
-    question: 'Can I split a PDF into separate individual 1-page documents?',
+    question: 'What are the exact single-file and total batch limits for PDF merging?',
     answer:
-      'Yes. In Split & Extract mode, choose the "Every Page (ZIP)" option. The tool extracts each page as an independent single-page PDF document (e.g. document_page_01.pdf, document_page_02.pdf) and packages them into a clean, downloadable ZIP archive without server round-trips.',
+      'You can merge up to 50 individual PDF documents in a single operation, with an individual file size limit of 250 MB (MAX_SINGLE_FILE_BYTES) and a cumulative batch limit of 750 MB (MAX_TOTAL_MERGE_BYTES). These safety bounds protect against browser tab termination and out-of-memory crashes while accommodating high-resolution scans and voluminous multi-page reports.',
   },
   {
-    question: 'How do custom page ranges and multi-part splits work?',
+    question: 'How does the "Every Page (ZIP)" splitting mode work?',
     answer:
-      'You can extract specific pages into a single document using comma-separated numbers and hyphenated ranges (e.g. "1-4, 7, 9-12"). If you select "By Ranges (ZIP)", you can separate distinct document sections using semicolons (e.g. "1-5; 6-10; 11-15"). Each section is assembled into its own standalone PDF file and bundled into a ZIP archive.',
+      'In Split & Extract mode, selecting "Every Page (ZIP)" iterates sequentially through every page (1 to N) of the source document, generates a standalone single-page PDF for each page with zero-padded numbering (e.g. document_page_01.pdf, document_page_02.pdf), and packages the entire set into a Deflate-compressed ZIP archive (JSZip) for single-click local download.',
   },
   {
-    question: 'What are the file size and batch limits for merging?',
+    question: 'What syntax is supported for extracting custom page intervals?',
     answer:
-      'You can merge up to 50 PDF files in a single session, with an individual file limit of 250 MB and a combined batch size limit of 750 MB. Because processing runs in client memory, these generous thresholds prevent browser tab crashes while accommodating heavy multi-page documents and image scans.',
+      'The "Pages to Extract" input supports individual page numbers and hyphenated ranges separated by commas (e.g. "1-3, 5, 8-10"). The parser enforces strict bounds checking (1 <= page <= total), rejects reversed ranges ("5-2"), automatically deduplicates overlapping intervals (Set<number>), and sorts extracted pages in strictly ascending sequence.',
+  },
+  {
+    question: 'How do I partition a PDF into multiple distinct documents using ranges?',
+    answer:
+      'Select "By Ranges (ZIP)" and enter range groups separated by semicolons (e.g. "1-5; 6-10; 11-15"). The parser creates a dedicated PDF for each semicolon group (e.g. document_part_1_pages_1-5.pdf, document_part_2_pages_6-10.pdf) and bundles all generated documents into a single downloadable ZIP archive.',
+  },
+  {
+    question: 'What quick presets are available for rapid page selection?',
+    answer:
+      'The extraction workspace provides four automated one-click presets: "All Pages" (1-N), "Odd Pages" (1, 3, 5, 7...), "Even Pages" (2, 4, 6, 8...), and "First & Last" (1, N). These presets instantly populate the range field without manual numeric entry.',
+  },
+  {
+    question: 'How does the engine verify that an uploaded file is a valid PDF?',
+    answer:
+      'The preflight validator scans the first 1,024 bytes of the binary buffer for the standard %PDF- magic byte sequence (0x25, 0x50, 0x44, 0x46, 0x2D). Files smaller than 32 bytes (MIN_PDF_FILE_BYTES), empty streams, or non-PDF binary formats (e.g. PNG, JPEG, ZIP, or plain text) are immediately flagged and rejected with a descriptive error.',
   },
   {
     question: 'Why are password-protected or encrypted PDFs rejected?',
     answer:
-      'Encrypted and password-protected PDF files restrict binary parsing and page extraction without authorized cryptographic decryption keys. To prevent document corruption, KivaroTools detects encrypted files during preflight inspection and prompts you to decrypt them with authorized software prior to processing.',
+      'Encrypted and password-protected PDFs restrict binary parsing and content stream extraction without cryptographic decryption keys. During preflight inspection, the engine checks doc.isEncrypted and alerts you to decrypt the document using authorized software prior to merging or extracting.',
   },
   {
-    question: 'Are bookmarks, vector fonts, and form fields preserved when merging?',
+    question: 'How does the tool ensure the generated output PDF is not corrupted?',
     answer:
-      'Page visual layout, vector artwork, embedded fonts, image fidelity, crop boxes, and page rotations are preserved exactly. However, interactive AcroForm input fields, JavaScript actions, and complex hierarchical bookmarks are flattened to standard page streams to prevent catalog naming collisions between different source documents.',
+      'Before triggering any file download, verifyOutputPdfIntegrity reloads the generated byte stream into an independent PDFDocument.load() instance and validates that the output byte length exceeds 32 bytes, contains %PDF- magic bytes, and that the resulting page count exactly equals the expected mathematical sum.',
   },
   {
-    question: 'Can I reorder PDF files before merging on mobile devices?',
+    question: 'How can I adjust document order before merging on mobile and desktop?',
     answer:
-      'Yes. In addition to drag-and-drop on desktop, every file in the merge list features dedicated, accessible Move Up and Move Down arrow buttons. This ensures reliable keyboard navigation and seamless touch reordering on smartphones and tablets.',
+      'On desktop, you can drag and drop file cards directly. Additionally, every file card features dedicated, accessible Move Up and Move Down arrow buttons with full ARIA attributes. This enables reliable keyboard navigation and one-touch reordering on touchscreens, smartphones, and tablets.',
+  },
+  {
+    question: 'How are custom output filenames sanitized for OS compatibility?',
+    answer:
+      'The sanitizeFilename engine normalizes Unicode (NFC), strips path traversal sequences (.., /, \\), neutralizes Windows reserved device names (CON, PRN, AUX, NUL, COM1-9, LPT1-9 -> CON_document), removes illegal filesystem characters (< > : " | ? * \\x00-\\x1F), collapses underscores, and truncates names to a safe 100-character boundary.',
+  },
+  {
+    question: 'Are vector artwork, embedded fonts, and print resolutions preserved?',
+    answer:
+      'Yes. Pages are copied as native PDF content stream dictionaries via copyPages(). Embedded TrueType and OpenType fonts, vector curves, CMYK/RGB color profiles, high-resolution raster images, and page crop/media boxes are preserved without lossy re-encoding or raster degradation.',
+  },
+  {
+    question: 'What happens to fillable form fields and interactive bookmarks when merging?',
+    answer:
+      'Page visual appearances and text contents are preserved, but interactive AcroForm input fields, JavaScript actions, and complex hierarchical bookmarks are flattened to standard page streams. This prevents cross-document catalog naming collisions and ensures reliable rendering across all standard PDF viewers.',
+  },
+  {
+    question: 'How much device memory is required for merging large PDF scans?',
+    answer:
+      'Browser heap memory during PDF decompression can temporarily reach 2 to 3 times the raw file size. To prevent thread lockups, the tool uses a cooperative scheduler (yieldToBrowser) that yields execution frames via requestAnimationFrame and setTimeout(0), allowing the browser to update UI animations, show progress percentages, and respond to user actions.',
+  },
+  {
+    question: 'What happens if I cancel a long-running merge or split operation?',
+    answer:
+      'Clicking Cancel increments the internal operationIdRef and activates cancelledRef, terminating the page-copy loop on the next frame. All temporary in-memory objects and active blob URLs (URL.revokeObjectURL) are immediately garbage-collected without memory leaks.',
   },
 ];
 
@@ -59,217 +99,217 @@ export default function PdfMergeSplitSeo() {
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-8 md:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8">
+      {/* 1:1 FAQPage Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       <section aria-labelledby="pdf-merge-split-in-browser-pdf-management-fast" className="mb-8">
         <h2 id="pdf-merge-split-in-browser-pdf-management-fast" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        In-Browser PDF Management: Fast, Private Document Merging &amp; Splitting
-      </h2>
-      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
-        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+          In-Browser PDF Management: Fast, Private Document Merging &amp; Splitting
+        </h2>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+          </p>
+        </blockquote>
+        <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+          Managing Portable Document Format (PDF) files should not require expensive software subscriptions, command-line complexity,
+          or uploading confidential information to third-party cloud servers. The KivaroTools <strong>PDF Merge &amp; Split Tool</strong>{' '}
+          delivers a streamlined document workshop running 100% locally in your web browser. Combine multiple PDF reports into a single
+          continuous document, extract exact page selections, split multi-page files into individual 1-page documents, or partition
+          records by custom ranges into ZIP archives—all with zero server uploads and instant local processing.
         </p>
-      </blockquote>
-      <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        Managing Portable Document Format (PDF) files should not require expensive software subscriptions, command-line complexity,
-        or uploading confidential information to third-party cloud servers. The KivaroTools <strong>PDF Merge &amp; Split Tool</strong>{' '}
-        delivers a streamlined document workshop running 100% locally in your web browser. Combine multiple PDF reports into a single
-        continuous document, extract exact page selections, split multi-page files into individual 1-page documents, or partition
-        records by custom ranges into ZIP archives—all with zero server uploads and instant local processing.
-      </p>
+      </section>
 
       {/* WORKFLOW COMPARISON TABLE */}
-      </section>
-
       <section aria-labelledby="pdf-merge-split-supported-pdf-workflows-at-a-g" className="mb-8">
         <h3 id="pdf-merge-split-supported-pdf-workflows-at-a-g" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Supported PDF Workflows at a Glance
-      </h3>
-      <div className="overflow-x-auto mb-8">
-        <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-          <thead>
-            <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Workflow Mode</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Input Capacity</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Key Capabilities</th>
-              <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Output Format</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Merge PDFs</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">2 to 50 files (750 MB total)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Keyboard reordering, preflight validation, custom filename</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-medium">Single consolidated .pdf</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Extract Pages</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Custom ranges (e.g. 1-3, 5), presets (Odd, Even, First/Last)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Trimmed .pdf with selected pages</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Every Page (ZIP)</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Automated 1-click single-page splitting with padded numbering</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-medium">Compressed .zip with separate PDFs</td>
-            </tr>
-            <tr>
-              <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">By Ranges (ZIP)</th>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700">Multi-part splitting with semicolon syntax (e.g. 1-5; 6-10)</td>
-              <td className="p-3 border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-medium">Compressed .zip with partitioned PDFs</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          Supported PDF Workflows at a Glance
+        </h3>
+        <div className="overflow-x-auto mb-8">
+          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Workflow Mode</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Input Capacity</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Key Capabilities</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Output Format</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Merge PDFs</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">2 to 50 files (750 MB total)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Keyboard reordering, preflight validation, custom filename</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-medium">Single consolidated .pdf</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Extract Pages</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Custom ranges (e.g. 1-3, 5), presets (Odd, Even, First/Last)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Trimmed .pdf with selected pages</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Every Page (ZIP)</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Automated 1-click single-page splitting with padded numbering</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-medium">Compressed .zip with separate PDFs</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">By Ranges (ZIP)</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">1 document (up to 250 MB)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Multi-part splitting with semicolon syntax (e.g. 1-5; 6-10)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-medium">Compressed .zip with partitioned PDFs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* STEP BY STEP GUIDES */}
-      </section>
-
       <section aria-labelledby="pdf-merge-split-step-by-step-instructions" className="mb-8">
         <h3 id="pdf-merge-split-step-by-step-instructions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Step-by-Step Instructions
-      </h3>
+          Step-by-Step Instructions
+        </h3>
 
-      <div className="space-y-6 mb-8">
-        <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
-            How to Merge Multiple PDF Files into One
-          </h4>
-          <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
-            <li>Ensure the <strong>Merge PDFs</strong> tab is active at the top of the workspace.</li>
-            <li>Drag and drop your PDF documents into the upload region or click to select files from your file explorer.</li>
-            <li>Inspect the document list. Check individual file sizes, page counts, and verification badges.</li>
-            <li>Adjust page sequence using the <strong>Move Up</strong> and <strong>Move Down</strong> arrow buttons. The top-to-bottom list sequence strictly determines the final page order.</li>
-            <li>(Optional) Type a custom name into the <em>Output Filename</em> field.</li>
-            <li>Click <strong>Merge &amp; Download PDF</strong>. The tool combines page trees in browser memory and downloads the consolidated document immediately.</li>
-          </ol>
-        </div>
+        <div className="space-y-6 mb-8">
+          <div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+              How to Merge Multiple PDF Files into One
+            </h4>
+            <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
+              <li>Ensure the <strong>Merge PDFs</strong> tab is active at the top of the workspace.</li>
+              <li>Drag and drop your PDF documents into the upload region or click to select files from your file explorer.</li>
+              <li>Inspect the document list. Check individual file sizes, page counts, and verification badges.</li>
+              <li>Adjust page sequence using the <strong>Move Up</strong> and <strong>Move Down</strong> arrow buttons. The top-to-bottom list sequence strictly determines the final page order.</li>
+              <li>(Optional) Type a custom name into the <em>Output Filename</em> field.</li>
+              <li>Click <strong>Merge &amp; Download PDF</strong>. The tool combines page trees in browser memory and downloads the consolidated document immediately.</li>
+            </ol>
+          </div>
 
-        <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
-            How to Extract Selected Pages into a New PDF
-          </h4>
-          <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
-            <li>Switch to the <strong>Split &amp; Extract</strong> tab and upload your target PDF document.</li>
-            <li>Select the <strong>Extract Pages</strong> splitting method.</li>
-            <li>Enter your target page numbers or intervals in the <em>Pages to Extract</em> field (e.g., <code className="text-xs">1-3, 5, 8-10</code>), or click a quick preset button (<em>Odd Pages</em>, <em>Even Pages</em>, or <em>First &amp; Last</em>).</li>
-            <li>Verify the live status badge confirming the number of selected pages.</li>
-            <li>Click <strong>Extract &amp; Download PDF</strong> to download your trimmed document.</li>
-          </ol>
-        </div>
+          <div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+              How to Extract Selected Pages into a New PDF
+            </h4>
+            <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
+              <li>Switch to the <strong>Split &amp; Extract</strong> tab and upload your target PDF document.</li>
+              <li>Select the <strong>Extract Pages</strong> splitting method.</li>
+              <li>Enter your target page numbers or intervals in the <em>Pages to Extract</em> field (e.g., <code className="text-xs">1-3, 5, 8-10</code>), or click a quick preset button (<em>Odd Pages</em>, <em>Even Pages</em>, or <em>First &amp; Last</em>).</li>
+              <li>Verify the live status badge confirming the number of selected pages.</li>
+              <li>Click <strong>Extract &amp; Download PDF</strong> to download your trimmed document.</li>
+            </ol>
+          </div>
 
-        <div>
-          <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
-            How to Split a PDF into Separate Individual Pages or Parts (ZIP)
-          </h4>
-          <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
-            <li>Upload your document in the <strong>Split &amp; Extract</strong> workspace.</li>
-            <li>Choose <strong>Every Page (ZIP)</strong> to automatically turn each page into an independent 1-page PDF.</li>
-            <li>Alternatively, choose <strong>By Ranges (ZIP)</strong> and specify section boundaries separated by semicolons (e.g., <code className="text-xs">1-5; 6-10; 11-15</code>).</li>
-            <li>Click <strong>Split &amp; Download ZIP</strong>. Each document part is generated, verified, and packaged into a ZIP archive for immediate local download.</li>
-          </ol>
+          <div>
+            <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-2">
+              How to Split a PDF into Separate Individual Pages or Parts (ZIP)
+            </h4>
+            <ol className="list-decimal space-y-1.5 pl-5 text-slate-600 dark:text-slate-400">
+              <li>Upload your document in the <strong>Split &amp; Extract</strong> workspace.</li>
+              <li>Choose <strong>Every Page (ZIP)</strong> to automatically turn each page into an independent 1-page PDF.</li>
+              <li>Alternatively, choose <strong>By Ranges (ZIP)</strong> and specify section boundaries separated by semicolons (e.g., <code className="text-xs">1-5; 6-10; 11-15</code>).</li>
+              <li>Click <strong>Split &amp; Download ZIP</strong>. Each document part is generated, verified, and packaged into a ZIP archive for immediate local download.</li>
+            </ol>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* HOW CLIENT-SIDE ENGINE WORKS */}
-      </section>
-
       <section aria-labelledby="pdf-merge-split-how-client-side-pdf-processing" className="mb-8">
         <h3 id="pdf-merge-split-how-client-side-pdf-processing" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        How Client-Side PDF Processing Works
-      </h3>
-      <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-        Conventional online PDF converters send your files to remote cloud servers running command-line utilities
-        like Ghostscript or Poppler. KivaroTools executes the entire PDF specification parser directly inside your web browser
-        using pure JavaScript binary manipulation via <strong>pdf-lib</strong> and <strong>JSZip</strong>:
-      </p>
-      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">
-        <li>
-          <strong>In-Memory Preflight Inspection:</strong> When you drop a document into the workspace, the tool inspects
-          the header slice for valid magic bytes (<code className="text-xs">%PDF-</code>), parses the cross-reference (<code className="text-xs">xref</code>)
-          table, and verifies that the document is unencrypted and syntactically sound.
-        </li>
-        <li>
-          <strong>Native Content Stream Copying:</strong> Pages are copied as native PDF content stream dictionaries.
-          Embedded OpenType/TrueType vector fonts, vector paths, high-resolution imagery, and page crop boxes remain intact
-          without lossy rasterization or quality degradation.
-        </li>
-        <li>
-          <strong>Post-Generation Invariant Verification:</strong> Before triggering a file download, the generated byte stream
-          is reloaded into an independent parser to verify that its byte structure is valid and that output page counts match
-          the expected mathematical sum.
-        </li>
-        <li>
-          <strong>Zero Network Footprint:</strong> Because document objects are constructed inside browser heap memory,
-          your files are never transmitted across the network, stored on third-party drives, or exposed to cloud data retention policies.
-        </li>
-      </ul>
+          How Client-Side PDF Processing Works
+        </h3>
+        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+          Conventional online PDF converters send your files to remote cloud servers running command-line utilities
+          like Ghostscript or Poppler. KivaroTools executes the entire PDF specification parser directly inside your web browser
+          using pure JavaScript binary manipulation via <strong>pdf-lib</strong> and <strong>JSZip</strong>:
+        </p>
+        <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">
+          <li>
+            <strong>In-Memory Preflight Inspection:</strong> When you drop a document into the workspace, the tool inspects
+            the header slice for valid magic bytes (<code className="text-xs">%PDF-</code>), parses the cross-reference (<code className="text-xs">xref</code>)
+            table, and verifies that the document is unencrypted and syntactically sound.
+          </li>
+          <li>
+            <strong>Native Content Stream Copying:</strong> Pages are copied as native PDF content stream dictionaries.
+            Embedded OpenType/TrueType vector fonts, vector paths, high-resolution imagery, and page crop boxes remain intact
+            without lossy rasterization or quality degradation.
+          </li>
+          <li>
+            <strong>Post-Generation Invariant Verification:</strong> Before triggering a file download, the generated byte stream
+            is reloaded into an independent parser to verify that its byte structure is valid and that output page counts match
+            the expected mathematical sum.
+          </li>
+          <li>
+            <strong>Zero Network Footprint:</strong> Because document objects are constructed inside browser heap memory,
+            your files are never transmitted across the network, stored on third-party drives, or exposed to cloud data retention policies.
+          </li>
+        </ul>
+      </section>
 
       {/* REAL-WORLD USE CASES */}
-      </section>
-
       <section aria-labelledby="pdf-merge-split-practical-real-world-use-cases" className="mb-8">
         <h3 id="pdf-merge-split-practical-real-world-use-cases" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Practical Real-World Use Cases
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-sm">
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
-          <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Legal &amp; Real Estate Briefs</p>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
-            Combine deeds, title documents, addendums, and disclosures into a single organized packet, preserving confidential client data without cloud exposure.
-          </p>
+          Practical Real-World Use Cases
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 text-sm">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Legal &amp; Real Estate Briefs</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+              Combine deeds, title documents, addendums, and disclosures into a single organized packet, preserving confidential client data without cloud exposure.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Financial &amp; Tax Filings</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+              Extract relevant schedules from voluminous tax returns, or consolidate monthly bank statements and receipts into one audit-ready document.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Academic &amp; Research Reports</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+              Extract selected journal figures, separate thesis chapters into individual files, or combine multi-author research papers for peer distribution.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Office Invoices &amp; Receipts</p>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
+              Split a scanned monthly stack of 50 receipts into individual single-page PDF files using <em>Every Page (ZIP)</em> mode for streamlined bookkeeping.
+            </p>
+          </div>
         </div>
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
-          <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Financial &amp; Tax Filings</p>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
-            Extract relevant schedules from voluminous tax returns, or consolidate monthly bank statements and receipts into one audit-ready document.
-          </p>
-        </div>
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
-          <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Academic &amp; Research Reports</p>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
-            Extract selected journal figures, separate thesis chapters into individual files, or combine multi-author research papers for peer distribution.
-          </p>
-        </div>
-        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
-          <p className="font-bold text-slate-900 dark:text-slate-100 mb-1">Office Invoices &amp; Receipts</p>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">
-            Split a scanned monthly stack of 50 receipts into individual single-page PDF files using <em>Every Page (ZIP)</em> mode for streamlined bookkeeping.
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* TROUBLESHOOTING & COMMON ERRORS */}
-      </section>
-
       <section aria-labelledby="pdf-merge-split-troubleshooting-common-pdf-iss" className="mb-8">
         <h3 id="pdf-merge-split-troubleshooting-common-pdf-iss" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Troubleshooting Common PDF Issues
-      </h3>
-      <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">
-        <li>
-          <strong>&ldquo;File is encrypted or password-protected&rdquo;:</strong> PDF files protected with user or owner passwords cannot be
-          reorganized in browser memory without encryption keys. Remove the password using your authorized PDF reader before merging or extracting.
-        </li>
-        <li>
-          <strong>&ldquo;Invalid reversed range (e.g. 5-2)&rdquo;:</strong> Range start numbers cannot exceed end numbers. Re-enter the range in ascending order (e.g. <code className="text-xs">2-5</code>).
-        </li>
-        <li>
-          <strong>&ldquo;Page exceeds document total&rdquo;:</strong> Verify that your requested page numbers exist in the source document. The live validation badge indicates the total available pages.
-        </li>
-        <li>
-          <strong>Browser Memory Alerts:</strong> If merging dozens of high-DPI image scans, ensure your device has sufficient free RAM. The tool enforces a 250 MB single-file and 750 MB batch limit to maintain stability.
-        </li>
-      </ul>
-
-      {/* FREQUENTLY ASKED QUESTIONS */}
+          Troubleshooting Common PDF Issues
+        </h3>
+        <ul className="list-disc space-y-2 pl-5 text-slate-600 dark:text-slate-400 mb-8">
+          <li>
+            <strong>&ldquo;File is encrypted or password-protected&rdquo;:</strong> PDF files protected with user or owner passwords cannot be
+            reorganized in browser memory without encryption keys. Remove the password using your authorized PDF reader before merging or extracting.
+          </li>
+          <li>
+            <strong>&ldquo;Invalid reversed range (e.g. 5-2)&rdquo;:</strong> Range start numbers cannot exceed end numbers. Re-enter the range in ascending order (e.g. <code className="text-xs">2-5</code>).
+          </li>
+          <li>
+            <strong>&ldquo;Page exceeds document total&rdquo;:</strong> Verify that your requested page numbers exist in the source document. The live validation badge indicates the total available pages.
+          </li>
+          <li>
+            <strong>Browser Memory Alerts:</strong> If merging dozens of high-DPI image scans, ensure your device has sufficient free RAM. The tool enforces a 250 MB single-file and 750 MB batch limit to maintain stability.
+          </li>
+        </ul>
       </section>
 
+      {/* FREQUENTLY ASKED QUESTIONS */}
       <section aria-labelledby="pdf-merge-split-frequently-asked-questions" className="mb-8">
         <h3 id="pdf-merge-split-frequently-asked-questions" className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
-        Frequently Asked Questions
-      </h3>
-      <div className="space-y-3">
+          Frequently Asked Questions
+        </h3>
+        <div className="space-y-3">
           {PDF_MERGE_SPLIT_FAQS.map((faq, index) => (
             <details
               key={index}
@@ -283,43 +323,44 @@ export default function PdfMergeSplitSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
-
-      {/* RELATED TOOLS */}
-      <div className="pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
-          Related Document &amp; Productivity Utilities
-        </h4>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link
-            href="/document/image-to-pdf"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Image to PDF Converter &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/finance/invoice-generator"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Invoice Generator &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/media/image-compressor"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Image Compressor &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/developer/base64-encoder"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Base64 Encoder &amp; Decoder &rarr;
-          </Link>
+          ))}
         </div>
-      </div>
+
+        {/* RELATED TOOLS */}
+        <div className="pt-6 border-t border-gray-200 dark:border-slate-800 mt-8">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-900 dark:text-slate-100 mb-3">
+            Related Document &amp; Productivity Utilities
+          </h4>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Link
+              href="/document/image-to-pdf"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Image to PDF Converter &rarr;
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link
+              href="/finance/invoice-generator"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Invoice Generator &rarr;
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link
+              href="/media/image-compressor"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Image Compressor &rarr;
+            </Link>
+            <span className="text-slate-300 dark:text-slate-700">•</span>
+            <Link
+              href="/developer/base64-encoder"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Base64 Encoder &amp; Decoder &rarr;
+            </Link>
+          </div>
+        </div>
       </section>
     </article>
   );

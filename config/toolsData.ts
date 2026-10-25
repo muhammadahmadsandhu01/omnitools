@@ -342,15 +342,16 @@ export const tools: Tool[] = [
 
   {
     id: 'pdf-merge-split',
-    name: 'PDF Merge & Split Tool',
+    name: 'PDF Merge & Split Tool — Combine, Extract & ZIP Pages',
     slug: 'pdf-merge-split',
     categoryId: 'document',
     description:
-      'Merge PDF files or extract selected pages directly in your browser.',
+      'Merge multiple PDF files up to 750 MB (50 files), extract custom page ranges, or split into individual documents and ZIP archives 100% client-side with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Merge & Split Tool — Combine & Extract Pages Online',
-    seoDescription: 'Merge multiple PDF files into one or split pages into separate documents and ZIP archives directly in your browser. 100% private client-side processing with zero uploads.',
+    seoTitle: 'PDF Merge & Split Tool — Combine & Extract Pages Online (Zero Uploads)',
+    seoDescription:
+      'Merge multiple PDF files (up to 50 files / 750 MB) or extract custom page intervals into standalone PDFs and ZIP archives 100% in your browser with zero server uploads.',
     relatedToolSlugs: ['image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
   },
 

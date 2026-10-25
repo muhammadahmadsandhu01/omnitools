@@ -54,25 +54,25 @@ export interface ProgressState {
   percent: number;
 }
 
-const MAX_SINGLE_FILE_BYTES = 250 * 1024 * 1024; // 250 MB
-const MAX_TOTAL_MERGE_BYTES = 750 * 1024 * 1024; // 750 MB
-const MAX_MERGE_FILES = 50;
-const MIN_PDF_FILE_BYTES = 32;
+export const MAX_SINGLE_FILE_BYTES = 250 * 1024 * 1024; // 250 MB
+export const MAX_TOTAL_MERGE_BYTES = 750 * 1024 * 1024; // 750 MB
+export const MAX_MERGE_FILES = 50;
+export const MIN_PDF_FILE_BYTES = 32;
 
-const WINDOWS_RESERVED_NAMES = new Set([
+export const WINDOWS_RESERVED_NAMES = new Set([
   'CON', 'PRN', 'AUX', 'NUL',
   'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
   'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
 ]);
 
-const makeId = (): string => {
+export const makeId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
-const formatSize = (bytes: number): string => {
+export const formatSize = (bytes: number): string => {
   if (!Number.isFinite(bytes) || bytes < 0) return '0 B';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
