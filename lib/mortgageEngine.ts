@@ -38,6 +38,7 @@ export type CalculationInputs = {
   pmiRate: number;
   pmiLtv: number;
   closingPct: number;
+  closingAmount?: number;
   points: number;
   lenderFees: number;
   frequency: Frequency;
@@ -272,8 +273,19 @@ export const MORTGAGE_PRESETS: PresetScenario[] = [
   },
 ];
 
+export const parseCleanNumber = (v: number | string): number => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
+  if (typeof v !== 'string') return NaN;
+  const trimmed = v.trim();
+  if (trimmed === '') return NaN;
+  const cleaned = trimmed.replace(/[$€£¥₹\s,]/g, '');
+  if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
+  const x = Number(cleaned);
+  return Number.isFinite(x) ? x : NaN;
+};
+
 export const toNumber = (v: number | string): number => {
-  const x = Number(v);
+  const x = parseCleanNumber(v);
   return Number.isFinite(x) ? x : 0;
 };
 
@@ -358,7 +370,12 @@ export function buildMortgageModel(inputs: CalculationInputs): MortgageModelResu
   const insurance = roundMinor(Math.max(0, inputs.insurance) / 12, minorUnit);
   const hoa = roundMinor(Math.max(0, inputs.hoa), minorUnit);
 
-  const closing = roundMinor((price * Math.max(0, inputs.closingPct)) / 100, minorUnit);
+  const closingFromPct = (price * Math.max(0, inputs.closingPct ?? 0)) / 100;
+  const closingRaw =
+    inputs.closingAmount !== undefined && inputs.closingAmount > 0
+      ? inputs.closingAmount
+      : closingFromPct;
+  const closing = roundMinor(Math.max(0, closingRaw), minorUnit);
   const points = roundMinor((loan * Math.max(0, inputs.points)) / 100, minorUnit);
   const upfrontFees = roundMinor(Math.max(0, inputs.lenderFees), minorUnit);
   const cashToClose = roundMinor(down + closing + points + upfrontFees + appliedPrepayAtOrigination, minorUnit);

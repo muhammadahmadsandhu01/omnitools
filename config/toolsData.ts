@@ -112,12 +112,12 @@ export const tools: Tool[] = [
     slug: 'mortgage-calculator',
     categoryId: 'finance',
     description:
-      'Calculate monthly mortgage payments, total interest, and estimated costs including property tax, insurance, and down payment.',
+      'Calculate monthly mortgage payments (PITI), property taxes, homeowners insurance, dynamic PMI cancellation, closing costs, and prepayment savings with interactive charts and full amortization schedules.',
     isPopular: true,
     status: 'published',
     seoTitle: 'Mortgage Calculator — PITI, PMI & Amortization Schedule',
     seoDescription:
-      'Calculate monthly mortgage payments (PITI), property taxes, home insurance, PMI drop-off, closing costs, and extra payments with full amortization schedules.',
+      'Calculate monthly mortgage payments (PITI), property taxes, home insurance, dynamic PMI drop-off, closing costs, and extra prepayments with full amortization schedules.',
     relatedToolSlugs: ['emi-calculator', 'compound-interest', 'salary-calculator', 'invoice-generator'],
   },
 

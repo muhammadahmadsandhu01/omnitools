@@ -34,6 +34,7 @@ import {
   annualizeSchedule,
   generateMortgageCsv,
   toNumber,
+  parseCleanNumber,
   clamp,
 } from '@/lib/mortgageEngine';
 
@@ -53,6 +54,7 @@ export default function MortgageCalculator() {
   const [hoa, setHoa] = useState<string>('');
   const [pmiRate, setPmiRate] = useState<string>('');
   const [pmiLtv, setPmiLtv] = useState<string>('');
+  const [closingAmount, setClosingAmount] = useState<string>('');
   const [closingPct, setClosingPct] = useState<string>('');
   const [points, setPoints] = useState<string>('');
   const [lenderFees, setLenderFees] = useState<string>('');
@@ -81,6 +83,7 @@ export default function MortgageCalculator() {
     setHoa('');
     setPmiRate('');
     setPmiLtv('');
+    setClosingAmount('');
     setClosingPct('');
     setPoints('');
     setLenderFees('');
@@ -104,6 +107,13 @@ export default function MortgageCalculator() {
     setPmiRate(preset.values.pmiRate);
     setPmiLtv(preset.values.pmiLtv);
     setClosingPct(preset.values.closingPct);
+    const p = toNumber(preset.values.homePrice);
+    const cp = toNumber(preset.values.closingPct);
+    if (p > 0 && cp > 0) {
+      setClosingAmount(roundMinor((cp / 100) * p, currency.minorUnit).toString());
+    } else {
+      setClosingAmount('');
+    }
     setPoints(preset.values.points);
     setLenderFees(preset.values.lenderFees);
     setExtra(preset.values.extra);
@@ -126,6 +136,7 @@ export default function MortgageCalculator() {
   const hoaId = useId();
   const pmiRateId = useId();
   const pmiLtvId = useId();
+  const closingAmountId = useId();
   const closingPctId = useId();
   const pointsId = useId();
   const lenderFeesId = useId();
@@ -145,61 +156,138 @@ export default function MortgageCalculator() {
   const hasTerm = term.trim() !== '' && !isNaN(toNumber(term)) && toNumber(term) > 0;
 
   // Progressive calculation condition: honest incomplete state until mandatory loan inputs exist.
-  const isReady = hasPrice && hasRate && hasTerm;
-
   // Field-specific validation
   const fieldErrors = useMemo(() => {
     const errs: Record<string, string> = {};
-    if (homePrice.trim() !== '' && (isNaN(priceNum) || priceNum <= 0)) {
-      errs.homePrice = 'Home purchase price must be greater than zero.';
+    if (homePrice.trim() !== '') {
+      const p = parseCleanNumber(homePrice);
+      if (isNaN(p) || p <= 0) {
+        errs.homePrice = 'Home purchase price must be greater than zero.';
+      }
     }
     if (downPayment.trim() !== '') {
-      if (isNaN(rawDownNum) || rawDownNum < 0) {
+      const dp = parseCleanNumber(downPayment);
+      if (isNaN(dp) || dp < 0) {
         errs.downPayment = 'Down payment cannot be negative.';
-      } else if (hasPrice && rawDownNum > priceNum) {
+      } else if (hasPrice && dp > priceNum) {
         errs.downPayment = 'Down payment cannot exceed the home price.';
       }
     }
     if (downPct.trim() !== '') {
-      const dpNum = toNumber(downPct);
-      if (isNaN(dpNum) || dpNum < 0 || dpNum > 100) {
+      const dpPct = parseCleanNumber(downPct);
+      if (isNaN(dpPct) || dpPct < 0 || dpPct > 100) {
         errs.downPct = 'Down payment percentage must be between 0% and 100%.';
       }
     }
     if (rate.trim() !== '') {
-      const rNum = toNumber(rate);
-      if (isNaN(rNum) || rNum < 0 || rNum > 100) {
+      const r = parseCleanNumber(rate);
+      if (isNaN(r) || r < 0 || r > 100) {
         errs.rate = 'Interest rate must be between 0% and 100%.';
       }
     }
     if (term.trim() !== '') {
-      const tNum = toNumber(term);
-      if (isNaN(tNum) || tNum < 1 || tNum > 100) {
-        errs.term = 'Loan term must be between 1 and 100 years.';
+      const t = parseCleanNumber(term);
+      if (isNaN(t) || t < 1 || t > 100 || !Number.isInteger(t)) {
+        errs.term = 'Loan term must be a whole number between 1 and 100 years.';
       }
     }
-    if (closingPct.trim() !== '') {
-      const cNum = toNumber(closingPct);
-      if (isNaN(cNum) || cNum < 0 || cNum > 100) {
-        errs.closingPct = 'Closing costs percentage cannot exceed 100%.';
+    if (tax.trim() !== '') {
+      const tx = parseCleanNumber(tax);
+      if (isNaN(tx) || tx < 0) {
+        errs.tax = 'Annual property tax cannot be negative.';
       }
     }
-    if (points.trim() !== '') {
-      const ptNum = toNumber(points);
-      if (isNaN(ptNum) || ptNum < 0 || ptNum > 100) {
-        errs.points = 'Discount points cannot exceed 100% of the loan.';
+    if (insurance.trim() !== '') {
+      const ins = parseCleanNumber(insurance);
+      if (isNaN(ins) || ins < 0) {
+        errs.insurance = 'Annual home insurance cannot be negative.';
+      }
+    }
+    if (hoa.trim() !== '') {
+      const h = parseCleanNumber(hoa);
+      if (isNaN(h) || h < 0) {
+        errs.hoa = 'Monthly HOA dues cannot be negative.';
+      }
+    }
+    if (pmiRate.trim() !== '') {
+      const pmiR = parseCleanNumber(pmiRate);
+      if (isNaN(pmiR) || pmiR < 0 || pmiR > 100) {
+        errs.pmiRate = 'PMI rate must be between 0% and 100%.';
       }
     }
     if (pmiLtv.trim() !== '') {
-      const ltvNum = toNumber(pmiLtv);
+      const ltvNum = parseCleanNumber(pmiLtv);
       if (isNaN(ltvNum) || ltvNum < 0 || ltvNum > 100) {
         errs.pmiLtv = 'PMI LTV cancellation threshold must be between 0% and 100%.';
       }
     }
+    if (closingPct.trim() !== '') {
+      const cNum = parseCleanNumber(closingPct);
+      if (isNaN(cNum) || cNum < 0 || cNum > 100) {
+        errs.closingPct = 'Closing costs percentage cannot exceed 100%.';
+      }
+    }
+    if (closingAmount.trim() !== '') {
+      const caNum = parseCleanNumber(closingAmount);
+      if (isNaN(caNum) || caNum < 0) {
+        errs.closingAmount = 'Closing costs amount cannot be negative.';
+      }
+    }
+    if (points.trim() !== '') {
+      const ptNum = parseCleanNumber(points);
+      if (isNaN(ptNum) || ptNum < 0 || ptNum > 100) {
+        errs.points = 'Discount points cannot exceed 100% of the loan.';
+      }
+    }
+    if (lenderFees.trim() !== '') {
+      const lfNum = parseCleanNumber(lenderFees);
+      if (isNaN(lfNum) || lfNum < 0) {
+        errs.lenderFees = 'Upfront lender fees cannot be negative.';
+      }
+    }
+    if (extra.trim() !== '') {
+      const exNum = parseCleanNumber(extra);
+      if (isNaN(exNum) || exNum < 0) {
+        errs.extra = 'Extra monthly principal cannot be negative.';
+      }
+    }
+    if (prepay.trim() !== '') {
+      const ppNum = parseCleanNumber(prepay);
+      if (isNaN(ppNum) || ppNum < 0) {
+        errs.prepay = 'One-time prepayment cannot be negative.';
+      }
+    }
+    if (prepayPeriod.trim() !== '') {
+      const prNum = parseCleanNumber(prepayPeriod);
+      if (isNaN(prNum) || prNum < 1 || !Number.isInteger(prNum)) {
+        errs.prepayPeriod = 'Prepayment period must be a positive whole number.';
+      }
+    }
     return errs;
-  }, [homePrice, downPayment, downPct, rate, term, closingPct, points, pmiLtv, hasPrice, priceNum, rawDownNum]);
+  }, [
+    homePrice,
+    downPayment,
+    downPct,
+    rate,
+    term,
+    tax,
+    insurance,
+    hoa,
+    pmiRate,
+    pmiLtv,
+    closingPct,
+    closingAmount,
+    points,
+    lenderFees,
+    extra,
+    prepay,
+    prepayPeriod,
+    hasPrice,
+    priceNum,
+  ]);
 
   const errors = Object.values(fieldErrors);
+  const isReady = hasPrice && hasRate && hasTerm && errors.length === 0;
 
   const dpNum = clamp(rawDownNum, 0, Math.max(0, priceNum));
   const currentDownPct = priceNum > 0 ? (dpNum / priceNum) * 100 : 0;
@@ -215,6 +303,7 @@ export default function MortgageCalculator() {
     pmiRate: Math.max(0, toNumber(pmiRate)),
     pmiLtv: pmiLtv.trim() !== '' ? clamp(toNumber(pmiLtv), 0, 100) : 80,
     closingPct: Math.max(0, toNumber(closingPct)),
+    closingAmount: closingAmount.trim() !== '' ? Math.max(0, toNumber(closingAmount)) : undefined,
     points: Math.max(0, toNumber(points)),
     lenderFees: Math.max(0, toNumber(lenderFees)),
     frequency,
@@ -234,6 +323,7 @@ export default function MortgageCalculator() {
     pmiRate,
     pmiLtv,
     closingPct,
+    closingAmount,
     points,
     lenderFees,
     frequency,
@@ -322,15 +412,23 @@ export default function MortgageCalculator() {
 
   const setPrice = (v: string) => {
     setHomePrice(v);
-    const p = Number(v);
-    if (v.trim() !== '' && !isNaN(p) && p > 0) {
-      if (downPct.trim() !== '' && !isNaN(Number(downPct))) {
-        const pct = clamp(Number(downPct), 0, 100);
+    const p = toNumber(v);
+    if (v.trim() !== '' && p > 0) {
+      if (downPct.trim() !== '' && !isNaN(toNumber(downPct))) {
+        const pct = clamp(toNumber(downPct), 0, 100);
         const amt = roundMinor((pct / 100) * p, currency.minorUnit);
         setDownPayment(amt.toString());
-      } else if (downPayment.trim() !== '' && !isNaN(Number(downPayment))) {
-        const pct = (Number(downPayment) / p) * 100;
+      } else if (downPayment.trim() !== '' && !isNaN(toNumber(downPayment))) {
+        const pct = (toNumber(downPayment) / p) * 100;
         setDownPct(roundMinor(clamp(pct, 0, 100), 2).toString());
+      }
+      if (closingPct.trim() !== '' && !isNaN(toNumber(closingPct))) {
+        const pct = clamp(toNumber(closingPct), 0, 100);
+        const amt = roundMinor((pct / 100) * p, currency.minorUnit);
+        setClosingAmount(amt.toString());
+      } else if (closingAmount.trim() !== '' && !isNaN(toNumber(closingAmount))) {
+        const pct = (toNumber(closingAmount) / p) * 100;
+        setClosingPct(roundMinor(clamp(pct, 0, 100), 2).toString());
       }
     }
   };
@@ -341,7 +439,7 @@ export default function MortgageCalculator() {
       setDownPct('');
       return;
     }
-    const amt = Number(v);
+    const amt = parseCleanNumber(v);
     if (!isNaN(amt) && priceNum > 0) {
       const pct = (amt / priceNum) * 100;
       setDownPct(roundMinor(clamp(pct, 0, 100), 2).toString());
@@ -354,10 +452,36 @@ export default function MortgageCalculator() {
       setDownPayment('');
       return;
     }
-    const pct = Number(v);
+    const pct = parseCleanNumber(v);
     if (!isNaN(pct) && priceNum > 0) {
       const amt = (clamp(pct, 0, 100) / 100) * priceNum;
       setDownPayment(roundMinor(amt, currency.minorUnit).toString());
+    }
+  };
+
+  const setClosingAmt = (v: string) => {
+    setClosingAmount(v);
+    if (v.trim() === '') {
+      setClosingPct('');
+      return;
+    }
+    const amt = parseCleanNumber(v);
+    if (!isNaN(amt) && priceNum > 0) {
+      const pct = (amt / priceNum) * 100;
+      setClosingPct(roundMinor(clamp(pct, 0, 100), 2).toString());
+    }
+  };
+
+  const setClosingPercentage = (v: string) => {
+    setClosingPct(v);
+    if (v.trim() === '') {
+      setClosingAmount('');
+      return;
+    }
+    const pct = parseCleanNumber(v);
+    if (!isNaN(pct) && priceNum > 0) {
+      const amt = (clamp(pct, 0, 100) / 100) * priceNum;
+      setClosingAmount(roundMinor(amt, currency.minorUnit).toString());
     }
   };
 
@@ -693,10 +817,19 @@ export default function MortgageCalculator() {
                 value={tax}
                 style={currencyPaddingStyle}
                 onChange={(e) => setTax(e.target.value)}
-                className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                className={`${moneyInputBaseClass} ${
+                  fieldErrors.tax ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                }`}
                 aria-label="Annual property tax"
+                aria-invalid={!!fieldErrors.tax}
+                aria-describedby={fieldErrors.tax ? `${taxId}-error` : undefined}
               />
             </div>
+            {fieldErrors.tax && (
+              <p id={`${taxId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                {fieldErrors.tax}
+              </p>
+            )}
           </div>
           <div className="min-w-0 w-full">
             <label htmlFor={insuranceId} className={labelClass}>Annual Home Insurance</label>
@@ -713,10 +846,19 @@ export default function MortgageCalculator() {
                 value={insurance}
                 style={currencyPaddingStyle}
                 onChange={(e) => setInsurance(e.target.value)}
-                className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                className={`${moneyInputBaseClass} ${
+                  fieldErrors.insurance ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                }`}
                 aria-label="Annual home insurance"
+                aria-invalid={!!fieldErrors.insurance}
+                aria-describedby={fieldErrors.insurance ? `${insuranceId}-error` : undefined}
               />
             </div>
+            {fieldErrors.insurance && (
+              <p id={`${insuranceId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                {fieldErrors.insurance}
+              </p>
+            )}
           </div>
         </div>
 
@@ -757,10 +899,19 @@ export default function MortgageCalculator() {
                     value={hoa}
                     style={currencyPaddingStyle}
                     onChange={(e) => setHoa(e.target.value)}
-                    className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                    className={`${moneyInputBaseClass} ${
+                      fieldErrors.hoa ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                    }`}
                     aria-label="Monthly HOA dues"
+                    aria-invalid={!!fieldErrors.hoa}
+                    aria-describedby={fieldErrors.hoa ? `${hoaId}-error` : undefined}
                   />
                 </div>
+                {fieldErrors.hoa && (
+                  <p id={`${hoaId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {fieldErrors.hoa}
+                  </p>
+                )}
               </div>
 
               {/* Annual PMI Rate */}
@@ -776,11 +927,20 @@ export default function MortgageCalculator() {
                     value={pmiRate}
                     style={percentPaddingStyle}
                     onChange={(e) => setPmiRate(e.target.value)}
-                    className={`${inputBaseClass} pr-11 border-gray-200 dark:border-slate-700`}
+                    className={`${inputBaseClass} pr-11 ${
+                      fieldErrors.pmiRate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                    }`}
                     aria-label="Annual PMI rate"
+                    aria-invalid={!!fieldErrors.pmiRate}
+                    aria-describedby={fieldErrors.pmiRate ? `${pmiRateId}-error` : undefined}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold pointer-events-none select-none text-sm">%</span>
                 </div>
+                {fieldErrors.pmiRate && (
+                  <p id={`${pmiRateId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {fieldErrors.pmiRate}
+                  </p>
+                )}
               </div>
 
               {/* PMI Cancellation Threshold */}
@@ -813,7 +973,37 @@ export default function MortgageCalculator() {
                 )}
               </div>
 
-              {/* Closing Costs */}
+              {/* Closing Costs Dual Input */}
+              <div className="flex flex-col justify-start min-w-0 w-full">
+                <label htmlFor={closingAmountId} className={labelClass}>Closing Costs Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold pointer-events-none select-none text-sm">
+                    {currencySymbol}
+                  </span>
+                  <input
+                    id={closingAmountId}
+                    type="number"
+                    min="0"
+                    step="any"
+                    placeholder="e.g. 7500"
+                    value={closingAmount}
+                    style={currencyPaddingStyle}
+                    onChange={(e) => setClosingAmt(e.target.value)}
+                    className={`${moneyInputBaseClass} ${
+                      fieldErrors.closingAmount ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                    }`}
+                    aria-label="Closing costs amount"
+                    aria-invalid={!!fieldErrors.closingAmount}
+                    aria-describedby={fieldErrors.closingAmount ? `${closingAmountId}-error` : undefined}
+                  />
+                </div>
+                {fieldErrors.closingAmount && (
+                  <p id={`${closingAmountId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {fieldErrors.closingAmount}
+                  </p>
+                )}
+              </div>
+
               <div className="flex flex-col justify-start min-w-0 w-full">
                 <label htmlFor={closingPctId} className={labelClass}>Closing Costs</label>
                 <div className="relative">
@@ -823,10 +1013,10 @@ export default function MortgageCalculator() {
                     min="0"
                     max="100"
                     step="0.1"
-                    placeholder="e.g. 3"
+                    placeholder="e.g. 2.5"
                     value={closingPct}
                     style={percentPaddingStyle}
-                    onChange={(e) => setClosingPct(e.target.value)}
+                    onChange={(e) => setClosingPercentage(e.target.value)}
                     className={`${inputBaseClass} pr-11 ${
                       fieldErrors.closingPct ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
                     }`}
@@ -889,10 +1079,19 @@ export default function MortgageCalculator() {
                     value={lenderFees}
                     style={currencyPaddingStyle}
                     onChange={(e) => setLenderFees(e.target.value)}
-                    className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                    className={`${moneyInputBaseClass} ${
+                      fieldErrors.lenderFees ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                    }`}
                     aria-label="Upfront lender fees"
+                    aria-invalid={!!fieldErrors.lenderFees}
+                    aria-describedby={fieldErrors.lenderFees ? `${lenderFeesId}-error` : undefined}
                   />
                 </div>
+                {fieldErrors.lenderFees && (
+                  <p id={`${lenderFeesId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                    {fieldErrors.lenderFees}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -915,10 +1114,19 @@ export default function MortgageCalculator() {
                       value={extra}
                       style={currencyPaddingStyle}
                       onChange={(e) => setExtra(e.target.value)}
-                      className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                      className={`${moneyInputBaseClass} ${
+                        fieldErrors.extra ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                       aria-label="Extra monthly principal payment"
+                      aria-invalid={!!fieldErrors.extra}
+                      aria-describedby={fieldErrors.extra ? `${extraId}-error` : undefined}
                     />
                   </div>
+                  {fieldErrors.extra && (
+                    <p id={`${extraId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {fieldErrors.extra}
+                    </p>
+                  )}
                 </div>
 
                 {/* One-Time Prepayment */}
@@ -937,10 +1145,19 @@ export default function MortgageCalculator() {
                       value={prepay}
                       style={currencyPaddingStyle}
                       onChange={(e) => setPrepay(e.target.value)}
-                      className={`${moneyInputBaseClass} border-gray-200 dark:border-slate-700`}
+                      className={`${moneyInputBaseClass} ${
+                        fieldErrors.prepay ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                       aria-label="One-time prepayment amount"
+                      aria-invalid={!!fieldErrors.prepay}
+                      aria-describedby={fieldErrors.prepay ? `${prepayId}-error` : undefined}
                     />
                   </div>
+                  {fieldErrors.prepay && (
+                    <p id={`${prepayId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {fieldErrors.prepay}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -970,9 +1187,18 @@ export default function MortgageCalculator() {
                         placeholder="e.g. 12"
                         value={prepayPeriod}
                         onChange={(e) => setPrepayPeriod(e.target.value)}
-                        className={`${inputBaseClass} border-gray-200 dark:border-slate-700`}
+                        className={`${inputBaseClass} ${
+                          fieldErrors.prepayPeriod ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                        }`}
                         aria-label="Prepayment period number"
+                        aria-invalid={!!fieldErrors.prepayPeriod}
+                        aria-describedby={fieldErrors.prepayPeriod ? `${prepayPeriodId}-error` : undefined}
                       />
+                      {fieldErrors.prepayPeriod && (
+                        <p id={`${prepayPeriodId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+                          {fieldErrors.prepayPeriod}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
