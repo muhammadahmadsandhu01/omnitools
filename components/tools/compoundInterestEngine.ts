@@ -230,7 +230,7 @@ export function clamp(value: number, min: number, max: number): number {
 export function sanitizeFinancialInputs(raw: Partial<FinancialInputs>): FinancialInputs {
   const principal = clamp(cleanNumber(raw.principal, 10000), 0, 1e14);
   const annualRate = clamp(cleanNumber(raw.annualRate, 8), -100, 500);
-  const years = clamp(cleanNumber(raw.years, 10), 0.1, 100);
+  const years = clamp(cleanNumber(raw.years, 10), 0, 100);
   const compoundingFrequency: CompoundingFrequency =
     raw.compoundingFrequency && raw.compoundingFrequency in COMPOUNDING_PERIODS
       ? raw.compoundingFrequency
@@ -380,43 +380,107 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
     withdrawalInflationAdjusted = false,
   } = inputs;
 
-  const DAYS_PER_YEAR = 365;
-  const totalDays = Math.max(1, Math.round(years * DAYS_PER_YEAR));
-  const yearsUsed = totalDays / DAYS_PER_YEAR;
+  if (years <= 0) {
+    return {
+      futureValue: principal,
+      initialInvestment: principal,
+      totalContributions: 0,
+      totalInvested: principal,
+      totalOneTimeDeposits: 0,
+      totalOneTimeWithdrawals: 0,
+      grossGains: 0,
+      totalFeesPaid: 0,
+      totalTaxesPaid: 0,
+      netGains: 0,
+      afterTaxFutureValue: principal,
+      inflationAdjustedValue: principal,
+      cumulativeInflationLoss: 0,
+      effectiveApy: calculateEffectiveApy(annualRate, compoundingFrequency),
+      cagr: 0,
+      fisherRealReturn: calculateFisherRealReturn(annualRate, inflationRate),
+      doublingYears: calculateRuleOf72(annualRate),
+      roiPercent: 0,
+      annualizedIrr: 0,
+      depletedYear: null,
+      isDepleted: false,
+      yearsUsed: 0,
+      schedule: [
+        {
+          period: 0,
+          year: 0,
+          openingBalance: principal,
+          contributions: 0,
+          escalationAmount: 0,
+          grossGrowth: 0,
+          feesPaid: 0,
+          taxesPaid: 0,
+          withdrawals: 0,
+          closingBalance: principal,
+          cumulativeInvested: principal,
+          cumulativeGains: 0,
+          cumulativeFees: 0,
+          cumulativeTaxes: 0,
+          cumulativeWithdrawals: 0,
+          realPurchasingPower: principal,
+        },
+      ],
+    };
+  }
 
-  const compPeriods = COMPOUNDING_PERIODS[compoundingFrequency];
-  const contribPeriods = CONTRIBUTION_PERIODS[contributionFrequency];
-  const withdrawPeriods = CONTRIBUTION_PERIODS[withdrawalFrequency];
+  const compPeriods = COMPOUNDING_PERIODS[compoundingFrequency] || 12;
+  const contribPeriods = CONTRIBUTION_PERIODS[contributionFrequency] || 12;
+  const withdrawPeriods = CONTRIBUTION_PERIODS[withdrawalFrequency] || 12;
 
-  const contribIntervalDays = DAYS_PER_YEAR / contribPeriods;
-  const withdrawIntervalDays = DAYS_PER_YEAR / withdrawPeriods;
+  // Determine sub-period simulation frequency S (ticks per year)
+  // Ensures exact integer synchronization with contribution and withdrawal schedules
+  let S = 12;
+  if ([1, 4, 12].includes(contribPeriods) && [1, 4, 12].includes(withdrawPeriods)) {
+    S = 12;
+  } else if ([1, 26, 52].includes(contribPeriods) && [1, 26, 52].includes(withdrawPeriods)) {
+    S = 52;
+  } else {
+    S = 156;
+  }
 
-  // Daily growth multiplier derived from compounding frequency:
-  // (1 + r/m)^(m/365)
-  let dailyGrowthMultiplier = 1;
+  const contribIntervalSteps = S / contribPeriods;
+  const withdrawIntervalSteps = S / withdrawPeriods;
+  const totalSteps = Math.max(1, Math.round(years * S));
+  const yearsUsed = totalSteps / S;
+
+  // Exact period growth multiplier for 1/S of a year:
+  // Derived from compounding frequency m: (1 + (r/100)/m)^(m/S)
+  let periodGrowthMultiplier = 1;
+  let periodNetMultiplier = 1;
   if (annualRate > -100) {
     const periodicRate = annualRate / 100 / compPeriods;
     if (1 + periodicRate > 0) {
-      dailyGrowthMultiplier = Math.pow(1 + periodicRate, compPeriods / DAYS_PER_YEAR);
+      periodGrowthMultiplier = Math.pow(1 + periodicRate, compPeriods / S);
     } else {
-      dailyGrowthMultiplier = 0;
+      periodGrowthMultiplier = 0;
+    }
+
+    const netRate = Math.max(-100, annualRate - annualFeeRate);
+    const periodicNetRate = netRate / 100 / compPeriods;
+    if (1 + periodicNetRate > 0) {
+      periodNetMultiplier = Math.pow(1 + periodicNetRate, compPeriods / S);
+    } else {
+      periodNetMultiplier = 0;
     }
   } else {
-    dailyGrowthMultiplier = 0;
+    periodGrowthMultiplier = 0;
+    periodNetMultiplier = 0;
   }
 
-  const dailyFeeRate = (annualFeeRate / 100) / DAYS_PER_YEAR;
-  const dailyFixedFee = fixedAnnualFee / DAYS_PER_YEAR;
   const effectiveTaxRate = taxTreatment === "exempt" ? 0 : Math.max(0, taxRate) / 100;
 
-  // Sort one-time events by timing day
+  // Sort one-time events by exact target step
   const sortedEvents = [...oneTimeEvents]
     .map((e) => ({
       ...e,
-      targetDay: Math.max(1, Math.min(totalDays, Math.round(e.year * DAYS_PER_YEAR))),
+      targetStep: Math.max(1, Math.min(totalSteps, Math.round(e.year * S))),
       processed: false,
     }))
-    .sort((a, b) => a.targetDay - b.targetDay);
+    .sort((a, b) => a.targetStep - b.targetStep);
 
   let balance = principal;
   let invested = principal;
@@ -428,11 +492,8 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
   let totalTaxesPaid = 0;
   let totalWithdrawals = 0;
 
-  let nextContributionDay = contributionTiming === "beginning" ? 1 : contribIntervalDays;
-  let nextWithdrawalDay =
-    (drawdownEnabled ? accumulationYears * DAYS_PER_YEAR : 0) + withdrawIntervalDays;
-
-  let depletedDay: number | null = null;
+  const accumSteps = Math.round(accumulationYears * S);
+  let depletedStep: number | null = null;
 
   // Annual schedule tracking
   const schedule: ScheduleRow[] = [];
@@ -464,13 +525,13 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
     realPurchasingPower: principal,
   });
 
-  for (let day = 1; day <= totalDays; day++) {
-    const currentYearIndex = Math.floor((day - 1) / DAYS_PER_YEAR);
-    const isAccumulationPhase = !drawdownEnabled || (day / DAYS_PER_YEAR) <= accumulationYears;
+  for (let step = 1; step <= totalSteps; step++) {
+    const currentYearIndex = Math.floor((step - 1) / S);
+    const isAccumulationPhase = !drawdownEnabled || step <= accumSteps;
 
-    // 1. One-time cash flows due on this day
+    // 1. One-time cash flows due on this step
     for (const evt of sortedEvents) {
-      if (!evt.processed && evt.targetDay === day) {
+      if (!evt.processed && evt.targetStep === step) {
         evt.processed = true;
         if (evt.type === "deposit") {
           balance += evt.amount;
@@ -487,94 +548,82 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
       }
     }
 
-    // 2. Beginning of period contributions
-    if (isAccumulationPhase && contribution > 0 && contributionTiming === "beginning") {
-      while (day + 1e-9 >= nextContributionDay && nextContributionDay <= totalDays + 1e-5) {
-        // Calculate escalation for current year
-        const escalatedAmount =
-          contribution * Math.pow(1 + contributionEscalationPercent / 100, currentYearIndex) +
-          contributionEscalationFixed * currentYearIndex;
-        const safeContribution = Math.max(0, escalatedAmount);
-        const escalationDiff = Math.max(0, safeContribution - contribution);
+    // 2. Beginning-of-period recurring contributions
+    const isContribStep =
+      isAccumulationPhase &&
+      contribution > 0 &&
+      (contributionTiming === "beginning"
+        ? (step - 1) % contribIntervalSteps === 0
+        : step % contribIntervalSteps === 0);
 
-        balance += safeContribution;
-        invested += safeContribution;
-        totalContributions += safeContribution;
-        yearContribs += safeContribution;
-        yearEscalation += escalationDiff;
+    if (isContribStep && contributionTiming === "beginning") {
+      const escalatedAmount =
+        contribution * Math.pow(1 + contributionEscalationPercent / 100, currentYearIndex) +
+        contributionEscalationFixed * currentYearIndex;
+      const safeContribution = Math.max(0, escalatedAmount);
+      const escalationDiff = Math.max(0, safeContribution - contribution);
 
-        nextContributionDay += contribIntervalDays;
-      }
+      balance += safeContribution;
+      invested += safeContribution;
+      totalContributions += safeContribution;
+      yearContribs += safeContribution;
+      yearEscalation += escalationDiff;
     }
 
-    // 3. Investment Growth & Daily Drag
+    // 3. Investment Growth & Sub-Period Drag
     if (balance > 0) {
-      const growthMultiplier = dailyGrowthMultiplier;
-      const dayGrossGrowth = balance * (growthMultiplier - 1);
-      grossGains += dayGrossGrowth;
-      yearGrossGrowth += dayGrossGrowth;
-      balance += dayGrossGrowth;
+      const stepGrossGrowth = balance * (periodGrowthMultiplier - 1);
+      const stepFeePct = balance * Math.max(0, periodGrowthMultiplier - periodNetMultiplier);
+      const actualFee = Math.min(balance + stepGrossGrowth, stepFeePct);
 
-      // Fees
-      const dayFee = balance * dailyFeeRate + dailyFixedFee;
-      const actualFee = Math.min(balance, Math.max(0, dayFee));
-      balance -= actualFee;
+      grossGains += stepGrossGrowth;
+      yearGrossGrowth += stepGrossGrowth;
       totalFeesPaid += actualFee;
       yearFees += actualFee;
 
-      // Taxable account annual/daily drag on net gain after fees
-      if (taxTreatment === "taxable" && effectiveTaxRate > 0 && dayGrossGrowth > 0) {
-        const netGainBeforeTax = Math.max(0, dayGrossGrowth - actualFee);
-        const dayTax = netGainBeforeTax * effectiveTaxRate;
-        const actualTax = Math.min(balance, Math.max(0, dayTax));
-        balance -= actualTax;
-        totalTaxesPaid += actualTax;
-        yearTaxes += actualTax;
-      }
+      balance += stepGrossGrowth - actualFee;
     }
 
-    // 4. End of period contributions
-    if (isAccumulationPhase && contribution > 0 && contributionTiming === "end") {
-      while (day + 1e-9 >= nextContributionDay && nextContributionDay <= totalDays + 1e-5) {
-        const escalatedAmount =
-          contribution * Math.pow(1 + contributionEscalationPercent / 100, currentYearIndex) +
-          contributionEscalationFixed * currentYearIndex;
-        const safeContribution = Math.max(0, escalatedAmount);
-        const escalationDiff = Math.max(0, safeContribution - contribution);
+    // 4. End-of-period recurring contributions
+    if (isContribStep && contributionTiming === "end") {
+      const escalatedAmount =
+        contribution * Math.pow(1 + contributionEscalationPercent / 100, currentYearIndex) +
+        contributionEscalationFixed * currentYearIndex;
+      const safeContribution = Math.max(0, escalatedAmount);
+      const escalationDiff = Math.max(0, safeContribution - contribution);
 
-        balance += safeContribution;
-        invested += safeContribution;
-        totalContributions += safeContribution;
-        yearContribs += safeContribution;
-        yearEscalation += escalationDiff;
-
-        nextContributionDay += contribIntervalDays;
-      }
+      balance += safeContribution;
+      invested += safeContribution;
+      totalContributions += safeContribution;
+      yearContribs += safeContribution;
+      yearEscalation += escalationDiff;
     }
 
     // 5. Drawdown / Retirement Withdrawals
-    if (drawdownEnabled && !isAccumulationPhase && withdrawalAmount > 0) {
-      while (day + 1e-9 >= nextWithdrawalDay && nextWithdrawalDay <= totalDays + 1e-5) {
-        let currentWithdrawal = withdrawalAmount;
-        if (withdrawalType === "percentage") {
-          currentWithdrawal = (balance * (withdrawalAmount / 100)) / withdrawPeriods;
-        }
-        if (withdrawalInflationAdjusted && inflationRate > 0) {
-          const yearsIntoDrawdown = Math.max(0, (day / DAYS_PER_YEAR) - accumulationYears);
-          currentWithdrawal *= Math.pow(1 + inflationRate / 100, yearsIntoDrawdown);
-        }
+    const isWithdrawStep =
+      drawdownEnabled &&
+      !isAccumulationPhase &&
+      withdrawalAmount > 0 &&
+      (step - accumSteps) % withdrawIntervalSteps === 0;
 
-        const actualWithdraw = Math.min(Math.max(0, balance), Math.max(0, currentWithdrawal));
-        balance -= actualWithdraw;
-        totalWithdrawals += actualWithdraw;
-        yearWithdrawals += actualWithdraw;
+    if (isWithdrawStep) {
+      let currentWithdrawal = withdrawalAmount;
+      if (withdrawalType === "percentage") {
+        currentWithdrawal = (balance * (withdrawalAmount / 100)) / withdrawPeriods;
+      }
+      if (withdrawalInflationAdjusted && inflationRate > 0) {
+        const yearsIntoDrawdown = (step - accumSteps) / S;
+        currentWithdrawal *= Math.pow(1 + inflationRate / 100, yearsIntoDrawdown);
+      }
 
-        if (balance <= 0 && depletedDay === null) {
-          depletedDay = day;
-          balance = 0;
-        }
+      const actualWithdraw = Math.min(Math.max(0, balance), Math.max(0, currentWithdrawal));
+      balance -= actualWithdraw;
+      totalWithdrawals += actualWithdraw;
+      yearWithdrawals += actualWithdraw;
 
-        nextWithdrawalDay += withdrawIntervalDays;
+      if (balance <= 0 && depletedStep === null) {
+        depletedStep = step;
+        balance = 0;
       }
     }
 
@@ -583,12 +632,30 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
       balance = 0;
     }
 
-    // Year boundary or final day: capture schedule row
-    const isYearEnd = day % DAYS_PER_YEAR === 0;
-    const isFinalDay = day === totalDays;
+    // Capture annual schedule row at year boundary or final step
+    const isYearEnd = step % S === 0;
+    const isFinalStep = step === totalSteps;
 
-    if (isYearEnd || isFinalDay) {
-      const yearElapsed = day / DAYS_PER_YEAR;
+    if (isYearEnd || isFinalStep) {
+      // Annual fixed maintenance fee deducted at year end
+      if (fixedAnnualFee > 0 && balance > 0) {
+        const actualFixedFee = Math.min(balance, fixedAnnualFee);
+        balance -= actualFixedFee;
+        totalFeesPaid += actualFixedFee;
+        yearFees += actualFixedFee;
+      }
+
+      // In a taxable account, taxes are assessed and settled annually on net realized gains
+      if (taxTreatment === "taxable" && effectiveTaxRate > 0) {
+        const yearNetGain = Math.max(0, yearGrossGrowth - yearFees);
+        const yearTax = yearNetGain * effectiveTaxRate;
+        const actualTax = Math.min(balance, Math.max(0, yearTax));
+        balance -= actualTax;
+        totalTaxesPaid += actualTax;
+        yearTaxes += actualTax;
+      }
+
+      const yearElapsed = step / S;
       const inflationFactor = Math.pow(1 + Math.max(0, inflationRate) / 100, yearElapsed);
       const realValue = inflationFactor > 0 ? balance / inflationFactor : balance;
 
@@ -628,10 +695,7 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
     const deferredTax = taxableGains * effectiveTaxRate;
     afterTaxFutureValue = Math.max(0, balance - deferredTax);
     totalTaxesPaid += deferredTax;
-  } else if (taxTreatment === "taxable") {
-    afterTaxFutureValue = balance;
   } else {
-    // exempt
     afterTaxFutureValue = balance;
   }
 
@@ -689,8 +753,8 @@ export function simulateTimeline(rawInputs: Partial<FinancialInputs>): Projectio
     doublingYears,
     roiPercent,
     annualizedIrr,
-    depletedYear: depletedDay !== null ? Math.round((depletedDay / DAYS_PER_YEAR) * 10) / 10 : null,
-    isDepleted: depletedDay !== null,
+    depletedYear: depletedStep !== null ? Math.round((depletedStep / S) * 10) / 10 : null,
+    isDepleted: depletedStep !== null,
     yearsUsed,
     schedule,
   };
@@ -805,20 +869,16 @@ export function analyzeGoal(
     };
   }
 
+  const isExactOrExceeded = projectedEndingValue >= goal || Math.abs(projectedEndingValue - goal) < 1e-4;
   const fundedPercentage = Math.min(1000, (projectedEndingValue / goal) * 100);
-  const gapOrSurplus = Math.abs(projectedEndingValue - goal);
-  const status =
-    projectedEndingValue >= goal
-      ? "achieved"
-      : fundedPercentage >= 80
-      ? "shortfall"
-      : "shortfall";
+  const gapOrSurplus = isExactOrExceeded ? 0 : Math.round(Math.abs(projectedEndingValue - goal) * 100) / 100;
+  const status = isExactOrExceeded ? "achieved" : "shortfall";
 
   // 1. Solver: Required Contribution
   let requiredContribution: number | null = null;
   let requiredContributionDelta: number | null = null;
 
-  if (projectedEndingValue < goal) {
+  if (projectedEndingValue < goal && Math.abs(projectedEndingValue - goal) >= 1e-4) {
     let low = 0;
     let high = Math.max(goal * 2, 1e8);
     const maxTest = simulateTimeline({
@@ -829,7 +889,7 @@ export function analyzeGoal(
       requiredContribution = null;
       requiredContributionDelta = null;
     } else {
-      for (let i = 0; i < 35; i++) {
+      for (let i = 0; i < 40; i++) {
         const mid = (low + high) / 2;
         const testResult = simulateTimeline({
           ...baseInputs,
@@ -841,7 +901,7 @@ export function analyzeGoal(
           low = mid;
         }
       }
-      requiredContribution = Math.round(high * 100) / 100;
+      requiredContribution = Math.ceil(high * 100) / 100;
       requiredContributionDelta = Math.max(
         0,
         requiredContribution - cleanNumber(baseInputs.contribution, 0)
@@ -854,7 +914,7 @@ export function analyzeGoal(
 
   // 2. Solver: Required Return
   let requiredReturn: number | null = null;
-  if (projectedEndingValue < goal) {
+  if (projectedEndingValue < goal && Math.abs(projectedEndingValue - goal) >= 1e-4) {
     let low = -50;
     let high = 250;
     let found = false;
@@ -878,7 +938,7 @@ export function analyzeGoal(
 
   // 3. Solver: Required Years
   let requiredYears: number | null = null;
-  if (projectedEndingValue < goal) {
+  if (projectedEndingValue < goal && Math.abs(projectedEndingValue - goal) >= 1e-4) {
     let low = 0.5;
     let high = 100;
     let found = false;
@@ -924,7 +984,7 @@ export function generateScenarios(
   targetGoal = 0
 ): ScenarioResultItem[] {
   const sanitized = sanitizeFinancialInputs(baseInputs);
-  const spread = Math.max(0.1, clamp(spreadPercent, 0.1, 20));
+  const spread = clamp(cleanNumber(spreadPercent, 2), 0, 20);
 
   const scenarios: ScenarioDefinition[] = [
     {

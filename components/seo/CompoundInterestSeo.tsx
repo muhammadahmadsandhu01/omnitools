@@ -114,28 +114,42 @@ export default function CompoundInterestSeo() {
           How to Use the KivaroTools Compound Interest Calculator
         </h3>
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
-          The calculator is designed to provide institutional-grade precision with an intuitive, responsive interface. Follow these steps to simulate your plan:
+          The calculator is designed to provide enterprise-grade financial planning precision with an intuitive, responsive interface. Follow these steps to simulate your plan:
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-900/40">
             <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5">1. Starting Capital &amp; Additions</h4>
             <ul className="text-xs space-y-1.5 text-slate-600 dark:text-slate-400 list-disc pl-4">
-              <li><strong>Currency:</strong> Choose from major global currencies (USD, EUR, GBP, CAD, AUD, JPY, INR).</li>
-              <li><strong>Initial Investment:</strong> Enter your lump-sum starting balance ($0 or higher).</li>
-              <li><strong>Contribution Amount:</strong> Set regular recurring deposits (e.g., $500/month).</li>
-              <li><strong>Contribution Frequency:</strong> Select Weekly, Bi-weekly, Monthly, Quarterly, or Annually.</li>
-              <li><strong>Contribution Timing:</strong> Choose whether additions occur at the <em>Beginning</em> or <em>End</em> of each interval.</li>
+              <li><strong>Currency:</strong> Choose from 150+ ISO global currencies (USD, EUR, GBP, CAD, AUD, INR, AED, etc.).</li>
+              <li><strong>Initial Investment:</strong> Starting lump-sum deposit ($0 to $100T).</li>
+              <li><strong>Recurring Contributions:</strong> Regular deposits (e.g., $500/month).</li>
+              <li><strong>Contribution Frequency:</strong> Weekly (52/yr), Bi-weekly (26/yr), Monthly (12/yr), Quarterly (4/yr), or Annually (1/yr).</li>
+              <li><strong>Contribution Timing:</strong> Beginning (Annuity Due) vs End of Period (Ordinary Annuity).</li>
+              <li><strong>Annual Escalation:</strong> Model career salary growth with annual percentage (e.g., 5%/yr) or fixed step-up additions.</li>
             </ul>
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-900/40">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5">2. Growth Rates &amp; Economic Factors</h4>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5">2. Growth Rates, Fees &amp; Taxes</h4>
             <ul className="text-xs space-y-1.5 text-slate-600 dark:text-slate-400 list-disc pl-4">
-              <li><strong>Annual Nominal Return:</strong> The expected annual percentage return (e.g., 7% or 8%).</li>
-              <li><strong>Compounding Frequency:</strong> Annually, Semi-Annually, Quarterly, Monthly, or Daily.</li>
-              <li><strong>Investment Period:</strong> Duration in years (0.1 to 100 years).</li>
-              <li><strong>Inflation Adjustment:</strong> Toggle real purchasing power discounting via the Fisher equation.</li>
-              <li><strong>Tax Treatment:</strong> Model Taxable, Tax-Deferred (401k/IRA), or Tax-Exempt (Roth) accounts.</li>
+              <li><strong>Nominal Return Rate:</strong> Expected annual gross rate (-100% to 500%).</li>
+              <li><strong>Compounding Frequency:</strong> Daily (365), Monthly (12), Quarterly (4), Semi-Annually (2), or Annually (1).</li>
+              <li><strong>Investment Horizon:</strong> Exact duration in years (0 to 100 years).</li>
+              <li><strong>Expense Drag:</strong> Annual asset management fee percentage (AUM) and fixed annual account fees.</li>
+              <li><strong>Tax Treatment:</strong> Taxable (annual drag on net gains), Tax-Deferred (exit taxation on gains), or Tax-Exempt (Roth/ISA).</li>
+              <li><strong>Inflation Adjustment:</strong> Fisher real purchasing power discounting factor.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-900/40 md:col-span-2 lg:col-span-1">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5">3. Milestones, Drawdown &amp; Risk</h4>
+            <ul className="text-xs space-y-1.5 text-slate-600 dark:text-slate-400 list-disc pl-4">
+              <li><strong>Milestone Cash Flows:</strong> Add discrete lump-sum deposits or capital withdrawals at specific timeline years.</li>
+              <li><strong>Retirement Drawdown:</strong> Transition from accumulation to decumulation with monthly/annual living expense withdrawals.</li>
+              <li><strong>Goal Solvers:</strong> Automatically solve required monthly savings or required rate of return to reach a target goal.</li>
+              <li><strong>Multi-Scenario Engine:</strong> Side-by-side Conservative, Base, and Optimistic comparison with custom spread.</li>
+              <li><strong>Monte Carlo Simulation:</strong> 500 to 2,000 stochastic paths analyzing sequence-of-returns risk and probability of plan success.</li>
+              <li><strong>Stress Testing:</strong> Pre-configured market shock scenarios (e.g., Early 20% crash, inflation surge, savings pause).</li>
             </ul>
           </div>
         </div>
@@ -158,18 +172,18 @@ export default function CompoundInterestSeo() {
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Future Value (Ending Balance)</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">P + Total Deposits + Net Interest</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">P + Total Deposits + Gross Gains - Fees - Taxes - Withdrawals</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">The total nominal value of your investment portfolio at the end of the selected horizon.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Total Invested Capital</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">P + &sum; Contributions</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Total Contributions &amp; Invested Capital</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">P + &sum; Recurring Contributions + &sum; Milestone Deposits</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">Your cumulative out-of-pocket cash deposits over the lifetime of the investment.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Net Compound Interest Earned</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Future Value - Total Invested</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">The pure wealth generated by market returns and compounding interest on interest.</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Gross vs. Net Compound Interest</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Gross Gains - Management Fees - Taxes Paid</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">The pure wealth generated by market returns and compounding after deducting advisory fees and tax obligations.</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Effective Annual Yield (APY)</th>
@@ -179,7 +193,17 @@ export default function CompoundInterestSeo() {
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Fisher Real Purchasing Power</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">FV / (1 + i)^t</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">What your future portfolio will actually be worth in terms of today&apos;s purchasing power after inflation.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">What your future portfolio will actually be worth in terms of today&apos;s purchasing power after inflation erosion.</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Portfolio Longevity &amp; Depletion Year</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Sustains vs. Depletion Year t_depleted</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">During drawdown, verifies whether your portfolio sustains living expenses through horizon or flags exact depletion timing.</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Money-Weighted Return (Annualized IRR)</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">NPV(r) = 0</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">The true annualized internal rate of return accounting for the timing and magnitude of all cash inflows and outflows.</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Rule of 72 Doubling Time</th>

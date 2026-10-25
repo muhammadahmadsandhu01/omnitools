@@ -434,7 +434,7 @@ export default function CompoundInterest() {
     return {
       principal: cleanNumber(principal, 0),
       annualRate: cleanNumber(rate, 0),
-      years: Math.max(0.1, cleanNumber(years, 0)),
+      years: cleanNumber(years, 0) < 0 ? 0 : cleanNumber(years, 0),
       compoundingFrequency: compounding,
       contribution: cleanNumber(contribution, 0),
       contributionFrequency,
@@ -489,7 +489,7 @@ export default function CompoundInterest() {
   );
 
   // Multi-Scenario Planning
-  const spread = useMemo(() => Math.max(0.1, cleanNumber(scenarioSpread, 2)), [scenarioSpread]);
+  const spread = useMemo(() => Math.max(0, cleanNumber(scenarioSpread, 2)), [scenarioSpread]);
   const scenarioRows = useMemo(
     () => generateScenarios(canonicalInputs, spread, goalValue),
     [canonicalInputs, spread, goalValue]
@@ -854,9 +854,9 @@ export default function CompoundInterest() {
                 type="button"
                 onClick={() => applyPreset("retirement")}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 hover:text-blue-600 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-blue-400 dark:hover:border-slate-600 transition shadow-2xs"
-                title="Load Retirement Drawdown scenario: $150k initial, $1k/mo, 15y growth + 15y drawdown"
+                title="Load Retirement Transition scenario: $150k initial, $1k/mo, 15y growth + 15y drawdown"
               >
-                <span>Retirement Drawdown</span>
+                <span>Retirement Transition</span>
                 <span className="rounded bg-emerald-50 px-1 py-0.5 text-[9px] font-bold text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300">$150k + $1k/mo</span>
               </button>
               <button
