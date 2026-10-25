@@ -103,17 +103,20 @@ export const SUPPORTED_MIME_TYPES = [
  * Parses a hex color string (e.g. #ffffff or #f3f4f6) into pdf-lib RGB values (0 to 1).
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  if (!hex || typeof hex !== 'string') return { r: 1, g: 1, b: 1 };
   const clean = hex.replace('#', '').trim();
   if (clean.length === 3) {
     const r = parseInt(clean[0] + clean[0], 16) / 255;
     const g = parseInt(clean[1] + clean[1], 16) / 255;
     const b = parseInt(clean[2] + clean[2], 16) / 255;
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return { r: 1, g: 1, b: 1 };
     return { r, g, b };
   }
   if (clean.length === 6) {
     const r = parseInt(clean.substring(0, 2), 16) / 255;
     const g = parseInt(clean.substring(2, 4), 16) / 255;
     const b = parseInt(clean.substring(4, 6), 16) / 255;
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return { r: 1, g: 1, b: 1 };
     return { r, g, b };
   }
   return { r: 1, g: 1, b: 1 }; // Default to white

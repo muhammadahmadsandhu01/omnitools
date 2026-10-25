@@ -76,6 +76,11 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
     answer:
       'If your resulting PDF exceeds upload limits (such as government portals requiring files under 2 MB), use the "Compressed (60%)" or "Standard (80%)" quality preset before conversion, or run your generated PDF through the KivaroTools PDF Merge & Split and Image Compressor utilities.',
   },
+  {
+    question: 'Can I change the canvas background color behind my images?',
+    answer:
+      'Yes. KivaroTools includes an interactive Background Color picker with hex input support (e.g., #FFFFFF for standard clean white, #F3F4F6 for soft document gray, or custom branded hex codes). When placing images with margins or non-standard aspect ratios, the PDF page canvas is drawn with your selected background fill color, eliminating uneven white space and matching your organization\'s document palette.',
+  },
 ];
 
 export default function ImageToPdfSeo() {
