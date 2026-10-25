@@ -14,7 +14,7 @@ export const PRECIOUS_METALS_FAQS: FaqItem[] = [
   {
     question: 'What is the critical difference between a troy ounce and an ordinary kitchen scale ounce?',
     answer:
-      'A troy ounce (oz t) is the universal international standard for precious metals trading and weighs exactly 31.1034768 grams. An ordinary avoirdupois ounce (oz), standard on American kitchen and postal scales, weighs only 28.349523125 grams. One troy ounce is approximately 9.71% heavier than an ordinary ounce. If you weigh scrap jewelry on a household kitchen scale and assume the reading is troy ounces, your valuation will be inaccurate by nearly 9%. KivaroTools explicitly separates troy ounces from ordinary ounces to prevent this costly error.',
+      'A troy ounce (oz t) is the universal international standard for precious metals trading and weighs exactly 31.1034768 grams. An ordinary avoirdupois ounce (oz), standard on American kitchen and postal scales, weighs only 28.349523125 grams. One troy ounce is approximately 9.71% heavier than an ordinary ounce. If you weigh scrap jewelry on a household kitchen scale and assume the reading is troy ounces, your valuation will be inaccurate by nearly 9.7%. KivaroTools explicitly separates troy ounces from ordinary ounces to prevent this costly error.',
   },
   {
     question: 'How much do refiners, bullion dealers, and pawn shops actually pay for scrap gold?',
@@ -46,6 +46,41 @@ export const PRECIOUS_METALS_FAQS: FaqItem[] = [
     answer:
       'No. All mathematical valuation algorithms, unit conversions, multi-item scrap lot calculations, and dealer spread simulations execute 100% locally inside your web browser. Neither your weights, item names, lot manifests, nor estimated payouts are ever transmitted, tracked, or saved on KivaroTools servers.',
   },
+  {
+    question: 'How do I calculate the melt value of multiple scrap gold and silver items at once?',
+    answer:
+      'Switch from the Quick Melt tab to our Scrap Lot Builder. This institutional accumulator lets you enter distinct line items with independent metal types (Gold, Silver, Platinum, Palladium), hallmark purities (e.g., 10K, 14K, 18K, Sterling 925), gross weights, and weight units (grams, troy ounces, pennyweights, tolas). The calculator computes individual fine masses and cumulative scrap lot melt value, displaying aggregate dealer payout tiers, CSV spreadsheet export, and a clean printable valuation receipt.',
+  },
+  {
+    question: 'What is the exact conversion between 1 tola, 1 pennyweight (dwt), and 1 troy ounce?',
+    answer:
+      'In precision precious metals metrology: 1 Troy Ounce (oz_t) equals exactly 31.1034768 grams or 20 Pennyweights (dwt) or 480 Grains. 1 Pennyweight (dwt) equals exactly 1.55517384 grams (0.05 oz_t). 1 Tola equals exactly 11.6638038 grams (180 grains or exactly 0.375 troy ounces). Standardizing to the exact gram equivalent ensures that calculations in PKR, INR, AED, or USD remain mathematically irreproachable.',
+  },
+  {
+    question: 'How is 21K (875 fineness) and 22K (916 fineness) gold valued compared to 24K spot?',
+    answer:
+      'Pure 24K gold has a decimal fineness of 0.999 to 1.000. 22K crown gold (popular across India, Pakistan, and the UK) contains 22/24 parts gold, translating to a decimal fineness of 0.9167 (91.67% pure). 21K gold (popular in Saudi Arabia, UAE, and the Arabian Gulf) contains 21/24 parts gold, translating to a decimal fineness of 0.8750 (87.5% pure). The melt price per gram is simply 24K spot per gram multiplied by 0.9167 for 22K, or multiplied by 0.8750 for 21K.',
+  },
+  {
+    question: 'Can I calculate scrap value for 925 sterling silver flatware and 900 junk silver coins?',
+    answer:
+      'Yes. For sterling silver tableware, flatware, and jewelry, select Silver and Sterling 925 (92.5% pure silver). For pre-1965 US circulation coinage (dimes, quarters, half-dollars, often called "90% junk silver"), select Silver and Coin 900 (90.0% pure silver). KivaroTools extracts the net fine silver troy ounces and multiplies by the live XAG spot benchmark.',
+  },
+  {
+    question: 'Why do platinum (Pt950, Pt900, Pt850) and palladium (Pd999, Pd950, Pd500) scrap prices differ from gold?',
+    answer:
+      'Platinum (XPT) and Palladium (XPD) are platinum-group metals (PGMs) with distinct industrial supply and catalytic converter demand profiles. While gold is alloyed primarily with copper, silver, and zinc, platinum is typically alloyed with ruthenium, iridium, or cobalt at 950 (95%), 900 (90%), or 850 (85%) fineness. Palladium jewelry alloys range from Pd950 (95%) to Pd500 (50%). Refineries apply distinct assay testing and higher smelting temperatures to PGMs, often resulting in slightly wider dealer spreads.',
+  },
+  {
+    question: 'How to convert gold spot price per troy ounce in USD to price per gram in EUR, GBP, INR, or PKR?',
+    answer:
+      'Divide the USD spot price per troy ounce by 31.1034768 to establish the USD price per gram. Then, multiply that per-gram USD rate by the prevailing foreign exchange cross-rate for EUR, GBP, INR, PKR, AED, SAR, CAD, or AUD (sourced automatically from the European Central Bank ECB Frankfurter feed with Open ExchangeRate fallback). KivaroTools handles this two-tier conversion automatically in real time across 32 international fiat currencies.',
+  },
+  {
+    question: 'How does KivaroTools sanitize CSV scrap lot exports against spreadsheet formula injection (CWE-1236)?',
+    answer:
+      'When you export your multi-item scrap jewelry inventory to an RFC-4180 compliant CSV spreadsheet, KivaroTools inspects every cell string. If any item label begins with characters that trigger dynamic execution in Microsoft Excel, Apple Numbers, or Google Sheets (such as "=", "+", "-", or "@"), KivaroTools automatically prepends an apostrophe (\') escape prefix. This prevents formula injection and malware execution while keeping all calculations 100% browser-local.',
+  },
 ];
 
 export default function PreciousMetalsSeo() {
@@ -71,14 +106,14 @@ export default function PreciousMetalsSeo() {
       />
 
       <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-4">
-        Precious Metals Melt Value &amp; Scrap Bullion Valuation Guide
+        Precious Metals Market Rates &amp; Scrap Bullion Valuation Guide
       </h2>
 
       <p className="lead text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-        Whether you are evaluating old scrap jewelry before visiting a pawn shop, verifying wholesale bullion prices,
-        cataloging estate silverware, or calculating multi-item scrap lots, our <strong>Precious Metals Calculator</strong> provides
-        accurate, transparent melt valuation for <strong>Gold (XAU)</strong>, <strong>Silver (XAG)</strong>, <strong>Platinum (XPT)</strong>,
-        and <strong>Palladium (XPD)</strong> across 32 world currencies and 9 canonical weight denominations.
+        Whether evaluating broken scrap jewelry before visiting a pawn broker, auditing bullion spot prices,
+        cataloging inherited sterling flatware, or calculating cumulative multi-item scrap lots, our <strong>Precious Metals Calculator</strong> provides
+        exact, institutional melt valuations for <strong>Gold (XAU)</strong>, <strong>Silver (XAG)</strong>, <strong>Platinum (XPT)</strong>,
+        and <strong>Palladium (XPD)</strong> across 32 world fiat currencies and 9 canonical weight denominations.
       </p>
 
       {/* How to use the calculator */}
@@ -88,19 +123,19 @@ export default function PreciousMetalsSeo() {
         </h3>
         <ol className="list-decimal pl-6 space-y-2.5 text-sm sm:text-base text-slate-600 dark:text-slate-400">
           <li>
-            <strong>Select Your Calculation Mode:</strong> Use <em>Quick Melt Calculator</em> for single rings, bars, or coins, or switch to <em>Scrap Lot Builder</em> to sum multiple items of varying metals and purities.
+            <strong>Select Calculation Mode:</strong> Use <em>Quick Melt Calculator</em> for single rings, bullion bars, or sovereign coins, or switch to <em>Scrap Lot Builder</em> to inventory multi-item lots of varying metals, purities, and units.
           </li>
           <li>
-            <strong>Choose Your Metal &amp; Purity:</strong> Select Gold, Silver, Platinum, or Palladium. Choose the standard hallmark fineness (e.g. 14K Gold, Sterling 925 Silver, Pt950 Platinum) or select <em>Custom Fineness</em> to enter exact decimal purity or percentages.
+            <strong>Choose Precious Metal &amp; Purity Fineness:</strong> Select Gold, Silver, Platinum, or Palladium. Choose standard hallmark purities (24K, 22K, 21K, 18K, 14K, 10K, 9K Gold; 999 Fine, 958 Britannia, 925 Sterling, 900 Coin Silver; Pt 999 to Pt 850; Pd 999 to Pd 500) or enter custom millesimal fineness decimals.
           </li>
           <li>
-            <strong>Enter Gross Weight &amp; Weight Unit:</strong> Weigh your item on a scale and select the matching unit: grams, troy ounces, pennyweights (dwt), kitchen scale ounces, tolas, kilograms, or milligrams.
+            <strong>Enter Gross Measured Weight &amp; Unit:</strong> Weigh your scrap item on a physical scale and choose from 9 exact units: troy ounces (<code>oz_t</code> = 31.1034768 g), grams (<code>g</code>), kilograms (<code>kg</code>), milligrams (<code>mg</code>), kitchen avoirdupois ounces (<code>oz_av</code> = 28.349523125 g), pounds (<code>lb</code>), pennyweights (<code>dwt</code> = 1.55517384 g), tolas (<code>tola</code> = 11.6638038 g), or grains (<code>gr</code> = 0.06479891 g).
           </li>
           <li>
-            <strong>Select Spot Pricing Basis:</strong> By default, calculations automatically sync with live wholesale market spot rates. Click <em>Enter Custom Spot Override</em> if markets are closed or if you have a local jeweler quote to test.
+            <strong>Select Spot Pricing Basis &amp; Currency:</strong> Rates sync automatically with live LBMA/COMEX wholesale spot feeds converted across 32 currencies (USD, EUR, GBP, INR, PKR, AED, SAR, CAD, AUD, etc.). Use <em>Enter Custom Spot Override</em> if markets are closed or testing a local jeweler quote.
           </li>
           <li>
-            <strong>Review Your Valuation Breakdown:</strong> Inspect pure fine metal content, wholesale melt benchmark (100%), and realistic dealer cash payout estimates (Refiner 95%, Jeweler 88%, Pawn Shop 75%).
+            <strong>Audit Dealer Payout Tiers:</strong> Compare full 100% intrinsic melt value against 4 commercial buyer tiers (100% Melt Benchmark, 95% High Refinery/Bullion, 85% Standard Coin Shop, 75% Fast Cash/Pawn) or set a custom payout percentage from 50% to 105%.
           </li>
         </ol>
       </section>
@@ -112,27 +147,27 @@ export default function PreciousMetalsSeo() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Gross Item Weight</h4>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Gross Item Weight &amp; Unit Standardization</h4>
             <p className="text-slate-600 dark:text-slate-400">
-              The total mass of the object as measured on a physical scale before purity extraction. Note that non-metal components (gemstones, watch movements, internal springs) must be excluded from this figure.
+              The total physical weight recorded on your balance. Non-metal components (gemstones, internal steel springs, enamel, hollow wax cores) must be deducted before entering gross weight.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
             <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Purity &amp; Fineness Rating</h4>
             <p className="text-slate-600 dark:text-slate-400">
-              The proportion of precious metal alloyed into the piece. Measured in Karats out of 24 for gold, or parts-per-thousand (millesimal fineness e.g. 925 for sterling silver, 950 for platinum).
+              The proportion of pure precious metal alloyed into the piece. Measured in Karats out of 24 for gold, or parts-per-thousand (millesimal fineness, e.g., 925 for sterling silver, 950 for platinum, 875 for 21K gold).
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Spot Price Benchmark</h4>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Live Spot Price Benchmark</h4>
             <p className="text-slate-600 dark:text-slate-400">
-              The current trading price for one troy ounce of raw, unrefined bullion bar on major commodity exchanges (LBMA and COMEX). Spot rates fluctuate continuously during trading hours.
+              The wholesale market clearing price for one troy ounce of unrefined London Good Delivery bullion. KivaroTools utilizes multi-tier market feeds backed by European Central Bank (ECB) currency cross-rates.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Dealer Payout Tiers</h4>
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Dealer Payout Tiers &amp; Custom Sliders</h4>
             <p className="text-slate-600 dark:text-slate-400">
-              Realistic cash offers based on industry buyer category: High-volume refiners (~95%), bullion dealers (~88%), and pawn shops (~75%), accounting for melting, assay, and operational margins.
+              Commercial buyers deduct assay, smelting, insurance, and profit margins. Our engine models four standard tiers (100% Melt, 95% Refinery, 85% Coin Shop, 75% Pawn) plus a custom slider (50% to 105%).
             </p>
           </div>
         </div>
@@ -148,10 +183,10 @@ export default function PreciousMetalsSeo() {
         </p>
 
         <div className="p-4 rounded-2xl bg-slate-900 text-slate-100 font-mono text-xs sm:text-sm space-y-2 mb-6">
-          <p><strong>1. Pure Metal Weight (g):</strong> Gross Weight (g) × (Purity Fineness ÷ 1000 or Karat ÷ 24)</p>
-          <p><strong>2. Pure Weight (Troy Oz):</strong> Pure Metal Weight (g) ÷ 31.1034768</p>
-          <p><strong>3. Intrinsic Melt Value:</strong> Pure Weight (Troy Oz) × Spot Price Per Troy Ounce</p>
-          <p><strong>4. Dealer Cash Offer:</strong> Intrinsic Melt Value × Payout Percentage (e.g. 0.88 for 88%)</p>
+          <p><strong>1. Pure Metal Weight (g):</strong> Gross Weight (g) &times; (Purity Fineness &divide; 1000 or Karat &divide; 24)</p>
+          <p><strong>2. Pure Weight (Troy Oz):</strong> Pure Metal Weight (g) &divide; 31.1034768</p>
+          <p><strong>3. Intrinsic Melt Value:</strong> Pure Weight (Troy Oz) &times; Spot Price Per Troy Ounce</p>
+          <p><strong>4. Dealer Cash Offer:</strong> Intrinsic Melt Value &times; Payout Percentage (e.g., 0.85 for 85%)</p>
         </div>
 
         <div className="space-y-4">
@@ -161,14 +196,15 @@ export default function PreciousMetalsSeo() {
               Worked Example 1: 14K Gold Ring (5.00 Grams)
             </h4>
             <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-              Suppose gold spot price is <strong>$4,000.00 / oz t</strong>. 14K gold has a fineness of 14 ÷ 24 = <strong>0.583333 (58.33% pure)</strong>.
+              Suppose gold spot price is <strong>$4,000.00 / oz t</strong>. 14K gold has a fineness of 14 &divide; 24 = <strong>0.583333 (58.33% pure)</strong>.
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-600 dark:text-slate-400">
-              <li><strong>Fine Pure Gold:</strong> 5.00 g × (14 ÷ 24) = <strong>2.9167 grams</strong></li>
-              <li><strong>Fine Troy Ounces:</strong> 2.9167 g ÷ 31.1034768 = <strong>0.093774 oz t</strong></li>
-              <li><strong>100% Intrinsic Melt Value:</strong> 0.093774 oz t × $4,000.00 = <strong>$375.10</strong></li>
-              <li><strong>Refiner Cash Offer (95%):</strong> $375.10 × 0.95 = <strong>$356.35</strong></li>
-              <li><strong>Pawn Shop Offer (75%):</strong> $375.10 × 0.75 = <strong>$281.33</strong></li>
+              <li><strong>Fine Pure Gold:</strong> 5.00 g &times; (14 &divide; 24) = <strong>2.9167 grams</strong></li>
+              <li><strong>Fine Troy Ounces:</strong> 2.9167 g &divide; 31.1034768 = <strong>0.093774 oz t</strong></li>
+              <li><strong>100% Intrinsic Melt Value:</strong> 0.093774 oz t &times; $4,000.00 = <strong>$375.10</strong></li>
+              <li><strong>Refiner Cash Offer (95%):</strong> $375.10 &times; 0.95 = <strong>$356.35</strong></li>
+              <li><strong>Coin Shop Offer (85%):</strong> $375.10 &times; 0.85 = <strong>$318.84</strong></li>
+              <li><strong>Pawn Shop Offer (75%):</strong> $375.10 &times; 0.75 = <strong>$281.33</strong></li>
             </ul>
           </div>
 
@@ -181,10 +217,10 @@ export default function PreciousMetalsSeo() {
               Suppose silver spot price is <strong>$50.00 / oz t</strong>. Sterling silver has a hallmark of 925 (<strong>92.5% pure silver</strong>).
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-600 dark:text-slate-400">
-              <li><strong>Fine Pure Silver:</strong> 120.00 g × 0.925 = <strong>111.00 grams</strong></li>
-              <li><strong>Fine Troy Ounces:</strong> 111.00 g ÷ 31.1034768 = <strong>3.56873 oz t</strong></li>
-              <li><strong>100% Intrinsic Melt Value:</strong> 3.56873 oz t × $50.00 = <strong>$178.44</strong></li>
-              <li><strong>Bullion Dealer Offer (88%):</strong> $178.44 × 0.88 = <strong>$157.03</strong></li>
+              <li><strong>Fine Pure Silver:</strong> 120.00 g &times; 0.925 = <strong>111.00 grams</strong></li>
+              <li><strong>Fine Troy Ounces:</strong> 111.00 g &divide; 31.1034768 = <strong>3.56873 oz t</strong></li>
+              <li><strong>100% Intrinsic Melt Value:</strong> 3.56873 oz t &times; $50.00 = <strong>$178.44</strong></li>
+              <li><strong>Bullion Dealer Offer (85%):</strong> $178.44 &times; 0.85 = <strong>$151.67</strong></li>
             </ul>
           </div>
 
@@ -197,9 +233,10 @@ export default function PreciousMetalsSeo() {
               Suppose platinum spot price is <strong>$1,500.00 / oz t</strong>. Pt950 contains <strong>95.0% pure platinum</strong>.
             </p>
             <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-600 dark:text-slate-400">
-              <li><strong>Fine Pure Platinum:</strong> 7.00 g × 0.950 = <strong>6.65 grams</strong></li>
-              <li><strong>Fine Troy Ounces:</strong> 6.65 g ÷ 31.1034768 = <strong>0.21380 oz t</strong></li>
-              <li><strong>100% Intrinsic Melt Value:</strong> 0.21380 oz t × $1,500.00 = <strong>$320.70</strong></li>
+              <li><strong>Fine Pure Platinum:</strong> 7.00 g &times; 0.950 = <strong>6.65 grams</strong></li>
+              <li><strong>Fine Troy Ounces:</strong> 6.65 g &divide; 31.1034768 = <strong>0.21380 oz t</strong></li>
+              <li><strong>100% Intrinsic Melt Value:</strong> 0.21380 oz t &times; $1,500.00 = <strong>$320.70</strong></li>
+              <li><strong>Refinery Cash Offer (95%):</strong> $320.70 &times; 0.95 = <strong>$304.67</strong></li>
             </ul>
           </div>
         </div>
@@ -220,7 +257,7 @@ export default function PreciousMetalsSeo() {
               <tr className="bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Metal</th>
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Purity Rating</th>
-                <th className="p-2.5 border border-gray-200 dark:border-slate-700">Fineness (‰)</th>
+                <th className="p-2.5 border border-gray-200 dark:border-slate-700">Fineness (&permil;)</th>
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Percentage</th>
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Common Use Case</th>
               </tr>
@@ -269,11 +306,25 @@ export default function PreciousMetalsSeo() {
                 <td className="p-2.5">US legal minimum karat, high-school rings</td>
               </tr>
               <tr>
+                <td className="p-2.5 font-bold text-amber-600">Gold (Au)</td>
+                <td className="p-2.5 font-semibold">9K Gold</td>
+                <td className="p-2.5 font-mono">375.0</td>
+                <td className="p-2.5 font-mono">37.5%</td>
+                <td className="p-2.5">British &amp; Commonwealth traditional hallmarked jewelry</td>
+              </tr>
+              <tr>
                 <td className="p-2.5 font-bold text-slate-500">Silver (Ag)</td>
                 <td className="p-2.5 font-semibold">Fine Silver .999</td>
                 <td className="p-2.5 font-mono">999.0</td>
                 <td className="p-2.5 font-mono">99.9%</td>
-                <td className="p-2.5">Silver bullion bars, 1 oz Silver Eagles</td>
+                <td className="p-2.5">Silver bullion bars, 1 oz Silver Eagles, Maples</td>
+              </tr>
+              <tr>
+                <td className="p-2.5 font-bold text-slate-500">Silver (Ag)</td>
+                <td className="p-2.5 font-semibold">Britannia Silver .958</td>
+                <td className="p-2.5 font-mono">958.0</td>
+                <td className="p-2.5 font-mono">95.8%</td>
+                <td className="p-2.5">Historical UK silverware, collector bullion</td>
               </tr>
               <tr>
                 <td className="p-2.5 font-bold text-slate-500">Silver (Ag)</td>
@@ -297,11 +348,18 @@ export default function PreciousMetalsSeo() {
                 <td className="p-2.5">High-end wedding bands, solitaire mountings</td>
               </tr>
               <tr>
+                <td className="p-2.5 font-bold text-sky-600">Platinum (Pt)</td>
+                <td className="p-2.5 font-semibold">Pt900 / Pt850</td>
+                <td className="p-2.5 font-mono">900.0 / 850.0</td>
+                <td className="p-2.5 font-mono">90.0% &ndash; 85.0%</td>
+                <td className="p-2.5">Japanese and European platinum-iridium alloys</td>
+              </tr>
+              <tr>
                 <td className="p-2.5 font-bold text-purple-600">Palladium (Pd)</td>
-                <td className="p-2.5 font-semibold">Pd950 Palladium</td>
-                <td className="p-2.5 font-mono">950.0</td>
-                <td className="p-2.5 font-mono">95.0%</td>
-                <td className="p-2.5">Lightweight platinum-family jewelry &amp; catalytic metal</td>
+                <td className="p-2.5 font-semibold">Pd950 / Pd500</td>
+                <td className="p-2.5 font-mono">950.0 / 500.0</td>
+                <td className="p-2.5 font-mono">95.0% &ndash; 50.0%</td>
+                <td className="p-2.5">Lightweight white-metal jewelry &amp; catalytic metal</td>
               </tr>
             </tbody>
           </table>
@@ -338,7 +396,7 @@ export default function PreciousMetalsSeo() {
                 <td className="p-2.5 font-bold text-amber-600">Avoirdupois Ounce (oz)</td>
                 <td className="p-2.5 font-mono">28.3495 g</td>
                 <td className="p-2.5 font-mono">0.9115 oz t</td>
-                <td className="p-2.5">Kitchen scales, postage scales (~8.86% lighter than troy oz)</td>
+                <td className="p-2.5">Kitchen scales, postage scales (~8.86% lighter than troy oz; loses 9.7% value if confused)</td>
               </tr>
               <tr>
                 <td className="p-2.5 font-bold">Pennyweight (dwt)</td>
@@ -350,7 +408,13 @@ export default function PreciousMetalsSeo() {
                 <td className="p-2.5 font-bold">Tola</td>
                 <td className="p-2.5 font-mono">11.6638 g</td>
                 <td className="p-2.5 font-mono">0.3750 oz t</td>
-                <td className="p-2.5">South Asian and Middle Eastern traditional retail standard</td>
+                <td className="p-2.5">South Asian and Middle Eastern traditional retail standard (180 grains)</td>
+              </tr>
+              <tr>
+                <td className="p-2.5 font-bold">Grain (gr)</td>
+                <td className="p-2.5 font-mono">0.0648 g</td>
+                <td className="p-2.5 font-mono">0.002083 oz t</td>
+                <td className="p-2.5">Precision troy metrology (480 grains = 1 troy ounce)</td>
               </tr>
               <tr>
                 <td className="p-2.5 font-bold">Kilogram (kg)</td>
@@ -387,10 +451,10 @@ export default function PreciousMetalsSeo() {
           </div>
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800">
             <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
-              3. Bullion Stacking &amp; Portfolio Tracking
+              3. Bullion Stacking &amp; Sovereign Coins
             </h4>
             <p className="text-slate-600 dark:text-slate-400">
-              Physical investors holding sovereign coins (Krugerrands, Maple Leafs, Eagles) can track total fine troy ounces and current market values with real-time foreign exchange conversion across 32 currencies.
+              Physical investors holding sovereign coins (Krugerrands, Maple Leafs, American Eagles, British Sovereigns) can track total fine troy ounces and current market values with real-time foreign exchange conversion across 32 currencies.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800">
@@ -404,25 +468,66 @@ export default function PreciousMetalsSeo() {
         </div>
       </section>
 
-      {/* Common Pitfalls & Troubleshooting */}
-      <section aria-labelledby="precious-metals-troubleshooting-amp-common-val" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h3 id="precious-metals-troubleshooting-amp-common-val" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-3">
-          Troubleshooting &amp; Common Valuation Pitfalls
-        </h3>
-        <ul className="list-disc pl-6 space-y-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          <li>
-            <strong>Gold-Plated Items (HGE, GF, RGP, EPNS):</strong> Stamps like &ldquo;14K HGE&rdquo; (Heavy Gold Electroplate), &ldquo;1/10 14K GF&rdquo; (Gold Filled), or &ldquo;EPNS&rdquo; (Electroplated Nickel Silver) indicate base metal coated in microscopic gold or silver. These items have virtually zero scrap melt value and will be rejected by refiners.
-          </li>
-          <li>
-            <strong>Magnetic Testing Failure:</strong> Real gold and fine silver are non-magnetic. If a piece stamped &ldquo;18K&rdquo; strongly attracts a neodymium magnet, it is likely gold-plated brass or steel.
-          </li>
-          <li>
-            <strong>Overlooking Stone Weight:</strong> Large cubic zirconias, gemstones, or lead-filled hollow bangles add deceptive weight on a scale. Always request that buyers zero out non-metallic materials before calculating payments.
-          </li>
-          <li>
-            <strong>Confusing Pennyweights with Grams:</strong> 1 pennyweight (dwt) is 1.5552 grams. If a seller enters 10 dwt as 10 grams, they under-report weight by over 35%. Always ensure scale and selector units align.
-          </li>
-        </ul>
+      {/* Zone 5: Dedicated Pitfalls, Edge Cases & Verification Guide */}
+      <section aria-labelledby="precious-metals-financial-pitfalls-and-edge-cases" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="precious-metals-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              1. Troy Ounces vs. Kitchen Avoirdupois Ounces (The 9.7% Loss)
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Weighing jewelry on a standard digital kitchen scale calibrated to avoirdupois ounces (28.3495 g) and multiplying by the spot price per troy ounce (31.1035 g) leads to a 9.71% undervaluation. Always verify scale units are set to grams or troy ounces, or convert using <code>grams / 31.1034768</code>.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              2. Gemstone &amp; Movement Tare Weight Deductions
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Large cubic zirconia, natural diamonds, synthetic gems, watch movements, and hollow resin bangles add deceptive gross weight. Smelters and scrap buyers do not pay for non-metallic weight. Always subtract estimated stone weight (tare) to avoid overestimating pure gold mass.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              3. Hallmark Stamp Verification: Solid vs Plated Marks
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Legitimate solid hallmarks state millesimal fineness: 375 (9K), 417 (10K), 585 (14K), 750 (18K), 875 (21K), 916 (22K), or 999 (24K). Conversely, stamps such as &ldquo;14K HGE&rdquo; (Heavy Gold Electroplate), &ldquo;1/10 14K GF&rdquo; (Gold Filled), or &ldquo;EPNS&rdquo; represent base metal with microscopic gold/silver plating possessing zero scrap melt value.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              4. Commercial Dealer Payout Margins &amp; Lowball Pawn Offers
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Wholesale refiners pay 93% to 96% of melt value because of smelting and assay costs. Reputable local coin shops pay 80% to 88%. Pawn shops and mail-order cash-for-gold programs often bid only 50% to 75%. Calculating your exact melt baseline allows you to walk away from predatory cash offers.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              5. Acid Scratch Testing vs XRF Spectrometer Verification
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Unmarked or vintage estate items should be verified via non-destructive X-Ray Fluorescence (XRF) spectroscopy or nitric acid scratch testing. Heavy gold-filled jewelry will pass a surface magnetic test but fails an electronic specific gravity or acid assay test when filed.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              6. Multi-Tier Live API Freshness &amp; LocalStorage Caching
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              KivaroTools fetches live rates through multi-tier fallback APIs paired with Frankfurt ECB currency conversions. If market data APIs are unreachable or you are operating offline, the utility falls back seamlessly to browser-cached rates (<code>kivarotools_precious_metals_cache_v2</code>) or user-specified custom spot overrides.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* FAQ Section */}
@@ -444,7 +549,8 @@ export default function PreciousMetalsSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
       {/* Internal Links to Related Utilities */}
@@ -459,28 +565,35 @@ export default function PreciousMetalsSeo() {
           >
             Crypto &amp; Currency Converter &rarr;
           </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
-          <Link
-            href="/finance/salary-calculator"
-            className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-          >
-            Salary Take-Home Pay Calculator &rarr;
-          </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
           <Link
             href="/finance/mortgage-calculator"
             className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
           >
             Mortgage &amp; Home Loan Calculator &rarr;
           </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+          <Link
+            href="/finance/emi-calculator"
+            className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          >
+            Loan EMI Calculator &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
           <Link
             href="/finance/compound-interest"
             className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
           >
             Compound Interest Calculator &rarr;
           </Link>
-          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
+          <Link
+            href="/finance/sip-calculator"
+            className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+          >
+            SIP &amp; Mutual Funds Calculator &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">&bull;</span>
           <Link
             href="/finance/invoice-generator"
             className="text-blue-600 dark:text-blue-400 hover:underline font-semibold"

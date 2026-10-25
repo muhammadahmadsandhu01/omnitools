@@ -56,6 +56,31 @@ export const CRYPTO_CONVERTER_FAQS: FaqItem[] = [
     answer:
       'No. All currency conversion calculations, fee modeling, and arithmetic breakdowns execute entirely in your web browser. KivaroTools never logs, stores, or transmits your conversion amounts, personal data, or financial queries to any external server.',
   },
+  {
+    question: 'What is Dynamic Currency Conversion (DCC) and why should I reject it at foreign ATMs?',
+    answer:
+      'Dynamic Currency Conversion (DCC) occurs when a foreign ATM or card terminal offers to bill you in your home currency rather than the local foreign currency. While presented as a convenience, DCC allows the foreign merchant or ATM operator to apply an unregulated exchange rate markup—often 6% to 12% worse than the mid-market rate. Always choose to be billed in the local currency and let your home bank perform the conversion.',
+  },
+  {
+    question: 'How does KivaroTools handle sub-cent to 8-decimal satoshi (0.00000001 BTC) precision?',
+    answer:
+      'Bitcoin is divisible to eight decimal places (0.00000001 BTC), known as a Satoshi (1 BTC = 100,000,000 Satoshis). KivaroTools preserves up to 8 decimal places for crypto assets and sub-cent precision for fiat micro-conversions, eliminating floating-point rounding errors and displaying both full token amounts and satoshi equivalents.',
+  },
+  {
+    question: 'Can I model both percentage bank spreads and fixed wire transfer fees simultaneously?',
+    answer:
+      'Yes. Our commercial fee simulator allows you to input both a percentage spread (e.g., 2.0% retail bank wire markup) and an upfront fixed outgoing wire fee (e.g., $25.00). The engine calculates the pure mid-market value, subtracts the percentage spread, deducts the fixed transfer fee, and outputs the exact net in-pocket proceeds received by your recipient.',
+  },
+  {
+    question: 'How does the converter function offline or during weekend market closures?',
+    answer:
+      'Foreign exchange interbank markets close on weekends, while cryptocurrency markets trade 24/7/365. KivaroTools implements dual-TTL browser localStorage caching (kivarotools_currency_rates_v3) with a 4-hour TTL for fiat and a 10-minute TTL for crypto. If you lose internet connectivity while traveling or access the tool on a weekend, cached benchmark rates seamlessly ensure offline calculation without interruption.',
+  },
+  {
+    question: 'Can I share a specific currency conversion and fee calculation via a custom URL?',
+    answer:
+      'Yes. KivaroTools encodes all conversion parameters into shareable query-parameter URLs (e.g., ?amount=100&from=USD&to=PKR&markup=2). Clicking the share option generates a direct link that pre-populates the exact amount, currency pair, and broker fee markup on any device.',
+  },
 ];
 
 export default function CryptoConverterSeo() {
@@ -85,6 +110,11 @@ export default function CryptoConverterSeo() {
         <h2 id="crypto-converter-currency-amp-cryptocurrency-co" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Currency &amp; Cryptocurrency Converter: Mid-Market Exchange Rates &amp; Fee Simulation
         </h2>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; Secure:</strong> All conversion calculations, fee simulations, and satoshi breakdowns run locally in your browser. No transaction amounts, IP addresses, or currency queries are ever tracked or shared.
+          </p>
+        </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
           Converting value between sovereign fiat currencies (such as the US Dollar, Euro, British Pound, Pakistani Rupee, and Indian Rupee) and decentralized digital assets (like Bitcoin, Ethereum, and Solana) requires understanding market microstructure, spot pricing, and commercial fee structures. KivaroTools provides transparent mid-market exchange rates combined with custom broker markup simulation, giving travelers, freelancers, businesses, and investors the tools to calculate true net transaction proceeds.
         </p>
@@ -272,6 +302,68 @@ export default function CryptoConverterSeo() {
         </div>
       </section>
 
+      {/* ZONE 5: DEDICATED PITFALLS, EDGE CASES & VERIFICATION GUIDE */}
+      <section aria-labelledby="crypto-converter-financial-pitfalls-and-edge-cases" className="mb-10 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="crypto-converter-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              1. The Dynamic Currency Conversion (DCC) Foreign Terminal Trap
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              When traveling abroad or shopping on overseas websites, payment terminals frequently prompt: &ldquo;Bill in USD or EUR?&rdquo; Selecting USD activates Dynamic Currency Conversion (DCC), allowing the merchant&apos;s processor to apply an inflated 6% to 12% exchange markup. Always select the local native currency to let your credit card issuer convert at standard 1% to 2% network rates.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              2. Hidden Retail Markups vs Upfront International Wire Fees
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Traditional commercial banks advertise &ldquo;Zero Commission Currency Transfers&rdquo; while burying a 3% to 4% spread in the exchange rate. On a $10,000 international remittance, a 3.5% hidden rate markup costs $350.00—far exceeding a transparent $25 fixed wire fee. KivaroTools models both percentage markups and fixed wire deductions.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              3. Cross-Currency USD Triangulation &amp; Rounding Mechanics
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Exchanging non-USD pairs (such as CAD to PKR or EUR to INR) requires cross-rate triangulation: <code>Rate(A &rarr; B) = Rate(USD &rarr; B) / Rate(USD &rarr; A)</code>. Performing crude rounding at intermediate steps creates significant penny discrepancies. KivaroTools executes high-precision double-precision floating-point triangulation before final localized formatting.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              4. Satoshi Precision (0.00000001 BTC) &amp; Micro-Fiat Decimals
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Cryptocurrency conversions demand precision down to the eighth decimal place (1 Satoshi = 10^-8 BTC). Rounding prematurely to 2 decimals completely truncates micro-transactions and freelance crypto billing. Our engine displays up to 8 decimal places alongside Satoshi breakdowns for Bitcoin and Gwei units for Ethereum.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              5. 24/7 Decentralized Crypto Order Books vs 24/5 Central Bank Forex
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Sovereign forex markets pause trading on Friday evening (New York close) and resume Sunday evening (Sydney open), freezing central bank ECB benchmark rates over the weekend. Meanwhile, cryptocurrencies trade continuously 24/7/365. KivaroTools transparently displays rate timestamps and status tags so you know whether rates are live or cached.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              6. Dual-TTL LocalStorage Caching &amp; Zero-Tracking Browser Execution
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              To balance responsiveness with freshness, KivaroTools implements dual-TTL client-side caching (<code>kivarotools_currency_rates_v3</code>): 4 hours for low-volatility fiat rates and 10 minutes for volatile crypto rates. If external market APIs fail, the utility seamlessly uses cached benchmark snapshots with zero server-side telemetry.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Section 6: Data Sourcing & Provenance Architecture */}
       <section aria-labelledby="crypto-converter-data-sourcing-amp-reliability-" className="mb-10">
         <h3 id="crypto-converter-data-sourcing-amp-reliability-" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
@@ -352,7 +444,8 @@ export default function CryptoConverterSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
       {/* Section 9: Related Financial Planning Tools */}
@@ -387,23 +480,23 @@ export default function CryptoConverterSeo() {
           </Link>
 
           <Link
-            href="/finance/salary-calculator"
+            href="/finance/mortgage-calculator"
             className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition group"
           >
             <div>
-              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Salary &amp; Take-Home Pay</span>
-              <p className="text-[11px] text-slate-500">Gross-to-net paycheck calculations across 22 countries</p>
+              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Mortgage Calculator</span>
+              <p className="text-[11px] text-slate-500">Home loan payments, property tax, and PMI</p>
             </div>
             <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
           </Link>
 
           <Link
-            href="/finance/invoice-generator"
+            href="/finance/emi-calculator"
             className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition group"
           >
             <div>
-              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Pro Invoice Generator</span>
-              <p className="text-[11px] text-slate-500">Generate print-ready multi-currency PDF client invoices</p>
+              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Loan EMI Calculator</span>
+              <p className="text-[11px] text-slate-500">Personal &amp; auto loan monthly amortization schedules</p>
             </div>
             <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
           </Link>
@@ -420,12 +513,12 @@ export default function CryptoConverterSeo() {
           </Link>
 
           <Link
-            href="/finance/emi-calculator"
+            href="/finance/invoice-generator"
             className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition group"
           >
             <div>
-              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Loan EMI Calculator</span>
-              <p className="text-[11px] text-slate-500">Personal &amp; auto loan monthly amortization schedules</p>
+              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Pro Invoice Generator</span>
+              <p className="text-[11px] text-slate-500">Generate print-ready multi-currency PDF client invoices</p>
             </div>
             <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
           </Link>

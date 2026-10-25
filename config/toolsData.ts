@@ -94,89 +94,91 @@ export const tools: Tool[] = [
 
   {
     id: 'precious-metals',
-    name: 'Precious Metals Market Rates',
+    name: 'Precious Metals Market Rates & Scrap Melt Calculator',
     slug: 'precious-metals',
     categoryId: 'finance',
     description:
-      'Gold, silver, platinum and palladium market rates, historical prices, purity-adjusted values and unit conversions.',
+      'Live Gold, Silver, Platinum & Palladium spot prices, multi-item scrap jewelry melt calculator, karat purity conversions, and 30-day charts across 32 currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Precious Metals Market Rates',
-    seoDescription: 'Live market rates for gold, silver, platinum, and palladium. Calculate purity-adjusted melt value, weight conversions, and historical spot prices.',
+    seoTitle: 'Precious Metals Market Rates & Scrap Gold/Silver Melt Calculator',
+    seoDescription:
+      'Track live Gold (XAU), Silver (XAG), Platinum (XPT), and Palladium (XPD) spot prices across 32 currencies. Calculate exact scrap jewelry melt values by karat (24K–9K), 9 weight units (troy oz, grams, tola, dwt), and dealer payout tiers (75%–100%).',
     relatedToolSlugs: ['crypto-converter', 'compound-interest', 'invoice-generator', 'sip-calculator'],
   },
 
   {
     id: 'mortgage-calculator',
-    name: 'Mortgage & Home Loan Calculator',
+    name: 'Mortgage & Home Loan Amortization Calculator (PITI + PMI)',
     slug: 'mortgage-calculator',
     categoryId: 'finance',
     description:
-      'Calculate monthly mortgage payments (PITI), property taxes, homeowners insurance, dynamic PMI cancellation, closing costs, and prepayment savings with interactive charts and full amortization schedules.',
+      'Calculate monthly or accelerated biweekly mortgage payments, PITI escrow, automatic 80% LTV PMI drop-off, cash to close, and complete amortization schedules.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Mortgage Calculator — PITI, PMI & Amortization Schedule',
+    seoTitle: 'Mortgage Calculator — PITI, Automatic 80% LTV PMI Drop-Off & Biweekly Amortization',
     seoDescription:
-      'Calculate monthly mortgage payments (PITI), property taxes, home insurance, dynamic PMI drop-off, closing costs, and extra prepayments with full amortization schedules.',
+      'Calculate monthly and accelerated biweekly mortgage payments with full PITI escrow (property tax, home insurance, HOA), automatic 80% LTV PMI cancellation, cash to close, extra principal prepayments, and reconciled amortization schedules.',
     relatedToolSlugs: ['emi-calculator', 'compound-interest', 'salary-calculator', 'invoice-generator'],
   },
 
   {
     id: 'invoice-generator',
-    name: 'Pro Invoice Generator (PDF)',
+    name: 'Free Professional PDF Invoice Generator (No Signup)',
     slug: 'invoice-generator',
     categoryId: 'finance',
     description:
-      'Create professional, print-ready PDF invoices with automatic calculations and browser-based editing.',
+      'Create, customize, and download print-ready A4 PDF invoices locally in your browser with custom branding, proportional VAT/GST tax allocation, and 30+ currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free Invoice Generator — Create & Download PDF Invoices',
+    seoTitle: 'Free PDF Invoice Generator — Multi-Currency, VAT/GST, A4 Pagination & No Signup',
     seoDescription:
-      'Free online invoice generator for freelancers and businesses. Create, calculate, and download print-ready PDF invoices with multi-currency, tax, and discount support directly in your browser. No signup required.',
+      'Create, customize, and download professional A4 PDF invoices 100% in your browser with zero signup. Features company logo upload, 30+ ISO-4217 currencies, proportional VAT/GST tax allocation, multi-page A4 pagination, and local auto-save.',
     relatedToolSlugs: ['salary-calculator', 'crypto-converter', 'emi-calculator', 'compound-interest'],
   },
 
   {
     id: 'emi-calculator',
-    name: 'Personal & Auto Loan EMI Calculator',
+    name: 'Loan EMI & Amortization Calculator (Personal, Auto & Retail Loans)',
     slug: 'emi-calculator',
     categoryId: 'finance',
     description:
-      'Calculate monthly EMI, total interest, and repayment amounts for personal, car, or education loans.',
+      'Calculate reducing-balance equated installments (monthly, biweekly, weekly), compare tenure reduction vs payment recast prepayments, and audit loan fees across 42 currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'EMI Calculator — Loan EMI & Amortization Schedule',
+    seoTitle: 'Loan EMI Calculator — Personal, Auto & Home Loan Amortization + Prepayment Modes',
     seoDescription:
-      'Calculate monthly loan EMI, total interest payable, and complete amortization schedules for personal, auto, and home loans with prepayment and fee modeling.',
+      'Calculate Equated Monthly Installments (EMI), biweekly/weekly payments, and reducing-balance amortization across 42 currencies. Compare Tenure Reduction vs Payment Recast prepayments, Ordinary vs Annuity Due timing, and origination fee drag.',
     relatedToolSlugs: ['mortgage-calculator', 'compound-interest', 'sip-calculator', 'salary-calculator', 'invoice-generator'],
   },
 
   {
     id: 'compound-interest',
-    name: 'Compound Interest Calculator',
+    name: 'Compound Interest, Wealth Accumulation & Retirement Drawdown Calculator',
     slug: 'compound-interest',
     categoryId: 'finance',
     description:
-      'Calculate compound growth, estimated returns, and long-term investment value over time.',
+      'Model compound growth with step-up contributions, 5 compounding frequencies, AUM fee and tax drag, Fisher real purchasing power, retirement drawdown, and 2,000-path Monte Carlo risk analysis.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Compound Interest Calculator — Investment & Savings Growth',
-    seoDescription: 'Calculate compound interest, APY, and long-term investment growth with customizable contribution frequencies, beginning or end timing, and inflation adjustment.',
+    seoTitle: 'Compound Interest Calculator — Daily/Monthly Growth, Tax Drag, Drawdown & Monte Carlo',
+    seoDescription:
+      'Calculate compound interest across 154 currencies with daily to annual compounding, step-up contributions, AUM fee & tax drag (Taxable, Deferred, Roth), Fisher inflation discounting, retirement drawdown, goal solvers, and 2,000-path Monte Carlo simulations.',
     relatedToolSlugs: ['sip-calculator', 'emi-calculator', 'mortgage-calculator', 'precious-metals', 'salary-calculator'],
   },
 
   {
     id: 'sip-calculator',
-    name: 'SIP & Mutual Funds Calculator',
+    name: 'SIP & Mutual Fund Calculator (Step-Up, Expense Ratio, Tax & Monte Carlo)',
     slug: 'sip-calculator',
     categoryId: 'finance',
     description:
-      'Calculate mutual fund SIP and lump-sum returns with annual step-up, inflation discounting, expense ratio drag, and Monte Carlo risk simulations.',
+      'Calculate systematic investment plan (SIP) and lump-sum mutual fund returns with annual step-ups, TER expense drag, capital gains tax, inflation discounting, and 3,000-path Monte Carlo simulations.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SIP Calculator — Systematic Investment Plan & Mutual Fund Returns',
+    seoTitle: 'SIP Calculator — Step-Up Mutual Fund Returns, TER Expense Drag, Tax & 3,000-Path Monte Carlo',
     seoDescription:
-      'Calculate hypothetical SIP and lump-sum mutual fund returns with annual step-up, inflation-adjusted purchasing power, expense ratio fees, tax drag, and year-by-year schedule.',
+      'Calculate Mutual Fund SIP and Lump Sum returns across 154 currencies. Model annual Step-Up top-ups, Nominal APR vs Effective APY, Total Expense Ratio (TER) drag, Capital Gains Tax, Fisher inflation, 80-iteration Goal Solver, and 3,000-path Monte Carlo risk.',
     relatedToolSlugs: ['compound-interest', 'emi-calculator', 'mortgage-calculator', 'crypto-converter', 'precious-metals'],
   },
 
@@ -212,16 +214,16 @@ export const tools: Tool[] = [
 
   {
     id: 'crypto-converter',
-    name: 'Crypto & Currency Converter',
+    name: 'Live Currency & Cryptocurrency Converter (Mid-Market Rates & Fee Simulator)',
     slug: 'crypto-converter',
     categoryId: 'finance',
     description:
-      'Convert between 160+ world fiat currencies and top cryptocurrencies with transparent mid-market rates, card fee modeling, and 30-day trend charts.',
+      'Convert 160+ world fiat currencies and top cryptocurrencies with live ECB and CoinGecko mid-market exchange rates, 30-day historical trend charts, and bank spread markup simulation.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Currency & Crypto Converter — Exchange Rates',
+    seoTitle: 'Currency & Crypto Converter — 160+ Fiat & Top Cryptos, Mid-Market Rates & Bank Fee Simulator',
     seoDescription:
-      'Convert between 160+ fiat currencies (USD, EUR, GBP, PKR, INR) and top cryptocurrencies (BTC, ETH, SOL) with mid-market rates, bank fee simulation, and 30-day historical charts.',
+      'Convert 160+ world fiat currencies and 8 major cryptocurrencies (BTC, ETH, USDT, SOL, BNB, XRP, ADA, DOGE) using live ECB & CoinGecko mid-market rates. Simulate bank spread markups (0.5%–3.0%), fixed wire fees, satoshi precision, and 30-day FX charts.',
     relatedToolSlugs: ['precious-metals', 'compound-interest', 'salary-calculator', 'invoice-generator', 'sip-calculator'],
   },
 

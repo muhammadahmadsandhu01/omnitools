@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { SITE_URL } from '@/config/site';
 
 export interface FaqItem {
   question: string;
@@ -67,6 +66,21 @@ export const SIP_CALCULATOR_FAQS: FaqItem[] = [
     answer:
       'To prevent CSV Macro / Formula Injection attacks when opening exported financial data in Microsoft Excel, Google Sheets, or LibreOffice Calc, all text cells beginning with formula trigger characters (=, +, -, @, tab, carriage return) are automatically sanitized by prepending an apostrophe, while standard negative numbers (e.g. -50.25) remain cleanly formatted as numbers.',
   },
+  {
+    question: 'Why do Indian mutual fund calculators use Nominal APR while European/US calculators use Effective APY?',
+    answer:
+      'Indian financial portals and AMFI guidelines calculate monthly SIP returns using nominal APR compounding (periodic rate i = r / 12), where 12% annual return implies exactly 1.0% per month. Conversely, European and North American quantitative models frequently default to effective APY compounding (periodic rate i = (1 + r)^(1/12) - 1 ≈ 0.9489% per month) so that compounding intra-year exactly equals the stated annual return. KivaroTools provides a direct toggle between both conventions.',
+  },
+  {
+    question: 'How does combining an initial day-1 lump sum with an ongoing monthly step-up SIP affect compounding?',
+    answer:
+      'KivaroTools supports a hybrid mode where a starting lump sum (P_0) compounds concurrently with your regular recurring installments. The lump-sum component compounds for the entire horizon: P_0 * (1 + i)^n, while each periodic installment compounds for its respective remaining life. This hybrid modeling reflects the common scenario of investing an existing savings reserve while continuing monthly dollar-cost averaging.',
+  },
+  {
+    question: 'How does Long-Term Capital Gains (LTCG) tax affect mutual fund redemption values at maturity?',
+    answer:
+      'Upon liquidating mutual fund investments, tax authorities assess capital gains tax on net profits above statutory exemption thresholds. KivaroTools calculates taxable gains as max(0, Ending Balance - Net Cost Basis) and applies your configured LTCG tax rate. This displays your realistic post-tax net take-home wealth rather than an inflated gross theoretical figure.',
+  },
 ];
 
 export default function SipCalculatorSeo() {
@@ -83,40 +97,12 @@ export default function SipCalculatorSeo() {
     })),
   };
 
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: `${SITE_URL}`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Finance Tools',
-        item: `${SITE_URL}/finance`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: 'SIP Calculator',
-        item: `${SITE_URL}/finance/sip-calculator`,
-      },
-    ],
-  };
-
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+      {/* FAQ Schema Script Tag (Fix: duplicate breadcrumb removed) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <section aria-labelledby="sip-calculator-systematic-investment-plan-sip" className="mb-8">
@@ -430,6 +416,68 @@ export default function SipCalculatorSeo() {
         </div>
       </section>
 
+      {/* ZONE 5: DEDICATED PITFALLS, EDGE CASES & VERIFICATION GUIDE */}
+      <section aria-labelledby="sip-calculator-financial-pitfalls-and-edge-cases" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="sip-calculator-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              1. Nominal APR (r/m) vs Effective APY Regional Conventions
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Investors comparing Indian mutual fund calculators to US platforms often notice divergent maturity values for the identical 12% return. Indian AMFI tools use Nominal APR (<code>i = r / 12 = 1.0%</code>), while US/European institutional models use Effective APY (<code>i = (1+r)^(1/12) - 1 ≈ 0.9489%</code>). KivaroTools features a direct compounding switch so you can match your local regulatory standard.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              2. Front-End Entry Fees &amp; Net Taxable Cost Basis
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              When brokers deduct an upfront entry load (e.g., 2%), only the remaining 98% of your cash enters the market. Erroneously counting the fee toward your invested cost basis distorts subsequent capital gains calculations. Our engine properly segregates gross cash deposits from net cost basis to ensure IRS and international tax audit compliance.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              3. Total Expense Ratio (TER): Geometric Drag vs Arithmetic Subtraction
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Deducting an annual 1.5% TER from a 12% nominal return does not equal a simple 10.5% return. Asset management fees compound geometrically at each sub-period: <code>fee_rate = 1 - (1 - TER)^(1/m)</code>. Over 20 years, an active fund charging 1.5% TER leaves you with nearly 25% less terminal wealth compared to an index fund charging 0.10% TER.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              4. 80-Iteration Bisection Solver: Target Reachability &amp; Upper Bounds
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Basic goal planners fail when target wealth goals are impossible under given returns and tenures. KivaroTools executes an 80-iteration numerical bisection solver accurate to $0.05. If a milestone exceeds upper contribution boundaries, the engine transparently indicates unreachability rather than returning flawed calculations.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              5. 3,000-Path Monte Carlo Volatility &amp; Sequence of Returns Risk
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Linear compound interest calculators mislead investors by projecting a smooth 12% return every single year. Experiencing negative returns in the final years before retirement severely reduces your capital. Our 3,000-path lognormal Brownian motion simulation reveals the full percentile fan (p10 conservative to p90 optimistic) and empirical goal reach probability.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              6. Terminal Capital Gains Tax (LTCG) Liquidation Net Proceeds
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Gross maturity values fail to show what enters your bank account. Upon liquidation, governments tax realized capital gains. KivaroTools calculates post-tax liquidation proceeds: <code>Net Proceeds = Ending Balance - max(0, Ending Balance - Net Cost Basis) * Tax Rate</code>, giving salaried investors true purchasing power visibility.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Section: Goal Planner Numerical Bisection Solver */}
       <section aria-labelledby="sip-calculator-goal-planner-reverse-solver" className="mb-8">
         <h3 id="sip-calculator-goal-planner-reverse-solver" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
@@ -594,6 +642,28 @@ export default function SipCalculatorSeo() {
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Convert 160+ world fiat currencies and top crypto assets with transparent mid-market rates.
+            </div>
+          </Link>
+          <Link
+            href="/finance/precious-metals"
+            className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 hover:border-emerald-500/40 bg-gray-50/50 dark:bg-slate-900/40 hover:bg-emerald-50/20 transition-all text-sm group"
+          >
+            <div className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+              Precious Metals Scrap Calculator &rarr;
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Live Gold, Silver, Platinum, and Palladium scrap jewelry melt values across 32 currencies.
+            </div>
+          </Link>
+          <Link
+            href="/finance/invoice-generator"
+            className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 hover:border-emerald-500/40 bg-gray-50/50 dark:bg-slate-900/40 hover:bg-emerald-50/20 transition-all text-sm group"
+          >
+            <div className="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+              Pro PDF Invoice Generator &rarr;
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Create professional, print-ready A4 PDF invoices locally in your browser with zero signup.
             </div>
           </Link>
         </div>

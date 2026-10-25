@@ -66,6 +66,21 @@ export const COMPOUND_INTEREST_FAQS: FaqItem[] = [
     answer:
       'No. All compound interest calculations are mathematical models based on constant user-supplied assumptions. Real-world financial assets (such as stocks, bonds, and real estate) experience fluctuating market volatility, variable inflation, economic cycles, sequence-of-returns risk, and tax obligations. Projections should be used as educational baselines rather than guaranteed forecasts.',
   },
+  {
+    question: 'How does the 2,000-path Monte Carlo simulation evaluate sequence-of-returns risk and goal probability?',
+    answer:
+      'Deterministic compound calculators assume fixed annual returns (e.g., 8% every year). In reality, market returns follow stochastic distributions. KivaroTools generates up to 2,000 randomized annual paths using Box-Muller Gaussian transforms. The engine sorts terminal outcomes into 10th (p10), 25th (p25), 50th (p50 median), 75th (p75), and 90th (p90) wealth percentiles, displaying the empirical probability of achieving your target savings corpus under real-world volatility.',
+  },
+  {
+    question: 'What is the difference between Taxable, Tax-Deferred, and Tax-Exempt investment compounding?',
+    answer:
+      'Tax treatment dramatically affects terminal capital: In Taxable accounts, annual returns are reduced by your marginal tax rate each year, creating severe ongoing tax drag. In Tax-Deferred accounts (traditional 401k/IRA), growth compounds uninhibited until full taxation upon withdrawal. In Tax-Exempt accounts (Roth IRA, TFSA, ISA), contributions are made with post-tax dollars, but capital gains and withdrawals compound completely tax-free.',
+  },
+  {
+    question: 'How does the Retirement Drawdown decumulation engine solve for the exact portfolio depletion year?',
+    answer:
+      'When you switch to decumulation mode, the portfolio shifts from accepting deposits to funding monthly or annual living expenses adjusted for inflation. KivaroTools computes period-by-period asset balances after subtracting living withdrawals, investment fees, and taxes. If withdrawals exceed portfolio growth and principal, the engine flags the exact calendar year of capital depletion (t_depleted) or confirms permanent sustainability.',
+  },
 ];
 
 export default function CompoundInterestSeo() {
@@ -95,11 +110,11 @@ export default function CompoundInterestSeo() {
         <h2 id="compound-interest-the-foundations-of-compound-in" className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100">
           The Foundations of Compound Interest: Mechanics, Mathematics &amp; Long-Term Growth
         </h2>
-      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
-        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
-        </p>
-      </blockquote>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No net worth figures, contribution plans, or retirement targets are ever uploaded to remote servers.
+          </p>
+        </blockquote>
         <p className="text-base leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Compound interest is widely regarded as the cornerstone of personal financial planning and modern wealth creation. Unlike linear systems where interest is calculated strictly on the initial deposit, compound growth reinvests every cycle&apos;s earnings back into the capital base. As a result, subsequent interest is earned on both the original principal and all prior accumulated returns.
         </p>
@@ -120,7 +135,7 @@ export default function CompoundInterestSeo() {
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/60 dark:bg-slate-900/40">
             <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1.5">1. Starting Capital &amp; Additions</h4>
             <ul className="text-xs space-y-1.5 text-slate-600 dark:text-slate-400 list-disc pl-4">
-              <li><strong>Currency:</strong> Choose from 150+ ISO global currencies (USD, EUR, GBP, CAD, AUD, INR, AED, etc.).</li>
+              <li><strong>Currency:</strong> Choose from 154 ISO global currencies (USD, EUR, GBP, CAD, AUD, INR, AED, etc.).</li>
               <li><strong>Initial Investment:</strong> Starting lump-sum deposit ($0 to $100T).</li>
               <li><strong>Recurring Contributions:</strong> Regular deposits (e.g., $500/month).</li>
               <li><strong>Contribution Frequency:</strong> Weekly (52/yr), Bi-weekly (26/yr), Monthly (12/yr), Quarterly (4/yr), or Annually (1/yr).</li>
@@ -149,7 +164,7 @@ export default function CompoundInterestSeo() {
               <li><strong>Goal Solvers:</strong> Automatically solve required monthly savings or required rate of return to reach a target goal.</li>
               <li><strong>Multi-Scenario Engine:</strong> Side-by-side Conservative, Base, and Optimistic comparison with custom spread.</li>
               <li><strong>Monte Carlo Simulation:</strong> 500 to 2,000 stochastic paths analyzing sequence-of-returns risk and probability of plan success.</li>
-              <li><strong>Stress Testing:</strong> Pre-configured market shock scenarios (e.g., Early 20% crash, inflation surge, savings pause).</li>
+              <li><strong>Stress Testing:</strong> Pre-configured market shock scenarios (e.g., 2008 GFC, Stagflation, Early Bear Market, Savings Pause).</li>
             </ul>
           </div>
         </div>
@@ -419,6 +434,68 @@ export default function CompoundInterestSeo() {
         </div>
       </section>
 
+      {/* ZONE 5: DEDICATED PITFALLS, EDGE CASES & VERIFICATION GUIDE */}
+      <section aria-labelledby="compound-interest-financial-pitfalls-and-edge-cases" className="mb-10 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="compound-interest-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              1. Linear Inflation Subtraction vs Fisher Real Purchasing Power
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Subtracting 3% inflation from an 8% nominal return to assume a 5% real return (Linear Approximation) produces mathematical errors over long horizons. KivaroTools utilizes the rigorous Fisher relationship: <code>Real FV = Nominal FV / (1 + i)^t</code>. Over 30 years, this prevents overestimating the purchasing power of your retirement corpus by thousands of dollars.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              2. Sequence of Returns Risk &amp; 2,000-Path Monte Carlo Simulations
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Assuming a portfolio smoothly compounds at 7% every year obscures market crashes during critical decumulation phases. Experiencing a 20% drawdown in Year 1 of retirement devastates longevity. Our 2,000-path Box-Muller Monte Carlo simulation models stochastic volatility, producing p10 (conservative) through p90 (optimistic) wealth percentile bands.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              3. Continuous Compounding Limit (A = Pe^rt) vs Daily Compounding
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Savers often wonder how much daily compounding (365 cycles) lags theoretical continuous compounding. On a $10,000 investment at 8% over 10 years, daily compounding yields $22,253.46 while continuous compounding (<code>A = Pe^(rt)</code>) yields $22,255.41—a trivial $1.95 delta. Beyond daily compounding, frequency delivers diminishing returns.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              4. Compound AUM Fee Drag: The 25% Terminal Wealth Destruction
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Financial advisors often market a 1% annual Assets Under Management (AUM) fee as minor. However, deducting 1% annually from an 8% gross return reduces net growth to 7%. Over a 30-year horizon, this seemingly small fee siphons off over 25% of your total accumulated terminal wealth. Our engine explicitly isolates and reconciles cumulative fee drag.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              5. Tax Regimes: Annual Drag vs Deferred Exit vs Tax-Exempt Roth
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Standard calculators ignore taxes. KivaroTools models three statutory tax structures: (1) <em>Taxable</em> (annual capital gains tax drag applied each period); (2) <em>Tax-Deferred</em> (traditional 401k/IRA exit tax applied upon terminal liquidation); and (3) <em>Tax-Exempt</em> (Roth IRA, ISA, or TFSA zero-tax compounding).
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+              6. Retirement Drawdown Longevity &amp; Portfolio Depletion Year
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Transitioning from wealth accumulation to decumulation requires stress-testing withdrawal rates. If monthly living expenses exceed portfolio yield, capital depletes rapidly. Our drawdown engine determines whether a portfolio sustains your lifetime expenses or solves for the exact calendar year of capital exhaustion (<code>t_depleted</code>).
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Section 7: Practical Financial Planning Applications */}
       <section aria-labelledby="compound-interest-practical-real-world-applicati" className="mb-10">
         <h3 id="compound-interest-practical-real-world-applicati" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
@@ -490,7 +567,8 @@ export default function CompoundInterestSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
       {/* Section 10: Related Tools */}
@@ -542,6 +620,28 @@ export default function CompoundInterestSeo() {
             <div>
               <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Precious Metals Rates</span>
               <p className="text-[11px] text-slate-500">Live gold, silver, and platinum store-of-value prices</p>
+            </div>
+            <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
+          </Link>
+
+          <Link
+            href="/finance/crypto-converter"
+            className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition group"
+          >
+            <div>
+              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Currency &amp; Crypto Converter</span>
+              <p className="text-[11px] text-slate-500">Live mid-market rates and commercial bank spread fees</p>
+            </div>
+            <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
+          </Link>
+
+          <Link
+            href="/finance/invoice-generator"
+            className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition group"
+          >
+            <div>
+              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400">Pro Invoice Generator</span>
+              <p className="text-[11px] text-slate-500">Print-ready A4 PDF invoicing with zero signup</p>
             </div>
             <span className="text-blue-600 dark:text-blue-400 font-bold">&rarr;</span>
           </Link>

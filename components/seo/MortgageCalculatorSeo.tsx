@@ -66,6 +66,21 @@ export const MORTGAGE_CALCULATOR_FAQS: FaqItem[] = [
     answer:
       'In the United States, eligible homeowners who itemize deductions on Schedule A can deduct mortgage interest on acquisition debt up to $750,000 ($375,000 if married filing separately). State and local taxes (SALT), including municipal property taxes, can also be deducted up to the statutory $10,000 cap ($5,000 if married filing separately). However, if your standard deduction exceeds total itemized deductions, itemizing provides no incremental tax benefit.',
   },
+  {
+    question: 'How does KivaroTools guarantee principal conservation across 360 monthly or 780 biweekly payment periods?',
+    answer:
+      'Our financial engine executes an exact Principal Conservation check at the end of every simulation run: Initial Financed Principal minus Total Principal Repaid must reconcile to precisely $0.00. On the final scheduled period, the engine caps the principal component to the remaining unpaid beginning balance, eliminating penny overpayments or trailing cent residuals caused by IEEE-754 floating-point rounding.',
+  },
+  {
+    question: 'How does FHA Mortgage Insurance (MIP) differ from conventional Private Mortgage Insurance (PMI)?',
+    answer:
+      'Unlike conventional PMI, which automatically terminates under the Homeowners Protection Act once LTV reaches 80% (or 78%), FHA loans require both an upfront mortgage insurance premium (UFMIP, typically 1.75%) and an annual mortgage insurance premium (MIP, typically 0.85%). For borrowers putting down less than 10%, FHA MIP remains for the entire life of the loan and cannot be cancelled without refinancing into a conventional mortgage.',
+  },
+  {
+    question: 'Does KivaroTools transmit my property price, income, or loan parameters to mortgage lenders or brokers?',
+    answer:
+      'No. KivaroTools operates with a strict zero-lead-capture, zero-tracking policy. All amortization algorithms, PITI escrow math, biweekly conversions, and CSV generation execute 100% locally in your web browser. Neither your purchase price, down payment, interest rate, nor personal financial figures are ever uploaded to any server or shared with mortgage lenders.',
+  },
 ];
 
 export default function MortgageCalculatorSeo() {
@@ -171,7 +186,7 @@ export default function MortgageCalculatorSeo() {
               <strong>Configure Down Payment:</strong> Enter either your liquid cash down payment amount or your target down payment percentage. The calculator keeps both fields bidirectionally synchronized.
             </li>
             <li>
-              <strong>Set Interest Rate &amp; Loan Term:</strong> Input the lender&apos;s nominal annual interest rate (e.g., 6.5%) and desired repayment horizon (supports any term from 1 to 100 years).
+              <strong>Set Interest Rate &amp; Loan Term:</strong> Input the lender&apos;s nominal annual interest rate (e.g., 6.5%, supported in steps of 0.001%) and desired repayment horizon (supports any term from 1 to 100 years, up to 2,600 biweekly periods).
             </li>
             <li>
               <strong>Select Payment Frequency:</strong> Choose between standard <em>Monthly</em> (12 payments/year) or <em>Accelerated Biweekly</em> (26 payments/year, where each biweekly payment equals half the monthly payment, creating 13 monthly equivalents per year to accelerate equity buildup).
@@ -433,41 +448,66 @@ export default function MortgageCalculatorSeo() {
           </ul>
         </section>
 
-        {/* COMMON MISTAKES */}
-        <section aria-labelledby="mortgage-calculator-common-mortgage-calculation-mi" className="mb-8">
-          <h3 id="mortgage-calculator-common-mortgage-calculation-mi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            Common Mortgage Calculation Mistakes to Avoid
-          </h3>
-          <ul className="list-disc pl-5 space-y-2 mb-6 text-sm text-slate-600 dark:text-slate-400">
-            <li>
-              <strong>Conflating Nominal Rate with APR:</strong> The nominal interest rate governs the monthly P&amp;I calculation, while APR factors in upfront financing charges, points, and fees. Do not use APR in the periodic amortization formula.
-            </li>
-            <li>
-              <strong>Budgeting Only for Principal and Interest:</strong> Forgetting property taxes, hazard insurance, and HOA dues can cause severe budget shortfalls. In high-tax jurisdictions, escrow can account for 25% to 40% of the total monthly housing cost.
-            </li>
-            <li>
-              <strong>Overlooking Upfront Cash to Close:</strong> Down payment is only a fraction of settlement day cash. Buyers must also bring closing costs, title insurance, appraisal fees, transfer taxes, and initial escrow impound deposits.
-            </li>
-            <li>
-              <strong>Assuming Property Taxes Remain Constant:</strong> Municipal tax boards frequently re-assess property values after a sale to reflect the new market purchase price, often increasing property taxes in years two and beyond.
-            </li>
-          </ul>
-        </section>
+        {/* ZONE 5: DEDICATED PITFALLS, EDGE CASES & VERIFICATION GUIDE */}
+        <section aria-labelledby="mortgage-calculator-financial-pitfalls-and-edge-cases" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+          <h2 id="mortgage-calculator-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                1. Accelerated Biweekly (Monthly/2) vs Standard Biweekly Math
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Many online calculators divide the annual 12-month total by 26 (i.e., Monthly &times; 12 / 26), which yields zero prepayment acceleration. KivaroTools implements genuine <em>Accelerated Biweekly</em> amortization (Monthly &divide; 2). Because there are 26 biweekly periods per year, you submit 13 full monthly payments annually, shaving 4 to 6 years off a 30-year loan without refinancing fees.
+              </p>
+            </div>
 
-        {/* ASSUMPTIONS & LIMITATIONS */}
-        <section aria-labelledby="mortgage-calculator-calculator-assumptions-exclusi" className="mb-8">
-          <h3 id="mortgage-calculator-calculator-assumptions-exclusi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            Calculator Assumptions, Exclusions &amp; Limitations
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-            To maintain mathematical rigor, KivaroTools models standard conventional fully amortizing fixed-rate mortgages under the following explicit assumptions:
-          </p>
-          <ul className="list-disc pl-5 space-y-1.5 mb-6 text-sm text-slate-600 dark:text-slate-400">
-            <li>Interest is compounded periodically (monthly or biweekly) based on a 360-day or exact calendar year schedule.</li>
-            <li>Property taxes and insurance premiums are modeled as level annual estimates divided evenly across billing cycles; actual escrow disbursements vary according to municipal tax schedules.</li>
-            <li>PMI is calculated as a level annual percentage applied to the remaining loan balance and dropped at the specified LTV threshold; specific lender guidelines or FHA mortgage insurance premium (MIP) life-of-loan rules may differ.</li>
-            <li>Calculations assume zero prepayment penalties.</li>
-          </ul>
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                2. Homeowners Protection Act of 1998: 80% Request vs 78% Mandate
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Under the federal HPA, borrowers with conventional mortgages have the statutory right to request written PMI cancellation once the loan balance reaches 80% LTV of the original purchase price. Servicers are legally required to automatically drop PMI at 78% LTV. KivaroTools tracks the exact month your loan crosses these milestones and sets PMI to $0.00.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                3. Conflating Down Payment with Total Cash to Close
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                First-time homebuyers frequently overlook closing charges. Your cash required on settlement day equals <code>Down Payment + Closing Costs + Discount Points + Lender Fees + Origination Prepayments</code>. KivaroTools features synchronized dollar and percentage inputs, allowing you to audit your official TRID Closing Disclosure before arriving at the title company.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                4. Origination Curtailment vs Mid-Loan Lump-Sum Prepayments
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Applying a prepayment on Day 1 at loan origination immediately reduces the interest-bearing principal before Period 1 accrues. Our engine allows you to toggle between an origination curtailment and a specific period lump-sum prepayment, modeling the exact interest savings and accelerated PMI drop-off date.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                5. Property Tax Reassessment &amp; Escrow Shortage Spikes
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Fixed-rate mortgages guarantee that Principal and Interest remain constant. However, municipal tax boards reassess newly purchased homes to reflect higher transaction prices, causing annual escrow shortages. Our non-amortizing escrow pass-through modeling separates pure debt service from municipal assessments.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
+                6. RFC-4180 CSV Amortization Export &amp; Formula Injection Defense
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                Exporting your 360-month or 780-biweekly schedule to Microsoft Excel or Google Sheets is protected against CSV Spreadsheet Formula Injection (CWE-1236). KivaroTools sanitizes all cell entries starting with &ldquo;=&rdquo;, &ldquo;+&rdquo;, &ldquo;-&rdquo;, or &ldquo;@&rdquo; by prepending a single quote, ensuring enterprise-grade data security.
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* FAQS SECTION */}
@@ -504,7 +544,7 @@ export default function MortgageCalculatorSeo() {
             Related Financial Calculators &amp; Utilities
           </h3>
           <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-            Explore related personal finance and lending tools on KivaroTools: compare auto and personal loans on the{' '}
+            Explore related personal finance and lending tools on KivaroTools: calculate personal and auto loan installments on the{' '}
             <Link href="/finance/emi-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
               Personal &amp; Auto Loan EMI Calculator
             </Link>
@@ -516,13 +556,17 @@ export default function MortgageCalculatorSeo() {
             <Link href="/finance/sip-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
               SIP Calculator
             </Link>
-            , generate professional PDF invoices using the{' '}
+            , track spot gold and bullion scrap with the{' '}
+            <Link href="/finance/precious-metals" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Precious Metals Calculator
+            </Link>
+            , convert international currencies with the{' '}
+            <Link href="/finance/crypto-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Currency &amp; Crypto Converter
+            </Link>
+            , or generate professional PDF invoices using the{' '}
             <Link href="/finance/invoice-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
               Pro Invoice Generator
-            </Link>
-            , or explore developer utilities like the{' '}
-            <Link href="/developer/json-formatter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              JSON Formatter
             </Link>
             .
           </p>
