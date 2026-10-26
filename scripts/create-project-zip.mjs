@@ -18,21 +18,51 @@ const EXCLUDED_DIRS = new Set([
   '.vercel',
   '.kilo',
   'test-results',
+  'kivarotools-public',
+  'Online Library WebPages',
+  '.idea',
+  '.vscode',
+  'coverage',
 ]);
 
-const EXCLUDED_EXTENSIONS = new Set(['.zip', '.tar', '.gz', '.tgz']);
+const EXCLUDED_EXTENSIONS = new Set(['.zip', '.tar', '.gz', '.tgz', '.tsbuildinfo', '.log']);
+
+const EXCLUDED_FILES = new Set([
+  'repomix-output.xml',
+  'verify-seo.js',
+  'SALARY_CALCULATOR_22_COUNTRY_ACCURACY_AUDIT.md',
+  'precious_metals_graph_and_data_audit.md',
+  '.env.local',
+  'CLAUDE.md',
+  'scripts/apply-all-seo-upgrades.js',
+]);
 
 function shouldIncludePath(relPath) {
+  // Normalize path separators to forward slash for consistent checks
+  const normalizedRel = relPath.split(path.sep).join('/');
+  const fileName = path.basename(relPath);
+
+  if (EXCLUDED_FILES.has(fileName) || EXCLUDED_FILES.has(normalizedRel)) {
+    return false;
+  }
+
+  // Exclude any env files
+  if (fileName.startsWith('.env')) {
+    return false;
+  }
+
   const parts = relPath.split(path.sep);
   for (const part of parts) {
     if (EXCLUDED_DIRS.has(part)) {
       return false;
     }
   }
+
   const ext = path.extname(relPath).toLowerCase();
   if (EXCLUDED_EXTENSIONS.has(ext)) {
     return false;
   }
+
   return true;
 }
 
