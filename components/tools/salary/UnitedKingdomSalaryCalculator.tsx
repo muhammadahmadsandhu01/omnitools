@@ -20,6 +20,10 @@ import {
   FREQUENCY_FACTORS,
   PayFrequency
 } from '@/components/tools/SalaryCalculator';
+import {
+  SalaryPresetBar,
+  SalaryInsightsAndExportSuite,
+} from '@/components/tools/salary/shared/SalaryAnalysisToolbar';
 
 /* =========================================================================
    UNITED KINGDOM STATUTORY SALARY CALCULATOR ENGINE
@@ -146,14 +150,44 @@ export function calculateUkTax(grossTaxableAnnual: number, region = 'EWNI', taxY
   };
 }
 
+
+export type UkStudentLoanPlan = 'none' | 'plan1' | 'plan2' | 'plan4' | 'plan5';
+
+export function computeUkStudentLoan(
+  annualGross: number,
+  plan: UkStudentLoanPlan,
+  postgradLoan: boolean
+): number {
+  let total = 0;
+  // 2026-27 GOV.UK Student Loan Repayment Thresholds (9% above threshold)
+  const thresholds: Record<UkStudentLoanPlan, number> = {
+    none: Infinity,
+    plan1: 26900,
+    plan2: 29385,
+    plan4: 33795,
+    plan5: 25000,
+  };
+  if (plan !== 'none' && annualGross > thresholds[plan]) {
+    total += (annualGross - thresholds[plan]) * 0.09;
+  }
+  // Postgraduate Loan: 6% above £21,000
+  if (postgradLoan && annualGross > 21000) {
+    total += (annualGross - 21000) * 0.06;
+  }
+  return total;
+}
+
 export default function UnitedKingdomSalaryCalculator() {
   const formId = useId();
 
   // Fresh initial state (Zero-Prefill)
   const [grossSalaryInput, setGrossSalaryInput] = useState<string>('');
   const [frequency, setFrequency] = useState<PayFrequency>('annual');
+  const [preTaxDeductionInput, setPreTaxDeductionInput] = useState<string>('');
   const [taxYear, setTaxYear] = useState<string>(METADATA.defaultTaxYear);
   const [region, setRegion] = useState<string>('EWNI');
+  const [studentLoanPlan, setStudentLoanPlan] = useState<UkStudentLoanPlan>('none');
+  const [postgradLoan, setPostgradLoan] = useState<boolean>(false);
 
   const parsedGross = useMemo(() => {
     const cleaned = grossSalaryInput.replace(/[^0-9.]/g, '');
@@ -161,16 +195,25 @@ export default function UnitedKingdomSalaryCalculator() {
     return isNaN(val) || val < 0 ? 0 : val;
   }, [grossSalaryInput]);
 
+  const parsedPreTax = useMemo(() => {
+    const cleaned = preTaxDeductionInput.replace(/[^0-9.]/g, '');
+    const val = parseFloat(cleaned);
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [preTaxDeductionInput]);
+
   const periodsPerYear = FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1;
   const annualGross = parsedGross * periodsPerYear;
 
   const result = useMemo(() => {
     if (annualGross <= 0) return null;
+    const effectivePreTax = Math.min(annualGross, parsedPreTax);
+    const taxableGrossAfterPreTax = Math.max(0, annualGross - effectivePreTax);
 
-    const res = calculateUkTax(annualGross, region, taxYear);
+    const res = calculateUkTax(taxableGrossAfterPreTax, region, taxYear);
     const annualIncomeTax = res.incomeTax;
-    const annualEmployeeSocial = res.nationalInsurance;
-    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial;
+    const studentLoanAnnual = computeUkStudentLoan(annualGross, studentLoanPlan, postgradLoan);
+    const annualEmployeeSocial = res.nationalInsurance + studentLoanAnnual;
+    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
     const annualEmployerSocial = res.employerNi;
     const annualEmployerCost = annualGross + annualEmployerSocial;
@@ -188,6 +231,7 @@ export default function UnitedKingdomSalaryCalculator() {
 
     return {
       annualGross,
+      annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
       annualTotalDeductions,
@@ -205,7 +249,7 @@ export default function UnitedKingdomSalaryCalculator() {
       audits,
       rawRes: res
     };
-  }, [annualGross, periodsPerYear, taxYear, region]);
+  }, [annualGross, periodsPerYear, taxYear, region, parsedPreTax, studentLoanPlan, postgradLoan]);
 
   return (
     <div className="w-full space-y-8">
@@ -361,6 +405,52 @@ export default function UnitedKingdomSalaryCalculator() {
             ))}
           </div>
         </div>
+
+        
+        {/* UK Student Loan & Postgraduate Loan Selector */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-slate-800/80">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+              UK Student Loan Plan (Optional — 9% above threshold)
+            </label>
+            <select
+              value={studentLoanPlan}
+              onChange={(e) => setStudentLoanPlan(e.target.value as UkStudentLoanPlan)}
+              className="w-full py-2.5 px-3 bg-gray-50/70 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="none">No Undergraduate Student Loan</option>
+              <option value="plan1">Plan 1 — Threshold £26,900/yr (9%)</option>
+              <option value="plan2">Plan 2 — Threshold £29,385/yr (9%)</option>
+              <option value="plan4">Plan 4 (Scotland) — Threshold £33,795/yr (9%)</option>
+              <option value="plan5">Plan 5 (Post-Aug 2023) — Threshold £25,000/yr (9%)</option>
+            </select>
+          </div>
+          <div className="flex items-end pb-1">
+            <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={postgradLoan}
+                onChange={(e) => setPostgradLoan(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+              />
+              <span>Include Postgraduate Loan (6% above £21,000/yr)</span>
+            </label>
+          </div>
+        </div>
+        {/* Quick Salary Presets & Pre-Tax Deduction Drawer */}
+        <SalaryPresetBar
+          currency={METADATA.currency}
+          symbol={METADATA.symbol}
+          presets={[{"label":"£30,000 / yr","amount":"30000","freq":"annual"},{"label":"£45,000 / yr","amount":"45000","freq":"annual"},{"label":"£65,000 / yr","amount":"65000","freq":"annual"},{"label":"£100,000 / yr","amount":"100000","freq":"annual"},{"label":"£150,000 / yr","amount":"150000","freq":"annual"}]}
+          onSelectPreset={(amt, freq) => {
+            setGrossSalaryInput(amt);
+            if (freq) setFrequency(freq);
+          }}
+          preTaxDeductionInput={preTaxDeductionInput}
+          onPreTaxDeductionChange={setPreTaxDeductionInput}
+          preTaxDeductionLabel="Annual Salary Sacrifice / Workplace Pension Contribution (Pre-Tax)"
+          preTaxDeductionHint="Reduces UK PAYE taxable income (and helps preserve your £12,570 Personal Allowance when earning above £100,000)."
+        />
       </div>
 
       {/* Results Section */}
@@ -434,7 +524,7 @@ export default function UnitedKingdomSalaryCalculator() {
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">Marginal Tax Bracket</span>
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {formatPercent(result.marginalRate * 100)}
+                {formatPercent(result.marginalRate)}
               </div>
               <p className="text-[11px] text-slate-400">Applied to your next {METADATA.currency} earned</p>
             </div>
@@ -575,7 +665,7 @@ export default function UnitedKingdomSalaryCalculator() {
                           {' – '}
                           {a.max !== null ? formatCurrency(a.max, METADATA.currency, METADATA.symbol, 0) : 'Above'}
                         </td>
-                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate * 100)}</td>
+                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate)}</td>
                         <td className="py-2 px-2 tabular-nums">
                           {formatCurrency(a.taxableAmountInBracket, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                         </td>
@@ -589,6 +679,41 @@ export default function UnitedKingdomSalaryCalculator() {
               </div>
             </div>
           )}
+
+          {/* Visual Allocation Bar, 7-Period Matrix, CSV/Print Export & Reverse Net-to-Gross Solver */}
+          <SalaryInsightsAndExportSuite
+            countryName={METADATA.name}
+            currency={METADATA.currency}
+            symbol={METADATA.symbol}
+            decimals={METADATA.decimals}
+            taxYear={taxYear}
+            rulesetId={METADATA.rulesetId}
+            result={{
+              annualGross: result.annualGross,
+              annualPreTaxDeductions: result.annualPreTaxDeductions,
+              annualIncomeTax: result.annualIncomeTax,
+              annualEmployeeSocial: result.annualEmployeeSocial,
+              annualTotalDeductions: result.annualTotalDeductions,
+              annualNet: result.annualNet,
+              annualEmployerSocial: result.annualEmployerSocial,
+              annualEmployerCost: result.annualEmployerCost,
+              effectiveTaxRate: result.effectiveTaxRate,
+              effectiveTotalRate: result.effectiveTotalRate,
+              marginalRate: result.marginalRate,
+            }}
+            computeNetFromAnnualGross={(candGross) => {
+              const effPre = Math.min(candGross, parsedPreTax);
+              const r = calculateUkTax(Math.max(0, candGross - effPre), region, taxYear);
+              const tax = r.incomeTax;
+              const soc = r.nationalInsurance + computeUkStudentLoan(candGross, studentLoanPlan, postgradLoan);
+              const tot = tax + soc + effPre;
+              return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: soc, annualTotalDeductions: tot, annualEmployerCost: candGross + r.employerNi };
+            }}
+            onApplyRequiredGross={(reqAnnual) => {
+              const perPeriod = Math.round(reqAnnual / periodsPerYear);
+              setGrossSalaryInput(String(perPeriod));
+            }}
+          />
 
           {/* Statutory Exclusions Note */}
           {METADATA.knownExclusions && METADATA.knownExclusions.length > 0 && (

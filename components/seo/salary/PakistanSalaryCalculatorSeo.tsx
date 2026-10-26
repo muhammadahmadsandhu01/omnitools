@@ -7,29 +7,29 @@ export interface FaqItem {
 
 export const PAKISTAN_SALARY_FAQS: FaqItem[] = [
   {
-    question: 'What is the tax-exempt salary threshold in Pakistan for Tax Year 2026–2027?',
+    question: 'What are the FBR salaried income tax slabs in Pakistan for FY 2026–2027 (Finance Act 2026)?',
     answer:
-      'Under the First Schedule, Part I, Division I of the Income Tax Ordinance 2001 (as amended by Finance Act 2024), annual salaried income up to PKR 600,000 (PKR 50,000 per month) is taxed at 0%. Income above PKR 600,000 enters progressive tax slabs starting at 5%.',
+      'Under the First Schedule, Part I, Division I of the Income Tax Ordinance 2001 (Finance Act 2026), salaried slabs are: 0% up to PKR 600,000; 1% on PKR 600,001–1,200,000; PKR 6,000 + 11% on PKR 1,200,001–2,200,000; PKR 116,000 + 20% on PKR 2,200,001–3,200,000; PKR 316,000 + 25% on PKR 3,200,001–4,100,000; PKR 541,000 + 29% on PKR 4,100,001–5,600,000; PKR 976,000 + 32% on PKR 5,600,001–7,000,000; and PKR 1,424,000 + 35% above PKR 7,000,000.',
+  },
+  {
+    question: 'How do FY 2026–2027 slabs compare with FY 2025–2026 (Finance Act 2025) and FY 2024–2025?',
+    answer:
+      'In FY 2024–25 (Finance Act 2024), the second slab was 5% and the third slab was 15%. In FY 2025–26 (Finance Act 2025), rates were reduced to 1%, 11%, 23%, 30%, and 35% (with a 9% surcharge above PKR 10M). In FY 2026–27 (Finance Act 2026), middle and upper-middle slabs were further reduced to 20%, 25%, 29%, and 32% up to PKR 7,000,000, and the 9% high-earner salaried surcharge was abolished.',
   },
   {
     question: 'How is employee EOBI contribution calculated in Pakistan?',
     answer:
-      'The Employees\' Old-Age Benefits Institution (EOBI) mandates an employee contribution of 1% based on the statutory minimum wage (notified at PKR 37,000/month for statutory wage ceiling parity). The maximum employee deduction is PKR 370 per month (PKR 4,440 per year).',
+      "The Employees' Old-Age Benefits Institution (EOBI) mandates an employee contribution of 1% and an employer contribution of 5% based on the statutory minimum wage (PKR 37,000/month). The standard employee deduction is PKR 370 per month (PKR 4,440 per year), while the employer contributes PKR 1,850 per month (PKR 22,200 per year).",
   },
   {
-    question: 'When does the 10% super-tax surcharge apply to salaried individuals?',
+    question: 'How does the 10% Medical Allowance tax exemption (Clause 139) work?',
     answer:
-      'Under Section 4AB of the Income Tax Ordinance, a 10% surcharge on total income tax liability applied to salaried individuals earning more than PKR 10,000,000 in Tax Year 2025. In Tax Year 2026–2027 statutory models, this surcharge structure is tracked specifically based on legislative notification.',
+      'Under Clause 139, Part I of the Second Schedule to the Income Tax Ordinance 2001, medical allowance paid by an employer is exempt from income tax up to 10% of basic salary (equivalent to 1/11th of gross pay when structured as Basic + 10% Medical), provided free hospitalization or medical reimbursement is not separately provided under the employment terms.',
   },
   {
     question: 'What qualifies an individual as a salaried taxpayer in Pakistan?',
     answer:
-      'An individual is classified as a salaried taxpayer under the Income Tax Ordinance if salary income constitutes more than 75% of their total taxable income for the fiscal year. If business or investment income exceeds 25%, the higher non-salaried tax slabs apply.',
-  },
-  {
-    question: 'Are allowances like medical allowance and conveyance tax-exempt?',
-    answer:
-      'Under Clause 139, Part I of the Second Schedule, medical allowance provided in accordance with terms of employment is exempt from income tax up to 10% of basic salary, provided free medical treatment or hospitalization coverage is not separately reimbursed. Conveyance allowance is generally taxable unless provided exclusively for official duty performance.',
+      'An individual is classified as a salaried taxpayer under the Income Tax Ordinance if salary income constitutes more than 75% of their total taxable income for the fiscal year. If business or freelance income exceeds 25%, non-salaried/AOP progressive slabs apply.',
   },
 ];
 
@@ -56,12 +56,13 @@ export default function PakistanSalaryCalculatorSeo() {
       />
 
       <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-        Pakistan Salary Calculator 2026–2027: FBR Tax Slabs, EOBI &amp; Take-Home Pay Guide
+        Pakistan Salary Calculator 2026–2027: Official FBR Tax Slabs, Multi-Year Comparison &amp; EOBI Guide
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-        Calculate your exact estimated net take-home pay in Pakistan using verified statutory payroll rules under the
-        Federal Board of Revenue (FBR) First Schedule, Part I, Division I salaried tax schedule. This guide details
-        contractual gross salary, statutory slab withholdings, mandatory EOBI contributions, and effective take-home pay.
+        Calculate your exact net take-home salary in Pakistan across <strong>FY 2026–2027 (Finance Act 2026)</strong>,{' '}
+        <strong>FY 2025–2026 (Finance Act 2025)</strong>, and <strong>FY 2024–2025 (Finance Act 2024)</strong> under the
+        Federal Board of Revenue (FBR) First Schedule, Part I, Division I salaried tax schedule. Model 10% Medical Allowance
+        exemptions (Clause 139), Section 60 Zakat deductions, EOBI contributions, and reverse Net-to-Gross pay targets.
       </p>
 
       {/* How It Works */}
@@ -70,22 +71,22 @@ export default function PakistanSalaryCalculatorSeo() {
       </h3>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <li>
-          <strong>Annual Gross Salary:</strong> Contractual monthly gross pay (basic salary + allowances) is annualized by multiplying by 12.
+          <strong>Annual Gross Salary &amp; Exemptions:</strong> Contractual monthly gross pay is multiplied by 12. If your salary structure includes a 10% Medical Allowance (Clause 139) or Section 60 Zakat / recognized Provident Fund deductions, those amounts are deducted before computing taxable salary.
         </li>
         <li>
-          <strong>EOBI Deduction:</strong> Mandatory employee EOBI of 1% on the statutory wage ceiling (PKR 37,000/month = PKR 370/month or PKR 4,440/year) is subtracted.
+          <strong>FBR Progressive Tax Slabs (FY 2026–27):</strong> Annual taxable income up to PKR 600,000 (PKR 50,000/month) is 100% tax-free (0%). Above PKR 600,000, progressive rates of 1%, 11%, 20%, 25%, 29%, 32%, and 35% apply only to the income within each slab.
         </li>
         <li>
-          <strong>Progressive Tax Slabs:</strong> Taxable income is evaluated against FBR progressive slabs (0% up to PKR 600k, 5% to PKR 1.2M, 15% to PKR 2.2M, 25% to PKR 3.2M, 30% to PKR 4.1M, and 35% on the excess).
+          <strong>EOBI Deduction:</strong> Mandatory employee EOBI of 1% on the statutory minimum wage (PKR 37,000/month = PKR 370/month or PKR 4,440/year) is subtracted alongside monthly withholding tax.
         </li>
         <li>
-          <strong>Monthly Take-Home:</strong> Total annual tax and EOBI deductions are divided by 12 and deducted from monthly gross salary to yield net spendable income.
+          <strong>Multi-Year Budget Savings:</strong> Compare your exact monthly tax under Finance Act 2026 vs. Finance Act 2025 and Finance Act 2024 with a single click.
         </li>
       </ol>
 
       {/* Worked Examples */}
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-        Representative Salary Examples (Tax Year 2026–2027)
+        Representative Pakistan Salary &amp; Tax Examples (FY 2026–2027 vs FY 2025–2026)
       </h3>
       <div className="overflow-x-auto mb-6">
         <table className="w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
@@ -93,9 +94,9 @@ export default function PakistanSalaryCalculatorSeo() {
             <tr>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Monthly Gross</th>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Annual Gross</th>
-              <th className="p-3 border border-slate-200 dark:border-slate-800">Annual FBR Tax</th>
-              <th className="p-3 border border-slate-200 dark:border-slate-800">Annual EOBI</th>
-              <th className="p-3 border border-slate-200 dark:border-slate-800">Monthly Take-Home</th>
+              <th className="p-3 border border-slate-200 dark:border-slate-800">FY 2026–27 Monthly Tax</th>
+              <th className="p-3 border border-slate-200 dark:border-slate-800">FY 2025–26 Monthly Tax</th>
+              <th className="p-3 border border-slate-200 dark:border-slate-800">FY 2026–27 Net Take-Home (after EOBI)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
@@ -103,29 +104,36 @@ export default function PakistanSalaryCalculatorSeo() {
               <td className="p-3 font-medium text-slate-900 dark:text-slate-100">PKR 50,000</td>
               <td className="p-3">PKR 600,000</td>
               <td className="p-3">PKR 0 (0%)</td>
-              <td className="p-3">PKR 4,440</td>
-              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 49,630</td>
+              <td className="p-3">PKR 0 (0%)</td>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 49,630 / mo</td>
             </tr>
             <tr>
               <td className="p-3 font-medium text-slate-900 dark:text-slate-100">PKR 100,000</td>
               <td className="p-3">PKR 1,200,000</td>
-              <td className="p-3">PKR 30,000 (2.5% eff.)</td>
-              <td className="p-3">PKR 4,440</td>
-              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 97,130</td>
+              <td className="p-3">PKR 500 / mo (PKR 6,000/yr)</td>
+              <td className="p-3">PKR 500 / mo (PKR 6,000/yr)</td>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 99,130 / mo</td>
+            </tr>
+            <tr>
+              <td className="p-3 font-medium text-slate-900 dark:text-slate-100">PKR 150,000</td>
+              <td className="p-3">PKR 1,800,000</td>
+              <td className="p-3">PKR 6,000 / mo (PKR 72,000/yr)</td>
+              <td className="p-3">PKR 6,000 / mo (PKR 72,000/yr)</td>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 143,630 / mo</td>
             </tr>
             <tr>
               <td className="p-3 font-medium text-slate-900 dark:text-slate-100">PKR 250,000</td>
               <td className="p-3">PKR 3,000,000</td>
-              <td className="p-3">PKR 380,000 (12.7% eff.)</td>
-              <td className="p-3">PKR 4,440</td>
-              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 217,963</td>
+              <td className="p-3">PKR 23,000 / mo (PKR 276,000/yr)</td>
+              <td className="p-3">PKR 25,000 / mo (PKR 300,000/yr)</td>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 226,630 / mo</td>
             </tr>
             <tr>
               <td className="p-3 font-medium text-slate-900 dark:text-slate-100">PKR 500,000</td>
               <td className="p-3">PKR 6,000,000</td>
-              <td className="p-3">PKR 1,365,000 (22.8% eff.)</td>
-              <td className="p-3">PKR 4,440</td>
-              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 385,880</td>
+              <td className="p-3">PKR 92,000 / mo (PKR 1,104,000/yr)</td>
+              <td className="p-3">PKR 106,750 / mo (PKR 1,281,000/yr)</td>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">PKR 407,630 / mo</td>
             </tr>
           </tbody>
         </table>
@@ -136,17 +144,17 @@ export default function PakistanSalaryCalculatorSeo() {
         Statutory Provenance &amp; Ruleset Details
       </h3>
       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400 mb-6 space-y-2">
-        <div><strong>Ruleset Identifier:</strong> PK-SALARY-2026.1</div>
+        <div><strong>Ruleset Identifier:</strong> PK-FBR-2026.2</div>
         <div><strong>Source Authority:</strong> Federal Board of Revenue (FBR) Pakistan</div>
-        <div><strong>Tax Year / Fiscal Basis:</strong> Tax Year 2026–2027 (Finance Act 2024 Framework)</div>
+        <div><strong>Tax Year / Fiscal Basis:</strong> FY 2026–2027 (Finance Act 2026), FY 2025–2026 (Finance Act 2025) &amp; FY 2024–2025</div>
         <div><strong>Status:</strong> Verified Statutory Model (100% Code Verified)</div>
-        <div><strong>Last Verified:</strong> 2026-07-01</div>
+        <div><strong>Last Verified:</strong> 2026-10-20</div>
         <div>
           <strong>Documented Statutory Limitations &amp; Exclusions:</strong>
           <ul className="list-disc pl-5 mt-1 space-y-1 text-xs">
-            <li>Provincial professional taxes (e.g., Punjab / Sindh professional tax schedules)</li>
-            <li>Charitable tax credits under Section 61 and educational credits</li>
-            <li>Advance adjustable withholding taxes (e.g., motor vehicle, electricity, banking)</li>
+            <li>Provincial professional taxes (Punjab / Sindh / KP / Balochistan professional tax schedules)</li>
+            <li>Full-time teacher / researcher tax reduction under Second Schedule Clause 9A</li>
+            <li>Company-provided vehicle perquisite valuation under Section 13</li>
           </ul>
         </div>
       </div>

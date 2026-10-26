@@ -9458,7 +9458,7 @@ export function calculateProgressiveTax(
 // 1. Pakistan Salaried Slabs (FBR Finance Act 2026 / 2025 / 2024)
 export function calculatePakistanTax(
   taxableIncomeAnnual: number,
-  _taxYear = '2026-2027'
+  taxYear = '2026-2027'
 ): {
   incomeTax: number;
   surcharge: number;
@@ -9467,23 +9467,52 @@ export function calculatePakistanTax(
   audits: TaxBracketAudit[];
   marginalRate: number;
 } {
-  void _taxYear;
-  const pkBrackets: TaxBracket[] = [
-    { min: 0, max: 600000, rate: 0.0, baseTax: 0 },
-    { min: 600000, max: 1200000, rate: 0.05, baseTax: 0 },
-    { min: 1200000, max: 2200000, rate: 0.15, baseTax: 30000 },
-    { min: 2200000, max: 3200000, rate: 0.25, baseTax: 180000 },
-    { min: 3200000, max: 4100000, rate: 0.30, baseTax: 430000 },
-    { min: 4100000, max: null, rate: 0.35, baseTax: 700000 },
-  ];
+  let pkBrackets: TaxBracket[];
+  let surchargeRate = 0;
+
+  if (taxYear === '2026-2027') {
+    // Finance Act 2026 (Tax Year 2027 — Effective 1 July 2026)
+    pkBrackets = [
+      { min: 0, max: 600000, rate: 0.0, baseTax: 0 },
+      { min: 600000, max: 1200000, rate: 0.01, baseTax: 0 },
+      { min: 1200000, max: 2200000, rate: 0.11, baseTax: 6000 },
+      { min: 2200000, max: 3200000, rate: 0.20, baseTax: 116000 },
+      { min: 3200000, max: 4100000, rate: 0.25, baseTax: 316000 },
+      { min: 4100000, max: 5600000, rate: 0.29, baseTax: 541000 },
+      { min: 5600000, max: 7000000, rate: 0.32, baseTax: 976000 },
+      { min: 7000000, max: null, rate: 0.35, baseTax: 1424000 },
+    ];
+    surchargeRate = 0;
+  } else if (taxYear === '2025-2026') {
+    // Finance Act 2025 (Tax Year 2026)
+    pkBrackets = [
+      { min: 0, max: 600000, rate: 0.0, baseTax: 0 },
+      { min: 600000, max: 1200000, rate: 0.01, baseTax: 0 },
+      { min: 1200000, max: 2200000, rate: 0.11, baseTax: 6000 },
+      { min: 2200000, max: 3200000, rate: 0.23, baseTax: 116000 },
+      { min: 3200000, max: 4100000, rate: 0.30, baseTax: 346000 },
+      { min: 4100000, max: null, rate: 0.35, baseTax: 616000 },
+    ];
+    surchargeRate = 0.09;
+  } else {
+    // Finance Act 2024 (Tax Year 2025)
+    pkBrackets = [
+      { min: 0, max: 600000, rate: 0.0, baseTax: 0 },
+      { min: 600000, max: 1200000, rate: 0.05, baseTax: 0 },
+      { min: 1200000, max: 2200000, rate: 0.15, baseTax: 30000 },
+      { min: 2200000, max: 3200000, rate: 0.25, baseTax: 180000 },
+      { min: 3200000, max: 4100000, rate: 0.30, baseTax: 430000 },
+      { min: 4100000, max: null, rate: 0.35, baseTax: 700000 },
+    ];
+    surchargeRate = 0.10;
+  }
 
   const { totalTax: baseTax, audits, marginalRate } = calculateProgressiveTax(taxableIncomeAnnual, pkBrackets);
 
   let incomeTax = baseTax;
   let surcharge = 0;
-  // Finance Act: 10% surcharge on tax when taxable income > PKR 10,000,000
-  if (taxableIncomeAnnual > 10000000) {
-    surcharge = baseTax * 0.10;
+  if (taxableIncomeAnnual > 10000000 && surchargeRate > 0) {
+    surcharge = baseTax * surchargeRate;
     incomeTax += surcharge;
   }
 
@@ -9499,7 +9528,7 @@ export function calculatePakistanTax(
     employeeEobi,
     employerEobi,
     audits,
-    marginalRate: taxableIncomeAnnual > 10000000 ? marginalRate * 1.1 : marginalRate,
+    marginalRate: taxableIncomeAnnual > 10000000 && surchargeRate > 0 ? marginalRate * (1 + surchargeRate) : marginalRate,
   };
 }
 
@@ -11696,6 +11725,51 @@ export default function SalaryCalculator() {
   const [selectedCountryModal, setSelectedCountryModal] = useState<CountryDefinition | null>(null);
   const [catalogDisplayLimit, setCatalogDisplayLimit] = useState<number>(24);
 
+  // Instant Hub Quick-Calculator State
+  const [quickCountryCode, setQuickCountryCode] = useState<string>('PK');
+  const [quickSalaryInput, setQuickSalaryInput] = useState<string>('');
+  const [quickFreq, setQuickFreq] = useState<PayFrequency>('monthly');
+
+  const quickCountryDef = GLOBAL_COUNTRIES[quickCountryCode] || GLOBAL_COUNTRIES['PK'];
+  const quickParsedGross = useMemo(() => parseNumericInput(quickSalaryInput), [quickSalaryInput]);
+  const quickResult = useMemo(() => {
+    if (quickParsedGross <= 0) return null;
+    return calculateSalaryTakeHome(
+      quickCountryCode,
+      quickCountryDef.defaultTaxYear,
+      quickFreq,
+      {
+        baseSalary: quickParsedGross,
+        bonus: 0,
+        commission: 0,
+        overtime: 0,
+        allowances: 0,
+        taxableBenefits: 0,
+        nonTaxableBenefits: 0,
+        otherIncome: 0,
+      },
+      {
+        retirementPreTax: 0,
+        retirementPreTaxType: 'fixed',
+        healthInsurancePreTax: 0,
+        hsaFsaPreTax: 0,
+        otherPreTax: 0,
+        unionDuesPostTax: 0,
+        postTaxInsurance: 0,
+        loanRepaymentPostTax: 0,
+        otherPostTax: 0,
+      },
+      {
+        region: quickCountryDef.defaultRegion,
+        filingStatus: 'single',
+        germanTaxClass: 'I',
+        indiaRegime: 'new',
+        singaporeResidency: 'citizen',
+        gulfResidency: 'expat',
+      }
+    );
+  }, [quickCountryCode, quickCountryDef, quickFreq, quickParsedGross]);
+
   // Close modal on Escape key
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -11928,6 +12002,136 @@ export default function SalaryCalculator() {
             <span>Privacy Standard · No salary data stored or transmitted</span>
           </div>
         </div>
+      </div>
+
+      {/* 1.5 INSTANT GLOBAL SALARY CALCULATOR BAR */}
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border-2 border-blue-200 dark:border-blue-900/60 shadow-md space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+              Instant 1-Step Calculation
+            </span>
+            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
+              Quick Take-Home Pay Calculator (22 Statutory Countries)
+            </h3>
+          </div>
+          <Link
+            href={`/finance/salary-calculator/${getCountrySlug(quickCountryDef)}`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors shadow-xs"
+          >
+            <span>Open Full {quickCountryDef.name} Calculator</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Select Country */}
+          <div className="space-y-1.5">
+            <label htmlFor={`${formId}-quick-country`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              1. Select Country
+            </label>
+            <select
+              id={`${formId}-quick-country`}
+              value={quickCountryCode}
+              onChange={(e) => {
+                const nextCode = e.target.value;
+                setQuickCountryCode(nextCode);
+                const monthlySet = new Set(['PK', 'SG', 'AE', 'SA', 'BR', 'MX', 'ZA']);
+                setQuickFreq(monthlySet.has(nextCode) ? 'monthly' : 'annual');
+              }}
+              className="w-full py-3 px-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {featuredCountries.map((fc) => (
+                <option key={fc.code} value={fc.code}>
+                  {fc.flag} {fc.name} ({fc.currency} · {fc.defaultTaxYear})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Enter Gross Salary */}
+          <div className="space-y-1.5">
+            <label htmlFor={`${formId}-quick-salary`} className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              2. Enter Gross Salary ({quickCountryDef.currency})
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 font-bold text-slate-400 select-none">
+                {quickCountryDef.symbol}
+              </span>
+              <input
+                id={`${formId}-quick-salary`}
+                type="text"
+                inputMode="numeric"
+                value={quickSalaryInput}
+                onChange={(e) => setQuickSalaryInput(e.target.value)}
+                placeholder={quickFreq === 'monthly' ? 'e.g. 150,000' : 'e.g. 85,000'}
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums"
+              />
+            </div>
+          </div>
+
+          {/* Select Frequency */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
+              3. Pay Cycle
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['monthly', 'annual'] as PayFrequency[]).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setQuickFreq(f)}
+                  className={`py-3 px-3 rounded-xl text-xs font-bold capitalize border transition-all ${
+                    quickFreq === f
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-gray-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-gray-200 dark:border-slate-700'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Instant Result Strip */}
+        {quickResult && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white grid grid-cols-2 sm:grid-cols-4 gap-4 items-center">
+            <div>
+              <span className="text-[11px] uppercase tracking-wider text-emerald-100 block">
+                Net Monthly Take-Home
+              </span>
+              <span className="text-xl sm:text-2xl font-extrabold tabular-nums">
+                {formatCurrency(quickResult.monthlyNetTakeHome, quickResult.currency, quickResult.currencySymbol, quickResult.currencyDecimals)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[11px] uppercase tracking-wider text-emerald-100 block">
+                Net Annual Take-Home
+              </span>
+              <span className="text-lg sm:text-xl font-bold tabular-nums">
+                {formatCurrency(quickResult.annualNetTakeHome, quickResult.currency, quickResult.currencySymbol, quickResult.currencyDecimals)}
+              </span>
+            </div>
+            <div>
+              <span className="text-[11px] uppercase tracking-wider text-emerald-100 block">
+                Annual Income Tax + Social
+              </span>
+              <span className="text-sm sm:text-base font-bold tabular-nums">
+                −{formatCurrency(quickResult.annualTotalEmployeeDeductions, quickResult.currency, quickResult.currencySymbol, quickResult.currencyDecimals)} ({formatPercent(quickResult.totalDeductionRate, 1)})
+              </span>
+            </div>
+            <div className="sm:text-right">
+              <Link
+                href={`/finance/salary-calculator/${getCountrySlug(quickCountryDef)}`}
+                className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-white text-emerald-800 font-bold text-xs hover:bg-emerald-50 transition-colors shadow-xs"
+              >
+                <span>Full Breakdown &amp; Slabs</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. SEARCH & FILTER SECTION */}

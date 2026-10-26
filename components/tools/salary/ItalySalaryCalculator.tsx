@@ -20,6 +20,10 @@ import {
   FREQUENCY_FACTORS,
   PayFrequency
 } from '@/components/tools/SalaryCalculator';
+import {
+  SalaryPresetBar,
+  SalaryInsightsAndExportSuite,
+} from '@/components/tools/salary/shared/SalaryAnalysisToolbar';
 
 /* =========================================================================
    ITALY STATUTORY SALARY CALCULATOR ENGINE
@@ -161,6 +165,7 @@ export default function ItalySalaryCalculator() {
   // Fresh initial state (Zero-Prefill)
   const [grossSalaryInput, setGrossSalaryInput] = useState<string>('');
   const [frequency, setFrequency] = useState<PayFrequency>('annual');
+  const [preTaxDeductionInput, setPreTaxDeductionInput] = useState<string>('');
   const [taxYear, setTaxYear] = useState<string>(METADATA.defaultTaxYear);
   const [region, setRegion] = useState<string>('LOM');
 
@@ -170,16 +175,24 @@ export default function ItalySalaryCalculator() {
     return isNaN(val) || val < 0 ? 0 : val;
   }, [grossSalaryInput]);
 
+  const parsedPreTax = useMemo(() => {
+    const cleaned = preTaxDeductionInput.replace(/[^0-9.]/g, '');
+    const val = parseFloat(cleaned);
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [preTaxDeductionInput]);
+
   const periodsPerYear = FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1;
   const annualGross = parsedGross * periodsPerYear;
 
   const result = useMemo(() => {
     if (annualGross <= 0) return null;
+    const effectivePreTax = Math.min(annualGross, parsedPreTax);
+    const taxableGrossAfterPreTax = Math.max(0, annualGross - effectivePreTax);
 
-    const res = calculateItalyTax(annualGross, region, taxYear);
+    const res = calculateItalyTax(taxableGrossAfterPreTax, region, taxYear);
     const annualIncomeTax = res.incomeTax + res.regionalTax;
     const annualEmployeeSocial = res.employeeSocial;
-    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial;
+    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
     const annualEmployerSocial = res.employerSocial;
     const annualEmployerCost = annualGross + annualEmployerSocial;
@@ -197,6 +210,7 @@ export default function ItalySalaryCalculator() {
 
     return {
       annualGross,
+      annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
       annualTotalDeductions,
@@ -214,7 +228,7 @@ export default function ItalySalaryCalculator() {
       audits,
       rawRes: res
     };
-  }, [annualGross, periodsPerYear, taxYear, region]);
+  }, [annualGross, periodsPerYear, taxYear, region, parsedPreTax]);
 
   return (
     <div className="w-full space-y-8">
@@ -370,6 +384,21 @@ export default function ItalySalaryCalculator() {
             ))}
           </div>
         </div>
+
+        {/* Quick Salary Presets & Pre-Tax Deduction Drawer */}
+        <SalaryPresetBar
+          currency={METADATA.currency}
+          symbol={METADATA.symbol}
+          presets={[{"label":"€28,000 / yr","amount":"28000","freq":"annual"},{"label":"€38,000 / yr","amount":"38000","freq":"annual"},{"label":"€50,000 / yr","amount":"50000","freq":"annual"},{"label":"€75,000 / yr","amount":"75000","freq":"annual"},{"label":"€2,800 / mo","amount":"2800","freq":"monthly"}]}
+          onSelectPreset={(amt, freq) => {
+            setGrossSalaryInput(amt);
+            if (freq) setFrequency(freq);
+          }}
+          preTaxDeductionInput={preTaxDeductionInput}
+          onPreTaxDeductionChange={setPreTaxDeductionInput}
+          preTaxDeductionLabel="Annual Previdenza Complementare (Fondo Pensione — Max €5,164.57)"
+          preTaxDeductionHint="Supplementary pension fund contributions deductible from IRPEF taxable income up to €5,164.57/year."
+        />
       </div>
 
       {/* Results Section */}
@@ -443,7 +472,7 @@ export default function ItalySalaryCalculator() {
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">Marginal Tax Bracket</span>
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {formatPercent(result.marginalRate * 100)}
+                {formatPercent(result.marginalRate)}
               </div>
               <p className="text-[11px] text-slate-400">Applied to your next {METADATA.currency} earned</p>
             </div>
@@ -584,7 +613,7 @@ export default function ItalySalaryCalculator() {
                           {' – '}
                           {a.max !== null ? formatCurrency(a.max, METADATA.currency, METADATA.symbol, 0) : 'Above'}
                         </td>
-                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate * 100)}</td>
+                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate)}</td>
                         <td className="py-2 px-2 tabular-nums">
                           {formatCurrency(a.taxableAmountInBracket, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                         </td>
@@ -598,6 +627,40 @@ export default function ItalySalaryCalculator() {
               </div>
             </div>
           )}
+
+          {/* Visual Allocation Bar, 7-Period Matrix, CSV/Print Export & Reverse Net-to-Gross Solver */}
+          <SalaryInsightsAndExportSuite
+            countryName={METADATA.name}
+            currency={METADATA.currency}
+            symbol={METADATA.symbol}
+            decimals={METADATA.decimals}
+            taxYear={taxYear}
+            rulesetId={METADATA.rulesetId}
+            result={{
+              annualGross: result.annualGross,
+              annualPreTaxDeductions: result.annualPreTaxDeductions,
+              annualIncomeTax: result.annualIncomeTax,
+              annualEmployeeSocial: result.annualEmployeeSocial,
+              annualTotalDeductions: result.annualTotalDeductions,
+              annualNet: result.annualNet,
+              annualEmployerSocial: result.annualEmployerSocial,
+              annualEmployerCost: result.annualEmployerCost,
+              effectiveTaxRate: result.effectiveTaxRate,
+              effectiveTotalRate: result.effectiveTotalRate,
+              marginalRate: result.marginalRate,
+            }}
+            computeNetFromAnnualGross={(candGross) => {
+              const effPre = Math.min(candGross, parsedPreTax);
+              const r = calculateItalyTax(Math.max(0, candGross - effPre), region, taxYear);
+              const tax = r.incomeTax + r.regionalTax;
+              const tot = tax + r.employeeSocial + effPre;
+              return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: r.employeeSocial, annualTotalDeductions: tot, annualEmployerCost: candGross + r.employerSocial };
+            }}
+            onApplyRequiredGross={(reqAnnual) => {
+              const perPeriod = Math.round(reqAnnual / periodsPerYear);
+              setGrossSalaryInput(String(perPeriod));
+            }}
+          />
 
           {/* Statutory Exclusions Note */}
           {METADATA.knownExclusions && METADATA.knownExclusions.length > 0 && (

@@ -20,6 +20,10 @@ import {
   FREQUENCY_FACTORS,
   PayFrequency
 } from '@/components/tools/SalaryCalculator';
+import {
+  SalaryPresetBar,
+  SalaryInsightsAndExportSuite,
+} from '@/components/tools/salary/shared/SalaryAnalysisToolbar';
 
 /* =========================================================================
    INDIA STATUTORY SALARY CALCULATOR ENGINE
@@ -176,6 +180,7 @@ export default function IndiaSalaryCalculator() {
   // Fresh initial state (Zero-Prefill)
   const [grossSalaryInput, setGrossSalaryInput] = useState<string>('');
   const [frequency, setFrequency] = useState<PayFrequency>('annual');
+  const [preTaxDeductionInput, setPreTaxDeductionInput] = useState<string>('');
   const [taxYear, setTaxYear] = useState<string>(METADATA.defaultTaxYear);
   const [regime, setRegime] = useState<IndiaTaxRegime>('new');
 
@@ -185,16 +190,26 @@ export default function IndiaSalaryCalculator() {
     return isNaN(val) || val < 0 ? 0 : val;
   }, [grossSalaryInput]);
 
+  const parsedPreTax = useMemo(() => {
+    const cleaned = preTaxDeductionInput.replace(/[^0-9.]/g, '');
+    const val = parseFloat(cleaned);
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [preTaxDeductionInput]);
+
   const periodsPerYear = FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1;
   const annualGross = parsedGross * periodsPerYear;
 
   const result = useMemo(() => {
     if (annualGross <= 0) return null;
+    const effectivePreTax = Math.min(annualGross, parsedPreTax);
+    const taxableGrossAfterPreTax = Math.max(0, annualGross - effectivePreTax);
 
-    const res = calculateIndiaTax(annualGross, regime, taxYear);
+    const res = calculateIndiaTax(taxableGrossAfterPreTax, regime, taxYear);
+    const newRegimeRes = calculateIndiaTax(taxableGrossAfterPreTax, 'new', taxYear);
+    const oldRegimeRes = calculateIndiaTax(taxableGrossAfterPreTax, 'old', taxYear);
     const annualIncomeTax = res.totalTax;
     const annualEmployeeSocial = 0;
-    const annualTotalDeductions = annualIncomeTax;
+    const annualTotalDeductions = annualIncomeTax + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
     const annualEmployerSocial = 0;
     const annualEmployerCost = annualGross;
@@ -212,6 +227,7 @@ export default function IndiaSalaryCalculator() {
 
     return {
       annualGross,
+      annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
       annualTotalDeductions,
@@ -227,9 +243,11 @@ export default function IndiaSalaryCalculator() {
       effectiveTotalRate,
       marginalRate,
       audits,
-      rawRes: res
+      rawRes: res,
+      newRegimeTax: newRegimeRes.totalTax,
+      oldRegimeTax: oldRegimeRes.totalTax
     };
-  }, [annualGross, periodsPerYear, taxYear, regime]);
+  }, [annualGross, periodsPerYear, taxYear, regime, parsedPreTax]);
 
   return (
     <div className="w-full space-y-8">
@@ -399,6 +417,21 @@ export default function IndiaSalaryCalculator() {
             ))}
           </div>
         </div>
+
+        {/* Quick Salary Presets & Pre-Tax Deduction Drawer */}
+        <SalaryPresetBar
+          currency={METADATA.currency}
+          symbol={METADATA.symbol}
+          presets={[{"label":"₹8,00,000 / yr","amount":"800000","freq":"annual"},{"label":"₹12,00,000 / yr","amount":"1200000","freq":"annual"},{"label":"₹18,00,000 / yr","amount":"1800000","freq":"annual"},{"label":"₹25,00,000 / yr","amount":"2500000","freq":"annual"},{"label":"₹1,00,000 / mo","amount":"100000","freq":"monthly"}]}
+          onSelectPreset={(amt, freq) => {
+            setGrossSalaryInput(amt);
+            if (freq) setFrequency(freq);
+          }}
+          preTaxDeductionInput={preTaxDeductionInput}
+          onPreTaxDeductionChange={setPreTaxDeductionInput}
+          preTaxDeductionLabel="Annual Section 80C / 80CCD(1B) NPS / EPF / HRA Tax-Exempt Deductions"
+          preTaxDeductionHint="Enter Chapter VI-A (80C/80D/NPS) or employer NPS (80CCD(2)) deductions to reduce taxable income."
+        />
       </div>
 
       {/* Results Section */}
@@ -451,6 +484,63 @@ export default function IndiaSalaryCalculator() {
             </div>
           </div>
 
+          
+          {/* New Regime vs Old Regime Instant Comparison Banner */}
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-emerald-200 dark:border-emerald-900/50 shadow-sm space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+                Section 115BAC New Regime vs. Old Regime Tax Comparison ({taxYear})
+              </h3>
+              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                {result.newRegimeTax <= result.oldRegimeTax
+                  ? `New Regime saves ₹${Math.round(result.oldRegimeTax - result.newRegimeTax).toLocaleString('en-IN')}/yr`
+                  : `Old Regime saves ₹${Math.round(result.newRegimeTax - result.oldRegimeTax).toLocaleString('en-IN')}/yr`}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => setRegime('new')}
+                className={`text-left p-3.5 rounded-2xl border transition-all ${
+                  regime === 'new'
+                    ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/30 ring-1 ring-blue-600'
+                    : 'border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40'
+                }`}
+              >
+                <div className="font-bold text-slate-900 dark:text-white flex justify-between">
+                  <span>New Tax Regime (Section 115BAC)</span>
+                  {regime === 'new' && <span className="text-[10px] uppercase text-blue-600 dark:text-blue-400">Selected</span>}
+                </div>
+                <div className="mt-1 text-base font-extrabold text-slate-900 dark:text-white tabular-nums">
+                  {formatCurrency(result.newRegimeTax, METADATA.currency, METADATA.symbol, 0)} / yr tax
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Net Monthly: {formatCurrency((result.annualGross - result.newRegimeTax - result.annualPreTaxDeductions) / 12, METADATA.currency, METADATA.symbol, 0)}/mo (Std Ded: ₹75,000)
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRegime('old')}
+                className={`text-left p-3.5 rounded-2xl border transition-all ${
+                  regime === 'old'
+                    ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/30 ring-1 ring-blue-600'
+                    : 'border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/40'
+                }`}
+              >
+                <div className="font-bold text-slate-900 dark:text-white flex justify-between">
+                  <span>Old Tax Regime (4 Slabs)</span>
+                  {regime === 'old' && <span className="text-[10px] uppercase text-blue-600 dark:text-blue-400">Selected</span>}
+                </div>
+                <div className="mt-1 text-base font-extrabold text-slate-900 dark:text-white tabular-nums">
+                  {formatCurrency(result.oldRegimeTax, METADATA.currency, METADATA.symbol, 0)} / yr tax
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Net Monthly: {formatCurrency((result.annualGross - result.oldRegimeTax - result.annualPreTaxDeductions) / 12, METADATA.currency, METADATA.symbol, 0)}/mo (Std Ded: ₹50,000)
+                </div>
+              </button>
+            </div>
+          </div>
           {/* Metric Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
@@ -472,7 +562,7 @@ export default function IndiaSalaryCalculator() {
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">Marginal Tax Bracket</span>
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {formatPercent(result.marginalRate * 100)}
+                {formatPercent(result.marginalRate)}
               </div>
               <p className="text-[11px] text-slate-400">Applied to your next {METADATA.currency} earned</p>
             </div>
@@ -607,7 +697,7 @@ export default function IndiaSalaryCalculator() {
                           {' – '}
                           {a.max !== null ? formatCurrency(a.max, METADATA.currency, METADATA.symbol, 0) : 'Above'}
                         </td>
-                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate * 100)}</td>
+                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate)}</td>
                         <td className="py-2 px-2 tabular-nums">
                           {formatCurrency(a.taxableAmountInBracket, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                         </td>
@@ -621,6 +711,40 @@ export default function IndiaSalaryCalculator() {
               </div>
             </div>
           )}
+
+          {/* Visual Allocation Bar, 7-Period Matrix, CSV/Print Export & Reverse Net-to-Gross Solver */}
+          <SalaryInsightsAndExportSuite
+            countryName={METADATA.name}
+            currency={METADATA.currency}
+            symbol={METADATA.symbol}
+            decimals={METADATA.decimals}
+            taxYear={taxYear}
+            rulesetId={METADATA.rulesetId}
+            result={{
+              annualGross: result.annualGross,
+              annualPreTaxDeductions: result.annualPreTaxDeductions,
+              annualIncomeTax: result.annualIncomeTax,
+              annualEmployeeSocial: result.annualEmployeeSocial,
+              annualTotalDeductions: result.annualTotalDeductions,
+              annualNet: result.annualNet,
+              annualEmployerSocial: result.annualEmployerSocial,
+              annualEmployerCost: result.annualEmployerCost,
+              effectiveTaxRate: result.effectiveTaxRate,
+              effectiveTotalRate: result.effectiveTotalRate,
+              marginalRate: result.marginalRate,
+            }}
+            computeNetFromAnnualGross={(candGross) => {
+              const effPre = Math.min(candGross, parsedPreTax);
+              const r = calculateIndiaTax(Math.max(0, candGross - effPre), regime, taxYear);
+              const tax = r.totalTax;
+              const tot = tax + effPre;
+              return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: 0, annualTotalDeductions: tot, annualEmployerCost: candGross };
+            }}
+            onApplyRequiredGross={(reqAnnual) => {
+              const perPeriod = Math.round(reqAnnual / periodsPerYear);
+              setGrossSalaryInput(String(perPeriod));
+            }}
+          />
 
           {/* Statutory Exclusions Note */}
           {METADATA.knownExclusions && METADATA.knownExclusions.length > 0 && (

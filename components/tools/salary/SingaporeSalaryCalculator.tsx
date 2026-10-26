@@ -20,6 +20,10 @@ import {
   FREQUENCY_FACTORS,
   PayFrequency
 } from '@/components/tools/SalaryCalculator';
+import {
+  SalaryPresetBar,
+  SalaryInsightsAndExportSuite,
+} from '@/components/tools/salary/shared/SalaryAnalysisToolbar';
 
 /* =========================================================================
    SINGAPORE STATUTORY SALARY CALCULATOR ENGINE
@@ -138,7 +142,8 @@ export default function SingaporeSalaryCalculator() {
 
   // Fresh initial state (Zero-Prefill)
   const [grossSalaryInput, setGrossSalaryInput] = useState<string>('');
-  const [frequency, setFrequency] = useState<PayFrequency>('annual');
+  const [frequency, setFrequency] = useState<PayFrequency>('monthly');
+  const [preTaxDeductionInput, setPreTaxDeductionInput] = useState<string>('');
   const [taxYear, setTaxYear] = useState<string>(METADATA.defaultTaxYear);
   const [residency, setResidency] = useState<SingaporeResidency>('citizen');
 
@@ -148,16 +153,24 @@ export default function SingaporeSalaryCalculator() {
     return isNaN(val) || val < 0 ? 0 : val;
   }, [grossSalaryInput]);
 
+  const parsedPreTax = useMemo(() => {
+    const cleaned = preTaxDeductionInput.replace(/[^0-9.]/g, '');
+    const val = parseFloat(cleaned);
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [preTaxDeductionInput]);
+
   const periodsPerYear = FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1;
   const annualGross = parsedGross * periodsPerYear;
 
   const result = useMemo(() => {
     if (annualGross <= 0) return null;
+    const effectivePreTax = Math.min(annualGross, parsedPreTax);
+    const taxableGrossAfterPreTax = Math.max(0, annualGross - effectivePreTax);
 
-    const res = calculateSingaporeTax(annualGross, residency, taxYear);
+    const res = calculateSingaporeTax(taxableGrossAfterPreTax, residency, taxYear);
     const annualIncomeTax = res.incomeTax;
     const annualEmployeeSocial = res.employeeCpf;
-    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial;
+    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
     const annualEmployerSocial = res.employerCpf;
     const annualEmployerCost = annualGross + annualEmployerSocial;
@@ -175,6 +188,7 @@ export default function SingaporeSalaryCalculator() {
 
     return {
       annualGross,
+      annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
       annualTotalDeductions,
@@ -192,7 +206,7 @@ export default function SingaporeSalaryCalculator() {
       audits,
       rawRes: res
     };
-  }, [annualGross, periodsPerYear, taxYear, residency]);
+  }, [annualGross, periodsPerYear, taxYear, residency, parsedPreTax]);
 
   return (
     <div className="w-full space-y-8">
@@ -354,6 +368,21 @@ export default function SingaporeSalaryCalculator() {
             ))}
           </div>
         </div>
+
+        {/* Quick Salary Presets & Pre-Tax Deduction Drawer */}
+        <SalaryPresetBar
+          currency={METADATA.currency}
+          symbol={METADATA.symbol}
+          presets={[{"label":"S$4,500 / mo","amount":"4500","freq":"monthly"},{"label":"S$6,800 / mo","amount":"6800","freq":"monthly"},{"label":"S$10,000 / mo","amount":"10000","freq":"monthly"},{"label":"S$15,000 / mo","amount":"15000","freq":"monthly"},{"label":"S$120,000 / yr","amount":"120000","freq":"annual"}]}
+          onSelectPreset={(amt, freq) => {
+            setGrossSalaryInput(amt);
+            if (freq) setFrequency(freq);
+          }}
+          preTaxDeductionInput={preTaxDeductionInput}
+          onPreTaxDeductionChange={setPreTaxDeductionInput}
+          preTaxDeductionLabel="Annual SRS (Supplementary Retirement Scheme) / CPF Cash Top-Up Relief"
+          preTaxDeductionHint="IRAS tax reliefs (SRS up to S$15,300 for citizens/PRs or S$35,700 for foreigners) that reduce chargeable income."
+        />
       </div>
 
       {/* Results Section */}
@@ -427,7 +456,7 @@ export default function SingaporeSalaryCalculator() {
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">Marginal Tax Bracket</span>
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {formatPercent(result.marginalRate * 100)}
+                {formatPercent(result.marginalRate)}
               </div>
               <p className="text-[11px] text-slate-400">Applied to your next {METADATA.currency} earned</p>
             </div>
@@ -568,7 +597,7 @@ export default function SingaporeSalaryCalculator() {
                           {' – '}
                           {a.max !== null ? formatCurrency(a.max, METADATA.currency, METADATA.symbol, 0) : 'Above'}
                         </td>
-                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate * 100)}</td>
+                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate)}</td>
                         <td className="py-2 px-2 tabular-nums">
                           {formatCurrency(a.taxableAmountInBracket, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                         </td>
@@ -582,6 +611,41 @@ export default function SingaporeSalaryCalculator() {
               </div>
             </div>
           )}
+
+          {/* Visual Allocation Bar, 7-Period Matrix, CSV/Print Export & Reverse Net-to-Gross Solver */}
+          <SalaryInsightsAndExportSuite
+            countryName={METADATA.name}
+            currency={METADATA.currency}
+            symbol={METADATA.symbol}
+            decimals={METADATA.decimals}
+            taxYear={taxYear}
+            rulesetId={METADATA.rulesetId}
+            result={{
+              annualGross: result.annualGross,
+              annualPreTaxDeductions: result.annualPreTaxDeductions,
+              annualIncomeTax: result.annualIncomeTax,
+              annualEmployeeSocial: result.annualEmployeeSocial,
+              annualTotalDeductions: result.annualTotalDeductions,
+              annualNet: result.annualNet,
+              annualEmployerSocial: result.annualEmployerSocial,
+              annualEmployerCost: result.annualEmployerCost,
+              effectiveTaxRate: result.effectiveTaxRate,
+              effectiveTotalRate: result.effectiveTotalRate,
+              marginalRate: result.marginalRate,
+            }}
+            computeNetFromAnnualGross={(candGross) => {
+              const effPre = Math.min(candGross, parsedPreTax);
+              const r = calculateSingaporeTax(Math.max(0, candGross - effPre), residency, taxYear);
+              const tax = r.incomeTax;
+              const soc = r.employeeCpf;
+              const tot = tax + soc + effPre;
+              return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: soc, annualTotalDeductions: tot, annualEmployerCost: candGross + r.employerCpf };
+            }}
+            onApplyRequiredGross={(reqAnnual) => {
+              const perPeriod = Math.round(reqAnnual / periodsPerYear);
+              setGrossSalaryInput(String(perPeriod));
+            }}
+          />
 
           {/* Statutory Exclusions Note */}
           {METADATA.knownExclusions && METADATA.knownExclusions.length > 0 && (

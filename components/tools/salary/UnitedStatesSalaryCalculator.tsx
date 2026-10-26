@@ -20,6 +20,10 @@ import {
   FREQUENCY_FACTORS,
   PayFrequency
 } from '@/components/tools/SalaryCalculator';
+import {
+  SalaryPresetBar,
+  SalaryInsightsAndExportSuite,
+} from '@/components/tools/salary/shared/SalaryAnalysisToolbar';
 
 /* =========================================================================
    UNITED STATES STATUTORY SALARY CALCULATOR ENGINE
@@ -275,6 +279,7 @@ export default function UnitedStatesSalaryCalculator() {
   // Fresh initial state (Zero-Prefill)
   const [grossSalaryInput, setGrossSalaryInput] = useState<string>('');
   const [frequency, setFrequency] = useState<PayFrequency>('annual');
+  const [preTaxDeductionInput, setPreTaxDeductionInput] = useState<string>('');
   const [taxYear, setTaxYear] = useState<string>(METADATA.defaultTaxYear);
   const [filingStatus, setFilingStatus] = useState<UsFilingStatus>('single');
   const [stateCode, setStateCode] = useState<string>('TX');
@@ -285,16 +290,24 @@ export default function UnitedStatesSalaryCalculator() {
     return isNaN(val) || val < 0 ? 0 : val;
   }, [grossSalaryInput]);
 
+  const parsedPreTax = useMemo(() => {
+    const cleaned = preTaxDeductionInput.replace(/[^0-9.]/g, '');
+    const val = parseFloat(cleaned);
+    return isNaN(val) || val < 0 ? 0 : val;
+  }, [preTaxDeductionInput]);
+
   const periodsPerYear = FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1;
   const annualGross = parsedGross * periodsPerYear;
 
   const result = useMemo(() => {
     if (annualGross <= 0) return null;
+    const effectivePreTax = Math.min(annualGross, parsedPreTax);
+    const taxableGrossAfterPreTax = Math.max(0, annualGross - effectivePreTax);
 
-    const res = calculateUsTax(annualGross, annualGross, filingStatus, stateCode, taxYear);
+    const res = calculateUsTax(taxableGrossAfterPreTax, annualGross, filingStatus, stateCode, taxYear);
     const annualIncomeTax = res.federalIncomeTax + res.stateIncomeTax;
     const annualEmployeeSocial = res.socialSecurityTax + res.medicareTax;
-    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial;
+    const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
     const annualEmployerSocial = res.employerFica;
     const annualEmployerCost = annualGross + annualEmployerSocial;
@@ -312,6 +325,7 @@ export default function UnitedStatesSalaryCalculator() {
 
     return {
       annualGross,
+      annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
       annualTotalDeductions,
@@ -329,7 +343,7 @@ export default function UnitedStatesSalaryCalculator() {
       audits,
       rawRes: res
     };
-  }, [annualGross, periodsPerYear, taxYear, filingStatus, stateCode]);
+  }, [annualGross, periodsPerYear, taxYear, filingStatus, stateCode, parsedPreTax]);
 
   return (
     <div className="w-full space-y-8">
@@ -503,6 +517,21 @@ export default function UnitedStatesSalaryCalculator() {
             ))}
           </div>
         </div>
+
+        {/* Quick Salary Presets & Pre-Tax Deduction Drawer */}
+        <SalaryPresetBar
+          currency={METADATA.currency}
+          symbol={METADATA.symbol}
+          presets={[{"label":"$60,000 / yr","amount":"60000","freq":"annual"},{"label":"$85,000 / yr","amount":"85000","freq":"annual"},{"label":"$120,000 / yr","amount":"120000","freq":"annual"},{"label":"$175,000 / yr","amount":"175000","freq":"annual"},{"label":"$250,000 / yr","amount":"250000","freq":"annual"}]}
+          onSelectPreset={(amt, freq) => {
+            setGrossSalaryInput(amt);
+            if (freq) setFrequency(freq);
+          }}
+          preTaxDeductionInput={preTaxDeductionInput}
+          onPreTaxDeductionChange={setPreTaxDeductionInput}
+          preTaxDeductionLabel="Annual Pre-Tax 401(k) / 403(b) / HSA / Traditional IRA Contributions"
+          preTaxDeductionHint="2026 IRS elective deferral limit: $24,500 for 401(k) + $4,400 self-only ($8,750 family) for HSA. Reduces federal & state taxable income."
+        />
       </div>
 
       {/* Results Section */}
@@ -576,7 +605,7 @@ export default function UnitedStatesSalaryCalculator() {
             <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-gray-200 dark:border-slate-800 space-y-1">
               <span className="text-xs text-slate-500 dark:text-slate-400">Marginal Tax Bracket</span>
               <div className="text-xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-                {formatPercent(result.marginalRate * 100)}
+                {formatPercent(result.marginalRate)}
               </div>
               <p className="text-[11px] text-slate-400">Applied to your next {METADATA.currency} earned</p>
             </div>
@@ -723,7 +752,7 @@ export default function UnitedStatesSalaryCalculator() {
                           {' – '}
                           {a.max !== null ? formatCurrency(a.max, METADATA.currency, METADATA.symbol, 0) : 'Above'}
                         </td>
-                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate * 100)}</td>
+                        <td className="py-2 px-2 tabular-nums font-semibold">{formatPercent(a.rate)}</td>
                         <td className="py-2 px-2 tabular-nums">
                           {formatCurrency(a.taxableAmountInBracket, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                         </td>
@@ -737,6 +766,41 @@ export default function UnitedStatesSalaryCalculator() {
               </div>
             </div>
           )}
+
+          {/* Visual Allocation Bar, 7-Period Matrix, CSV/Print Export & Reverse Net-to-Gross Solver */}
+          <SalaryInsightsAndExportSuite
+            countryName={METADATA.name}
+            currency={METADATA.currency}
+            symbol={METADATA.symbol}
+            decimals={METADATA.decimals}
+            taxYear={taxYear}
+            rulesetId={METADATA.rulesetId}
+            result={{
+              annualGross: result.annualGross,
+              annualPreTaxDeductions: result.annualPreTaxDeductions,
+              annualIncomeTax: result.annualIncomeTax,
+              annualEmployeeSocial: result.annualEmployeeSocial,
+              annualTotalDeductions: result.annualTotalDeductions,
+              annualNet: result.annualNet,
+              annualEmployerSocial: result.annualEmployerSocial,
+              annualEmployerCost: result.annualEmployerCost,
+              effectiveTaxRate: result.effectiveTaxRate,
+              effectiveTotalRate: result.effectiveTotalRate,
+              marginalRate: result.marginalRate,
+            }}
+            computeNetFromAnnualGross={(candGross) => {
+              const effPre = Math.min(candGross, parsedPreTax);
+              const r = calculateUsTax(Math.max(0, candGross - effPre), candGross, filingStatus, stateCode, taxYear);
+              const tax = r.federalIncomeTax + r.stateIncomeTax;
+              const soc = r.socialSecurityTax + r.medicareTax;
+              const tot = tax + soc + effPre;
+              return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: soc, annualTotalDeductions: tot, annualEmployerCost: candGross + r.employerFica };
+            }}
+            onApplyRequiredGross={(reqAnnual) => {
+              const perPeriod = Math.round(reqAnnual / periodsPerYear);
+              setGrossSalaryInput(String(perPeriod));
+            }}
+          />
 
           {/* Statutory Exclusions Note */}
           {METADATA.knownExclusions && METADATA.knownExclusions.length > 0 && (
