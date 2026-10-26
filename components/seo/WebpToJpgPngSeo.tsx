@@ -25,12 +25,12 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
   {
     question: 'What happens to transparent backgrounds when converting WebP to JPG?',
     answer:
-      'The JPEG specification does not support an alpha transparency channel. If a WebP image with transparent areas is encoded to JPG without a composite background, transparent pixels would typically render as black artifacts. KivaroTools automatically composites transparent areas onto a clean background fill color (defaulting to clean white #ffffff, or customizable to black or custom hex values) before rasterization.',
+      'The JPEG specification does not support an alpha transparency channel. If a WebP image with transparent areas is encoded to JPG without a composite background, transparent pixels would typically render as black artifacts. KivaroTools automatically composites transparent areas onto a clean background fill color (defaulting to clean white #ffffff, or customizable to black #000000, light gray #f3f4f6, warm ivory #fef3c7, or custom hex values) before rasterization.',
   },
   {
     question: 'Does converting WebP to PNG preserve transparency?',
     answer:
-      'Yes. When converting WebP to PNG, full 8-bit alpha transparency is completely preserved. Semi-transparent pixels, anti-aliased drop shadows, and transparent cutouts remain intact with pixel-level fidelity.',
+      'Yes. When converting WebP to PNG, full 8-bit alpha transparency is completely preserved. Semi-transparent pixels, anti-aliased drop shadows, and transparent cutouts remain intact with pixel-level fidelity via ctx.clearRect before raster drawing.',
   },
   {
     question: 'Will converting WebP to JPG always reduce the file size?',
@@ -45,7 +45,7 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
   {
     question: 'Can I convert animated WebP files into animated JPG or PNG?',
     answer:
-      'Neither standard JPG nor standard PNG support multi-frame animations (JPG is strictly a single-frame format, and APNG is a distinct animated format). When an animated WebP is loaded into the converter, KivaroTools detects the VP8X animation container and extracts the first frame (keyframe) as a high-fidelity static image. If you need animated output, consider converting to GIF or WebM using dedicated animation tools.',
+      'Neither standard JPG nor standard PNG support multi-frame animations (JPG is strictly a single-frame format, and APNG is a distinct animated format). When an animated WebP is loaded into the converter, KivaroTools detects the VP8X animation container and extracts the first frame (keyframe poster image) as a high-fidelity static image. If you need animated output, consider converting to GIF or WebM using dedicated animation tools.',
   },
   {
     question: 'Are my files uploaded to a remote server or stored in the cloud?',
@@ -67,6 +67,21 @@ export const WEBP_TO_JPG_PNG_FAQS: FaqItem[] = [
     answer:
       'Yes. KivaroTools WebP to JPG & PNG Converter is free with no sign-up requirements, no watermarks, and no daily conversion credits. Because processing happens locally on your own hardware, there are no cloud subscription fees or artificial queue throttling.',
   },
+  {
+    question: 'What do RIFF header validation errors mean when uploading WebP files?',
+    answer:
+      'WebP files use the Resource Interchange File Format (RIFF) container standard. Valid files start with ASCII "RIFF" (bytes 0..3), followed by a 32-bit unsigned little-endian payload size, and the "WEBP" FourCC identifier (bytes 8..11). KivaroTools inspects these magic bytes and verifies that the initial chunk is VP8 (lossy), VP8L (lossless), or VP8X (extended). If a file download was truncated or a server returned an HTML error renamed as .webp, the preflight container audit rejects the stream to protect your browser canvas from memory crashes.',
+  },
+  {
+    question: 'How does KivaroTools compare to online converters like CloudConvert, Ezgif, or TinyPNG?',
+    answer:
+      'Unlike cloud-based services that upload your images to remote servers with strict daily rate limits (e.g. 25 conversions/day), 5 MB file caps, or queue wait times, KivaroTools executes 100% client-side in your local browser memory. You can batch convert up to 50 files (up to 50 MB each, 250 MB batch) with zero upload latency, custom background matte presets (#ffffff, #000000, #f3f4f6, #fef3c7), and instant JSZip archive downloads without sign-up.',
+  },
+  {
+    question: 'How are my browser RAM and GPU protected during large batch conversions?',
+    answer:
+      'KivaroTools uses createImageBitmap for asynchronous hardware-accelerated image decoding and immediately calls bitmap.close() after drawing to the canvas context, freeing GPU and RAM allocations instantly. Furthermore, all object URLs created for previews and conversion results are deterministically revoked via URL.revokeObjectURL upon file removal or component unmount, preventing memory bloat.',
+  },
 ];
 
 export default function WebpToJpgPngSeo() {
@@ -83,41 +98,62 @@ export default function WebpToJpgPngSeo() {
     })),
   };
 
-  const breadcrumbSchema = {
+  const howToSchema = {
     '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
+    '@type': 'HowTo',
+    name: 'How to Convert WebP to JPG or PNG Step-by-Step',
+    description:
+      'Batch convert WebP images to universal JPG or lossless transparent PNG directly in your browser with custom alpha matte colors, adjustable JPEG quality, and one-click ZIP download.',
+    totalTime: 'PT30S',
+    step: [
       {
-        '@type': 'ListItem',
+        '@type': 'HowToStep',
         position: 1,
-        name: 'Home',
-        item: `${SITE_URL}`,
+        name: 'Add Your WebP Images',
+        text: 'Drag and drop your .webp files into the upload dropzone or click to browse files from your computer or phone. Queue up to 50 files (up to 50 MB per file, 250 MB total) in a single session.',
+        url: `${SITE_URL}/media/webp-to-jpg-png#step-1`,
       },
       {
-        '@type': 'ListItem',
+        '@type': 'HowToStep',
         position: 2,
-        name: 'Media & Images',
-        item: `${SITE_URL}/media`,
+        name: 'Select Target Format (JPG vs PNG)',
+        text: 'Choose JPG / JPEG for photographic visuals, web banners, and general sharing with universal device compatibility. Choose PNG when preserving 8-bit alpha transparency, sharp typography, or logo cutouts.',
+        url: `${SITE_URL}/media/webp-to-jpg-png#step-2`,
       },
       {
-        '@type': 'ListItem',
+        '@type': 'HowToStep',
         position: 3,
-        name: 'WebP to JPG & PNG Converter',
-        item: `${SITE_URL}/media/webp-to-jpg-png`,
+        name: 'Customize Quality & Background Fill (for JPG)',
+        text: 'When converting to JPG, adjust the JPEG quality slider between 10% and 100% (default 90%). Select a background fill color (white #ffffff, black #000000, light gray #f3f4f6, warm ivory #fef3c7, or custom hex) to cleanly composite transparent pixels.',
+        url: `${SITE_URL}/media/webp-to-jpg-png#step-3`,
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Execute Conversion',
+        text: 'Click "Convert All" to process your entire batch sequentially, or click the individual conversion icon on specific queue cards to convert files one by one in device memory.',
+        url: `${SITE_URL}/media/webp-to-jpg-png#step-4`,
+      },
+      {
+        '@type': 'HowToStep',
+        position: 5,
+        name: 'Download Your Files',
+        text: 'Download individual converted images immediately or click "Download All as ZIP" to save your entire converted batch packaged into a single JSZip compressed archive.',
+        url: `${SITE_URL}/media/webp-to-jpg-png#step-5`,
       },
     ],
   };
 
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-3xl border border-slate-200 dark:border-slate-800 transition-colors shadow-xs space-y-8">
-      {/* Structured Data: FAQPage & BreadcrumbList */}
+      {/* Structured Data: FAQPage & HowTo (BreadcrumbList provided globally by page shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
       {/* SECTION 1: OVERVIEW */}
@@ -125,16 +161,16 @@ export default function WebpToJpgPngSeo() {
         <h2 id="webp-to-jpg-png-webp-to-jpg-amp-png-conversion" className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
           WebP to JPG &amp; PNG Conversion: Universal Compatibility &amp; Privacy
         </h2>
-      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
-        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
-        </p>
-      </blockquote>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+          </p>
+        </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-base">
-          Google developed the <strong>WebP</strong> format to dramatically shrink image file sizes on the modern web. By utilizing advanced VP8 intra-frame predictive coding, WebP delivers comparable visual fidelity to legacy JPEG and PNG formats while reducing payload sizes by 25% to 35%. Despite universal support across modern web browsers, WebP still faces significant compatibility friction across desktop software, legacy photo viewers, social media uploaders, content management systems, print laboratories, and enterprise email clients.
+          Google developed the <strong>WebP</strong> format to dramatically shrink image file sizes on the modern web. By utilizing advanced VP8 intra-frame predictive coding and VP8L spatial transform algorithms, WebP delivers comparable visual fidelity to legacy JPEG and PNG formats while reducing payload sizes by 25% to 35%. Despite universal support across modern web browsers, WebP still faces significant compatibility friction across desktop software, legacy photo viewers, social media uploaders, content management systems, print laboratories, and enterprise email clients.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 text-base">
-          KivaroTools <strong>WebP to JPG &amp; PNG Converter</strong> bridges this gap by enabling fast, high-fidelity conversion of WebP files into universal JPEG or lossless PNG images. Built on client-side HTML5 Canvas and OffscreenCanvas technology, the tool processes your images directly in your browser without transmitting any data to external cloud servers.
+          KivaroTools <strong>WebP to JPG &amp; PNG Converter</strong> bridges this gap by enabling fast, high-fidelity batch transcoding of WebP files into universal JPEG or lossless PNG images. Built on client-side HTML5 Canvas 2D and OffscreenCanvas technology with hardware-accelerated <code>createImageBitmap</code> decoding, the tool processes your images directly in your browser without transmitting any data to external cloud servers.
         </p>
       </section>
 
@@ -144,19 +180,19 @@ export default function WebpToJpgPngSeo() {
           How to Convert WebP to JPG or PNG Step-by-Step
         </h2>
         <ol className="list-decimal pl-6 space-y-3 text-slate-600 dark:text-slate-300 text-sm sm:text-base">
-          <li>
+          <li id="step-1">
             <strong>Add Your WebP Images:</strong> Drag and drop your <code>.webp</code> files into the interactive dropzone or click to browse files from your local storage. You can batch process up to 50 files (up to 50 MB per file, 250 MB total) in a single session.
           </li>
-          <li>
+          <li id="step-2">
             <strong>Select Target Format (JPG vs PNG):</strong> Choose <strong>JPG / JPEG</strong> for photographs, web banners, and general image sharing where high compression and universal compatibility are paramount. Choose <strong>PNG</strong> when your image contains transparent backgrounds, sharp typography, or logo cutouts that require lossless preservation.
           </li>
-          <li>
-            <strong>Customize Quality &amp; Background Fill (for JPG):</strong> When converting to JPG, adjust the quality slider between 10% and 100% (default 90% balances visual clarity and compression). Because JPG cannot represent alpha transparency, select a background fill color (white, black, light gray, or custom hex) to cleanly composite any transparent pixels.
+          <li id="step-3">
+            <strong>Customize Quality &amp; Background Fill (for JPG):</strong> When converting to JPG, adjust the quality slider between 10% and 100% (default 90% balances visual clarity and compression). Because JPG cannot represent alpha transparency, select a background fill color (white <code>#ffffff</code>, black <code>#000000</code>, light gray <code>#f3f4f6</code>, warm ivory <code>#fef3c7</code>, or custom hex) to cleanly composite any transparent pixels.
           </li>
-          <li>
+          <li id="step-4">
             <strong>Execute Conversion:</strong> Click &ldquo;Convert All&rdquo; to process your entire batch sequentially, or click the individual conversion icon on specific queue cards to convert files one by one.
           </li>
-          <li>
+          <li id="step-5">
             <strong>Download Your Files:</strong> Download individual converted images immediately or click &ldquo;Download All as ZIP&rdquo; to save your entire batch packaged neatly into a single JSZip compressed archive.
           </li>
         </ol>
@@ -247,7 +283,7 @@ export default function WebpToJpgPngSeo() {
               Converting to JPG (Background Compositing)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Because JPEG cannot store transparency, transparent areas must be filled with a solid color. KivaroTools fills the canvas with your chosen background color (default white <code>#ffffff</code>, or custom hex) before drawing the image, preventing ugly black borders.
+              Because JPEG cannot store transparency, transparent areas must be filled with a solid color. KivaroTools fills the canvas with your chosen background color (default white <code>#ffffff</code>, black <code>#000000</code>, light gray <code>#f3f4f6</code>, warm ivory <code>#fef3c7</code>, or custom hex) before drawing the image, preventing ugly black borders.
             </p>
           </div>
         </div>
@@ -290,42 +326,152 @@ export default function WebpToJpgPngSeo() {
         </ul>
       </section>
 
-      {/* SECTION 7: COMMON TROUBLESHOOTING */}
-      <section aria-labelledby="webp-to-jpg-png-troubleshooting-common-webp-co" className="space-y-4">
-        <h2 id="webp-to-jpg-png-troubleshooting-common-webp-co" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-          Troubleshooting Common WebP Conversion Errors
+      {/* SECTION 7: COMPETITOR COMPARISON MATRIX */}
+      <section aria-labelledby="webp-to-jpg-png-competitor-matrix" className="space-y-4">
+        <h2 id="webp-to-jpg-png-competitor-matrix" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+          KivaroTools WebP Converter vs. Online Conversion Tools
         </h2>
-        <div className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-              Error: &ldquo;Invalid WebP header signature (not a valid RIFF/WEBP file)&rdquo;
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Compare our client-side architecture against popular cloud-hosted image conversion platforms:
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
+                <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">Capability</th>
+                <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold text-blue-600 dark:text-blue-400">KivaroTools</th>
+                <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">CloudConvert</th>
+                <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">Ezgif</th>
+                <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">iLoveIMG / FreeConvert</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-600 dark:text-slate-300 divide-y divide-slate-200 dark:divide-slate-800">
+              <tr>
+                <td className="p-3 font-medium">Processing Architecture</td>
+                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">100% Client-Side (Device RAM/GPU)</td>
+                <td className="p-3 text-red-500">Cloud Server Upload</td>
+                <td className="p-3 text-red-500">Cloud Server Upload</td>
+                <td className="p-3 text-red-500">Cloud Server Upload</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Max Free Batch Capacity</td>
+                <td className="p-3 text-blue-600 dark:text-blue-400 font-semibold">50 files / 250 MB total queue</td>
+                <td className="p-3">25 conversions per day total</td>
+                <td className="p-3">Single file / Limited batch</td>
+                <td className="p-3">15–20 files per task</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Max Single File Size</td>
+                <td className="p-3 text-blue-600 dark:text-blue-400 font-semibold">50 MB per file</td>
+                <td className="p-3">Varies by credit plan</td>
+                <td className="p-3">50 MB</td>
+                <td className="p-3">Limited on free tier</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Alpha Transparency Matte Fill</td>
+                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">4 Presets (#ffffff, #000000, #f3f4f6, #fef3c7) + Hex Picker</td>
+                <td className="p-3">Basic hex background option</td>
+                <td className="p-3">Color hex entry only</td>
+                <td className="p-3">Default solid color or none</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Conversion Limits &amp; Paywalls</td>
+                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">Unlimited Free (No sign-up, no credits)</td>
+                <td className="p-3 text-amber-600 dark:text-amber-400">25 credits/day free limit</td>
+                <td className="p-3">Free with heavy ad banners</td>
+                <td className="p-3 text-amber-600 dark:text-amber-400">Daily conversion quotas</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Binary RIFF Preflight Validation</td>
+                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">Deep container &amp; FourCC chunk audit</td>
+                <td className="p-3">Server-side ImageMagick/ffmpeg check</td>
+                <td className="p-3">Basic server format sniffing</td>
+                <td className="p-3">MIME-type check on upload</td>
+              </tr>
+              <tr>
+                <td className="p-3 font-medium">Batch Download Packaging</td>
+                <td className="p-3 text-blue-600 dark:text-blue-400 font-semibold">Instant JSZip (DEFLATE Level 6)</td>
+                <td className="p-3">ZIP archive via cloud download link</td>
+                <td className="p-3">Individual or delayed ZIP</td>
+                <td className="p-3">Cloud ZIP link (expires in 2h)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* SECTION 8: 6-CARD DIAGNOSTIC TROUBLESHOOTING GRID */}
+      <section aria-labelledby="webp-to-jpg-png-troubleshooting-grid" className="space-y-4">
+        <h2 id="webp-to-jpg-png-troubleshooting-grid" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+          Troubleshooting WebP Transcoding &amp; Header Errors
+        </h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Our engineering diagnostic engine inspects your WebP container byte-by-byte. Review how common binary corruption and formatting issues are resolved:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+              1. Invalid WebP Header Signature Error
             </h3>
-            <p>
-              This error occurs when a file with a <code>.webp</code> extension is not actually a WebP image. Common culprits include HTML error pages saved by your browser when an image failed to download, or disguised AVIF/JPEG files. Open the source image in your browser to verify it loads correctly.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Occurs when a file has a <code>.webp</code> extension but lacks ASCII &ldquo;RIFF&rdquo; (bytes 0..3) and &ldquo;WEBP&rdquo; (bytes 8..11). Common causes include HTML 404 pages or disguised JPEG/PNG downloads saved directly from websites.
             </p>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-              Error: &ldquo;File is empty (0 bytes)&rdquo;
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              2. Truncated RIFF Payload or Odd Padding Mismatch
             </h3>
-            <p>
-              The selected file has a size of 0 bytes, indicating a broken download or interrupted file transfer. Re-download the image from the original source before retrying.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Triggered when the declared 32-bit little-endian RIFF container size exceeds physical file bounds, or an odd-sized chunk is missing its mandatory <code>0x00</code> word-alignment padding byte, indicating an incomplete network download.
             </p>
           </div>
 
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
-            <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-              Browser Crashes or Hangs on Huge WebP Files
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+              3. Malformed VP8X or Broken ANIM/ANMF Chunks
             </h3>
-            <p>
-              Very large images (e.g., panoramas exceeding 10,000×10,000 pixels) require significant device RAM to decode into uncompressed RGBA pixel buffers (a 10,000×10,000 image requires 400 MB of uncompressed memory). If your device has limited memory, convert images in smaller batches or close background browser tabs.
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Extended WebP containers require <code>VP8X</code> payloads of at least 10 bytes and strict consistency with <code>ANIM</code> (6 bytes) and <code>ANMF</code> frame headers. Inconsistent chunk structures are rejected before decoding.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              4. Eliminating Black Halos on Drop Shadows
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Converting transparent logos to standard JPG can create dark fringing around soft edges. Choosing the <strong>White (#ffffff)</strong> or <strong>Light Gray (#f3f4f6)</strong> matte swatch composites semi-transparent pixels seamlessly without dark borders.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+              5. Animated WebP Poster Keyframe Extraction
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              When multi-frame animated WebP images are queued, our canvas pipeline extracts the first keyframe as an uncompressed still image. An Amber alert informs you that JPG and standard PNG cannot play back multi-frame sequences.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
+              6. GPU &amp; Heap Memory Management on 4K Batches
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Transcoding 50 high-resolution images can consume several gigabytes of uncompressed canvas memory. KivaroTools calls <code>bitmap.close()</code> and cleans up Blob URLs sequentially, ensuring crash-free operation on low-RAM mobile browsers.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SECTION 8: 100% LOCAL PRIVACY */}
+      {/* SECTION 9: 100% LOCAL PRIVACY */}
       <section aria-labelledby="webp-to-jpg-png-client-side-privacy-why-browse" className="space-y-4">
         <h2 id="webp-to-jpg-png-client-side-privacy-why-browse" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Client-Side Privacy: Why Browser-Based Conversion Matters
@@ -338,7 +484,7 @@ export default function WebpToJpgPngSeo() {
         </p>
       </section>
 
-      {/* SECTION 9: FAQS */}
+      {/* SECTION 10: FAQS */}
       <section aria-labelledby="webp-to-jpg-png-frequently-asked-questions" className="space-y-4">
         <h2 id="webp-to-jpg-png-frequently-asked-questions" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Frequently Asked Questions
@@ -357,10 +503,11 @@ export default function WebpToJpgPngSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
-      {/* SECTION 10: RELATED KivaroTools UTILITIES */}
+      {/* SECTION 11: RELATED KIVAROTOOLS UTILITIES */}
       <section aria-labelledby="webp-to-jpg-png-related-media-amp-image-utilit" className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
         <h2 id="webp-to-jpg-png-related-media-amp-image-utilit" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
           Related Media &amp; Image Utilities

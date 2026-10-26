@@ -15,7 +15,10 @@ import {
 } from '../lib/webpToJpgPngEngine';
 import { tools } from '../config/toolsData';
 import { toolComponents, seoComponents } from '../config/toolRegistry';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const FIXTURES_DIR = path.join(__dirname, '../scratch/webp_fixtures');
 
 let passedAssertions = 0;

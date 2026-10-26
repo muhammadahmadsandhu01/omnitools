@@ -1,5 +1,9 @@
 import Link from 'next/link';
-import { SITE_URL } from '@/config/site';
+import {
+  HelpCircle,
+  AlertTriangle,
+  Wrench,
+} from 'lucide-react';
 
 export interface FaqItem {
   question: string;
@@ -67,38 +71,24 @@ export const TEXT_CASE_FAQS: FaqItem[] = [
     answer:
       'Alternating case (popularized for sarcastic or mocking tone in internet culture) cycles letter casing between lowercase and uppercase across alphabetical characters. Punctuation marks, spaces, and numbers do not increment the letter-casing parity counter, ensuring that alternating cadence remains visually balanced across words.',
   },
+  {
+    question: 'How do the 5 text cleanup tools (Trim, Normalize Spaces, Remove Blank Lines, Trim Lines, CRLF to LF) work?',
+    answer:
+      'The 5 cleanup filters run in memory instantly: Trim Whitespace strips outer margins; Normalize Spaces collapses repeated spaces and tabs into single spaces; Remove Blank Lines filters out empty lines; Trim Lines removes leading and trailing spaces per row; and Normalize Line Endings unifies Windows CRLF (\\r\\n) and classic Mac (\\r) breaks into standard Unix LF (\\n).',
+  },
+  {
+    question: 'How are reading time and speaking time calculated from the live word count?',
+    answer:
+      'Reading time is calculated using the international standard silent reading benchmark of 200 words per minute (WPM). Speaking time is modeled at 130 words per minute, which represents the standard delivery pace for conference keynote presentations, podcasts, and video voiceovers.',
+  },
+  {
+    question: 'What is the difference between CONSTANT_CASE and COBOL-CASE?',
+    answer:
+      'CONSTANT_CASE (often called SCREAMING_SNAKE_CASE) uses uppercase letters delimited by underscores (`MAX_BUFFER_SIZE`) and is standard for environment variables, C preprocessor macros, and Python constants. COBOL-CASE (also known as UPPER-KEBAB-CASE or TRAIN-CASE) uses uppercase letters delimited by hyphens (`WS-RECORD-COUNT`) and is standard in mainframe COBOL and HTTP custom header specifications.',
+  },
 ];
 
 export default function TextCaseConverterSeo() {
-  const canonicalUrl = `${SITE_URL}/seo/text-case-converter`;
-
-  // BreadcrumbList Schema
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: SITE_URL,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'SEO & Text Tools',
-        item: `${SITE_URL}/seo`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: 'Text Case Converter',
-        item: canonicalUrl,
-      },
-    ],
-  };
-
-  // FAQPage Schema
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -112,28 +102,68 @@ export default function TextCaseConverterSeo() {
     })),
   };
 
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Convert Text Across Writing and Developer Formats Online',
+    description:
+      'Step-by-step guide to transforming text between Title Case, Sentence case, camelCase, snake_case, and 15 writing and programming identifier formats with locale-aware Unicode rules.',
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Input Source Text',
+        text: 'Type, paste, or drag and drop your text or code file into the source editor. You can also click Load Sample Text to test acronyms and mixed-case tokens.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Select Category and Case Mode',
+        text: 'Choose between Standard Writing Cases and Developer Formats, then click your desired transformation pill (such as Title Case, Sentence case, camelCase, or snake_case).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Configure Line Boundaries and Language Locales',
+        text: 'Toggle Preserve Lines for multiline SQL or CSS lists, and select your language locale (such as Turkish, German, Dutch, or Greek) from the 191-language ISO registry.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Apply Quick Text Cleanups',
+        text: 'Optionally strip outer whitespace, collapse multiple spaces, delete blank lines, trim lines, or normalize Windows CRLF line breaks to Unix LF.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 5,
+        name: 'Export Converted Result',
+        text: 'Copy the transformed text to your clipboard using the Async Clipboard API or click Download (.txt) to save a clean text file.',
+      },
+    ],
+  };
+
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-      {/* Schema Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+      {/* Schema Structured Data: FAQPage and HowTo (No duplicate BreadcrumbList) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
       {/* SECTION 1: INTRODUCTION & OVERVIEW */}
       <section aria-labelledby="text-case-converter-professional-text-case-convert" className="mb-10">
         <h2 id="text-case-converter-professional-text-case-convert" className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight">
-          Professional Text Case Converter: Standard Writing & Developer Formats
+          Professional Text Case Converter: Standard Writing &amp; Developer Formats
         </h2>
-      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
-        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
-        </p>
-      </blockquote>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+          </p>
+        </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Changing the capitalization and naming format of text is a fundamental daily requirement across modern digital disciplines. Writers and book editors routinely need to format headlines and essay titles in compliance with standard editorial styles. Software developers, database architects, and API designers continuously refactor variable names, database column schemas, and URL slugs between disparate casing paradigms like <code>camelCase</code>, <code>PascalCase</code>, <code>snake_case</code>, and <code>kebab-case</code>.
         </p>
@@ -152,13 +182,13 @@ export default function TextCaseConverterSeo() {
             <strong>Input Your Text:</strong> Type, paste, or drag your text into the left <em>Source Text</em> editor. If you wish to test common edge cases, click <strong>Load Sample Text</strong> to populate a curated snippet containing sentences, mixed-case identifiers (like <code>XMLHttpRequest</code> and <code>userID</code>), and dot-delimited tokens.
           </li>
           <li>
-            <strong>Select Category & Case Mode:</strong> Switch between the <em>Standard Writing Cases</em> and <em>Developer Formats</em> tabs to display relevant conversion pills. Click any mode pill—such as <strong>Title Case</strong>, <strong>Sentence case</strong>, or <strong>snake_case</strong>—to view the transformed result instantly in the right editor.
+            <strong>Select Category &amp; Case Mode:</strong> Switch between the <em>Standard Writing Cases</em> and <em>Developer Formats</em> tabs to display relevant conversion pills. Click any mode pill—such as <strong>Title Case</strong>, <strong>Sentence case</strong>, or <strong>snake_case</strong>—to view the transformed result instantly in the right editor.
           </li>
           <li>
-            <strong>Configure Line Boundaries & Locale:</strong> If converting a list of database columns, toggle <strong>Preserve Lines</strong> to keep each entry on its own line. If converting text in Turkish, German, Dutch, or Greek, select the matching language from the <strong>Locale Selector</strong> or search the 191-language ISO registry modal.
+            <strong>Configure Line Boundaries &amp; Locale:</strong> If converting a list of database columns, toggle <strong>Preserve Lines</strong> to keep each entry on its own line. If converting text in Turkish, German, Dutch, or Greek, select the matching language from the <strong>Locale Selector</strong> or search the 191-language ISO registry modal.
           </li>
           <li>
-            <strong>Apply Quick Text Cleanups:</strong> Use the <em>Text Cleanups</em> toolbar beneath the input editor to strip outer whitespace, normalize multiple spaces into single spaces, or remove empty lines.
+            <strong>Apply Quick Text Cleanups:</strong> Use the <em>Text Cleanups</em> toolbar beneath the input editor to strip outer whitespace, normalize multiple spaces into single spaces, remove empty lines, trim lines, or normalize CRLF line breaks.
           </li>
           <li>
             <strong>Export Converted Result:</strong> Click <strong>Copy Result</strong> to save the converted string to your clipboard via the Async Clipboard API, or click <strong>Download (.txt)</strong> to save a clean text file to your local drive.
@@ -335,7 +365,7 @@ export default function TextCaseConverterSeo() {
       {/* SECTION 5: DEVELOPER TOKENIZATION ENGINE */}
       <section aria-labelledby="text-case-converter-developer-naming-conventions-c" className="mb-10">
         <h2 id="text-case-converter-developer-naming-conventions-c" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-          Developer Naming Conventions: camelCase, PascalCase, snake_case & Beyond
+          Developer Naming Conventions: camelCase, PascalCase, snake_case &amp; Beyond
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Converting developer code identifiers requires far more sophistication than simple word capitalization. Naive regex cleaners frequently fail when encountering industry-standard acronyms, numeric version tags, or pre-existing mixed-case identifiers.
@@ -349,7 +379,7 @@ export default function TextCaseConverterSeo() {
             <strong>Acronym Boundary Splitting:</strong> In identifiers like <code>XMLHttpRequest</code> or <code>parseJSONResponse</code>, the algorithm recognizes that <code>XML</code> and <code>JSON</code> are multi-character acronyms followed by title-cased words (<code>Http</code> and <code>Response</code>). It decomposes them into discrete tokens: <code>[&quot;xml&quot;, &quot;http&quot;, &quot;request&quot;]</code> and <code>[&quot;parse&quot;, &quot;json&quot;, &quot;response&quot;]</code>.
           </li>
           <li>
-            <strong>Digit &amp; Version Preservation:</strong> Transitions between letters and digits are recognized cleanly. <code>IPv6Address</code> becomes <code>ipv6Address</code> or <code>ipv6_address</code>, rather than erroneously breaking into <code>i_pv_6_address</code>.
+            <strong>Digit &amp; Version Preservation:</strong> Transitions between letters and digits are recognized cleanly. <code>OAuth2Client</code> becomes <code>oauth2_client</code> and <code>IPv6Address</code> becomes <code>ipv6_address</code>, rather than erroneously breaking into <code>i_pv_6_address</code>.
           </li>
           <li>
             <strong>Delimiter Agnosticism:</strong> Source identifiers can be separated by hyphens (<code>user-profile-id</code>), underscores (<code>user_profile_id</code>), dots (<code>user.profile.id</code>), slashes (<code>user/profile/id</code>), or spaces (<code>user profile id</code>). The engine normalizes them into identical token arrays before re-synthesizing the target format.
@@ -360,10 +390,51 @@ export default function TextCaseConverterSeo() {
         </ul>
       </section>
 
-      {/* SECTION 6: INTERNATIONALIZATION & UNICODE RULES */}
+      {/* SECTION 6: CLEANUP UTILITIES & LIVE TELEMETRY */}
+      <section aria-labelledby="text-case-converter-cleanup-utilities-and-telemetry" className="mb-10 p-6 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 not-prose">
+        <div className="flex items-center gap-2 mb-3">
+          <Wrench className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <h2 id="text-case-converter-cleanup-utilities-and-telemetry" className="text-xl font-bold text-slate-900 dark:text-white">
+            5 Text Cleanup Utilities &amp; 8 Real-Time Telemetry Counters
+          </h2>
+        </div>
+        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+          Beyond case conversion, KivaroTools integrates instant text sanitization and live document metrics designed for editors, programmers, and speechwriters:
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-4">
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40">
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">5 Instant Cleanup Filters</span>
+            <ul className="list-disc pl-4 space-y-1 text-slate-600 dark:text-slate-400">
+              <li><strong>Trim Whitespace:</strong> Strips outer leading/trailing spaces.</li>
+              <li><strong>Normalize Spaces:</strong> Replaces consecutive spaces/tabs with single space.</li>
+              <li><strong>Remove Blank Lines:</strong> Strips empty rows from lists and logs.</li>
+              <li><strong>Trim Lines:</strong> Strips trailing and leading margin on every line.</li>
+              <li><strong>Normalize Line Endings:</strong> Unifies CRLF (<code>\r\n</code>) to Unix LF (<code>\n</code>).</li>
+            </ul>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-purple-100 dark:border-purple-900/40">
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">8 Live Telemetry Metrics</span>
+            <ul className="list-disc pl-4 space-y-1 text-slate-600 dark:text-slate-400">
+              <li><strong>Character Count:</strong> Real-time count with and without spaces.</li>
+              <li><strong>Unicode Words:</strong> Segmented via standard or <code>Intl.Segmenter</code>.</li>
+              <li><strong>Structural Units:</strong> Dynamic line, sentence, and paragraph counts.</li>
+              <li><strong>Reading Time:</strong> Modeled at silent speed of 200 words per minute.</li>
+              <li><strong>Speaking Time:</strong> Modeled at podium delivery of 130 words per minute.</li>
+            </ul>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          The editor also maintains a <strong>50-snapshot in-memory undo/redo history stack</strong>, allowing you to test multiple case variations and revert instantly without losing your original text draft.
+        </p>
+      </section>
+
+      {/* SECTION 7: INTERNATIONALIZATION & UNICODE RULES */}
       <section aria-labelledby="text-case-converter-internationalization-unicode-c" className="mb-10">
         <h2 id="text-case-converter-internationalization-unicode-c" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-          Internationalization & Unicode Casing: Turkish, German, Dutch & Greek Rules
+          Internationalization &amp; Unicode Casing: Turkish, German, Dutch &amp; Greek Rules
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           Text capitalization is not language-neutral. In many European and Mediterranean languages, standard ASCII uppercase and lowercase transformations produce grammatically incorrect and offensive results. KivaroTools includes dedicated linguistic handlers for key international scripts:
@@ -372,7 +443,7 @@ export default function TextCaseConverterSeo() {
         <div className="space-y-3 mb-6">
           <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">
-              1. Turkish & Azerbaijani Casing (Dotted vs. Dotless I)
+              1. Turkish &amp; Azerbaijani Casing (Dotted vs. Dotless I)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               In Turkish (<code>tr</code>) and Azerbaijani (<code>az</code>), &ldquo;I&rdquo; with a dot is a different vowel from &ldquo;I&rdquo; without a dot. Lowercase <code>i</code> uppercases to dotted <code>İ</code> (e.g. <em>istanbul</em> &rarr; <code>İSTANBUL</code>). Uppercase dotless <code>I</code> lowercases to dotless <code>ı</code> (e.g. <em>IĞDIR</em> &rarr; <code>ığdır</code>). ASCII tools corrupt this into <em>ISTANBUL</em> and <em>igdir</em>, which alters word meaning.
@@ -408,7 +479,139 @@ export default function TextCaseConverterSeo() {
         </div>
       </section>
 
-      {/* SECTION 7: CLIENT-SIDE PRIVACY */}
+      {/* SECTION 8: 5-COLUMN COMPETITOR COMPARISON MATRIX */}
+      <section aria-labelledby="text-case-converter-competitor-matrix" className="mb-10">
+        <h2 id="text-case-converter-competitor-matrix" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+          Case Converter Comparison: KivaroTools vs. Alternative Utilities
+        </h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+          Compare how KivaroTools stacks up against older web converters and standard code editors:
+        </p>
+        <div className="overflow-x-auto mb-6 not-prose">
+          <table className="min-w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Feature / Capability</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-purple-600 dark:text-purple-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">ConvertCase.net</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">CapitalizeMyTitle</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Standard IDEs / Editors</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Supported Casing Modes</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">15 Modes (7 Writing + 8 Developer)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">8 Modes (Limited Developer)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Writing Cases Only</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600">Upper, Lower &amp; Title Only</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Acronym &amp; Version Tokenizer</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Decomposes XMLHttpRequest &amp; OAuth2</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-500">Clumps Acronyms</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">Plugins Required</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Unicode &amp; Locale Rules</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">191 Languages (tr, az, de, nl, el)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-500">ASCII-Only English</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600">Partial Editorial</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">OS Default Locale</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Cleanups &amp; Preserve Lines</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">5 Cleanups + Preserve Lines Toggle</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Separate Find/Replace</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Privacy &amp; Telemetry</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side / Zero Ad Trackers</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Ad-Supported</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Ad-Supported</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Local Disk</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* SECTION 9: 6-CARD ENGINEERING & EDITORIAL TROUBLESHOOTING GRID */}
+      <section aria-labelledby="text-case-converter-troubleshooting-grid" className="mb-10">
+        <h2 id="text-case-converter-troubleshooting-grid" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
+          Engineering &amp; Editorial Troubleshooting Guide
+        </h2>
+        <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4 text-sm">
+          Keep these 6 technical nuances in mind when processing complex code identifiers and editorial prose:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-6">
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              1. Turkish Dotless I Corruption in ASCII
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Standard JavaScript <code>.toLowerCase()</code> converts uppercase <code>I</code> into dotted <code>i</code>. In Turkish, this corrupts city names like <em>IĞDIR</em> into <em>iğdir</em> instead of <em>ığdır</em>. Select the Turkish locale pill to enforce proper dotted/dotless Unicode mappings.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              2. Single-Letter Splits on Acronyms
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Naive regex splitters turn <code>HTTPSConnection</code> into <code>h_t_t_p_s_connection</code>. KivaroTools groups uppercase letter sequences before camelCase transitions, transforming it cleanly into <code>https_connection</code>.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              3. Sentence Case Decimal &amp; Abbreviation Protection
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Converting software release notes to sentence case often erroneously capitalizes numbers after decimals (e.g., <em>v2.5.Is released</em>). Our sentence parser explicitly preserves decimals, currency values, and honorific abbreviations like <em>Dr.</em> and <em>vs.</em>
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              4. Batch Converting Multiline SQL Lists
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              When pasting lists of 50 database columns, standard tools join all words into one single unreadable line. Toggle <strong>Preserve Lines</strong> ON so every column name transforms to camelCase or snake_case on its own row.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              5. Windows CRLF vs. Unix LF Git Diffs
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Copying text across operating systems can introduce mixed <code>\r\n</code> and <code>\n</code> line breaks, triggering full-file Git diff churn. Use the <em>Normalize Line Endings</em> cleanup before committing refactored constants.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              6. Contextual Proper Noun Review
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Brand names with internal capitalization (like <em>iPhone</em>, <em>GitHub</em>, <em>PostgreSQL</em>, or <em>LaTeX</em>) follow corporate trademark rules rather than English grammar. Review these terms after automated bulk transformations.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 10: CLIENT-SIDE PRIVACY */}
       <section aria-labelledby="text-case-converter-client-side-security-amp-priva" className="mb-10">
         <h2 id="text-case-converter-client-side-security-amp-priva" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
           Client-Side Security &amp; Privacy: Zero Server Transmissions
@@ -426,31 +629,11 @@ export default function TextCaseConverterSeo() {
         </ul>
       </section>
 
-      {/* SECTION 8: LIMITATIONS & HUMAN REVIEW */}
-      <section aria-labelledby="text-case-converter-limitations-human-review-guide" className="mb-10">
-        <h2 id="text-case-converter-limitations-human-review-guide" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-          Limitations & Human Review Guidelines
-        </h2>
-        <p className="leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
-          While automated case conversion drastically accelerates formatting workflows, certain natural language ambiguities cannot be determined programmatically with 100% accuracy without contextual human review:
-        </p>
-        <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <strong className="text-slate-900 dark:text-white">Proper Nouns &amp; Brand Names:</strong> Sentence case and lowercase conversion cannot automatically distinguish general vocabulary from proper nouns (such as <em>Apple</em>, <em>Mercedes</em>, or <em>Paris</em>). If converting an entire document to Sentence case, verify that brand names and personal names are reviewed and capitalized.
-          </div>
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <strong className="text-slate-900 dark:text-white">Contextual Preposition Capitalization:</strong> In Title Case, words like &ldquo;in&rdquo; or &ldquo;out&rdquo; remain lowercase when acting as simple prepositions (e.g. <em>Lost in the Woods</em>), but should be capitalized when acting as adverbs in phrasal verbs (e.g. <em>Log In to Your Account</em> or <em>Check In at Noon</em>). Review phrasal verbs in headlines.
-          </div>
-          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <strong className="text-slate-900 dark:text-white">Hyphenated Compound Words:</strong> Different editorial style guides (Chicago Manual of Style vs. AP Stylebook) specify conflicting rules for capitalizing the second element of hyphenated compounds (e.g. <em>Self-Driving Cars</em> vs. <em>Self-driving Cars</em>). Verify your publisher&apos;s specific style guide requirements.
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 9: FAQS */}
+      {/* SECTION 11: FAQS (15 Items matching FAQPage JSON-LD) */}
       <section aria-labelledby="text-case-converter-frequently-asked-questions-faq" className="mb-10">
-        <h2 id="text-case-converter-frequently-asked-questions-faq" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-          Frequently Asked Questions (FAQ)
+        <h2 id="text-case-converter-frequently-asked-questions-faq" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          <span>Frequently Asked Questions (FAQ)</span>
         </h2>
         <div className="space-y-3">
           {TEXT_CASE_FAQS.map((faq, index) => (
@@ -466,10 +649,11 @@ export default function TextCaseConverterSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
-      {/* SECTION 10: RELATED KivaroTools UTILITIES */}
+      {/* SECTION 12: RELATED KivaroTools UTILITIES */}
       <section aria-labelledby="text-case-converter-related-kivarotools-utilities" className="pt-6 border-t border-slate-200 dark:border-slate-800">
         <h2 id="text-case-converter-related-kivarotools-utilities" className="text-lg sm:text-xl font-bold mb-3 text-slate-900 dark:text-white">
           Related KivaroTools Utilities

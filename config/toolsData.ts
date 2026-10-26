@@ -376,31 +376,31 @@ export const tools: Tool[] = [
 
   {
     id: 'webp-to-jpg-png',
-    name: 'WebP to JPG & PNG Converter',
+    name: 'WebP to JPG & PNG Converter — Batch Transcode & Alpha Matte Fill',
     slug: 'webp-to-jpg-png',
     categoryId: 'media',
     description:
-      'Convert WebP images to JPG or PNG directly in your browser with adjustable quality and transparency background fill.',
+      'Convert up to 50 WebP images (up to 250 MB batch) to standard JPG or lossless 8-bit alpha PNG directly in your browser with custom background matte colors, adjustable JPEG quality, and one-click ZIP export.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'WebP to JPG & PNG Converter — Free Batch Image Converter',
+    seoTitle: 'WebP to JPG & PNG Converter — Batch Convert 50 Files, Alpha Matte & ZIP (Zero Upload)',
     seoDescription:
-      'Convert WebP images to JPG or PNG online directly in your browser. Batch processing, customizable JPEG quality, transparency background fill, and instant ZIP download with 100% client-side privacy.',
+      'Convert up to 50 WebP images (50 MB per file / 250 MB batch) to high-resolution JPG or lossless PNG 100% in your browser. Features custom alpha background matte fill, 10%–100% JPEG quality, animated WebP poster extraction, and instant ZIP download.',
     relatedToolSlugs: ['image-compressor', 'image-to-pdf', 'pdf-merge-split', 'svg-optimizer'],
   },
 
   {
     id: 'image-compressor',
-    name: 'Image Compressor & Optimizer',
+    name: 'Image Compressor & Perceptual Optimizer (JPG, PNG, WebP, AVIF & HEIC)',
     slug: 'image-compressor',
     categoryId: 'media',
     description:
-      'Reduce image file size with adjustable compression directly in your browser.',
+      'Compress and resize up to 100 images (100 MB per file) 100% client-side with perceptual SSIM scoring, 5-pass binary search Target KB sizing (10 KB–100 MB), automatic EXIF stripping, and interactive Before/After split comparison.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image Compressor & Optimizer — Reduce Image Size in KB',
+    seoTitle: 'Image Compressor & Optimizer — Reduce Size to 20KB/50KB/100KB, WebP/AVIF/HEIC (Zero Upload)',
     seoDescription:
-      'Compress JPG, PNG, WebP, and AVIF images online for free in your browser. Reduce file size to target KB limits or preserve visual quality with private client-side processing.',
+      'Compress up to 100 JPG, PNG, WebP, AVIF, HEIC, and TIFF images (100 MB per file) 100% in your browser. Features 5-pass binary search Target KB sizing (20KB, 50KB, 100KB), perceptual SSIM scoring, batch resizing, EXIF stripping, and split preview.',
     relatedToolSlugs: ['webp-to-jpg-png', 'image-to-pdf', 'svg-optimizer', 'pdf-merge-split'],
   },
 
@@ -410,15 +410,16 @@ export const tools: Tool[] = [
 
   {
     id: 'qr-generator',
-    name: 'Custom QR Code Generator',
+    name: 'Custom QR Code Generator — Static URL, Wi-Fi, vCard, Logo & Vector SVG/PDF',
     slug: 'qr-generator',
     categoryId: 'seo',
     description:
-      'Create customizable QR codes with options for colors, content, and supported branding elements.',
+      'Generate 100% permanent, unexpiring static QR codes across 8 payload types with custom colors, center logos, live 0–95 scan reliability scoring, in-browser optical verification, and print-ready PNG, SVG, WebP, JPEG, or A4 PDF exports.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free QR Code Generator Online — Custom Colors, Logos & Print Vector',
-    seoDescription: 'Generate free, unexpiring static QR codes for URLs, Wi-Fi, vCard contacts, emails, and events. Customize colors, add logos, and download print-ready PNG, SVG, or PDF client-side.',
+    seoTitle: 'Free QR Code Generator Online — Custom Logo, Wi-Fi, vCard, Vector SVG & PDF (No Expiry)',
+    seoDescription:
+      'Generate permanent, unexpiring static QR codes for URLs, Wi-Fi, vCard 3.0 contacts, emails, SMS, and events 100% in your browser. Add custom logos (Level H 30%), check WCAG contrast & scan reliability (0–95), test with built-in scanner, and export PNG, SVG, or A4 PDF.',
     relatedToolSlugs: ['meta-generator', 'text-analyzer', 'text-case-converter', 'base64-encoder'],
   },
 
@@ -441,29 +442,31 @@ export const tools: Tool[] = [
 
   {
     id: 'text-case-converter',
-    name: 'Text Case Converter',
+    name: 'Text Case Converter — 15 Editorial & Developer Naming Formats',
     slug: 'text-case-converter',
     categoryId: 'seo',
     description:
-      'Convert text between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, and 15 writing and developer naming formats.',
+      'Transform text instantly across 7 editorial writing cases and 8 developer identifier formats with acronym-aware tokenization, 191-language Unicode rules, 5 whitespace/line-ending cleanups, and live reading/speaking telemetry.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Text Case Converter — Title Case, UPPERCASE, camelCase & snake_case',
-    seoDescription: 'Free online text case converter. Convert between UPPERCASE, lowercase, Title Case, Sentence case, camelCase, PascalCase, snake_case, and 15 writing and programming identifier formats with zero server uploads.',
+    seoTitle: 'Text Case Converter — 15 Writing & Developer Formats, Title Case, camelCase & snake_case',
+    seoDescription:
+      'Convert text across 15 modes: UPPERCASE, lowercase, AP/Chicago Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, and CONSTANT_CASE. Features 191-language Unicode rules (Turkish, German, Dutch, Greek), acronym tokenization, 5 text cleanups, and live word/reading counters.',
     relatedToolSlugs: ['text-analyzer', 'json-formatter', 'base64-encoder', 'regex-tester'],
   },
 
   {
     id: 'meta-generator',
-    name: 'Meta Tag & Open Graph Generator',
+    name: 'Meta Tag, Open Graph & Next.js Metadata Generator + SEO Auditor',
     slug: 'meta-generator',
     categoryId: 'seo',
     description:
-      'Generate HTML meta tags and Open Graph markup for search and social sharing.',
+      'Author HTML meta tags, Open Graph markup, Twitter/X Cards, and typed Next.js App Router Metadata objects with 6 live SERP/social previews and a built-in 0–100 URL & HTML SEO Auditor.',
     isPopular: false,
     status: 'published',
-    seoTitle: 'Meta Tag & Open Graph Generator — SEO & Social',
-    seoDescription: 'Free Meta Tag & Open Graph Generator. Create SEO meta tags, Twitter Cards, and live social previews with instant validation and private in-browser processing.',
+    seoTitle: 'Meta Tag & Open Graph Generator — Live SERP/Social Preview, Auditor & Next.js Export',
+    seoDescription:
+      'Generate W3C HTML meta tags, Open Graph (og:*), Twitter/X Cards, and typed Next.js App Router Metadata objects. Preview across Google SERP, Facebook, X, LinkedIn & Discord, or audit any URL/HTML with a 0–100 SEO health score.',
     relatedToolSlugs: ['qr-generator', 'text-analyzer', 'text-case-converter', 'json-formatter'],
   },
 
