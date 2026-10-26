@@ -9,77 +9,77 @@ export const IMAGE_TO_PDF_FAQS: FaqItem[] = [
   {
     question: 'How do I combine multiple photos into a single PDF document?',
     answer:
-      'Drag and drop your images into the KivaroTools upload area or select them using the file browser. Arrange the image sequence using the drag-and-drop handles or the Move Up and Move Down arrow buttons. Ensure Output Mode is set to "Single Combined PDF", customize your preferred page size and margins, and click "Convert to PDF". All images will be compiled into one multi-page document in your exact order.',
+      'Drag and drop up to 100 images into the KivaroTools upload area or select them using the file browser (up to 500 MB batch). Arrange the image sequence using drag-and-drop or the accessible Move Up and Move Down keyboard buttons. Ensure Output Mode is set to "Single Combined PDF", customize your preferred page size (e.g. A4, US Letter, or Fit to Image) and margins, and click "Convert to PDF". All images will be compiled into one multi-page document in your exact order with zero server uploads.',
   },
   {
     question: 'Can I generate separate individual PDFs for each uploaded image?',
     answer:
-      'Yes. Toggle the Output Mode switch from "Single Combined PDF" to "Separate PDFs (ZIP)". KivaroTools will compile an independent standalone PDF for every image in your queue and package them into a single downloadable ZIP archive, making it easy to process dozens of receipts or invoices at once.',
+      'Yes. Toggle the Output Mode switch from "Single Combined PDF" to "Separate PDFs (ZIP)". KivaroTools will compile an independent standalone PDF for every image in your queue with zero-padded numbering (e.g. 01_document.pdf, 02_document.pdf) and package them into a single downloadable DEFLATE level-6 compressed ZIP archive, making it easy to process dozens of receipts, invoices, or student assignments at once.',
   },
   {
     question: 'Are my images or generated PDF documents uploaded to any remote server?',
     answer:
-      'No. KivaroTools operates 100% client-side directly within your browser memory using pdf-lib and the HTML5 Canvas API. Your image bytes never leave your personal computer or mobile device, ensuring complete privacy for sensitive government identity cards, medical records, financial tax forms, and confidential business documents.',
+      'No. KivaroTools operates 100% client-side directly within your browser memory using pdf-lib and the HTML5 Canvas API (ArrayBuffer, Uint8Array, Blob). Your image bytes never leave your personal computer or mobile device, ensuring complete privacy for sensitive government identity cards, passports, medical records, financial tax forms, and confidential business documents under GDPR and HIPAA standards.',
   },
   {
     question: 'What image formats are supported by the converter?',
     answer:
-      'KivaroTools supports standard JPEG (JPG), PNG, WebP, BMP, GIF (first frame extracted), SVG vector graphics, and Apple iPhone HEIC/HEIF photos. Unsupported, corrupted, or zero-byte files are caught immediately during pre-flight validation with helpful diagnostic feedback.',
+      'KivaroTools supports 9 distinct image extensions: JPEG (JPG/JPEG), PNG, WebP, BMP, GIF (first keyframe extracted), SVG vector graphics, and Apple iPhone HEIC/HEIF photos. Unsupported, corrupted, or zero-byte files are caught immediately during pre-flight validation with helpful diagnostic feedback. For AVIF files, convert them to PNG or WebP first using our WebP to JPG & PNG Converter before importing.',
   },
   {
     question: 'How does the tool handle iPhone HEIC and HEIF photos?',
     answer:
-      'KivaroTools dynamically imports the client-side heic2any decoding engine in your browser. This decodes Apple High Efficiency Image Container (HEIC/HEIF) files into standard JPEG streams locally on your device before embedding them into the PDF, requiring zero cloud conversion or third-party server processing.',
+      'KivaroTools dynamically imports the client-side heic2any (v0.0.4) decoding engine in your browser. This decodes Apple High Efficiency Image Container (HEIC/HEIF) files into standard JPEG streams locally on your device before embedding them into the PDF, requiring zero cloud conversion, external API tokens, or third-party server processing.',
   },
   {
     question: 'How does Auto Orientation work?',
     answer:
-      'When set to "Auto", the engine inspects the natural pixel dimensions of each individual image. Wide landscape photos are placed on landscape pages, while tall vertical photos and document scans are placed on portrait pages. This prevents awkward horizontal shrinking and preserves maximum readability.',
+      'When set to "Auto", the engine inspects the natural pixel dimensions of each individual image. Wide landscape photos (width > height) are placed on landscape pages, while tall vertical photos and document scans (width <= height) are placed on portrait pages. This prevents awkward horizontal shrinking, eliminates oversized letterbox bars, and preserves maximum readability.',
   },
   {
     question: 'What is the difference between "Fit to Image" and standard page sizes like A4 or Letter?',
     answer:
-      'Standard presets like A4 (210 × 297 mm) and US Letter (8.5 × 11 in) create fixed-dimension paper pages, centering your image inside optional margins. "Fit to Image" sets each PDF page dimensions to exactly match the native pixel resolution of the image (at 72 DPI), eliminating all outer margins and white borders.',
+      'Standard presets like A4 (210 × 297 mm / 595.28 × 841.89 pt) and US Letter (8.5 × 11 in / 612 × 792 pt) create fixed-dimension paper pages, centering your image inside optional margins. "Fit to Image" sets each PDF page dimensions to exactly match the native pixel resolution of the image (1 px = 1 pt at 72 DPI), creating borderless digital pages with zero outer margins and zero white borders.',
   },
   {
     question: 'Will converting transparent PNG images create a black background?',
     answer:
-      'No. In "Original / Lossless" mode, PNG transparency channels are preserved. When using quality compression presets that convert images to JPEG (which lacks an alpha channel), KivaroTools automatically composites transparent pixels against a clean background color (white by default, or your custom chosen hex color) to prevent black background artifacts.',
+      'No. In "Original / Lossless" mode, PNG and WebP transparency channels are preserved. When using quality compression presets (High 0.92, Medium 0.80, Low 0.60) that convert images to JPEG (which lacks an alpha channel), KivaroTools automatically composites transparent pixels against your chosen background hex color fill (#ffffff clean white by default) to prevent black background artifacts.',
   },
   {
     question: 'What is the difference between Contain, Cover, and Actual image placement?',
     answer:
-      '"Contain" scales the image proportionally so that the entire image fits completely inside the printable area without cropping. "Cover" scales the image up to fill the entire printable area, centering it and cropping any overflow. "Actual" places the image at 1:1 pixel-to-point dimensions without scaling, downscaling only if the image exceeds page bounds.',
+      '"Contain" (default) scales the image proportionally via min(printableW / imgW, printableH / imgH) so that 100% of the image fits completely inside printable margins without cropping. "Cover" scales the image up via max(printableW / imgW, printableH / imgH) to fill the entire printable area with even edge cropping. "Actual" places the image at 1:1 pixel-to-point dimensions without scaling, downscaling via Contain only if the image exceeds page bounds.',
   },
   {
     question: 'Is there a limit on file size or the number of images I can convert?',
     answer:
-      'You can convert up to 100 images per batch with a total combined queue size of up to 500 MB. Because processing runs entirely in your local browser memory, performance depends on your device RAM and CPU rather than artificial cloud quotas or paywalls.',
+      'You can convert up to 100 images per batch (MAX_FILES = 100) with a total combined queue size of up to 500 MB (MAX_TOTAL_BYTES = 524,288,000 bytes). Because processing runs entirely in your local browser memory, performance depends on your device RAM and CPU rather than artificial cloud quotas, daily cooldown timers, or paywalls.',
   },
   {
     question: 'Can I rotate individual images before converting to PDF?',
     answer:
-      'Yes. Every image card in the queue features a 90° clockwise rotation button. You can rotate sideways scans, receipts, or smartphone photos 90°, 180°, or 270° before generation, and the rotation is accurately applied to the final PDF pages.',
+      'Yes. Every image card in the queue features a 90° clockwise rotation button (0°, 90°, 180°, 270°). You can rotate sideways scans, receipts, or smartphone photos before generation. When rotated, the HTML5 Canvas context swaps pixel coordinates to ensure the final PDF pages render in the correct visual orientation.',
   },
   {
     question: 'Can I create custom page sizes in millimeters, inches, or points?',
     answer:
-      'Yes. Select "Custom" under Page Size, enter your desired width and height, and pick your preferred unit: millimeters (mm), inches (in), or typographic points (pt). The engine automatically calculates the exact mathematical point conversions for standard PDF output.',
+      'Yes. Select "Custom" under Page Size, enter your desired width and height, and pick your preferred unit: millimeters (mm * 72 / 25.4), inches (in * 72), or typographic points (pt). The engine automatically calculates the exact mathematical point conversions (clamped to a safe minimum of 10 pt) for standard PDF output.',
   },
   {
     question: 'Why does embedding a JPEG into a PDF sometimes increase the file size slightly?',
     answer:
-      'A PDF document wraps image byte streams with structural document metadata (cross-reference tables, page dictionaries, creator metadata, and font dictionaries). In addition, re-encoding images through canvas at high quality can produce slightly larger binaries. For minimal file size on already-compressed files, select "Original / Lossless".',
+      'A PDF document wraps image byte streams with structural document metadata (cross-reference tables, page dictionaries, creator metadata, and font dictionaries). In addition, re-encoding images through canvas at high quality can produce slightly larger binaries. For minimal file size on already-compressed files, select "Original / Lossless" to enable direct binary stream pass-through (embedJpg/embedPng).',
   },
   {
     question: 'What should I do if my downloaded PDF is too large for an email attachment or portal upload?',
     answer:
-      'If your resulting PDF exceeds upload limits (such as government portals requiring files under 2 MB), use the "Compressed (60%)" or "Standard (80%)" quality preset before conversion, or run your generated PDF through the KivaroTools PDF Merge & Split and Image Compressor utilities.',
+      'If your resulting PDF exceeds upload limits (such as government portals requiring files under 2 MB or 10 MB), use the "Medium (80%)" or "Low (60%)" quality preset before conversion, or pre-compress your camera photos with the KivaroTools Image Compressor. You can also partition or merge documents using our PDF Merge & Split tool.',
   },
   {
     question: 'Can I change the canvas background color behind my images?',
     answer:
-      'Yes. KivaroTools includes an interactive Background Color picker with hex input support (e.g., #FFFFFF for standard clean white, #F3F4F6 for soft document gray, or custom branded hex codes). When placing images with margins or non-standard aspect ratios, the PDF page canvas is drawn with your selected background fill color, eliminating uneven white space and matching your organization\'s document palette.',
+      'Yes. KivaroTools includes an interactive Background Color picker with hex input support (e.g., #FFFFFF for standard clean white, #F3F4F6 for soft document gray, or custom dark themes like #0F172A). When placing images with margins or non-standard aspect ratios, the PDF page canvas is drawn with your selected background fill color, eliminating uneven white space and matching your organization\'s document palette.',
   },
 ];
 
@@ -97,12 +97,50 @@ export default function ImageToPdfSeo() {
     })),
   };
 
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Convert and Assemble Images into Standardized PDF Documents',
+    description:
+      'Step-by-step instructions to convert JPG, PNG, WebP, HEIC, and SVG images into a single multi-page PDF or separate ZIP PDFs with custom page sizes, margins, and orientation 100% client-side in your browser.',
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Add Your Images',
+        text: 'Drag and drop up to 100 images onto the upload zone, or click to browse. The converter accepts JPG, PNG, WebP, BMP, GIF, SVG, and iPhone HEIC/HEIF files up to a 500 MB total queue size.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Arrange & Orient Pages',
+        text: 'The order of items in your queue matches the page order in the final PDF document. Use mouse drag-and-drop or the accessible Move Up and Move Down keyboard buttons to rearrange pages. Click the 90° rotation button to correct sideways smartphone photos.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Configure Page Geometry',
+        text: 'Choose from standard international paper formats (A4, A3, A5, US Letter, US Legal), select Fit to Image to match pixel dimensions exactly, or specify custom millimeter/inch bounds. Set your margin width (None, Small, Large) and image placement (Contain, Cover, or Actual Size).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Generate & Download',
+        text: 'Choose between a Single Combined PDF or Separate PDFs (ZIP). Click Convert to PDF to generate and download your verified, standardized PDF document instantly with zero server uploads.',
+      },
+    ],
+  };
+
   return (
     <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-6 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-sm">
-      {/* Structured Data: FAQPage (SoftwareApplication is provided by page shell) */}
+      {/* 1:1 FAQPage & HowTo Structured Data (BreadcrumbList & WebApplication handled globally by page shell) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
       {/* Section 1: Introduction */}
@@ -400,7 +438,85 @@ export default function ImageToPdfSeo() {
         </p>
       </section>
 
-      {/* Section 10: Frequently Asked Questions */}
+      {/* Section 10: Troubleshooting, Edge Cases & Layout Optimization Guide (6 Structured Cards) */}
+      <section aria-labelledby="image-to-pdf-troubleshooting-edge-cases" className="mb-10">
+        <h3 id="image-to-pdf-troubleshooting-edge-cases" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
+          Troubleshooting, Edge Cases &amp; Layout Optimization Guide
+        </h3>
+        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
+          Master image encoding behavior, color fills, coordinate transforms, and device optimization with these technical insights:
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-sm">
+          {/* Card 1 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Direct Stream Pass-Through vs. Canvas Pipeline
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              When an unrotated (0°) JPEG or PNG is converted in <em>Original / Lossless (1.0)</em> mode, KivaroTools bypasses HTML5 Canvas entirely and embeds raw binary bytes via <code className="text-xs">pdfDoc.embedJpg()</code> and <code className="text-xs">pdfDoc.embedPng()</code> for <strong>0% generation loss</strong>. When rotating 90°, 180°, or 270°, or converting WebP/HEIC/SVG, the HTML5 2D canvas context executes coordinate translation and pixel re-quantization.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              PNG/WebP Transparency vs. Hex Background Compositing
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              In Lossless mode, transparent PNG alpha channels remain native. However, when choosing High (92%), Medium (80%), or Low (60%) JPEG compression, the engine composites transparent pixels against your configured hex color (<code className="text-xs">#ffffff</code> white by default). Use the interactive color picker to match document palettes and eliminate black background artifacts on transparent logos or stickers.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Shrinking 50MB+ Smartphone Batches for Email
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Modern 12 MP to 48 MP smartphone camera photos produce massive 5 MB to 15 MB files each. Converting 10 uncompressed camera photos can yield an unwieldy 80 MB PDF. Setting the Quality slider to <em>High (0.92)</em> or <em>Medium (0.80)</em> re-quantizes high-frequency noise, slashing document size by 70% to 85% while keeping text and receipts razor-sharp for email attachments under 10 MB or 25 MB.
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+              Eliminating White Letterbox Bars on Mixed Orientations
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Batching wide 16:9 landscape screenshots with vertical 3:4 smartphone photos often creates large top-and-bottom letterbox bars. Select <strong>Auto Orientation</strong> to rotate the page geometry dynamically for each individual photo (width &gt; height &rarr; Landscape, width &le; height &rarr; Portrait). For digital screen viewing, choose <strong>Fit to Image</strong> to set exact 1 px = 1 pt borderless pages.
+            </p>
+          </div>
+
+          {/* Card 5 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              Client-Side Apple HEIC / HEIF Decoding via heic2any
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Apple iPhones capture photos in high-efficiency HEIC format by default, which standard browsers cannot decode natively. KivaroTools dynamically loads the <code className="text-xs">heic2any</code> WebAssembly module directly into browser memory on demand. This converts HEIC frames to standard JPEG buffers locally without transmitting photos over the network or exposing private EXIF GPS metadata.
+            </p>
+          </div>
+
+          {/* Card 6 */}
+          <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+            <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1.5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+              Strict Aspect Ratio Preservation (Zero Stretch Distortion)
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Unlike low-quality tools that stretch images to match page borders, KivaroTools strictly preserves natural aspect ratios. <em>Contain</em> fits the full photo inside margins via <code className="text-xs">min(printableW / imgW, printableH / imgH)</code>. <em>Cover</em> fills the page via <code className="text-xs">max()</code> with even margin cropping, and <em>Actual Size</em> renders 1 px = 1 pt with automatic contain downscaling if the graphic exceeds page boundaries.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 11: Frequently Asked Questions */}
       <section aria-labelledby="image-to-pdf-frequently-asked-questions-abo" className="mb-10">
         <h3 id="image-to-pdf-frequently-asked-questions-abo" className="text-xl sm:text-2xl font-semibold mb-4 text-slate-900 dark:text-slate-100">
           Frequently Asked Questions About Image to PDF Conversion
@@ -419,7 +535,8 @@ export default function ImageToPdfSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
       {/* Section 11: Related Utilities */}

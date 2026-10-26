@@ -346,27 +346,27 @@ export const tools: Tool[] = [
     slug: 'pdf-merge-split',
     categoryId: 'document',
     description:
-      'Merge multiple PDF files up to 750 MB (50 files), extract custom page ranges, or split into individual documents and ZIP archives 100% client-side with zero server uploads.',
+      'Merge up to 50 PDF files (750 MB total), extract custom page intervals, or split documents into individual pages and multi-range ZIP archives 100% client-side with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Merge & Split Tool — Combine & Extract Pages Online (Zero Uploads)',
+    seoTitle: 'PDF Merge & Split Tool — Combine 50 PDFs (750 MB), Extract Pages & ZIP (Zero Upload)',
     seoDescription:
-      'Merge multiple PDF files (up to 50 files / 750 MB) or extract custom page intervals into standalone PDFs and ZIP archives 100% in your browser with zero server uploads.',
+      'Merge up to 50 PDF files (750 MB batch / 250 MB per file), extract custom page ranges, or split PDFs into individual pages and semicolon-range ZIP archives 100% in your browser with zero server uploads.',
     relatedToolSlugs: ['image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
   },
 
   {
     id: 'image-to-pdf',
-    name: 'Image to PDF Converter',
+    name: 'Image to PDF Converter — Combine JPG, PNG, WebP & HEIC to PDF',
     slug: 'image-to-pdf',
     categoryId: 'document',
     description:
-      'Convert JPG, PNG, WebP, BMP, and GIF images into a PDF document directly in your browser.',
+      'Convert up to 100 JPG, PNG, WebP, HEIC/HEIF, BMP, GIF, and SVG images (up to 500 MB) into a single multi-page PDF or separate ZIP PDFs 100% client-side with custom page geometry and lossless stream embedding.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image to PDF Converter — Convert JPG, PNG & Photos to PDF',
+    seoTitle: 'Image to PDF Converter — Convert JPG, PNG, WebP, HEIC & SVG to PDF (Zero Upload)',
     seoDescription:
-      'Convert JPG, PNG, WebP, and photos to PDF for free. Combine images into one PDF or download separate files with custom page sizes and 100% private processing.',
+      'Convert up to 100 images (500 MB) across 9 formats (JPG, PNG, WebP, HEIC/HEIF, SVG, BMP, GIF) to a single PDF or separate ZIP PDFs 100% in your browser. Custom A4/Letter/Fit page sizes, margins, auto-orientation, and lossless embedding.',
     relatedToolSlugs: ['pdf-merge-split', 'webp-to-jpg-png', 'image-compressor', 'invoice-generator'],
   },
 
