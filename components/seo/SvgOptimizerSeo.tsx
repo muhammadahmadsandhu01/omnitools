@@ -99,6 +99,43 @@ export default function SvgOptimizerSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Optimize, Clean, and Minify SVG Vector Files Without Losing Visual Quality',
+            description: 'Step-by-step guide to stripping editor metadata, pruning unused defs via BFS reachability, rounding path coordinates, and comparing before/after SVG rendering.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Upload SVG File or Paste Raw XML Markup',
+        text: 'Drag and drop an .svg file (up to 10 MB) exported from Figma, Illustrator, or Inkscape, or paste raw SVG markup.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Select Optimization Preset (Smart, Safe, Balanced, or Maximum)',
+        text: 'Choose Smart or Safe mode for zero visual risk, or Balanced/Maximum mode for coordinate rounding and path minification.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Compare Side-by-Side Visual Preview & Risk Score',
+        text: 'Inspect the sandboxed live preview, byte reduction percentage, and visual alteration risk health indicator.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Copy Clean SVG/JSX Code or Download .svg File',
+        text: 'Copy the optimized XML markup directly into your web project or download the compressed .svg asset.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

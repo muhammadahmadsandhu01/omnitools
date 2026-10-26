@@ -12,20 +12,20 @@ import {
   Ban,
   CheckCircle,
 } from 'lucide-react';
-import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service',
+  title: 'Terms of Service — Usage Terms & Financial/Technical Disclaimers',
   description:
-    'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+    'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, financial calculators, and file converters.',
   alternates: {
-    canonical: '/terms',
+    canonical: `${SITE_URL}/terms`,
   },
   openGraph: {
     title: 'Terms of Service — KivaroTools',
     description:
       'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
-    url: '/terms',
+    url: `${SITE_URL}/terms`,
     type: 'website',
   },
   twitter: {
@@ -79,8 +79,8 @@ export default function TermsOfServicePage() {
           </div>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            Welcome to KivaroTools. These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use
-            of the KivaroTools website and web applications. By accessing or using our website, you acknowledge
+            Welcome to KivaroTools (<strong>{SITE_URL}</strong>). These Terms of Service (&ldquo;Terms&rdquo;) govern your
+            access to and use of the KivaroTools website and web applications. By accessing or using our website, you acknowledge
             that you have read, understood, and agreed to be bound by these Terms.
           </p>
         </header>
@@ -95,9 +95,9 @@ export default function TermsOfServicePage() {
               1. Nature of the Service &amp; Global Access
             </h2>
             <p>
-              KivaroTools is an independent digital utility suite developed and operated by an individual based
-              in {OPERATOR_LOCATION}, provided free of charge for a worldwide audience. The platform offers client-side
-              calculators, data converters, document utilities, and developer tools designed to run directly in your web browser.
+              KivaroTools is an independent digital utility suite developed and operated in {OPERATOR_LOCATION}, provided
+              free of charge for a worldwide audience. The platform offers client-side calculators, data converters, document
+              utilities, and developer tools designed to run directly in your web browser.
             </p>
             <p>
               We reserve the right to modify, update, suspend, or discontinue any feature, tool, or calculation engine
@@ -116,8 +116,8 @@ export default function TermsOfServicePage() {
                 IMPORTANT: Not Professional Financial, Tax, or Legal Advice
               </p>
               <p className="text-xs leading-6 text-amber-900 dark:text-amber-300">
-                All tools on KivaroTools—including but not limited to our 22 Country Salary Calculators, Mortgage Amortization
-                Calculators, Personal &amp; Auto Loan EMI Calculators, Compound Interest Calculators, SIP Projection Engines,
+                All tools on KivaroTools—including our 22 Country Salary Calculators, Mortgage Amortization Calculators,
+                Personal &amp; Auto Loan EMI Calculators, Compound Interest Calculators, SIP Projection Engines, Invoice Generators,
                 and Precious Metals Melt Rate Trackers—are provided strictly for <strong>educational estimation, preliminary modeling,
                 and informational planning purposes</strong>.
               </p>
@@ -125,7 +125,7 @@ export default function TermsOfServicePage() {
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
                 <strong>Tax &amp; Payroll Estimates:</strong> While our statutory salary models codify published official tax
-                schedules (such as IRS, HMRC, BMF, FBR, and ATO brackets), actual payroll withholdings and take-home pay depend on
+                schedules (such as IRS, HMRC, BMF, CBDT, FBR, CRA, and ATO brackets), actual payroll withholdings and take-home pay depend on
                 individual circumstances, employer benefits, localized municipal levies, family credits, and personal tax elections.
               </li>
               <li>
@@ -154,8 +154,8 @@ export default function TermsOfServicePage() {
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
                 <strong>Data Accuracy:</strong> You are responsible for verifying the accuracy and appropriateness of any converted
-                images, generated PDFs, formatted queries, invoices, or numerical calculations before using them in commercial, legal,
-                or production environments.
+                images, generated PDFs, formatted queries, invoices, QR codes, or numerical calculations before using them in commercial,
+                legal, print, or production environments.
               </li>
               <li>
                 <strong>Lawful Content:</strong> You agree not to use our tools to process, encode, or format material that is illegal,
@@ -163,7 +163,7 @@ export default function TermsOfServicePage() {
               </li>
               <li>
                 <strong>Platform Integrity:</strong> You agree not to attempt to interfere with our hosting network, launch denial-of-service
-                attacks, bypass rate limits, or engage in automated scraping that degrades the service for other global visitors.
+                attacks, bypass rate limits on inspection APIs, or engage in automated scraping that degrades the service for other visitors.
               </li>
             </ul>
           </section>
@@ -220,16 +220,14 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800 text-sm leading-6 text-slate-600 dark:text-slate-400 space-y-3">
               <p>
-                KivaroTools is operated by an independent developer located in {OPERATOR_LOCATION}. To the extent permitted by law,
-                these Terms are governed by and construed in accordance with the laws of {OPERATOR_LOCATION}, without regard to conflict
-                of law principles.
+                KivaroTools is operated from {OPERATOR_LOCATION}. To the extent permitted by law, these Terms are governed by
+                and construed in accordance with the laws of {OPERATOR_LOCATION}, without regard to conflict of law principles.
               </p>
               <p>
                 <strong>Worldwide Consumer Rights Notice:</strong> Because KivaroTools serves a worldwide audience, nothing in these
                 Terms excludes, restricts, limits, or modifies any non-waivable statutory rights, consumer guarantees, or legal remedies
                 that you are entitled to under the mandatory consumer protection laws of your country or jurisdiction of habitual
                 residence (such as mandatory consumer rights under European Union, United Kingdom, or other local consumer protection legislation).
-                The laws of Pakistan do not override these mandatory local consumer protections.
               </p>
               <p>
                 Before seeking formal dispute resolution, we encourage you to contact us directly to resolve any concerns informally
@@ -250,7 +248,15 @@ export default function TermsOfServicePage() {
                 Contact Page
               </Link>
               {CONTACT_EMAIL ? (
-                <span> or reach out via email at <a href={`mailto:${CONTACT_EMAIL}`} className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400">{CONTACT_EMAIL}</a></span>
+                <span>
+                  {' '}or reach out via email at{' '}
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                </span>
               ) : null}
               .
             </p>

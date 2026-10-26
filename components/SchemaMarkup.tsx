@@ -1,4 +1,5 @@
 import React from 'react';
+import { SITE_URL } from '@/config/site';
 
 export interface SchemaMarkupProps {
   name: string;
@@ -8,6 +9,8 @@ export interface SchemaMarkupProps {
   operatingSystem?: string;
   browserRequirements?: string;
   url?: string;
+  featureList?: string[];
+  keywords?: string[];
 }
 
 /**
@@ -19,7 +22,7 @@ export function resolveApplicationCategory(category?: string, explicitCategory?:
   }
   switch (category?.toLowerCase()) {
     case 'finance':
-      return 'BusinessApplication';
+      return 'FinanceApplication';
     case 'developer':
       return 'DeveloperApplication';
     case 'media':
@@ -27,7 +30,7 @@ export function resolveApplicationCategory(category?: string, explicitCategory?:
       return 'MultimediaApplication';
     case 'document':
     case 'documents':
-      return 'UtilityApplication';
+      return 'BusinessApplication';
     case 'seo':
       return 'UtilityApplication';
     default:
@@ -44,9 +47,11 @@ export default function SchemaMarkup({
   description,
   category,
   applicationCategory,
-  operatingSystem = 'Any',
-  browserRequirements = 'Requires JavaScript',
+  operatingSystem = 'Any (Web Browser — Windows, macOS, Linux, iOS, Android)',
+  browserRequirements = 'Requires JavaScript and modern HTML5 Web APIs',
   url,
+  featureList,
+  keywords,
 }: SchemaMarkupProps) {
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -56,15 +61,37 @@ export default function SchemaMarkup({
     applicationCategory: resolveApplicationCategory(category, applicationCategory),
     operatingSystem,
     browserRequirements,
+    isAccessibleForFree: true,
+    inLanguage: 'en',
+    author: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+    },
     offers: {
       '@type': 'Offer',
       price: '0',
       priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
     },
   };
 
   if (url) {
     schema.url = url;
+    schema['@id'] = `${url}#software`;
+  }
+
+  if (featureList && featureList.length > 0) {
+    schema.featureList = featureList;
+  }
+
+  if (keywords && keywords.length > 0) {
+    schema.keywords = keywords.join(', ');
   }
 
   return (

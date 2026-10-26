@@ -99,6 +99,43 @@ export default function Base64EncoderSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Encode and Decode UTF-8 Text or Binary Files to Base64 Online',
+            description: 'Step-by-step guide to converting UTF-8 strings, JSON payloads, and binary files to RFC 4648 Standard or URL-Safe Base64 locally in your browser.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Text or File Mode',
+        text: 'Choose Text String mode for UTF-8 text/JSON payloads or File/Binary mode to encode images, PDFs, or fonts into Base64 or Data URIs.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Choose Encode or Decode & Variant',
+        text: 'Toggle between Encode and Decode, and select RFC 4648 Standard Base64 (+/) or URL-Safe Base64Url (-_) for JWTs and query strings.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Configure Line Wrapping or MIME Prefix',
+        text: 'Optionally enable 76-character MIME line wrapping (RFC 2045) or prepend a data:[mime];base64, URI header for HTML/CSS embedding.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Copy or Download Output',
+        text: 'Inspect real-time byte telemetry and copy the Base64 string or download the decoded binary file directly to your device.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

@@ -99,6 +99,43 @@ export default function PasswordGeneratorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Generate Cryptographically Secure Passwords & Diceware Passphrases Online',
+            description: 'Step-by-step guide to generating CSPRNG random passwords, EFF Diceware passphrases, and PIN codes with real-time Shannon & NIST entropy auditing.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Password Mode (Random, Passphrase, or PIN)',
+        text: 'Choose Character Password mode for high-density strings, Diceware Passphrase mode for memorable multi-word phrases, or cryptographic PIN mode.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Configure Length & Character Sets',
+        text: 'Set password length (4 to 128 characters) and toggle uppercase, lowercase, numbers, and custom symbols, or exclude ambiguous look-alike characters (0/O, 1/l/I).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Verify Cryptographic Entropy & Crack-Time Resistance',
+        text: 'Check the real-time entropy score (in bits) and offline GPU/ASIC brute-force crack-time estimates.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Copy Single Password or Bulk Generate',
+        text: 'Copy your generated password with one click or generate up to 50 unique CSPRNG passwords in bulk for team or infrastructure rotation.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

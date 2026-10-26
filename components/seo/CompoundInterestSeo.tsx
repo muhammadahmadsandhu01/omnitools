@@ -104,6 +104,43 @@ export default function CompoundInterestSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Compound Interest with Recurring Contributions & Inflation Adjustment',
+            description: 'Step-by-step guide to projecting investment growth, APY vs APR effective yields, recurring deposits, tax drag, and inflation-adjusted purchasing power.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Enter Initial Principal & Contribution Schedule',
+        text: 'Input your starting investment balance, recurring deposit amount (monthly, quarterly, or annual), and annual step-up percentage.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Configure Nominal Rate & Compounding Frequency',
+        text: 'Set your expected annual return rate (%) and choose daily, monthly, quarterly, semi-annual, or annual compounding frequency.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Apply Inflation & Tax Drag Adjustments',
+        text: 'Optionally enter an annual inflation rate and capital gains/interest tax rate to see real inflation-adjusted purchasing power.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Review Growth Chart & Year-by-Year Schedule',
+        text: 'Analyze total principal vs. compound interest earned and export the year-by-year and month-by-month accumulation schedule.',
+      }
+            ],
+          }),
+        }}
+      />
 
       {/* Section 1: Introduction */}
       <section aria-labelledby="compound-interest-the-foundations-of-compound-in" className="mb-10">

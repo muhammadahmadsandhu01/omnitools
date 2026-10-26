@@ -99,6 +99,43 @@ export default function RegexTesterSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Test, Debug, and Benchmark Regular Expressions with ReDoS Protection Online',
+            description: 'Step-by-step guide to testing JavaScript/ECMAScript regular expressions, inspecting capture groups, running substitution previews, and auditing ReDoS safety.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Enter Regular Expression Pattern & Flags',
+        text: 'Type your regex pattern and toggle ECMAScript flags (g, i, m, s, u, y, d) or load a curated pattern from the library.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Provide Test Strings & Edge Cases',
+        text: 'Paste target text into the test editor to highlight all matches and non-matches in real time.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Inspect Capture Groups & Substitution Preview',
+        text: 'Review numbered ($1, $2) and named (?<name>) capture groups with exact character offsets, and test replace() substitution templates.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Audit AST Token Explanation & ReDoS Safety',
+        text: 'Check the plain-English token-by-token explanation and verify that the 1.5-second Web Worker watchdog reports zero catastrophic backtracking (ReDoS) risk.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

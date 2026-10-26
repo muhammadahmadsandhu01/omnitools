@@ -5,9 +5,12 @@ import {
   ArrowUpRight,
   ChevronRight,
   Home,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { categories, tools } from '@/config/toolsData';
+import { SITE_URL } from '@/config/site';
 
 type CategoryPageProps = {
   params: Promise<{
@@ -28,8 +31,15 @@ export async function generateMetadata({
 }: CategoryPageProps): Promise<Metadata> {
   const { category: categorySlug } = await params;
 
+  const resolvedCategorySlug =
+    categorySlug === 'image'
+      ? 'media'
+      : categorySlug === 'pdf'
+      ? 'document'
+      : categorySlug;
+
   const category = categories.find(
-    (item) => item.id === categorySlug
+    (item) => item.id === resolvedCategorySlug
   );
 
   if (!category) {
@@ -44,15 +54,23 @@ export async function generateMetadata({
   );
 
   const categoryTitle =
-    category.name.endsWith('Tools') || category.name.endsWith('Utilities')
+    category.seoTitle ||
+    (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
       ? category.name
-      : `${category.name} Tools`;
+      : `${category.name} Tools`);
+
+  const categoryDescription =
+    category.seoDescription ||
+    `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
+
+  const canonicalUrl = `${SITE_URL}/${category.id}`;
 
   return {
     title: categoryTitle,
-    description: `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities.`,
+    description: categoryDescription,
+    keywords: category.keywords,
     alternates: {
-      canonical: `/${category.id}`,
+      canonical: canonicalUrl,
     },
     robots: category.hidden
       ? {
@@ -65,14 +83,14 @@ export async function generateMetadata({
         },
     openGraph: {
       title: `${categoryTitle} — KivaroTools`,
-      description: `Explore free ${category.name.toLowerCase()} from KivaroTools.`,
-      url: `/${category.id}`,
+      description: categoryDescription,
+      url: canonicalUrl,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${categoryTitle} — KivaroTools`,
-      description: `Explore free ${category.name.toLowerCase()} from KivaroTools.`,
+      description: categoryDescription,
     },
   };
 }
@@ -85,12 +103,15 @@ export default async function CategoryPage({
   if (categorySlug === 'image') {
     permanentRedirect('/media');
   }
+  if (categorySlug === 'pdf') {
+    permanentRedirect('/document');
+  }
 
   const category = categories.find(
     (item) => item.id === categorySlug
   );
 
-  if (!category) {
+  if (!category || category.hidden) {
     notFound();
   }
 
@@ -99,10 +120,51 @@ export default async function CategoryPage({
   );
 
   const Icon = category.icon;
+  const canonicalUrl = `${SITE_URL}/${category.id}`;
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: category.name, item: canonicalUrl },
+    ],
+  };
+
+  const collectionSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${canonicalUrl}#collection`,
+    name: `${category.name} — KivaroTools`,
+    description:
+      category.description ||
+      `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
+    url: canonicalUrl,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: categoryTools.length,
+      itemListElement: categoryTools.map((tool, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: tool.name,
+        description: tool.description,
+        url: `${SITE_URL}/${category.id}/${tool.slug}`,
+      })),
+    },
+  };
 
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
 
         {/* Breadcrumbs */}
         <nav
@@ -167,9 +229,9 @@ export default async function CategoryPage({
                 </span>
               </div>
 
-              <p className="mt-2 max-w-2xl text-base leading-7 text-slate-600 dark:text-slate-400">
-                Explore free {category.name.toLowerCase()} tools designed
-                to be fast, simple, and easy to use.
+              <p className="mt-2 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-400">
+                {category.description ||
+                  `Explore free ${category.name.toLowerCase()} tools designed to be fast, simple, and easy to use with 100% client-side privacy.`}
               </p>
             </div>
 
@@ -185,11 +247,11 @@ export default async function CategoryPage({
                 id="category-tools-heading"
                 className="text-xl font-bold text-slate-900 dark:text-white"
               >
-                Explore {category.name} Tools
+                Explore {category.name}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                Choose a tool below to get started.
+                Select any utility below to launch its client-side workspace immediately.
               </p>
             </div>
 
@@ -221,7 +283,7 @@ export default async function CategoryPage({
                   {/* Card Content */}
                   <div className="flex flex-1 flex-col">
 
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {tool.name}
                     </h3>
 
@@ -229,16 +291,59 @@ export default async function CategoryPage({
                       {tool.description}
                     </p>
 
+                    {tool.featureList && tool.featureList.length > 0 && (
+                      <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                        {tool.featureList.slice(0, 2).map((feat, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                            <span className="line-clamp-1">{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
                   </div>
 
                   {/* Card Action */}
-                  <div className="mt-5 text-sm font-semibold text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300">
-                    Open tool
+                  <div className="mt-5 flex items-center justify-between text-sm font-semibold text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300">
+                    <span>Open tool</span>
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                      Client-Side
+                    </span>
                   </div>
                 </Link>
               ))}
             </div>
 
+            {/* Category Architecture & Cross-Category Hub Links */}
+            <div className="mt-14 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-2.5 text-blue-600 dark:text-blue-400">
+                <ShieldCheck className="h-5 w-5" />
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Privacy-First Architecture &amp; Technical Standards
+                </span>
+              </div>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Why Professionals Choose KivaroTools for {category.name}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                {category.description} Every utility in our {category.name.toLowerCase()} suite includes comprehensive methodology documentation, formula verification tables, and interactive FAQs directly below the workspace.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
+                {categories
+                  .filter((c) => !c.hidden && c.id !== category.id)
+                  .map((otherCat) => (
+                    <Link
+                      key={otherCat.id}
+                      href={`/${otherCat.id}`}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
+                    >
+                      Explore {otherCat.name} &rarr;
+                    </Link>
+                  ))}
+              </div>
+            </div>
           </section>
         ) : (
           /* Empty State */

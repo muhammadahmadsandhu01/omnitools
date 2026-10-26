@@ -104,6 +104,43 @@ export default function SipCalculatorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate SIP Mutual Fund Returns, Step-Up Top-Ups & Lumpsum Growth Online',
+            description: 'Step-by-step guide to projecting Systematic Investment Plan (SIP) maturity corpus, annual step-up increments, inflation-adjusted returns, and target wealth goals.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Choose SIP, Lumpsum, or Hybrid Investment Mode',
+        text: 'Select regular monthly SIP, one-time Lumpsum, or combined Hybrid mode, or switch to Reverse Target Corpus planning.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Enter Monthly Investment, Expected Return & Tenure',
+        text: 'Set your periodic contribution amount, expected annual CAGR (%), and investment horizon in years.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Enable Annual Step-Up & Inflation/Tax Adjustments',
+        text: 'Optionally add an annual step-up percentage to model salary increments and apply inflation and capital gains tax rates.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Analyze Wealth Breakdown & Yearly Amortization Table',
+        text: 'Review total invested capital vs. wealth gained, compare delay cost penalties, and export the year-by-year growth schedule.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <section aria-labelledby="sip-calculator-systematic-investment-plan-sip" className="mb-8">
         <h2 id="sip-calculator-systematic-investment-plan-sip" className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">

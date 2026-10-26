@@ -5,8 +5,8 @@
  * 1. SITE_URL resolves to canonical production domain 'https://kivarotools.com'
  * 2. sitemap() outputs strictly absolute https://kivarotools.com URLs
  * 3. No legacy Vercel preview domain (omnitools-navy.vercel.app) exists in any entry
- * 4. All active, published, indexable tools (including public UI-hidden tools), 
- *    categories, 22 country salary calculators, static company pages, and homepage are included
+ * 4. All 23 active, published, indexable tools, 5 categories, 22 country salary calculators,
+ *    4 static company pages, and homepage are included (55 total canonical URLs)
  * 5. robots() points sitemap directive to 'https://kivarotools.com/sitemap.xml'
  * 6. XML formatting validity for search engines
  */
@@ -64,10 +64,11 @@ assert(
 console.log('\n• Testing app/sitemap.ts Output...');
 const entries = sitemap();
 
-// Expected total: 1 home + 4 static + 5 active categories + 21 active tools = 31
+// Expected total: 1 home + 4 static + 5 active categories + 23 active tools + 22 country salary calculators = 55
 const activeCategories = categories.filter((c) => !c.hidden);
 const activePublishedTools = getPublishedTools().filter((t) => !t.excludeFromSitemap && !t.hidden);
-const expectedTotal = 1 + 4 + activeCategories.length + activePublishedTools.length;
+const expectedCountryCount = 22;
+const expectedTotal = 1 + 4 + activeCategories.length + activePublishedTools.length + expectedCountryCount;
 
 assert(
   entries.length === expectedTotal,
@@ -75,10 +76,10 @@ assert(
 );
 
 // Verify no preview domain
-const vercelMatches = entries.filter((e) => e.url.includes('vercel.app') || e.url.includes('omnitools-navy'));
+const vercelMatches = entries.filter((e) => e.url.includes('vercel.app') || e.url.includes('omnitools-navy') || e.url.includes('kivarotools.app'));
 assert(
   vercelMatches.length === 0,
-  `Zero sitemap entries contain 'vercel.app' or 'omnitools-navy' (found: ${vercelMatches.length})`
+  `Zero sitemap entries contain 'vercel.app', 'omnitools-navy', or 'kivarotools.app' (found: ${vercelMatches.length})`
 );
 
 // Verify all URLs start with https://kivarotools.com
@@ -111,7 +112,7 @@ assert(
   `Hidden category 'health' ('https://kivarotools.com/health') is excluded from sitemap`
 );
 
-// Verify All 21 Active Published Tools are present
+// Verify All 23 Active Published Tools are present
 for (const tool of activePublishedTools) {
   const exists = entries.some((e) => e.url === `https://kivarotools.com/${tool.categoryId}/${tool.slug}`);
   assert(
@@ -120,20 +121,20 @@ for (const tool of activePublishedTools) {
   );
 }
 
-// Verify Hidden Tools are excluded from sitemap
-const hiddenTools = ['/finance/salary-calculator', '/seo/text-analyzer', '/finance/auto-loan-calculator', '/health/bmi-calculator'];
-for (const path of hiddenTools) {
+// Verify Coming-Soon / Unimplemented Tools are excluded from sitemap
+const comingSoonTools = ['/finance/auto-loan-calculator', '/health/bmi-calculator'];
+for (const path of comingSoonTools) {
   assert(
     !entries.some((e) => e.url === `https://kivarotools.com${path}`),
-    `Hidden tool '${path}' is excluded from sitemap`
+    `Coming-soon tool '${path}' is excluded from sitemap`
   );
 }
 
-// Verify All 22 Country Salary Calculators are excluded from sitemap
-const countrySalaryEntries = entries.filter((e) => e.url.includes('/finance/salary-calculator/'));
+// Verify All 22 Country Salary Calculators are present in sitemap
+const countrySalaryEntries = entries.filter((e) => e.url.startsWith('https://kivarotools.com/finance/salary-calculator/'));
 assert(
-  countrySalaryEntries.length === 0,
-  `All 22 Country Salary Calculator pages are excluded from sitemap (found: ${countrySalaryEntries.length})`
+  countrySalaryEntries.length === 22,
+  `All 22 Country Salary Calculator pages are included in sitemap (found: ${countrySalaryEntries.length})`
 );
 
 // Verify Meaningful lastModified and changeFrequency

@@ -12,27 +12,27 @@ import {
   FileText,
   UserCheck,
 } from 'lucide-react';
-import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
+  title: 'Privacy Policy — Client-Side Processing, Cookies & AdSense Disclosures',
   description:
-    'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
+    'KivaroTools Privacy Policy. Detailed disclosures regarding 100% client-side browser processing, server logs, Google AdSense advertising cookies, analytics, and GDPR/CCPA user rights.',
   alternates: {
-    canonical: '/privacy',
+    canonical: `${SITE_URL}/privacy`,
   },
   openGraph: {
     title: 'Privacy Policy — KivaroTools',
     description:
-      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
-    url: '/privacy',
+      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, Google AdSense advertising cookies, and worldwide user rights.',
+    url: `${SITE_URL}/privacy`,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Privacy Policy — KivaroTools',
     description:
-      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, planned analytics and advertising, and worldwide user rights.',
+      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, Google AdSense advertising cookies, and worldwide user rights.',
   },
 };
 
@@ -80,8 +80,8 @@ export default function PrivacyPolicyPage() {
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
             This Privacy Policy describes how KivaroTools (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;),
-            an independent digital utility website operated by an individual based in {OPERATOR_LOCATION} and serving
-            a worldwide audience, handles information when you visit and use our web applications.
+            an independent digital utility website operated from {OPERATOR_LOCATION} and serving
+            a worldwide audience at <strong>{SITE_URL}</strong>, handles information when you visit and use our web applications.
           </p>
         </header>
 
@@ -97,22 +97,24 @@ export default function PrivacyPolicyPage() {
             <p>
               KivaroTools is architected from the ground up to minimize data collection. Unlike traditional web services
               that require uploading your confidential files, passwords, or personal financial figures to remote cloud
-              servers for processing, the majority of KivaroTools utilities execute <strong>locally within your web browser</strong>:
+              servers for processing, KivaroTools utilities execute <strong>locally within your web browser</strong>:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>
-                <strong>Document &amp; Image Converters:</strong> When converting images (WebP, JPG, PNG) or assembling
-                PDFs, all rasterization, compression, and file serialization occur within your browser&apos;s memory via HTML5 Canvas
-                and WebAssembly. Your images and documents are not transmitted over the internet to our servers.
+                <strong>Document &amp; Image Converters:</strong> When converting images (WebP, JPG, PNG, AVIF, HEIC), compressing
+                photos, or merging and splitting PDFs, all rasterization, compression, and file serialization occur within your
+                browser&apos;s memory via HTML5 Canvas, OffscreenCanvas, and WebAssembly. Your images and documents are not
+                transmitted to our servers.
               </li>
               <li>
                 <strong>Financial &amp; Tax Calculators:</strong> Salary deductions, compound interest projections, mortgage amortization,
-                and loan schedules are computed using deterministic client-side JavaScript. Your income figures, loan balances,
-                and financial inputs never leave your device.
+                precious metals melt valuations, invoice generation, and loan schedules are computed using deterministic client-side
+                JavaScript. Your income figures, loan balances, and financial inputs never leave your device.
               </li>
               <li>
-                <strong>Developer Utilities:</strong> Text formatting, JSON conversion, Base64 encoding, SQL formatting, and
-                regular expression testing run entirely in client-side runtime memory.
+                <strong>Developer, Cryptographic &amp; SEO Utilities:</strong> Text formatting, JSON conversion, Base64 encoding,
+                SQL formatting, SVG optimization, CSPRNG password/hash generation, QR code creation, and regular expression testing
+                run in client-side runtime memory.
               </li>
             </ul>
           </section>
@@ -121,33 +123,32 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               <Eye className="h-6 w-6 text-blue-600" />
-              2. Information Automatically Collected (Current Active State)
+              2. Information Automatically Collected &amp; Local Storage
             </h2>
             <p>
-              In our current operating state, KivaroTools does not require registration, does not create user profiles,
-              and does not collect names, credit cards, or physical addresses.
+              KivaroTools does not require registration, does not create user profiles, and does not collect names, credit cards,
+              or physical addresses to use any tool.
             </p>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
               <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
-                Server Hosting Logs (Vercel Edge Network)
+                Infrastructure &amp; Edge Server Logs (Cloudflare &amp; Hosting Network)
               </h3>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-                When you visit our site, our hosting infrastructure provider (Vercel Inc.) automatically logs standard
-                HTTP requests for operational security, denial-of-service (DDoS) prevention, and infrastructure debugging.
-                These transient server logs typically record your internet protocol (IP) address, browser user-agent string,
-                operating system, referring URL, requested page path, and timestamp of access. We do not use these logs to
-                identify individual visitors.
+                When you visit our site, our edge delivery and hosting infrastructure providers (such as Cloudflare, Inc. and Vercel Inc.)
+                automatically process standard HTTP request headers for operational security, content delivery caching, denial-of-service
+                (DDoS) mitigation, and infrastructure diagnostics. These transient logs typically record your internet protocol (IP) address,
+                browser user-agent string, operating system, referring URL, requested page path, and timestamp of access.
               </p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
               <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-2">
-                Local Storage &amp; Browser Cookies
+                Browser Local Storage (<code>localStorage</code>)
               </h3>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-                In our current state, we do not set tracking or profiling cookies. Certain tools offer optional convenience
-                features (for instance, the Invoice Generator can remember your business name for subsequent visits) that store
-                data solely in your device&apos;s local storage (<code>localStorage</code>). This data remains exclusively on your device
-                and can be erased at any time through your browser settings.
+                Certain tools offer optional convenience features—such as saving your dark/light theme preference, caching public
+                foreign exchange reference rates for offline use, or saving an Invoice Generator draft on your device—that store
+                data solely in your browser&apos;s local storage (<code>localStorage</code>). This data remains exclusively on your
+                device and can be cleared at any time using in-tool reset buttons or your browser settings.
               </p>
             </div>
           </section>
@@ -156,50 +157,30 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               <BarChart2 className="h-6 w-6 text-blue-600" />
-              3. Planned Third-Party Integrations (Future / Upon Activation)
+              3. Advertising Cookies (Google AdSense) &amp; Web Analytics
             </h2>
             <p>
-              To support the ongoing operation, maintenance, and development of our free tools, we plan to integrate
-              industry-standard analytics and advertising platforms following our public launch. We provide full upfront
-              disclosure of these planned integrations below:
+              To support the ongoing operation, maintenance, and free availability of our tools, KivaroTools utilizes
+              privacy-friendly web analytics and third-party advertising networks (including Google AdSense). We provide
+              full disclosure of these services below in accordance with Google Publisher Policies:
             </p>
 
             <div className="space-y-4">
               <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-900/30 dark:bg-blue-950/20">
                 <h3 className="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                  Planned: Google Analytics
+                  Google AdSense &amp; Third-Party Advertising Cookies
                 </h3>
                 <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-                  When enabled, Google Analytics (a web analytics service provided by Google LLC) uses first-party cookies
-                  to collect aggregated, non-identifying telemetry about how visitors interact with our site (such as pages visited,
-                  session length, general geographic region, and device category). This helps us understand which tools are useful
-                  and optimize site performance. You can prevent Google Analytics tracking at any time by installing the{' '}
-                  <a
-                    href="https://tools.google.com/dlpage/gaoptout"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
-                  >
-                    Google Analytics Opt-out Browser Add-on
-                  </a>.
+                  Third-party vendors, including Google, use cookies to serve ads based on a user&apos;s prior visits to
+                  KivaroTools or other websites on the internet:
                 </p>
-              </div>
-
-              <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-900/30 dark:bg-blue-950/20">
-                <h3 className="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">
-                  Planned: Google AdSense &amp; Third-Party Advertising
-                </h3>
-                <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">
-                  When enabled, third-party vendors, including Google, will use cookies to serve advertisements based on your
-                  prior visits to KivaroTools or other websites on the internet.
-                </p>
-                <ul className="list-disc pl-6 mt-3 space-y-1.5 text-sm text-slate-700 dark:text-slate-300">
+                <ul className="list-disc pl-6 mt-3 space-y-2 text-sm text-slate-700 dark:text-slate-300">
                   <li>
-                    Google&apos;s use of advertising cookies (such as the DART cookie) enables it and its partners to serve ads
-                    based on user visits to this site and/or other sites across the internet.
+                    Google&apos;s use of advertising cookies (including the DoubleClick / DART cookie) enables Google and its
+                    partners to serve advertisements to our users based on their visit to KivaroTools and/or other sites on the Internet.
                   </li>
                   <li>
-                    You may opt out of personalized advertising by visiting{' '}
+                    Users may opt out of personalized advertising at any time by visiting{' '}
                     <a
                       href="https://www.google.com/settings/ads"
                       target="_blank"
@@ -207,7 +188,17 @@ export default function PrivacyPolicyPage() {
                       className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
                     >
                       Google Ads Settings
-                    </a>.
+                    </a>{' '}
+                    (or{' '}
+                    <a
+                      href="https://myadcenter.google.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                    >
+                      Google My Ad Center
+                    </a>
+                    ).
                   </li>
                   <li>
                     Alternatively, you can opt out of a third-party vendor&apos;s use of cookies for personalized advertising by visiting{' '}
@@ -217,10 +208,53 @@ export default function PrivacyPolicyPage() {
                       rel="noopener noreferrer"
                       className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
                     >
-                      www.aboutads.info
-                    </a>.
+                      www.aboutads.info/choices
+                    </a>{' '}
+                    or{' '}
+                    <a
+                      href="https://www.youronlinechoices.eu/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                    >
+                      www.youronlinechoices.eu
+                    </a>
+                    .
+                  </li>
+                  <li>
+                    For more information on how Google uses data when you use partner sites or apps, please visit{' '}
+                    <a
+                      href="https://policies.google.com/technologies/partner-sites"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                    >
+                      How Google uses information from sites or apps that use our services
+                    </a>
+                    .
                   </li>
                 </ul>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 dark:border-blue-900/30 dark:bg-blue-950/20">
+                <h3 className="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                  Traffic &amp; Performance Analytics (Ahrefs Web Analytics &amp; Google Analytics)
+                </h3>
+                <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">
+                  We use aggregated web analytics (including Ahrefs Web Analytics and, where enabled, Google Analytics) to measure
+                  overall traffic volume, popular tool pages, general geographic regions, and device categories. Analytics scripts
+                  never inspect, record, or transmit the contents of files, code, passwords, or numbers entered into our tool workspaces.
+                  You can prevent Google Analytics tracking at any time by installing the{' '}
+                  <a
+                    href="https://tools.google.com/dlpage/gaoptout"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                  >
+                    Google Analytics Opt-out Browser Add-on
+                  </a>
+                  .
+                </p>
               </div>
             </div>
           </section>
@@ -229,7 +263,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               <UserCheck className="h-6 w-6 text-blue-600" />
-              4. International Privacy Rights &amp; User Choices
+              4. International Privacy Rights (GDPR, UK GDPR &amp; CCPA/CPRA)
             </h2>
             <p>
               Because KivaroTools serves visitors from countries across the globe, we recognize and respect your privacy rights
@@ -239,23 +273,23 @@ export default function PrivacyPolicyPage() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1.5">
-                  European Economic Area &amp; UK (GDPR)
+                  European Economic Area, UK &amp; Switzerland (GDPR)
                 </h3>
                 <p className="text-xs leading-5 text-slate-600 dark:text-slate-400">
-                  If you are located in the EEA or UK, you have the right to request access to, rectification of, or erasure
-                  of any personal data held about you, the right to restrict or object to processing, and the right to lodge
-                  a complaint with your local data protection supervisory authority.
+                  If you are located in the EEA, UK, or Switzerland, you have the right to request access to, rectification of,
+                  or erasure of any personal data held about you, the right to restrict or object to processing, and the right
+                  to withdraw cookie consent or lodge a complaint with your local supervisory authority.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1.5">
-                  California Residents (CCPA / CPRA)
+                  California &amp; US State Privacy Rights (CCPA / CPRA)
                 </h3>
                 <p className="text-xs leading-5 text-slate-600 dark:text-slate-400">
-                  We do not sell personal information or share personal data for cross-context behavioral advertising in our
-                  current operating state. California residents retain rights to know, delete, and non-discrimination regarding
-                  their data.
+                  KivaroTools does not sell personal information. California residents retain rights to know what categories of
+                  data are collected, to request deletion, to opt out of cross-context behavioral advertising cookies via the
+                  opt-out links in Section 3, and to non-discrimination.
                 </p>
               </div>
             </div>
@@ -265,12 +299,13 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               <Lock className="h-6 w-6 text-blue-600" />
-              5. Children&apos;s Privacy
+              5. Children&apos;s Privacy (COPPA)
             </h2>
             <p>
-              KivaroTools provides general-purpose web utilities and does not knowingly collect personally identifiable information
-              from children under the age of 13 (or under 16 where applicable under local regulations). If you believe a child has
-              provided personal information through our website, please notify us so we can take immediate corrective measures.
+              KivaroTools provides general-purpose professional and educational web utilities and does not knowingly collect
+              personally identifiable information from children under the age of 13 (or under 16 where applicable under local
+              regulations). If you believe a child has provided personal information through our website, please notify us so
+              we can take immediate corrective measures.
             </p>
           </section>
 
@@ -281,9 +316,8 @@ export default function PrivacyPolicyPage() {
               6. Policy Modifications
             </h2>
             <p>
-              We may revise this Privacy Policy periodically to reflect technological adjustments, regulatory updates, or the
-              activation of planned features (such as advertising or analytics). Any updates will be posted to this page with a revised
-              effective date. We encourage visitors to review this policy periodically.
+              We may revise this Privacy Policy periodically to reflect technological adjustments, regulatory updates, or
+              new tool features. Any updates will be posted to this page with a revised effective date.
             </p>
           </section>
 
@@ -294,16 +328,22 @@ export default function PrivacyPolicyPage() {
               7. Contact &amp; Privacy Inquiries
             </h2>
             <p>
-              If you have questions, feedback, or concerns regarding this Privacy Policy or our data handling practices,
+              If you have questions, feedback, or requests regarding this Privacy Policy or our data handling practices,
               please reach out through our{' '}
               <Link href="/contact" className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400">
                 Contact Page
               </Link>
               {CONTACT_EMAIL ? (
-                <span> or directly by email at <a href={`mailto:${CONTACT_EMAIL}`} className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400">{CONTACT_EMAIL}</a></span>
-              ) : (
-                <span>. Our dedicated contact email inbox will be published upon our upcoming public launch</span>
-              )}
+                <span>
+                  {' '}or directly by email at{' '}
+                  <a
+                    href={`mailto:${CONTACT_EMAIL}`}
+                    className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                  >
+                    {CONTACT_EMAIL}
+                  </a>
+                </span>
+              ) : null}
               .
             </p>
           </section>

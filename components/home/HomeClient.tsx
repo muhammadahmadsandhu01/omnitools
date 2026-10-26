@@ -17,12 +17,20 @@ import {
 
 import { categories, tools, type CategoryId } from '@/config/toolsData';
 import AdUnit from '@/components/ads/AdUnit';
+import { HOME_FAQS } from '@/config/homeFaqs';
+
+export { HOME_FAQS };
 
 type FilterCategory = 'all' | CategoryId;
 
 export default function HomeClient() {
   const [activeCategory, setActiveCategory] =
     useState<FilterCategory>('all');
+
+  const visibleCategories = useMemo(
+    () => categories.filter((category) => !category.hidden),
+    []
+  );
 
   const filteredTools = useMemo(() => {
     const visibleTools = tools.filter((tool) => tool.status === 'published' && !tool.hidden);
@@ -40,7 +48,7 @@ export default function HomeClient() {
   const getCategory = (categoryId: CategoryId) =>
     categories.find((category) => category.id === categoryId);
 
-  const homeAdSlot = process.env.NEXT_PUBLIC_ADSENSE_HOME_SLOT;
+  const homeAdSlot = process.env.NEXT_PUBLIC_ADSENSE_HOME_SLOT || '';
 
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
@@ -54,7 +62,7 @@ export default function HomeClient() {
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
               <Sparkles className="h-4 w-4" />
-              Privacy-conscious online tools
+              Privacy-First Enterprise Browser Suite
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
@@ -65,19 +73,19 @@ export default function HomeClient() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-              Free browser-based tools for developers, creators,
-              businesses, and everyday tasks.
+              Free, institutional-grade browser utilities for software engineers, financial planners,
+              businesses, and everyday digital workflows.
             </p>
 
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              No registration. No unnecessary uploads.
+              100% client-side execution for files &amp; code • Zero registration • Zero watermarks
             </p>
 
             {/* Trust points */}
             <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-slate-600 dark:text-slate-400">
               <span className="inline-flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-blue-600" />
-                Privacy-conscious
+                Client-side privacy
               </span>
 
               <span className="inline-flex items-center gap-2">
@@ -87,8 +95,25 @@ export default function HomeClient() {
 
               <span className="inline-flex items-center gap-2">
                 <Zap className="h-4 w-4 text-blue-600" />
-                Browser-based tools
+                Web Worker &amp; WASM speed
               </span>
+            </div>
+
+            {/* Crawlable Category Quick-Links for Search Engines & Users */}
+            <div className="mt-8 flex flex-wrap justify-center gap-2">
+              {visibleCategories.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/${cat.id}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
+                  >
+                    <Icon className={`h-3.5 w-3.5 ${cat.color}`} />
+                    <span>{cat.name}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -185,7 +210,7 @@ export default function HomeClient() {
               </h2>
 
               <p className="mt-2 text-slate-600 dark:text-slate-400">
-                Choose a category or browse the complete collection.
+                Choose a category or browse the complete collection of {tools.filter((t) => t.status === 'published' && !t.hidden).length} utilities and 22 country salary calculators.
               </p>
             </div>
 
@@ -213,7 +238,7 @@ export default function HomeClient() {
               All Tools
             </button>
 
-            {categories.filter((category) => !category.hidden).map((category) => {
+            {visibleCategories.map((category) => {
               const Icon = category.icon;
               const isActive = activeCategory === category.id;
 
@@ -324,32 +349,32 @@ export default function HomeClient() {
             </p>
 
             <h2 className="mt-2 text-3xl font-bold tracking-tight">
-              Simple tools without unnecessary friction
+              Enterprise precision without cloud privacy risks
             </h2>
 
             <p className="mt-4 text-slate-600 dark:text-slate-400">
-              KivaroTools is built around straightforward tools that are
-              easy to access and simple to use.
+              KivaroTools combines deterministic mathematical engines and isolated browser Web Workers
+              so you can process sensitive data locally on your own hardware.
             </p>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-3">
             <FeatureCard
               icon={<ShieldCheck className="h-5 w-5" />}
-              title="Privacy-conscious"
-              description="Tools are designed with privacy in mind, with browser-based processing where the individual tool supports it."
+              title="100% Client-Side File & Code Privacy"
+              description="PDFs, photos, JSON payloads, SQL queries, regex logs, and cryptographic keys execute strictly in local browser memory without remote file uploads."
             />
 
             <FeatureCard
               icon={<Zap className="h-5 w-5" />}
-              title="Fast & focused"
-              description="Open a tool, enter your data, and get the result without unnecessary account or workflow steps."
+              title="Web Worker & TypedArray Speed"
+              description="Background threads and virtualized DOM trees let you inspect 25 MB JSON trees, flatten 50 MB spreadsheets, and merge 750 MB PDFs without browser freezes."
             />
 
             <FeatureCard
               icon={<Wrench className="h-5 w-5" />}
-              title="Practical tools"
-              description="A growing collection covering development, finance, documents, media, SEO, and everyday tasks."
+              title="Institutional-Grade Depth"
+              description="From 80% LTV PMI cancellation and 3,000-path Monte Carlo simulations to 19-dialect SQL linting and 5-pass target-KB image compression."
             />
           </div>
         </div>
@@ -368,8 +393,8 @@ export default function HomeClient() {
             </h2>
 
             <p className="mt-4 max-w-lg leading-7 text-slate-600 dark:text-slate-400">
-              Find the tool you need, enter the required information,
-              and use the result immediately.
+              Find the tool you need, enter your data or drop your files,
+              and export clean results immediately with zero sign-up friction.
             </p>
           </div>
 
@@ -377,19 +402,19 @@ export default function HomeClient() {
             <StepCard
               number="01"
               title="Choose a tool"
-              description="Search the library or browse by category."
+              description="Search by keyword (e.g. JSON, PITI, WebP, QR) or browse by category."
             />
 
             <StepCard
               number="02"
-              title="Enter your data"
-              description="Provide the inputs required by the selected tool."
+              title="Process locally"
+              description="Configure options as your browser computes results in real time."
             />
 
             <StepCard
               number="03"
-              title="Get your result"
-              description="Use, copy, download, or continue with the result."
+              title="Export or copy"
+              description="Download watermark-free PDFs, Excel workbooks, ZIPs, SVGs, or copy code."
             />
           </div>
         </div>
@@ -409,30 +434,13 @@ export default function HomeClient() {
           </div>
 
           <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-            <FaqItem
-              question="Are KivaroTools free to use?"
-              answer="The tools currently provided on KivaroTools are intended to be available without registration or a paid account."
-            />
-
-            <FaqItem
-              question="Do I need to create an account?"
-              answer="No account is required for the current tool experience."
-            />
-
-            <FaqItem
-              question="Are my files uploaded?"
-              answer="It depends on the individual tool. Tools that process files should clearly indicate how processing works. Browser-based tools can process supported data locally in the browser."
-            />
-
-            <FaqItem
-              question="Can I use the tools on mobile?"
-              answer="The site is designed to work across modern desktop and mobile browsers, although individual tools may have different interface requirements."
-            />
-
-            <FaqItem
-              question="Are the results guaranteed to be accurate?"
-              answer="Tools provide calculations or transformations based on the information you enter. For financial, legal, medical, or other high-stakes decisions, verify important results with an appropriate professional or authoritative source."
-            />
+            {HOME_FAQS.map((faq, index) => (
+              <FaqItem
+                key={index}
+                question={faq.question}
+                answer={faq.answer}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -449,7 +457,7 @@ export default function HomeClient() {
           </h2>
 
           <p className="mx-auto mt-3 max-w-xl text-slate-600 dark:text-slate-400">
-            Browse the collection or use search to get started.
+            Browse the collection or use instant keyword search to get started.
           </p>
 
           <button

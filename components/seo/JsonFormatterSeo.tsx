@@ -104,6 +104,43 @@ export default function JsonFormatterSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Format, Validate, Minify, and Query JSON with JSONPath Online',
+            description: 'Step-by-step guide to validating RFC 8259 JSON syntax, pinpointing line/column errors, repairing malformed JSON5, and running JSONPath queries in your browser.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Paste Raw or Minified JSON',
+        text: 'Paste your JSON payload into the editor, upload a .json file, or load a sample payload.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Validate Syntax & Auto-Repair Common Errors',
+        text: 'Inspect real-time RFC 8259 validation with exact line and column error pointers, or click Auto-Repair to strip trailing commas, comments, and single quotes.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Format, Minify, or Sort Object Keys',
+        text: 'Choose 2-space, 4-space, or tab indentation, minify for production transport, or recursively sort object keys alphabetically for clean Git diffs.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Explore Interactive Tree & Run JSONPath Queries',
+        text: 'Switch to the collapsible Tree View or run JSONPath filter expressions to extract deeply nested values and export TypeScript interfaces.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

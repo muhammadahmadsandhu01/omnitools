@@ -12262,16 +12262,35 @@ export default function SalaryCalculator() {
               )}
             </div>
 
-            {/* Phase 2 Roadmap Callout */}
-            <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-300 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Phase 2 Dedicated Route Roadmap</span>
+            {/* Dedicated Statutory Route or Custom Estimate Action */}
+            {selectedCountryModal.status === "VERIFIED" || selectedCountryModal.status === "LIMITED" ? (
+              <div className="p-3.5 bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 text-xs text-emerald-900 dark:text-emerald-300 space-y-2">
+                <div className="font-bold flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Dedicated Statutory Calculator Active</span>
+                </div>
+                <p className="text-[11px] text-emerald-800/90 dark:text-emerald-300/90 leading-relaxed">
+                  Launch the standalone <span className="font-mono font-semibold">/finance/salary-calculator/{getCountrySlug(selectedCountryModal)}</span> calculator to model {selectedCountryModal.name} progressive tax brackets, social security caps, pay periods, and employer payroll cost.
+                </p>
+                <Link
+                  href={`/finance/salary-calculator/${getCountrySlug(selectedCountryModal)}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs"
+                >
+                  <span>Open {selectedCountryModal.name} Salary Calculator</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
-              <p className="text-[11px] text-blue-800/90 dark:text-blue-300/90 leading-relaxed">
-                The standalone dedicated route <span className="font-mono font-semibold">/finance/salary-calculator/{getCountrySlug(selectedCountryModal)}</span> is scheduled for rollout in Phase 2. All underlying statutory calculation formulas and test assertions are already codified in the KivaroTools engine.
-              </p>
-            </div>
+            ) : (
+              <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-900/50 text-xs text-blue-900 dark:text-blue-300 space-y-1">
+                <div className="font-bold flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <span>Custom Benchmark Estimation Model</span>
+                </div>
+                <p className="text-[11px] text-blue-800/90 dark:text-blue-300/90 leading-relaxed">
+                  {selectedCountryModal.name} ({selectedCountryModal.currency}) is catalogued in our 212-jurisdiction directory under user-defined custom estimation rules. Select any of the 22 featured statutory calculators above for codified government tax schedules.
+                </p>
+              </div>
+            )}
 
             {/* Modal Footer */}
             <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end">

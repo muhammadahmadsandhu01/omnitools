@@ -67,6 +67,8 @@ interface CountryConfig {
     currency: string;
     defaultTaxYear: string;
     calculationScope: string;
+    sourceAuthority?: string;
+    rulesetId?: string;
     [key: string]: unknown;
   };
 }
@@ -291,6 +293,7 @@ export function generateStaticParams() {
   }));
 }
 
+
 const countryLocales: Record<string, string> = {
   'united-states': 'en-US',
   'united-kingdom': 'en-GB',
@@ -335,17 +338,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const taxYear = (entry.meta && entry.meta.defaultTaxYear) || DEFAULT_TAX_YEARS[entry.code] || '2026';
-  const title = `${entry.name} Salary Calculator ${taxYear}`;
-  const description = `Calculate ${entry.name} salary take-home pay using applicable ${taxYear} statutory income tax, employee contributions, and payroll rules. See gross pay, deductions, net salary, and employer cost.`;
+  const authority = entry.meta?.sourceAuthority ? ` (${entry.meta.sourceAuthority})` : '';
+  const title = `${entry.name} Salary Calculator ${taxYear} — Gross to Net Take-Home Pay`;
+  const description = `Calculate ${entry.name} salary take-home pay in ${entry.meta.currency} using ${taxYear} statutory income tax brackets${authority}, employee social contributions, and employer payroll cost.`;
   const canonicalUrl = `${SITE_URL}/finance/salary-calculator/${entry.slug}`;
 
   return {
     title,
     description,
+    keywords: [
+      `${entry.name.toLowerCase()} salary calculator`,
+      `${entry.name.toLowerCase()} take home pay calculator ${taxYear}`,
+      `${entry.name.toLowerCase()} income tax calculator`,
+      `${entry.name.toLowerCase()} gross to net salary ${entry.meta.currency}`,
+      `${entry.name.toLowerCase()} paycheck tax calculator`,
+      `${entry.name.toLowerCase()} payroll cost calculator`,
+    ],
     alternates: {
       canonical: canonicalUrl,
       languages: {
-        'x-default': `${SITE_URL}/finance/salary-calculator/united-states`,
+        'x-default': `${SITE_URL}/finance/salary-calculator`,
         ...Object.keys(countryLocales).reduce((acc, c) => {
           acc[countryLocales[c]] = `${SITE_URL}/finance/salary-calculator/${c}`;
           return acc;
@@ -353,11 +365,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     },
     robots: {
-      index: false,
+      index: true,
       follow: true,
     },
     openGraph: {
-      title: `${entry.name} Salary Calculator ${taxYear} — KivaroTools`,
+      title: `${title} — KivaroTools`,
       description,
       url: canonicalUrl,
       type: 'website',
@@ -386,7 +398,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
   const SeoComponent = entry.seo;
   const taxYear = (entry.meta && entry.meta.defaultTaxYear) || DEFAULT_TAX_YEARS[entry.code] || '2026';
   const toolName = `${entry.name} Salary Calculator ${taxYear}`;
-  const toolDescription = `Calculate ${entry.name} salary take-home pay using applicable ${taxYear} statutory income tax, employee contributions, and payroll rules. See gross pay, deductions, net salary, and employer cost.`;
+  const toolDescription = `Calculate ${entry.name} salary take-home pay in ${entry.meta.currency} using applicable ${taxYear} statutory income tax, employee contributions, and payroll rules. See gross pay, deductions, net salary, and employer cost.`;
   const canonicalUrl = `${SITE_URL}/finance/salary-calculator/${entry.slug}`;
 
   const breadcrumbSchema = {
@@ -394,7 +406,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: 'Finance', item: `${SITE_URL}/finance` },
+      { '@type': 'ListItem', position: 2, name: 'Finance & Calculators', item: `${SITE_URL}/finance` },
       { '@type': 'ListItem', position: 3, name: 'Salary Calculator', item: `${SITE_URL}/finance/salary-calculator` },
       { '@type': 'ListItem', position: 4, name: entry.name, item: canonicalUrl },
     ],
@@ -409,8 +421,20 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
             name={toolName}
             description={toolDescription}
             category="finance"
-            applicationCategory="BusinessApplication"
+            applicationCategory="FinanceApplication"
             url={canonicalUrl}
+            featureList={[
+              `${entry.name} ${taxYear} statutory income tax bracket calculation (${entry.meta.currency})`,
+              `Employee social security and mandatory statutory contribution breakdown`,
+              `Annual, Monthly, Biweekly, Weekly, Daily, and Hourly pay period normalization`,
+              `Total Employer Cost of Employment reconciliation and CSV payroll export`,
+            ]}
+            keywords={[
+              `${entry.name} salary calculator`,
+              `${entry.name} take home pay ${taxYear}`,
+              `${entry.name} income tax calculator`,
+              `${entry.meta.currency} net salary calculator`,
+            ]}
           />
           <script
             type="application/ld+json"
@@ -469,7 +493,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           </nav>
 
           {/* Top Advertisement */}
-          <AdUnit slotId="TOP_AD_SLOT" />
+          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || ""} />
 
           {/* Page Header */}
           <header className="mx-auto my-8 max-w-4xl text-center">
@@ -477,7 +501,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
               {entry.name} Salary Calculator {taxYear}
             </h1>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-400 sm:text-lg">
-              Calculate {entry.name} net take-home pay, statutory deductions, income tax, and employer contributions for {taxYear}.
+              Calculate {entry.name} net take-home pay, statutory deductions, income tax, and employer contributions in {entry.meta.currency} for {taxYear}.
             </p>
           </header>
 
@@ -487,7 +511,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           </main>
 
           {/* Bottom Advertisement */}
-          <AdUnit slotId="BOTTOM_AD_SLOT" />
+          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || ""} />
 
           {/* Country SEO & Educational Methodology Component */}
           <section className="mt-12" aria-label="Statutory Methodology and Ruleset Documentation">

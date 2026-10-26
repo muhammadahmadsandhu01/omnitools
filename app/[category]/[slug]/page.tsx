@@ -19,11 +19,40 @@ type PageProps = {
 
 export function generateStaticParams() {
   return tools
-    .filter((tool) => tool.status === 'published')
+    .filter((tool) => tool.status === 'published' && !tool.hidden)
     .map((tool) => ({
       category: tool.categoryId,
       slug: tool.slug,
     }));
+}
+
+function resolveCanonicalRoute(category: string, slug: string): {
+  resolvedCategory: string;
+  resolvedSlug: string;
+} {
+  const resolvedSlug =
+    slug === 'webp-converter'
+      ? 'webp-to-jpg-png'
+      : slug === 'case-converter'
+      ? 'text-case-converter'
+      : slug === 'currency-converter'
+      ? 'crypto-converter'
+      : slug === 'meta-tags-generator' || slug === 'open-graph-generator'
+      ? 'meta-generator'
+      : slug;
+
+  const resolvedCategory =
+    resolvedSlug === 'image-to-pdf' || resolvedSlug === 'pdf-merge-split'
+      ? 'document'
+      : category === 'pdf'
+      ? 'document'
+      : category === 'image'
+      ? 'media'
+      : category === 'seo' && resolvedSlug === 'regex-tester'
+      ? 'developer'
+      : category;
+
+  return { resolvedCategory, resolvedSlug };
 }
 
 /**
@@ -34,20 +63,7 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { category, slug } = await params;
 
-  const resolvedCategory =
-    category === 'image'
-      ? 'media'
-      : category === 'seo' && slug === 'regex-tester'
-      ? 'developer'
-      : category;
-  const resolvedSlug =
-    slug === 'webp-converter'
-      ? 'webp-to-jpg-png'
-      : slug === 'case-converter'
-      ? 'text-case-converter'
-      : slug === 'currency-converter'
-      ? 'crypto-converter'
-      : slug;
+  const { resolvedCategory, resolvedSlug } = resolveCanonicalRoute(category, slug);
 
   const tool =
     tools.find((item) => item.slug === slug && item.categoryId === category) ||
@@ -64,12 +80,14 @@ export async function generateMetadata({
   const metaDescription = tool.seoDescription || tool.description;
 
   const isPublicAndPublished = !tool.hidden && tool.status === 'published';
+  const canonicalUrl = `${SITE_URL}/${resolvedCategory}/${resolvedSlug}`;
 
   return {
     title: metaTitle,
     description: metaDescription,
+    keywords: tool.keywords,
     alternates: {
-      canonical: `/${resolvedCategory}/${resolvedSlug}`,
+      canonical: canonicalUrl,
     },
     robots: isPublicAndPublished
       ? {
@@ -83,7 +101,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
-      url: `/${resolvedCategory}/${resolvedSlug}`,
+      url: canonicalUrl,
       type: 'website',
     },
     twitter: {
@@ -100,20 +118,7 @@ export async function generateMetadata({
 export default async function ToolPage({ params }: PageProps) {
   const { category, slug } = await params;
 
-  const resolvedCategory =
-    category === 'image'
-      ? 'media'
-      : category === 'seo' && slug === 'regex-tester'
-      ? 'developer'
-      : category;
-  const resolvedSlug =
-    slug === 'webp-converter'
-      ? 'webp-to-jpg-png'
-      : slug === 'case-converter'
-      ? 'text-case-converter'
-      : slug === 'currency-converter'
-      ? 'crypto-converter'
-      : slug;
+  const { resolvedCategory, resolvedSlug } = resolveCanonicalRoute(category, slug);
 
   if (category !== resolvedCategory || slug !== resolvedSlug) {
     permanentRedirect(`/${resolvedCategory}/${resolvedSlug}`);
@@ -127,7 +132,7 @@ export default async function ToolPage({ params }: PageProps) {
     categories.find((item) => item.id === category) ||
     categories.find((item) => item.id === resolvedCategory);
 
-  if (!tool || !categoryData) {
+  if (!tool || !categoryData || tool.status !== 'published') {
     notFound();
   }
 
@@ -144,6 +149,9 @@ export default async function ToolPage({ params }: PageProps) {
     seoComponents[resolvedSlug];
 
   const metaDescription = tool.seoDescription || tool.description;
+  const canonicalUrl = `${SITE_URL}/${resolvedCategory}/${resolvedSlug}`;
+  const topAdSlot = process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || "";
+  const bottomAdSlot = process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || "";
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -151,12 +159,12 @@ export default async function ToolPage({ params }: PageProps) {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: categoryData.name, item: `${SITE_URL}/${categoryData.id}` },
-      { '@type': 'ListItem', position: 3, name: tool.name, item: `${SITE_URL}/${resolvedCategory}/${resolvedSlug}` },
+      { '@type': 'ListItem', position: 3, name: tool.name, item: canonicalUrl },
     ],
   };
 
   return (
-    <main className="w-full">
+    <main className="w-full min-w-0 overflow-x-clip">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
         {/* Structured Data (GEO / AEO) */}
@@ -167,7 +175,9 @@ export default async function ToolPage({ params }: PageProps) {
               description={metaDescription}
               category={resolvedCategory}
               applicationCategory={tool.applicationCategory}
-              url={`${SITE_URL}/${resolvedCategory}/${resolvedSlug}`}
+              url={canonicalUrl}
+              featureList={tool.featureList}
+              keywords={tool.keywords}
             />
             <script
               type="application/ld+json"
@@ -239,12 +249,12 @@ export default async function ToolPage({ params }: PageProps) {
         </header>
 
         {/* Top Advertisement */}
-        <AdUnit slotId="TOP_AD_SLOT" />
+        <AdUnit slotId={topAdSlot} />
 
         {/* Tool Workspace */}
         <section
           aria-label={`${tool.name} tool`}
-          className="mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-8"
+          className="mb-8 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-6 lg:p-8"
         >
           {ToolComponent ? (
             <ToolComponent />
@@ -262,7 +272,7 @@ export default async function ToolPage({ params }: PageProps) {
         </section>
 
         {/* Bottom Advertisement */}
-        <AdUnit slotId="BOTTOM_AD_SLOT" />
+        <AdUnit slotId={bottomAdSlot} />
 
         {/* SEO Content */}
         {SeoComponent && (

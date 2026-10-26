@@ -676,7 +676,7 @@ export default function QrGenerator() {
 
   // Content state
   const [qrType, setQrType] = useState<QrType>('url');
-  const [url, setUrl] = useState('https://kivarotools.app');
+  const [url, setUrl] = useState('https://kivarotools.com');
   const [text, setText] = useState('');
   const [wifiSsid, setWifiSsid] = useState('');
   const [wifiPass, setWifiPass] = useState('');
@@ -1112,7 +1112,7 @@ export default function QrGenerator() {
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(148, 163, 184);
-      doc.text('Generated with KivaroTools • https://kivarotools.app/seo/qr-generator', 105, 282, { align: 'center' });
+      doc.text('Generated with KivaroTools • https://kivarotools.com/seo/qr-generator', 105, 282, { align: 'center' });
 
       const pdfBlob = doc.output('blob');
       setIsExporting(false);

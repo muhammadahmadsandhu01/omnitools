@@ -99,6 +99,43 @@ export default function JsonConverterSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Convert Between JSON, CSV, YAML, and XML Online',
+            description: 'Step-by-step guide to transforming nested JSON arrays and objects into RFC 4180 CSV, YAML 1.2, or XML with dot-notation flattening and formula-injection protection.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Source and Target Data Formats',
+        text: 'Choose your input format (JSON, CSV, YAML, or XML) and the desired output format.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Paste Data or Upload a Local File',
+        text: 'Paste your payload into the source editor, load a sample preset, or upload a local .json, .csv, .yaml, or .xml file.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Configure Flattening, Delimiters & Security Options',
+        text: 'Customize CSV delimiters (comma, semicolon, tab), nested object dot-notation flattening, YAML indentation, and CSV formula injection protection.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Copy or Download Converted Output',
+        text: 'Review the live converted output in the target pane and copy it to your clipboard or download the formatted file.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

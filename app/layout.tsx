@@ -8,7 +8,6 @@ import {
   Image as ImageIcon,
   Calculator,
   Search,
-  Heart,
   Mail,
   ShieldCheck,
 } from 'lucide-react';
@@ -32,12 +31,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: 'KivaroTools — Powerful Tools. Private by Design.',
+    default: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
     template: '%s | KivaroTools',
   },
 
   description:
-    'Free browser-based tools for developers, creators, businesses, and everyday tasks. No registration and privacy-conscious processing.',
+    'Free enterprise-grade, browser-based online tools for developers, financial planning, PDFs, image compression, and SEO. 100% client-side execution with zero server uploads and no registration.',
 
   applicationName: 'KivaroTools',
 
@@ -45,41 +44,64 @@ export const metadata: Metadata = {
     'online tools',
     'free web tools',
     'developer tools',
-    'privacy tools',
-    'browser tools',
-    'online calculators',
-    'JSON formatter',
-    'image compressor',
-    'PDF tools',
+    'financial calculators',
+    'salary calculator take home pay',
+    'mortgage calculator PITI PMI',
+    'loan EMI calculator',
+    'compound interest calculator',
+    'SIP calculator',
+    'JSON formatter validator',
+    'JSON to CSV Excel converter',
+    'SQL formatter linter',
+    'Regex tester debugger',
+    'SVG optimizer',
+    'PDF merge split',
+    'image to PDF converter',
+    'image compressor 20kb 50kb',
+    'WebP to JPG PNG converter',
+    'QR code generator with logo',
+    'word counter readability grammar checker',
+    'text case converter',
+    'meta tag open graph generator',
   ],
 
   authors: [
     {
       name: 'KivaroTools',
+      url: SITE_URL,
     },
   ],
 
   creator: 'KivaroTools',
+  publisher: 'KivaroTools',
 
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 
   openGraph: {
     type: 'website',
+    locale: 'en_US',
     siteName: 'KivaroTools',
-    title: 'KivaroTools — Powerful Tools. Private by Design.',
+    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
     description:
-      'Free browser-based tools for developers, creators, businesses, and everyday tasks.',
-    url: '/',
+      'Free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
+    url: SITE_URL,
   },
 
   twitter: {
     card: 'summary_large_image',
-    title: 'KivaroTools — Powerful Tools. Private by Design.',
+    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
     description:
-      'Free browser-based tools for developers, creators, businesses, and everyday tasks.',
+      'Free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
   },
 
   icons: {
@@ -102,30 +124,43 @@ export const metadata: Metadata = {
 
 const footerCategories = [
   {
-    name: 'Finance',
+    name: 'Finance & Calculators',
     href: '/finance',
     icon: Calculator,
   },
   {
-    name: 'Developer',
+    name: 'Developer Tools',
     href: '/developer',
     icon: Code2,
   },
   {
-    name: 'Document',
+    name: 'Document Utilities',
     href: '/document',
     icon: FileText,
   },
   {
-    name: 'Media',
+    name: 'Media & Images',
     href: '/media',
     icon: ImageIcon,
   },
   {
-    name: 'SEO & Text',
+    name: 'SEO & Text Tools',
     href: '/seo',
     icon: Search,
   },
+];
+
+const popularFooterTools = [
+  { name: 'Salary Calculator (22 Countries)', href: '/finance/salary-calculator' },
+  { name: 'Mortgage Calculator (PITI & PMI)', href: '/finance/mortgage-calculator' },
+  { name: 'Compound Interest & Drawdown', href: '/finance/compound-interest' },
+  { name: 'Free PDF Invoice Generator', href: '/finance/invoice-generator' },
+  { name: 'JSON Formatter & Tree Viewer', href: '/developer/json-formatter' },
+  { name: 'SQL Query Formatter (19 Dialects)', href: '/developer/sql-formatter' },
+  { name: 'PDF Merge & Split (750 MB)', href: '/document/pdf-merge-split' },
+  { name: 'Image Compressor (Target KB)', href: '/media/image-compressor' },
+  { name: 'Word Counter & Grammar Coach', href: '/seo/text-analyzer' },
+  { name: 'Custom QR Code Generator', href: '/seo/qr-generator' },
 ];
 
 function SiteFooter() {
@@ -133,9 +168,9 @@ function SiteFooter() {
     <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Main footer grid */}
-        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <Link
               href="/"
               className="inline-flex items-center gap-2.5"
@@ -153,24 +188,24 @@ function SiteFooter() {
             </Link>
 
             <p className="mt-2 text-xs font-medium uppercase tracking-widest text-slate-500 dark:text-slate-400">
-              PRIVATE BY DESIGN • POWERFUL TOOLS FOR EVERYONE
+              PRIVATE BY DESIGN • ENTERPRISE-GRADE BROWSER UTILITIES
             </p>
 
-            <p className="mt-3 max-w-xs text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Free online tools for developers, creators, businesses,
-              and everyday tasks.
+            <p className="mt-3 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Free enterprise-grade online tools for software engineers, financial planners, creators,
+              and global businesses. Every calculation and file conversion runs locally in your browser.
             </p>
 
             <div className="mt-4 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
               <ShieldCheck className="h-4 w-4 text-blue-600 dark:text-blue-500" />
-              Client-side processing • Zero data uploaded
+              100% Client-side processing • Zero server uploads
             </div>
           </div>
 
-          {/* Tools */}
+          {/* Categories */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Tools
+              Categories
             </h3>
 
             <ul className="mt-4 space-y-3">
@@ -192,10 +227,30 @@ function SiteFooter() {
             </ul>
           </div>
 
-          {/* Company */}
+          {/* Featured Tools */}
           <div>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Company
+              Featured Tools
+            </h3>
+
+            <ul className="mt-4 space-y-2.5">
+              {popularFooterTools.map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-xs text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company & Legal */}
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Company &amp; Legal
             </h3>
 
             <ul className="mt-4 space-y-3">
@@ -214,19 +269,10 @@ function SiteFooter() {
                   className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
                   <Mail className="h-4 w-4" />
-                  Contact
+                  Contact &amp; Support
                 </Link>
               </li>
-            </ul>
-          </div>
 
-          {/* Legal */}
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Legal
-            </h3>
-
-            <ul className="mt-4 space-y-3">
               <li>
                 <Link
                   href="/privacy"
@@ -258,6 +304,13 @@ function SiteFooter() {
           </p>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
+            <Link
+              href="/about"
+              className="transition hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              About
+            </Link>
+
             <Link
               href="/privacy"
               className="transition hover:text-blue-600 dark:hover:text-blue-400"

@@ -12,6 +12,32 @@ import {
 
 import { categories, tools } from '@/config/toolsData';
 
+
+const COUNTRY_SEARCH_ITEMS = [
+  { name: 'United States Salary Calculator (IRS & FICA)', slug: 'salary-calculator/united-states', categoryId: 'finance', keywords: 'usa us paycheck tax 401k w4 state tax' },
+  { name: 'United Kingdom Salary Calculator (HMRC PAYE & NI)', slug: 'salary-calculator/united-kingdom', categoryId: 'finance', keywords: 'uk britain england scotland paye national insurance pension' },
+  { name: 'Germany Salary Calculator (Brutto Netto & Steuerklasse)', slug: 'salary-calculator/germany', categoryId: 'finance', keywords: 'deutschland lohnsteuer soli sozialversicherung' },
+  { name: 'India Salary Calculator (New vs Old Tax Regime 115BAC)', slug: 'salary-calculator/india', categoryId: 'finance', keywords: 'inhand salary epf 80c 87a rebate inr' },
+  { name: 'Pakistan Salary Calculator (FBR Salaried Tax Slabs)', slug: 'salary-calculator/pakistan', categoryId: 'finance', keywords: 'pk pkr fbr income tax eobi take home pay' },
+  { name: 'Canada Salary Calculator (CRA Federal, CPP & EI)', slug: 'salary-calculator/canada', categoryId: 'finance', keywords: 'ca cad ontario bc alberta paycheck tax' },
+  { name: 'Australia Salary Calculator (ATO Stage 3, LITO & Super)', slug: 'salary-calculator/australia', categoryId: 'finance', keywords: 'au aud medicare levy superannuation payg' },
+  { name: 'Singapore Salary Calculator (IRAS Tax & CPF)', slug: 'salary-calculator/singapore', categoryId: 'finance', keywords: 'sg sgd cpf ordinary wage ceiling' },
+  { name: 'UAE Salary Calculator (0% Tax, GPSSA & Gratuity)', slug: 'salary-calculator/united-arab-emirates', categoryId: 'finance', keywords: 'dubai abu dhabi aed expat end of service' },
+  { name: 'Saudi Arabia Salary Calculator (0% Tax & GOSI)', slug: 'salary-calculator/saudi-arabia', categoryId: 'finance', keywords: 'ksa riyadh sar gosi saned expat' },
+  { name: 'France Salary Calculator (IR & URSSAF Net Pay)', slug: 'salary-calculator/france', categoryId: 'finance', keywords: 'fr eur salaire brut en net csg crds' },
+  { name: 'Japan Salary Calculator (Shotokuzei, Juminzei & Shakai Hoken)', slug: 'salary-calculator/japan', categoryId: 'finance', keywords: 'jp jpy tokyo nenkin kenko hoken' },
+  { name: 'Switzerland Salary Calculator (Federal, Cantonal & AHV/BVG)', slug: 'salary-calculator/switzerland', categoryId: 'finance', keywords: 'ch chf zurich geneva pillar 2' },
+  { name: 'Netherlands Salary Calculator (Box 1, AHK & 30% Ruling)', slug: 'salary-calculator/netherlands', categoryId: 'finance', keywords: 'nl eur dutch arbeidskorting expat' },
+  { name: 'Ireland Salary Calculator (PAYE, USC & PRSI)', slug: 'salary-calculator/ireland', categoryId: 'finance', keywords: 'ie eur dublin revenue tax credits' },
+  { name: 'New Zealand Salary Calculator (IRD PAYE, ACC & KiwiSaver)', slug: 'salary-calculator/new-zealand', categoryId: 'finance', keywords: 'nz nzd auckland kiwisaver' },
+  { name: 'Spain Salary Calculator (IRPF & Seguridad Social)', slug: 'salary-calculator/spain', categoryId: 'finance', keywords: 'es eur madrid sueldo neto autonomo' },
+  { name: 'Italy Salary Calculator (IRPEF, INPS & Stipendio Netto)', slug: 'salary-calculator/italy', categoryId: 'finance', keywords: 'it eur rome milan cuneo fiscale' },
+  { name: 'South Africa Salary Calculator (SARS PAYE, Rebate & UIF)', slug: 'salary-calculator/south-africa', categoryId: 'finance', keywords: 'za zar sars medical tax credit' },
+  { name: 'Brazil Salary Calculator (IRPF, CLT INSS & FGTS)', slug: 'salary-calculator/brazil', categoryId: 'finance', keywords: 'br brl salario liquido clt' },
+  { name: 'Mexico Salary Calculator (SAT ISR & IMSS Cuotas)', slug: 'salary-calculator/mexico', categoryId: 'finance', keywords: 'mx mxn sueldo neto nomina' },
+  { name: 'South Korea Salary Calculator (NTS Tax & 4 Insurances)', slug: 'salary-calculator/south-korea', categoryId: 'finance', keywords: 'kr krw seoul national pension' },
+];
+
 interface ToolSearchProps {
   className?: string;
   onNavigate?: () => void;
@@ -33,7 +59,34 @@ export default function ToolSearch({
   const results = useMemo(() => {
     if (!normalizedQuery) return [];
 
-    return tools
+    const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+    const countryMatches = COUNTRY_SEARCH_ITEMS.map((c) => {
+      const name = c.name.toLowerCase();
+      const kw = c.keywords.toLowerCase();
+      let score = 0;
+      if (name.includes(normalizedQuery)) score += 55;
+      if (kw.includes(normalizedQuery)) score += 35;
+      if (queryTokens.length > 1) {
+        const combined = `${name} ${kw} salary calculator take home pay`;
+        const matched = queryTokens.filter((t) => combined.includes(t));
+        if (matched.length === queryTokens.length) score += 50;
+      }
+      return {
+        tool: {
+          id: `country-${c.slug}`,
+          name: c.name,
+          slug: c.slug,
+          categoryId: 'finance' as const,
+          description: 'Dedicated statutory tax & net take-home pay calculator',
+          status: 'published' as const,
+        },
+        category: categories.find((item) => item.id === 'finance'),
+        score,
+      };
+    }).filter((item) => item.score > 0);
+
+    const toolMatches = tools
       .filter((tool) => tool.status === 'published' && !tool.hidden)
       .map((tool) => {
         const category = categories.find(
@@ -41,17 +94,35 @@ export default function ToolSearch({
         );
 
         const name = tool.name.toLowerCase();
+        const slug = tool.slug.toLowerCase();
         const description = tool.description.toLowerCase();
+        const seoTitle = (tool.seoTitle || '').toLowerCase();
         const categoryName = category?.name.toLowerCase() ?? '';
+        const keywordsJoined = (tool.keywords || []).join(' ').toLowerCase();
+        const featuresJoined = (tool.featureList || []).join(' ').toLowerCase();
 
         let score = 0;
 
         // Exact / beginning matches should appear first.
-        if (name === normalizedQuery) score += 100;
-        if (name.startsWith(normalizedQuery)) score += 60;
-        if (name.includes(normalizedQuery)) score += 40;
+        if (name === normalizedQuery || slug === normalizedQuery) score += 120;
+        if (name.startsWith(normalizedQuery) || slug.startsWith(normalizedQuery)) score += 70;
+        if (name.includes(normalizedQuery)) score += 45;
+        if (seoTitle.includes(normalizedQuery)) score += 30;
+        if (keywordsJoined.includes(normalizedQuery)) score += 35;
         if (categoryName.includes(normalizedQuery)) score += 20;
-        if (description.includes(normalizedQuery)) score += 10;
+        if (description.includes(normalizedQuery)) score += 15;
+        if (featuresJoined.includes(normalizedQuery)) score += 10;
+
+        // Multi-word token matching (e.g. "gold tola", "json excel", "compress 50kb")
+        if (queryTokens.length > 1) {
+          const combined = `${name} ${slug} ${seoTitle} ${keywordsJoined} ${description} ${featuresJoined}`;
+          const matchedTokens = queryTokens.filter((tok) => combined.includes(tok));
+          if (matchedTokens.length === queryTokens.length) {
+            score += 40;
+          } else if (matchedTokens.length > 0) {
+            score += matchedTokens.length * 8;
+          }
+        }
 
         return {
           tool,
@@ -59,12 +130,14 @@ export default function ToolSearch({
           score,
         };
       })
-      .filter((item) => item.score > 0)
+      .filter((item) => item.score > 0);
+
+    return [...toolMatches, ...countryMatches]
       .sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.tool.name.localeCompare(b.tool.name);
       })
-      .slice(0, 7);
+      .slice(0, 8);
   }, [normalizedQuery]);
 
   const showDropdown = isOpen && query.trim().length > 0;
@@ -165,7 +238,7 @@ export default function ToolSearch({
             if (query.trim()) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search tools..."
+          placeholder="Search tools (e.g. JSON, PDF, Mortgage, QR, WebP)..."
           autoComplete="off"
           spellCheck={false}
           role="combobox"
@@ -198,7 +271,7 @@ export default function ToolSearch({
           {results.length > 0 ? (
             <>
               <div className="px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Tools
+                Matching Tools ({results.length})
               </div>
 
               {results.map(({ tool, category }, index) => (
@@ -268,7 +341,7 @@ export default function ToolSearch({
               </p>
 
               <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                Try a different search term.
+                Try searching by format or feature (e.g. JSON, CSV, EMI, Gold, QR, WebP).
               </p>
             </div>
           )}

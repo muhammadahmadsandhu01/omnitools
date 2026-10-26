@@ -104,6 +104,43 @@ export default function InvoiceGeneratorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Create and Download a Professional Tax-Compliant PDF Invoice Online',
+            description: 'Step-by-step guide to building a custom commercial invoice with multi-currency formatting, line-item taxes, discounts, company logo, and vector PDF export.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Add Business Branding & Client Details',
+        text: 'Upload your company logo (PNG, JPG, WebP), enter your business name, tax/VAT ID, billing address, and client recipient details.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Configure Invoice Number, Dates & Currency',
+        text: 'Set your invoice number, issue date, payment due date, and choose from 150+ ISO currencies with automatic locale formatting.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Enter Line Items, Taxes & Discounts',
+        text: 'Add products or services with quantities, unit prices, per-item or subtotal tax rates (GST, VAT, Sales Tax), discounts, and shipping fees.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Generate Print-Ready PDF or Export CSV/JSON',
+        text: 'Preview the live A4/Letter invoice layout, download a high-resolution PDF, or export a CWE-1236 formula-safe CSV/JSON backup.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <section aria-labelledby="invoice-generator-free-professional-invoice-gene" className="mb-8">
         <h2 id="invoice-generator-free-professional-invoice-gene" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">

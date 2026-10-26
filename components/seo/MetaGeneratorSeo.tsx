@@ -554,14 +554,14 @@ export default function MetaGeneratorSeo() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KivaroTools — Fast Online Developer Utilities &amp; PDF Tools</title>
   <meta name="description" content="Free in-browser developer utilities..." />
-  <link rel="canonical" href="https://kivarotools.app/tools" />
+  <link rel="canonical" href="https://kivarotools.com/developer" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://kivarotools.app/tools" />
+  <meta property="og:url" content="https://kivarotools.com/developer" />
   <meta property="og:title" content="KivaroTools — Fast Online Developer Utilities" />
-  <meta property="og:image" content="https://kivarotools.app/og-banner.jpg" />
+  <meta property="og:image" content="https://kivarotools.com/og-banner.jpg" />
   <meta property="og:image:alt" content="KivaroTools Developer Dashboard" />
 
   <!-- Twitter / X -->
@@ -630,14 +630,14 @@ export const metadata: Metadata = {
   title: 'KivaroTools — Fast Online Developer Utilities & PDF Tools',
   description: 'Free in-browser developer utilities with zero server uploads...',
   alternates: {
-    canonical: 'https://kivarotools.app/tools',
+    canonical: 'https://kivarotools.com/developer',
   },
   openGraph: {
     title: 'KivaroTools — Fast Online Developer Utilities',
     description: 'Free in-browser developer utilities with zero server uploads...',
-    url: 'https://kivarotools.app/tools',
+    url: 'https://kivarotools.com/developer',
     siteName: 'KivaroTools',
-    images: [{ url: 'https://kivarotools.app/og-banner.jpg', width: 1200, height: 630 }],
+    images: [{ url: 'https://kivarotools.com/og-banner.jpg', width: 1200, height: 630 }],
     type: 'website',
   },
   twitter: {

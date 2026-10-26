@@ -104,6 +104,43 @@ export default function CryptoConverterSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Cryptocurrency Exchange Rates, Portfolio P&L, and Atomic Unit Conversions',
+            description: 'Step-by-step guide to converting BTC, ETH, SOL, and major cryptocurrencies across global fiat currencies, calculating trade P&L, and converting Satoshi/Wei/Gwei/Lamports.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Cryptocurrency & Target Fiat Currency',
+        text: 'Pick Bitcoin (BTC), Ethereum (ETH), Solana (SOL), or other major digital assets and select your target fiat currency (USD, EUR, GBP, PKR, INR, AED, etc.).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Enter Token Quantity or Fiat Amount',
+        text: 'Input the crypto or fiat value to view instant bi-directional conversion with live market reference rates or custom manual exchange rates.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Simulate Entry/Exit P&L & Exchange Fees',
+        text: 'Switch to the Profit/Loss & Fee simulator to enter buy price, sell price, maker/taker fee percentages, and network gas costs to compute net ROI and break-even price.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Convert Atomic Blockchain Units',
+        text: 'Use the Atomic Unit converter to translate between BTC and Satoshis, ETH and Wei/Gwei, or SOL and Lamports with full decimal precision.',
+      }
+            ],
+          }),
+        }}
+      />
 
       {/* Section 1: Introduction */}
       <section aria-labelledby="crypto-converter-currency-amp-cryptocurrency-co" className="mb-10">

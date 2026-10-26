@@ -104,6 +104,43 @@ export default function PreciousMetalsSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Gold, Silver, Platinum, and Palladium Value & Zakat Online',
+            description: 'Step-by-step guide to valuing precious metals across Tola, Grams, Troy Ounces, and Kilograms by karat purity (24K–9K), dealer spread, making charges, and Nisab Zakat.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Precious Metal & Karat/Fineness Purity',
+        text: 'Choose Gold, Silver, Platinum, or Palladium and select the exact purity (24K, 22K, 21K, 18K, 14K, 999, or 925 Sterling).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Enter Weight & Traditional or Metric Unit',
+        text: 'Input your metal weight and choose Grams, Troy Ounces, Tola (11.6638g), Masha, Ratti, Kilograms, or Grains.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Set Market Spot Rate, Currency & Making Charges',
+        text: 'Select your local currency (USD, PKR, INR, AED, SAR, GBP, EUR) and optionally add jewelry making charges, wastage, GST/VAT, and dealer buy/sell spread.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Review Melt Value, Retail Total & Zakat Nisab Status',
+        text: 'Inspect the intrinsic melt value, net resale value, retail purchase breakdown, and 2.5% Islamic Zakat liability against the statutory gold/silver Nisab threshold.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mb-4">
         Precious Metals Market Rates &amp; Scrap Bullion Valuation Guide

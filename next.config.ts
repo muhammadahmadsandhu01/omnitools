@@ -3,6 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async redirects() {
     return [
+      {
+        source: '/tools',
+        destination: '/',
+        permanent: true,
+      },
       // 1. Specific legacy alias with category change (must precede generic /image/:slug)
       {
         source: '/pdf/image-to-pdf',

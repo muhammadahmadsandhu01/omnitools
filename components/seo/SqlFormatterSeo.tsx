@@ -99,6 +99,43 @@ export default function SqlFormatterSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Format, Beautify, and Minify SQL Queries Across 8 Database Dialects Online',
+            description: 'Step-by-step guide to pretty-printing complex SQL queries, CTEs, JOINs, and subqueries for PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, and SQLite.',
+            step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Select Target SQL Dialect',
+        text: 'Choose Standard SQL, PostgreSQL, MySQL, MariaDB, MS SQL Server (T-SQL), Oracle PL/SQL, Google BigQuery, Snowflake, or SQLite.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Paste Raw or Minified SQL Query',
+        text: 'Paste your SQL script into the input editor or upload a local .sql file.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Configure Keyword Casing & Indentation Style',
+        text: 'Select UPPERCASE, lowercase, or Capitalize keyword rules, indentation width (2 or 4 spaces), and comma placement style.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Copy Beautified or Minified SQL Output',
+        text: 'Inspect the formatted query with preserved comments and string literals, then copy to clipboard or download as a .sql file.',
+      }
+            ],
+          }),
+        }}
+      />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}

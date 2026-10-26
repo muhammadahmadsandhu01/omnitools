@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Sparkles,
   Target,
+  Wand2,
 } from 'lucide-react';
 
 export interface FaqItem {
@@ -17,34 +18,79 @@ export interface FaqItem {
 
 export const TEXT_ANALYZER_FAQS: FaqItem[] = [
   {
-    question: 'What is the ideal Flesch Reading Ease score for web content?',
+    question: 'What is the ideal Flesch Reading Ease score for web content and SEO articles?',
     answer:
       'For general consumer websites, blogs, and marketing copy, the recommended Flesch Reading Ease score is 60 to 70, which corresponds to a standard 8th-to-9th grade reading level. Content in this range is clear, conversational, and accessible to the vast majority of adult English speakers without feeling oversimplified.',
   },
   {
     question: 'Does keyword density guarantee higher search engine rankings?',
     answer:
-      'No. Modern search engines use deep neural language models and semantic entity evaluation to understand content relevance. Maintaining a keyword density between 1% and 2.5% helps ensure clear topical focus, but search engines do not rank pages based on strict keyword percentages. Overusing keywords (keyword stuffing) can trigger quality penalties.',
+      'No. Modern search engines use deep neural language models and semantic entity evaluation to understand content relevance. Maintaining a natural 1-word and 2-to-3-word phrase density between 0.5% and 2.5% helps ensure clear topical focus and prevents accidental repetition, but search engines do not rank pages based on strict keyword percentages.',
+  },
+  {
+    question: 'How does the built-in 8-layer Grammar & Style Coach work without sending text to a server?',
+    answer:
+      'KivaroTools runs a deterministic 8-layer linguistic rule engine directly in your browser memory. It inspects your draft across Grammar (subject-verb agreement, article a/an phonetics, double modals, homophones), Spelling (300+ common misspellings and typos), Punctuation (spaced punctuation, duplicate marks, smart quote pairing), Clarity (wordy phrases, nominalizations, sentence complexity), Consistency (US vs UK spelling mix, hyphenation variants, quote style uniformity), Passive Voice, Style (weak intensifiers, clichés, hedge words), and Readability.',
+  },
+  {
+    question: 'What is the difference between Safe One-Click Fixes and Advisory Editorial Suggestions?',
+    answer:
+      'Deterministic mechanical issues—such as typographical misspellings, incorrect a/an articles, repeated words ("the the"), extra spaces, and unclosed punctuation—are classified as Safe Mechanical Fixes and can be applied individually or in bulk with one click. Contextual structural findings—such as passive voice, long sentences, or nominalizations—are presented as Advisory Editorial Suggestions with guidance so you retain complete creative control over your tone.',
+  },
+  {
+    question: 'How do Content Genre Presets (General, Academic, Technical, Fiction) affect writing analysis?',
+    answer:
+      'Each writing genre has distinct stylistic conventions. Switching the Content Genre adjusts sentence-length thresholds, passive-voice tolerance, and colloquialism alerts. For example, Academic and Technical modes allow longer multi-clause sentences and objective passive constructions, whereas Marketing and Blog modes prioritize punchy active-voice phrasing and lower reading grade levels.',
+  },
+  {
+    question: 'How does Dialogue Mode handle quoted speech in fiction and journalism?',
+    answer:
+      'When analysing fiction manuscripts, interviews, or journalistic articles, spoken dialogue inside quotation marks often uses intentional fragments, contractions, or colloquial phrasing. Dialogue Mode allows you to either exclude quoted speech from stylistic penalties or inspect dialogue separately so character voices are not flagged as formal grammar errors.',
   },
   {
     question: 'How does reading time differ from speaking time?',
     answer:
-      'Silent reading time is calculated at 225 words per minute (WPM), representing the natural pace at which an adult reads silently. Speaking time is calculated at 150 WPM (customizable from 60 to 300 WPM), representing a clear, conversational presentation pace for speeches, podcasts, and video voiceovers.',
+      'Silent reading time is calculated at 225 words per minute (WPM), representing the natural pace at which an adult reads silently. Speaking time is calculated at 150 WPM (customizable across deliberate 120 WPM, conversational 150 WPM, and fast broadcast 180 WPM presets), representing a realistic presentation pace for speeches, podcasts, and video voiceovers.',
   },
   {
-    question: 'What is the difference between character count and grapheme cluster count?',
+    question: 'What is the difference between UTF-16 character count and grapheme cluster count?',
     answer:
-      'Standard character counters calculate UTF-16 code units (the 16-bit blocks used in computer memory). A standard letter like "A" is 1 code unit. However, complex compound emojis (such as family emojis 👨‍👩‍👧‍👦) or accented characters with separate combining marks contain multiple code units while appearing as a single visual character. Grapheme cluster counting measures the exact number of visual characters perceived by the human eye.',
+      'Standard character counters calculate UTF-16 code units (the 16-bit blocks used in computer memory). A standard Latin letter like "A" is 1 code unit. However, compound emojis (such as family emojis 👨‍👩‍👧‍👦 or skin-tone modifiers 👍🏽) and accented characters with combining marks contain multiple UTF-16 code units while appearing as a single visual symbol. Grapheme cluster counting via Intl.Segmenter measures the exact number of visual characters perceived by the human eye.',
   },
   {
-    question: 'Is my text saved or uploaded when using the Text Analyzer?',
+    question: 'How are 1-word, 2-word (bigrams), and 3-word (trigrams) keyword phrases calculated?',
     answer:
-      'No. KivaroTools Word Counter & Text Analyzer processes 100% of calculations directly in your browser. No text is uploaded to any server, database, or cloud API. Your documents remain completely private and confidential on your device.',
+      'The N-gram tokenizer strips punctuation, normalizes casing, filters out grammatical stop words (such as "the", "and", "of", "in") for single-word frequencies, and slides a contiguous 2-word and 3-word window across sentence boundaries to surface your most frequently repeated multi-word concepts and topical entities.',
+  },
+  {
+    question: 'How does KivaroTools count hyphenated words, contractions, and numbers?',
+    answer:
+      'Contiguous sequences of Unicode letters and numbers are counted as words. Internal apostrophes in contractions ("don\'t", "it\'s", "we\'ll") and internal hyphens in compound words ("state-of-the-art", "client-side") are preserved as single word units, matching standard publishing and academic word processor conventions.',
+  },
+  {
+    question: 'Why do Flesch-Kincaid, Gunning Fog, SMOG, Coleman-Liau, and ARI give slightly different grade levels?',
+    answer:
+      'Each formula weights textual complexity differently. Flesch-Kincaid and SMOG measure syllables per word and words per sentence; Gunning Fog focuses on the percentage of 3+ syllable "hard words"; while Coleman-Liau and Automated Readability Index (ARI) measure character counts per word rather than phonetic syllables. Viewing all six side by side provides a balanced consensus grade.',
+  },
+  {
+    question: 'Does the sentence counter get confused by abbreviations like "Dr.", "U.S.", or decimal numbers like "3.14"?',
+    answer:
+      'No. The sentence boundary parser protects standard English honorifics and abbreviations (Mr., Mrs., Dr., Prof., e.g., i.e., etc., vs., Inc., Ltd.), decimal figures, currency amounts, URLs, and email addresses so they do not trigger false sentence breaks.',
   },
   {
     question: 'Can I check text in languages other than English?',
     answer:
-      'Yes. The character and word counters fully support international Unicode scripts including Arabic, Urdu, Hindi, Chinese, Japanese, Korean, Russian, and all European languages. However, the readability formulas (such as Flesch Reading Ease and Gunning Fog) are specifically calibrated for English phonetic syllable patterns and should be treated as indicative estimates when analyzing non-English text.',
+      'Yes. Word, character, grapheme, sentence, paragraph, and line counters fully support international Unicode scripts including Arabic, Urdu, Hindi, Chinese, Japanese, Korean, Russian, and all European languages. However, the readability formulas and English grammar coach rules are calibrated specifically for English syntax and phonetics.',
+  },
+  {
+    question: 'Can I import local .txt or .md files and export an editorial report?',
+    answer:
+      'Yes. You can load local plain-text (.txt) or Markdown (.md) files directly into the workspace, copy formatted summary statistics to your clipboard, or download a comprehensive plain-text editorial audit report containing all counts, readability scores, and keyword distributions.',
+  },
+  {
+    question: 'Is my text saved, logged, or uploaded to any external AI server?',
+    answer:
+      'Never. KivaroTools Word Counter & Text Analyzer executes 100% of counting, readability scoring, N-gram extraction, and grammar checking locally inside your browser tab. Zero characters are ever transmitted over the network or stored on external servers.',
   },
 ];
 
@@ -62,35 +108,72 @@ export default function TextAnalyzerSeo() {
     })),
   };
 
+  const howToSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: 'How to Analyze Word Count, Readability Grade, Keyword Density, and Grammar Online',
+    description:
+      'Step-by-step guide to auditing text length, 6 readability formulas, 1/2/3-word N-gram keyword density, and 8-layer grammar & style diagnostics locally in your browser.',
+    step: [
+      {
+        '@type': 'HowToStep',
+        position: 1,
+        name: 'Paste Text or Open a Local Document',
+        text: 'Type or paste your draft into the editor, load a local .txt or .md file, or select a sample text preset.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 2,
+        name: 'Inspect Real-Time Counts & Speaking Pace',
+        text: 'Verify exact words, UTF-16 characters, visual grapheme clusters, sentences, paragraphs, lines, silent reading time (225 WPM), and speaking time (150 WPM).',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 3,
+        name: 'Audit Readability Scores & N-Gram Keyword Density',
+        text: 'Review Flesch Reading Ease plus 5 grade-level indices (Flesch-Kincaid, Gunning Fog, SMOG, Coleman-Liau, ARI) alongside 1-word, 2-word, and 3-word phrase frequency tables.',
+      },
+      {
+        '@type': 'HowToStep',
+        position: 4,
+        name: 'Apply 8-Layer Grammar & Style Coach Fixes',
+        text: 'Select your target Content Genre and Dialogue Mode, inspect categorized grammar, spelling, punctuation, clarity, consistency, and style findings, and apply safe one-click fixes or export your audit report.',
+      },
+    ],
+  };
+
   return (
     <article className="prose prose-slate dark:prose-invert w-full max-w-4xl min-w-0 mx-auto bg-white dark:bg-[#111827] p-4 sm:p-10 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-sm overflow-hidden">
-      {/* FAQ Schema */}
+      {/* FAQ & HowTo Structured Data Schemas */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
       {/* Overview Section */}
       <section aria-labelledby="text-analyzer-comprehensive-text-analysis-am" className="mb-10">
         <h2 id="text-analyzer-comprehensive-text-analysis-am" className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
-          Comprehensive Text Analysis &amp; Readability Studio
+          Comprehensive Word Counter, Readability Grader &amp; 8-Layer Writing Studio
         </h2>
-      <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
-        <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
-        </p>
-      </blockquote>
+        <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
+          <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
+            <strong>Privacy First &amp; 100% Client-Side:</strong> All lexical counting, readability grading, N-gram phrase extraction, and 8-layer grammar diagnostics execute locally inside your browser via client-side JavaScript. Zero text or documents are ever uploaded to external servers.
+          </p>
+        </blockquote>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4 text-base sm:text-lg">
-          Whether drafting an editorial article, university essay, keynote speech, novel manuscript, or search-optimized
-          blog post, hitting precise length and comprehension targets is essential for clear communication. The KivaroTools{' '}
-          <strong>Word Counter &amp; Text Analyzer</strong> provides an advanced, browser-based writing studio that
-          evaluates your prose across multiple structural and linguistic dimensions simultaneously.
+          Whether drafting an editorial article, university dissertation, keynote speech, novel manuscript, or search-optimized
+          landing page, hitting precise length, readability, and stylistic quality targets is essential for clear communication. The KivaroTools{' '}
+          <strong>Word Counter &amp; Text Analyzer</strong> provides an enterprise-grade, browser-based writing and editing studio that
+          evaluates your prose across structural, statistical, and linguistic dimensions simultaneously.
         </p>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-base">
-          Unlike basic counters that only track raw character lengths, KivaroTools combines real-time counting with six classic
-          educational readability formulas, keyword repetition tracking, speaking pace estimation, and contextual writing coach
-          findings. Everything runs directly in your browser JavaScript memory—zero text is ever transmitted over the network or
-          stored on external servers.
+          Unlike basic counters that only report raw character lengths, KivaroTools combines Unicode-aware word and grapheme counting with six peer-reviewed
+          educational readability formulas, 1/2/3-word N-gram keyword density tracking, customizable speaking pace estimation, and a deterministic 8-layer
+          Grammar, Spelling, Punctuation, Clarity, Consistency, and Style Coach with one-click safe mechanical fixes.
         </p>
       </section>
 
@@ -98,7 +181,7 @@ export default function TextAnalyzerSeo() {
       <section aria-labelledby="text-analyzer-how-to-use-the-text-analyzer" className="mb-10">
         <h2 id="text-analyzer-how-to-use-the-text-analyzer" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
-          How to Use the Text Analyzer
+          How to Use the Word Counter &amp; Text Analyzer
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose mb-6">
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
@@ -107,34 +190,83 @@ export default function TextAnalyzerSeo() {
               Enter or Upload Text
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Paste your draft into the editor, start typing, click <strong>Open Text File</strong> to load a <code>.txt</code> or <code>.md</code> file, or click <strong>Sample</strong> to test pre-populated copy.
+              Paste your draft into the editor, start typing, click <strong>Open Text File</strong> to load a <code>.txt</code> or <code>.md</code> document, or click <strong>Sample</strong> to test pre-populated editorial copy.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
               <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">2</span>
-              Review Core Metrics
+              Review Core Counts &amp; Pacing
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Monitor synchronous counts for words, characters (with and without spaces), visual graphemes, sentences, paragraphs, physical lines, and reading/speaking times.
+              Monitor instant counts for words, characters (with and without spaces), visual graphemes, sentences, paragraphs, physical lines, and reading/speaking times.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
               <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">3</span>
-              Inspect Readability &amp; Grades
+              Inspect Readability &amp; 8-Layer Coach
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Examine Flesch Reading Ease and 5 additional educational grade benchmarks (Flesch-Kincaid, Gunning Fog, SMOG, Coleman-Liau, ARI) to ensure proper audience fit.
+              Examine Flesch Reading Ease, 5 grade-level indices, 1/2/3-word N-gram keyword frequencies, and 8-layer grammar, spelling, punctuation, clarity, and consistency diagnostics.
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700">
             <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
               <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">4</span>
-              Export or Copy Results
+              Apply Safe Fixes &amp; Export Report
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Use <strong>Copy Stats</strong> to place formatted summary metrics on your clipboard, copy modified text, or download a structured editorial text report.
+              Apply deterministic one-click mechanical fixes, copy formatted summary statistics to your clipboard, or download a comprehensive plain-text editorial audit report.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 8-Layer Grammar & Style Coach Section */}
+      <section aria-labelledby="text-analyzer-8-layer-grammar-coach" className="mb-10">
+        <h2 id="text-analyzer-8-layer-grammar-coach" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+          <Wand2 className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
+          8-Layer Deterministic Grammar, Style &amp; Consistency Coach
+        </h2>
+        <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
+          Built directly into the workspace is a client-side linguistic inspection engine that evaluates your manuscript across eight specialized editorial layers without sending a single word to cloud AI servers:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-6">
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">1. Grammar &amp; Syntax Diagnostics</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Detects phonetic <em>a/an</em> article mismatches (e.g., &quot;an university&quot;, &quot;a hour&quot;), subject-verb agreement errors, modal auxiliary misuse (&quot;could of&quot; &rarr; &quot;could have&quot;), double negatives, and contextual homophone confusions (<em>their/there/they&apos;re</em>, <em>your/you&apos;re</em>, <em>its/it&apos;s</em>, <em>affect/effect</em>).
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">2. High-Frequency Spelling &amp; Typo Engine</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Flags over 300 common English misspellings, transposition typos (<em>teh</em>, <em>recieve</em>, <em>occured</em>, <em>seperate</em>, <em>definately</em>), and accidental consecutive duplicate words (<em>&quot;the the&quot;</em>, <em>&quot;is is&quot;</em>) with instant one-click replacement.
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">3. Punctuation &amp; Typography Hygiene</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Identifies space-before-punctuation errors, missing space after commas/periods, repeated terminal marks (<code>!!</code>, <code>..</code>), unclosed parentheses or quotation marks, and double spaces between sentences.
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">4. Clarity, Conciseness &amp; Nominalizations</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Highlights verbose bureaucratic phrases (<em>&quot;due to the fact that&quot;</em> &rarr; <em>&quot;because&quot;</em>, <em>&quot;in order to&quot;</em> &rarr; <em>&quot;to&quot;</em>), pleonasms/redundancies (<em>&quot;past history&quot;</em>, <em>&quot;future plans&quot;</em>), and heavy noun-heavy nominalizations (<em>&quot;make a decision&quot;</em> &rarr; <em>&quot;decide&quot;</em>).
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">5. Document-Wide Consistency Checker</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Audits the entire document for mixed American vs. British English spelling conventions (e.g., mixing <em>color</em> and <em>colour</em> or <em>optimize</em> and <em>optimise</em>), inconsistent compound hyphenation (<em>e-mail</em> vs. <em>email</em>), and mixed curly/straight quotation marks.
+            </p>
+          </div>
+          <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">6. Passive Voice, Style, Genre &amp; Dialogue Modes</h3>
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              Detects auxiliary + past-participle passive voice constructions, weak intensifiers (<em>very</em>, <em>really</em>), hedge words, and clichés—calibrated dynamically across <strong>Content Genres</strong> (General, Academic, Technical, Business, Marketing, Creative) and <strong>Dialogue Modes</strong>.
             </p>
           </div>
         </div>
@@ -166,7 +298,7 @@ export default function TextAnalyzerSeo() {
             <strong>Sentence Count:</strong> Determined through rule-based boundary analysis. Common abbreviations (<em>Mr.</em>, <em>Dr.</em>, <em>e.g.</em>, <em>i.e.</em>, <em>etc.</em>), international sentence terminators (Latin <code>.</code>, <code>!</code>, <code>?</code>, Arabic/Urdu <code>۔</code>, <code>؟</code>, and CJK <code>。</code>, <code>！</code>, <code>？</code>), website domains, email addresses, and decimal numbers (<em>3.14</em>, <em>1,000,000</em>) are protected against premature splitting.
           </li>
           <li>
-            <strong>Paragraph Count:</strong> Incremented whenever two or more consecutive line breaks (<code>\n\n</code>) separate distinct text blocks. Whitespace-only lines do not artificially inflate paragraph numbers.
+            <strong>Paragraph Count:</strong> Incremented whenever one or more line breaks separate distinct non-empty text blocks. Whitespace-only lines do not artificially inflate paragraph numbers.
           </li>
           <li>
             <strong>Line Count:</strong> The count of physical lines separated by standard newline sequences (<code>\r\n</code> or <code>\n</code>), helping programmers, translators, and poets verify vertical line limits.
@@ -181,7 +313,7 @@ export default function TextAnalyzerSeo() {
           Readability Formulas &amp; Educational Scoring Benchmarks
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Readability formulas provide mathematical estimates of the reading skill required to understand a given piece of writing. KivaroTools computes six established formulas:
+          Readability formulas provide mathematical estimates of the reading skill required to understand a given piece of writing. KivaroTools computes six established formulas simultaneously:
         </p>
 
         <div className="w-full max-w-full overflow-x-auto mb-6 not-prose">
@@ -290,13 +422,13 @@ export default function TextAnalyzerSeo() {
       <section aria-labelledby="text-analyzer-keyword-density-amp-content-re" className="mb-10">
         <h2 id="text-analyzer-keyword-density-amp-content-re" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-blue-600 dark:text-blue-400 inline-block" />
-          Keyword Density &amp; Content Repetition Analysis
+          1/2/3-Word N-Gram Keyword Density &amp; Repetition Analysis
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
-          Keyword density measures the percentage frequency of specific single words and multi-word phrases relative to the total word count of your draft:
+          Keyword density measures the percentage frequency of specific single words (unigrams), 2-word phrases (bigrams), and 3-word phrases (trigrams) relative to the total word count of your draft:
         </p>
         <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/60 font-mono text-xs sm:text-sm text-slate-800 dark:text-slate-200 border border-gray-200 dark:border-slate-700 mb-4 text-center">
-          Keyword Density (%) = (Specific Word Count / Total Document Words) &times; 100
+          Keyword Density (%) = (Specific Phrase Occurrences / Total Document Words) &times; 100
         </div>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-3">
           <strong>Best Practices for Editorial &amp; SEO Analysis:</strong>
@@ -306,10 +438,10 @@ export default function TextAnalyzerSeo() {
             <strong>Stop Word Filtering:</strong> KivaroTools automatically filters out grammatical function words (<em>the</em>, <em>and</em>, <em>in</em>, <em>of</em>, <em>to</em>, <em>is</em>) from top keyword tables, highlighting genuine conceptual vocabulary.
           </li>
           <li>
-            <strong>Editorial Repetition Diagnostics:</strong> Identifying frequently repeated phrases allows writers to eliminate accidental crutch words and vary phrasing using context-appropriate synonyms.
+            <strong>Multi-Word Phrase (N-Gram) Discovery:</strong> Inspecting 2-word and 3-word phrases surfaces recurring compound topics (such as <em>&quot;machine learning model&quot;</em> or <em>&quot;client side privacy&quot;</em>) and catches repetitive phrasing habits.
           </li>
           <li>
-            <strong>No Fake Ranking Promises:</strong> Modern search engines rank pages based on user satisfaction, topic comprehensiveness, and natural entity relationships. There is no magical &quot;2% keyword density&quot; that guarantees search rankings. KivaroTools presents keyword density strictly as an editorial clarity tool.
+            <strong>No Fake Ranking Promises:</strong> Modern search engines rank pages based on user satisfaction, topic comprehensiveness, and natural entity relationships. KivaroTools presents keyword density strictly as an editorial clarity and topical focus diagnostic.
           </li>
         </ul>
       </section>
@@ -317,7 +449,7 @@ export default function TextAnalyzerSeo() {
       {/* Digital Publishing & Character Limits */}
       <section aria-labelledby="text-analyzer-digital-publishing-amp-charact" className="mb-10">
         <h2 id="text-analyzer-digital-publishing-amp-charact" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          Digital Publishing &amp; Character Limits Reference
+          Digital Publishing &amp; Social Media Character Limits Reference
         </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           When preparing copy for search snippets and social networks, staying within platform truncation limits prevents vital information from being cut off:
@@ -340,25 +472,25 @@ export default function TextAnalyzerSeo() {
           <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Students &amp; Academic Researchers</h3>
             <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-              Verify strict word count boundaries for essays and journal abstracts. Ensure research is accessible to peer reviewers by checking Gunning Fog and SMOG scores.
+              Verify strict word count boundaries for essays and journal abstracts. Ensure research is accessible to peer reviewers by checking Gunning Fog, SMOG, and US/UK spelling consistency.
             </p>
           </div>
           <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Content Marketers &amp; SEO Writers</h3>
             <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-              Keep keyword density natural, match target reading grade levels for target demographics, and pace articles for optimal reader retention.
+              Keep 1/2/3-word phrase density natural, match target reading grade levels for target demographics, and pace articles for optimal reader retention.
             </p>
           </div>
           <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Authors &amp; Novelists</h3>
             <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-              Track chapter word goals, monitor vocabulary variety, eliminate filler words, and inspect sentence length diversity to craft rhythmic narrative prose.
+              Track chapter word goals, enable Dialogue Mode to respect character speech, eliminate crutch words, and inspect sentence length diversity to craft rhythmic narrative prose.
             </p>
           </div>
           <div className="p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 text-sm">
             <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1">Public Speakers &amp; Podcasters</h3>
             <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-              Convert written speeches into precise delivery times, ensuring keynote addresses, podcast intros, and video scripts fit exact event time slots.
+              Convert written speeches into precise delivery times across custom WPM speeds, ensuring keynote addresses, podcast intros, and video scripts fit exact event time slots.
             </p>
           </div>
         </div>
@@ -394,7 +526,7 @@ export default function TextAnalyzerSeo() {
         <ul className="space-y-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
           <li className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-            <span><strong>Local In-Memory Execution:</strong> All counting algorithms, regex parsers, readability math, and writing coach rules execute entirely within your browser&apos;s local JavaScript thread.</span>
+            <span><strong>Local In-Memory Execution:</strong> All counting algorithms, regex parsers, readability math, and 8-layer writing coach rules execute entirely within your browser&apos;s local JavaScript thread.</span>
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
@@ -426,7 +558,8 @@ export default function TextAnalyzerSeo() {
                 {faq.answer}
               </p>
             </details>
-          ))}        </div>
+          ))}
+        </div>
       </section>
 
       {/* Related Content & Developer Utilities */}
@@ -465,7 +598,7 @@ export default function TextAnalyzerSeo() {
       {/* Return to Tool CTA */}
       <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800/80 dark:to-slate-800/40 border border-blue-200 dark:border-slate-700 text-center not-prose">
         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-          Ready to inspect your draft, check reading pace, or calculate grade-level readability?
+          Ready to inspect your draft, check reading pace, or run 8-layer grammar &amp; readability diagnostics?
         </p>
         <a
           href="#text-analyzer-workspace"

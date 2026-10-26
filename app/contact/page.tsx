@@ -11,33 +11,45 @@ import {
   Globe,
   Clock,
 } from 'lucide-react';
-import { CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Contact KivaroTools',
+  title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
   description:
-    'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries. Serving users worldwide.',
+    'Get in touch with KivaroTools for feedback, bug reports, calculation discrepancy inquiries, or tool suggestions. Serving users worldwide.',
   alternates: {
-    canonical: '/contact',
+    canonical: `${SITE_URL}/contact`,
   },
   openGraph: {
-    title: 'Contact KivaroTools',
+    title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
     description:
       'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
-    url: '/contact',
+    url: `${SITE_URL}/contact`,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact KivaroTools',
+    title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
     description:
       'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
   },
 };
 
 export default function ContactPage() {
+  const contactSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ContactPage',
+    name: 'Contact KivaroTools',
+    url: `${SITE_URL}/contact`,
+    description: 'Support, bug reporting, and feedback contact channel for KivaroTools.',
+  };
+
   return (
     <main className="w-full">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
+      />
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-8">
@@ -72,7 +84,7 @@ export default function ContactPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            We welcome constructive feedback, bug reports, calculation discrepancy reports, and
+            We welcome constructive feedback, bug reports, statutory calculation discrepancy inquiries, and
             feature suggestions from users worldwide.
           </p>
         </header>
@@ -85,13 +97,13 @@ export default function ContactPage() {
             </div>
             <div>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-                Independent Digital Utility
+                Independent Digital Utility Suite
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                KivaroTools is an independent web utility project developed and operated by an individual
-                based in {OPERATOR_LOCATION}, serving visitors and developers across the globe. We build
-                transparent, client-side tools designed to make common calculations and formatting tasks
-                accessible without registration barriers.
+                KivaroTools is an independent web utility platform developed and operated in {OPERATOR_LOCATION},
+                serving visitors, software engineers, and businesses across the globe. We build transparent,
+                client-side tools designed to make complex calculations and file conversions accessible without
+                registration barriers.
               </p>
             </div>
           </div>
@@ -109,8 +121,8 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold">Email Channel</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Inquiries, suggestions, and corrections</p>
+                <h3 className="text-base font-semibold">Email Support Channel</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Inquiries, bug reports, suggestions, and legal/privacy notices (Typical response: 24–48 business hours)</p>
               </div>
             </div>
 
@@ -133,11 +145,9 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                     <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                     <div className="text-xs leading-5 text-amber-900 dark:text-amber-200">
-                      <p className="font-semibold text-sm mb-1">Dedicated Support Email Pending Launch</p>
+                      <p className="font-semibold text-sm mb-1">Support Channel Notice</p>
                       <p>
-                        A dedicated domain email inbox for user correspondence is being configured for the
-                        upcoming public release. No placeholder or unmonitored mailbox is published here.
-                        Please check back shortly or review our{' '}
+                        Please review our{' '}
                         <Link href="/about" className="underline font-semibold hover:text-amber-950 dark:hover:text-amber-100">
                           About KivaroTools
                         </Link>{' '}
@@ -168,7 +178,7 @@ export default function ContactPage() {
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 If you encounter a calculation issue, statutory tax discrepancy, browser compatibility problem,
                 or UI glitch, please include the tool URL, your browser/device type, and the inputs used so we
-                can reproduce and rectify it.
+                can reproduce and rectify it promptly.
               </p>
             </div>
 
@@ -200,7 +210,7 @@ export default function ContactPage() {
               <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 We take security seriously. Because our tools process data locally in client browser memory,
                 server-side exposure is minimized by architecture. If you discover a potential vulnerability
-                or security concern, please disclose it responsibly with actionable reproduction steps.
+                or security concern, please disclose it responsibly via email with actionable reproduction steps.
               </p>
             </div>
           </div>
