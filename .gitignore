@@ -23,6 +23,8 @@
 # misc
 .DS_Store
 *.pem
+*.zip
+kivarotools-clean.zip
 
 # debug
 npm-debug.log*
