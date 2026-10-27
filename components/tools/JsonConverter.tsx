@@ -1894,7 +1894,7 @@ tr:hover td { background: #f8fafc; }
             <div className="flex flex-col gap-3 flex-grow">
               {/* Code Format Selector Pills and Actions */}
               <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 dark:bg-[#0a0f1a] p-2.5 rounded-2xl border border-gray-200 dark:border-slate-800">
-                <div className="flex items-center gap-1.5 overflow-x-auto">
+                <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain">
                   {(['yaml', 'xml', 'csv', 'tsv', 'jsonl'] as const).map((fmt) => (
                     <button
                       key={fmt}
@@ -1962,7 +1962,7 @@ tr:hover td { background: #f8fafc; }
               {/* Table Container */}
               <div className="flex-grow overflow-auto max-h-[460px] border border-gray-200 dark:border-slate-800 rounded-xl bg-gray-50 dark:bg-[#0a0f1a] [scrollbar-width:thin]">
                 {parsedData.length > 0 && visibleColumnList.length > 0 ? (
-                  <table className="w-full text-left border-collapse whitespace-nowrap text-sm">
+                  <table className="min-w-[580px] w-full text-left border-collapse whitespace-nowrap text-sm">
                     <thead className="sticky top-0 bg-gray-100 dark:bg-slate-800 z-10 shadow-sm">
                       <tr>
                         <th className="p-3 font-mono text-xs text-slate-400 dark:text-slate-500 border-b border-gray-200 dark:border-slate-700 w-12 text-center">

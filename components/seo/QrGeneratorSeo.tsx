@@ -209,8 +209,8 @@ export default function QrGeneratorSeo() {
           If the service provider alters its pricing model, caps monthly scans, or goes out of business, your printed physical signs, restaurant menus, product boxes,
           and brochures immediately display 404 errors or paywall pages.
         </p>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature Comparison</th>
@@ -257,8 +257,8 @@ export default function QrGeneratorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           KivaroTools natively formats eight distinct standardized payload architectures, ensuring smartphone cameras on iOS and Android trigger the exact native action:
         </p>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Payload Type</th>
@@ -330,8 +330,8 @@ export default function QrGeneratorSeo() {
           QR codes incorporate mathematical <strong>Reed-Solomon error correction</strong> codes. This redundancy enables smartphones and industrial barcode readers
           to reconstruct missing or corrupted data if the code is scratched, smudged, torn, or partially covered by a central company logo:
         </p>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Tier</th>
@@ -389,8 +389,8 @@ export default function QrGeneratorSeo() {
             Minimum QR Code Width = Intended Scanning Distance ÷ 10
           </p>
         </div>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Medium &amp; Context</th>
@@ -498,8 +498,8 @@ export default function QrGeneratorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
           Compare KivaroTools with commercial QR services across longevity, privacy, export fidelity, and integrated optical verification:
         </p>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Evaluation Criterion</th>

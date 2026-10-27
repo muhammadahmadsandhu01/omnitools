@@ -250,8 +250,8 @@ export default function SipCalculatorSeo() {
         </div>
 
         {/* Variable Definitions Table */}
-        <div className="overflow-x-auto my-6 not-prose">
-          <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div className="w-full overflow-x-auto my-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3.5 border-b border-gray-200 dark:border-slate-700 font-bold">Variable</th>
@@ -376,8 +376,8 @@ export default function SipCalculatorSeo() {
         </p>
 
         {/* Step-Up Comparison Table */}
-        <div className="overflow-x-auto my-6 not-prose">
-          <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div className="w-full overflow-x-auto my-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold">Horizon</th>

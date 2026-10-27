@@ -288,8 +288,8 @@ export default function PreciousMetalsSeo() {
           Never apply gold karat logic to silver or platinum. Each precious metal adheres to statutory hallmarking conventions:
         </p>
 
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Metal</th>
@@ -412,8 +412,8 @@ export default function PreciousMetalsSeo() {
           One of the most frequent mistakes scrap sellers make is weighing their jewelry on a household kitchen or shipping scale (which reads in avoirdupois ounces) and multiplying by the troy ounce spot price. The table below illustrates the standard physical conversions:
         </p>
 
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Weight Unit</th>

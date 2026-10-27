@@ -212,8 +212,8 @@ export default function CompoundInterestSeo() {
         <h3 id="compound-interest-understanding-your-calculation" className="text-xl sm:text-2xl font-bold mb-4 text-slate-800 dark:text-slate-200">
           Understanding Your Calculation Outputs
         </h3>
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Output Metric</th>
@@ -336,8 +336,8 @@ export default function CompoundInterestSeo() {
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 mb-4">
           To illustrate how compounding intervals affect returns, consider an initial principal of <strong>$10,000</strong> invested at a <strong>8.00% nominal rate</strong> over a <strong>10-year horizon</strong> with zero additional deposits:
         </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Frequency</th>

@@ -20,6 +20,36 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/pdf/pdf-to-word',
+        destination: '/document/pdf-to-word',
+        permanent: true,
+      },
+      {
+        source: '/pdf/word-to-pdf',
+        destination: '/document/word-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/pdf/pdf-to-excel',
+        destination: '/document/pdf-to-excel',
+        permanent: true,
+      },
+      {
+        source: '/pdf/excel-to-pdf',
+        destination: '/document/excel-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/pdf/pdf-to-ppt',
+        destination: '/document/pdf-to-ppt',
+        permanent: true,
+      },
+      {
+        source: '/pdf/pdf-to-jpg',
+        destination: '/document/pdf-to-jpg',
+        permanent: true,
+      },
+      {
         source: '/pdf',
         destination: '/document',
         permanent: true,
@@ -52,6 +82,46 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       // 4. Specific verified tool slug aliases
+      {
+        source: '/document/pdf-to-docx',
+        destination: '/document/pdf-to-word',
+        permanent: true,
+      },
+      {
+        source: '/document/docx-to-pdf',
+        destination: '/document/word-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-to-xlsx',
+        destination: '/document/pdf-to-excel',
+        permanent: true,
+      },
+      {
+        source: '/document/xlsx-to-pdf',
+        destination: '/document/excel-to-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-to-pptx',
+        destination: '/document/pdf-to-ppt',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-to-powerpoint',
+        destination: '/document/pdf-to-ppt',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-to-png',
+        destination: '/document/pdf-to-jpg',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-to-image',
+        destination: '/document/pdf-to-jpg',
+        permanent: true,
+      },
       {
         source: '/media/webp-converter',
         destination: '/media/webp-to-jpg-png',

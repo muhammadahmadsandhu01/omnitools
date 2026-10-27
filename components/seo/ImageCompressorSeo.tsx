@@ -189,8 +189,8 @@ export default function ImageCompressorSeo() {
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Select the optimization mode best suited to your destination requirements: web publishing, strict upload portals, or lossless archival fidelity.
         </p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Mode</th>
@@ -245,8 +245,8 @@ export default function ImageCompressorSeo() {
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Choosing the right format is as crucial as setting the compression ratio. The following matrix details the technical trade-offs across modern codecs:
         </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Format</th>
@@ -316,8 +316,8 @@ export default function ImageCompressorSeo() {
           All metrics below were measured on actual, reproducible test fixtures using the KivaroTools client-side compression pipeline.
           <em> Note: The Perceptual Match score is an internal heuristic (combining thumbnail block SSIM, edge preservation, and color variance) used by the engine to rank candidates from the same source; it is not an ISO/ITU standardized metric.</em>
         </p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Fixture Type</th>
@@ -397,8 +397,8 @@ export default function ImageCompressorSeo() {
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Most online image compressors upload your sensitive media to remote cloud clusters, impose harsh 5 MB file caps, or limit batch sizes to force paid subscriptions. KivaroTools executes 100% client-side in your browser memory:
         </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature / Capability</th>

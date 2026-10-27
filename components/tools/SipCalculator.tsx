@@ -2534,8 +2534,8 @@ export default function SipCalculator() {
         </div>
 
         {showSchedule && (
-          <div className="overflow-x-auto max-w-full">
-            <table className="min-w-full text-xs text-left" aria-label="Year-by-year investment schedule">
+          <div className="overflow-x-auto max-w-full overscroll-x-contain">
+            <table className="min-w-[580px] w-full text-xs text-left" aria-label="Year-by-year investment schedule">
               <thead className="bg-gray-100/70 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold border-b border-gray-200 dark:border-slate-800">
                 <tr className="h-10">
                   <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Year</th>

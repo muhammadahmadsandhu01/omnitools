@@ -1544,8 +1544,8 @@ export default function MortgageCalculator() {
 
               {scheduleOpen && (
                 <div id={scheduleControlsId} className="space-y-3">
-                  <div className="overflow-x-auto max-h-[460px] rounded-xl border border-gray-200 dark:border-slate-800 [scrollbar-width:thin]">
-                    <table className="min-w-full text-xs" aria-label="Amortization Schedule">
+                  <div className="overflow-x-auto max-h-[460px] rounded-xl border border-gray-200 dark:border-slate-800 [scrollbar-width:thin] overscroll-x-contain">
+                    <table className="min-w-[580px] w-full text-xs" aria-label="Amortization Schedule">
                       <thead className="sticky top-0 bg-gray-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-b border-gray-200 dark:border-slate-800">
                         <tr>
                           <th scope="col" className="text-left px-3 py-2.5 font-bold whitespace-nowrap">

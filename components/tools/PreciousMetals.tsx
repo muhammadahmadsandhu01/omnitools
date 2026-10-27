@@ -2191,7 +2191,7 @@ export default function PreciousMetals() {
         )}
 
         {/* Responsive Horizontally Scrollable Table with Fixed Row Integrity */}
-        <div className="overflow-x-auto w-full max-w-full">
+        <div className="overflow-x-auto w-full max-w-full overscroll-x-contain">
           <table id="country-market-table" className="w-full text-left border-collapse min-w-[640px]">
             <thead>
               <tr className="border-b border-gray-200 dark:border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -2940,8 +2940,8 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
                     <p className="text-xs text-slate-500 mt-1">Add items above to calculate aggregated scrap melt value.</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
+                  <div className="overflow-x-auto overscroll-x-contain">
+                    <table className="min-w-[580px] w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[11px]">
                           <th className="py-2.5 px-3">Item</th>

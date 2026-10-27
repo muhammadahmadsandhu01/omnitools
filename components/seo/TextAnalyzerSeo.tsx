@@ -316,8 +316,8 @@ export default function TextAnalyzerSeo() {
           Readability formulas provide mathematical estimates of the reading skill required to understand a given piece of writing. KivaroTools computes six established formulas simultaneously:
         </p>
 
-        <div className="w-full max-w-full overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+        <div className="w-full max-w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-2xl overflow-hidden">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Readability Formula</th>

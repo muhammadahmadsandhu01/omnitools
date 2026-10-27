@@ -539,8 +539,8 @@ export default function PakistanSalaryCalculator() {
               <span>Statutory Reconciliation Ledger (FY {taxYear})</span>
             </h3>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+            <div className="overflow-x-auto overscroll-x-contain">
+              <table className="min-w-[580px] w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
                     <th className="py-2.5 pr-4">Ledger Item</th>
@@ -648,8 +648,8 @@ export default function PakistanSalaryCalculator() {
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               FBR Progressive Slabs Breakdown (FY {taxYear})
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
+            <div className="overflow-x-auto overscroll-x-contain">
+              <table className="min-w-[580px] w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
                     <th className="py-2 pr-2">Slab</th>

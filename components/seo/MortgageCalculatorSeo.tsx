@@ -155,7 +155,7 @@ export default function MortgageCalculatorSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         <section aria-labelledby="mortgage-calculator-mortgage-amp-home-loan-master-" className="mb-8">
           <h2 id="mortgage-calculator-mortgage-amp-home-loan-master-" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Mortgage &amp; Home Loan Master Guide: PITI Breakdown, Amortization &amp; Payoff Strategies
@@ -215,7 +215,7 @@ export default function MortgageCalculatorSeo() {
             For a conventional fully amortizing fixed-rate loan with positive principal, periodic compounding, and constant nominal annual interest rate, scheduled periodic principal and interest payment <code className="font-mono font-semibold">M</code> is governed by the standard annuity formula:
           </p>
 
-          <div className="bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-6 font-mono text-sm text-center overflow-x-auto text-blue-700 dark:text-blue-300">
+          <div className="w-full bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-6 font-mono text-sm text-center overflow-x-auto text-blue-700 dark:text-blue-300 overscroll-x-contain">
             M = P &times; [ r(1 + r)^n ] / [ (1 + r)^n &minus; 1 ]
           </div>
 
@@ -302,8 +302,8 @@ export default function MortgageCalculatorSeo() {
             Your monthly mortgage check is rarely paid solely to the loan principal. In conventional residential lending, payments are apportioned across four financial pillars plus recurring community assessments:
           </p>
 
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Component</th>
@@ -350,8 +350,8 @@ export default function MortgageCalculatorSeo() {
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
             The following technical specification matrix outlines the computational architecture, inputs, and modeling capabilities implemented in the KivaroTools mortgage calculator:
           </p>
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Functional Module</th>

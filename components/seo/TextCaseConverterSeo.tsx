@@ -204,8 +204,8 @@ export default function TextCaseConverterSeo() {
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
           The table below illustrates all 15 supported casing modes, categorized by primary domain, accompanied by concrete before-and-after examples and primary real-world use cases:
         </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">Mode Name</th>
@@ -487,8 +487,8 @@ export default function TextCaseConverterSeo() {
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
           Compare how KivaroTools stacks up against older web converters and standard code editors:
         </p>
-        <div className="overflow-x-auto mb-6 not-prose">
-          <table className="min-w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Feature / Capability</th>

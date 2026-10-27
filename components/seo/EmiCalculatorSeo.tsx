@@ -149,7 +149,7 @@ export default function EmiCalculatorSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         <section aria-labelledby="emi-calculator-equated-monthly-installment-em" className="mb-8">
           <h2 id="emi-calculator-equated-monthly-installment-em" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Equated Monthly Installment (EMI) Guide: Formulas, Amortization &amp; Repayment Strategies
@@ -177,8 +177,8 @@ export default function EmiCalculatorSeo() {
             E = P &times; r &times; [ (1 + r)^n ] / [ (1 + r)^n &minus; 1 ]
           </div>
 
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Variable</th>
@@ -265,8 +265,8 @@ export default function EmiCalculatorSeo() {
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
             Borrowers frequently confuse flat interest rates with reducing-balance interest rates. A flat interest rate calculates finance charges on the entire initial loan principal throughout the full tenure, ignoring that you are steadily repaying the balance.
           </p>
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature</th>
@@ -461,8 +461,8 @@ export default function EmiCalculatorSeo() {
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
             The following technical specification matrix details the computational architecture, inputs, and modeling capabilities implemented in the KivaroTools loan EMI calculator:
           </p>
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Functional Module</th>

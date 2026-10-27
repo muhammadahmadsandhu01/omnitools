@@ -28,12 +28,12 @@ const COUNTRY_SLUGS = [
 
 export async function GET() {
   let markdown = `# KivaroTools — Enterprise-Grade Client-Side Web Utilities\n\n`;
-  markdown += `> Powerful Tools. Private by Design. KivaroTools (${SITE_URL}) provides 23+ free enterprise-grade online tools and 22 statutory country salary calculators. 100% of file conversions, cryptographic operations, code formatting, and financial calculations execute locally in the user's browser with zero server uploads and zero registration walls.\n\n`;
+  markdown += `> Powerful Tools. Private by Design. KivaroTools (${SITE_URL}) provides 29+ free enterprise-grade online tools and 22 statutory country salary calculators. 100% of file conversions, cryptographic operations, code formatting, and financial calculations execute locally in the user's browser with zero server uploads and zero registration walls.\n\n`;
 
   markdown += `## Core Architecture & Privacy Guarantees\n\n`;
   markdown += `- **100% Client-Side Execution:** Built on Web Workers, Web Cryptography API, HTML5 Canvas, OffscreenCanvas, and WebAssembly.\n`;
-  markdown += `- **Zero Server Data Retention:** Confidential files (PDFs, images, JSON datasets, SQL schemas, passwords, invoices, and salary figures) never leave the client device.\n`;
-  markdown += `- **Deterministic & Standards-Compliant:** Implements RFC 8259 (JSON), RFC 4648 (Base64/Base64URL), RFC 4180 (CSV with CWE-1236 formula injection defense), ISO 4217 (160+ currencies), BIPM/NIST (precious metals metrology), and official statutory tax schedules.\n\n`;
+  markdown += `- **Zero Server Data Retention:** Confidential files (PDFs, Word/Excel/PowerPoint OpenXML archives, images, JSON datasets, SQL schemas, passwords, invoices, and salary figures) never leave the client device.\n`;
+  markdown += `- **Deterministic & Standards-Compliant:** Implements ECMA-376 OpenXML (.docx, .xlsx, .pptx), RFC 8259 (JSON), RFC 4648 (Base64/Base64URL), RFC 4180 (CSV with CWE-1236 formula injection defense), ISO 4217 (160+ currencies), BIPM/NIST (precious metals metrology), and official statutory tax schedules.\n\n`;
 
   for (const cat of categories.filter((c) => !c.hidden)) {
     markdown += `## ${cat.name} (${SITE_URL}/${cat.id})\n\n`;

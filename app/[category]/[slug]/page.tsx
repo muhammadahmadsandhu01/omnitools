@@ -39,10 +39,29 @@ function resolveCanonicalRoute(category: string, slug: string): {
       ? 'crypto-converter'
       : slug === 'meta-tags-generator' || slug === 'open-graph-generator'
       ? 'meta-generator'
+      : slug === 'pdf-to-docx'
+      ? 'pdf-to-word'
+      : slug === 'docx-to-pdf'
+      ? 'word-to-pdf'
+      : slug === 'pdf-to-xlsx'
+      ? 'pdf-to-excel'
+      : slug === 'xlsx-to-pdf'
+      ? 'excel-to-pdf'
+      : slug === 'pdf-to-pptx' || slug === 'pdf-to-powerpoint'
+      ? 'pdf-to-ppt'
+      : slug === 'pdf-to-png' || slug === 'pdf-to-image'
+      ? 'pdf-to-jpg'
       : slug;
 
   const resolvedCategory =
-    resolvedSlug === 'image-to-pdf' || resolvedSlug === 'pdf-merge-split'
+    resolvedSlug === 'image-to-pdf' ||
+    resolvedSlug === 'pdf-merge-split' ||
+    resolvedSlug === 'pdf-to-word' ||
+    resolvedSlug === 'word-to-pdf' ||
+    resolvedSlug === 'pdf-to-excel' ||
+    resolvedSlug === 'excel-to-pdf' ||
+    resolvedSlug === 'pdf-to-ppt' ||
+    resolvedSlug === 'pdf-to-jpg'
       ? 'document'
       : category === 'pdf'
       ? 'document'

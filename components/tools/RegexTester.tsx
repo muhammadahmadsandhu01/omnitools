@@ -1508,7 +1508,7 @@ export default function RegexTester() {
             </div>
             <p className="leading-relaxed font-mono">{workerError}</p>
             {errorDiagnostics?.pointer && (
-              <div className="mt-1 p-2.5 bg-black/10 dark:bg-black/40 rounded-lg font-mono text-[11px] whitespace-pre overflow-x-auto">
+              <div className="mt-1 p-2.5 bg-black/10 dark:bg-black/40 rounded-lg font-mono text-[11px] whitespace-pre overflow-x-auto overscroll-x-contain">
                 {errorDiagnostics.pointer}
               </div>
             )}

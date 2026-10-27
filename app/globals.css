@@ -19,8 +19,8 @@ body {
    ============================================================ */
 .prose {
   line-height: 1.75;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .prose p {
@@ -71,9 +71,48 @@ body {
   max-width: 100%;
 }
 
+/* ============================================================
+   Mobile-First Horizontal Scrollable Table Architecture
+   Prevents vertical character-by-character word breaking on mobile
+   and enables smooth left-right touch scrolling across all screens
+   ============================================================ */
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+}
+
+table,
 .prose table {
   width: 100%;
   border-collapse: collapse;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.prose table {
+  min-width: 640px;
+}
+
+th,
+td,
+.prose th,
+.prose td {
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: none;
+}
+
+.prose th,
+.prose td {
+  padding: 0.75rem 0.875rem;
+  min-width: 110px;
+  vertical-align: top;
+}
+
+.prose thead th {
+  white-space: nowrap;
 }
 
 /* Hide default disclosure triangle on <summary> elements using custom chevrons */

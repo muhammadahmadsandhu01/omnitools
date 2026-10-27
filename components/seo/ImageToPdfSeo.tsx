@@ -198,8 +198,8 @@ export default function ImageToPdfSeo() {
           Different image formats serve distinct purposes, from compressed photographic lossy streams to lossless transparent graphics.
           KivaroTools provides specialized decoding and rasterization pipelines for each format:
         </p>
-        <div className="overflow-x-auto mb-4">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-4 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Image Format</th>
@@ -317,8 +317,8 @@ export default function ImageToPdfSeo() {
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           All performance metrics below were measured on actual, reproducible test fixtures using the KivaroTools client-side PDF generation engine:
         </p>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Fixture Description</th>
@@ -389,8 +389,8 @@ export default function ImageToPdfSeo() {
         <h3 id="image-to-pdf-kivarotools-vs-legacy-cloud-pd" className="text-xl sm:text-2xl font-semibold mb-3 text-slate-900 dark:text-slate-100">
           KivaroTools vs. Legacy Cloud PDF Converters
         </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature / Attribute</th>

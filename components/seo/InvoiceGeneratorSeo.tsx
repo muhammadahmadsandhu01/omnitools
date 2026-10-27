@@ -98,7 +98,7 @@ export default function InvoiceGeneratorSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
       {/* FAQ Schema Script Tag (Fix: previously missing in JSX) */}
       <script
         type="application/ld+json"
@@ -168,8 +168,8 @@ export default function InvoiceGeneratorSeo() {
           To ensure prompt payment and satisfy regional tax authority requirements (such as IRS W-9 guidelines, UK HMRC standards, or European VAT directives), commercial invoices must contain essential structural sections:
         </p>
 
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Section</th>
@@ -243,8 +243,8 @@ export default function InvoiceGeneratorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Using the correct commercial document prevents bookkeeping disputes and preserves audit integrity:
         </p>
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Document Type</th>

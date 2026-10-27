@@ -178,8 +178,8 @@ export default function PdfMergeSplitSeo() {
         <h3 id="pdf-merge-split-supported-pdf-workflows-at-a-g" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
           Supported PDF Workflows at a Glance
         </h3>
-        <div className="overflow-x-auto mb-8">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-8 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Workflow Mode</th>
@@ -227,8 +227,8 @@ export default function PdfMergeSplitSeo() {
           Most commercial online PDF utilities upload your documents to remote web servers where files are queued and processed
           via command-line tools. KivaroTools operates under a zero-upload client-side architecture:
         </p>
-        <div className="overflow-x-auto mb-4">
-          <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-4 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-bold">Feature / Attribute</th>

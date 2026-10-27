@@ -497,8 +497,8 @@ export function SalaryInsightsAndExportSuite({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
+          <div className="overflow-x-auto overscroll-x-contain">
+            <table className="min-w-[580px] w-full text-xs text-left">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-400 font-semibold">
                   <th className="py-2.5 pr-3">Frequency</th>

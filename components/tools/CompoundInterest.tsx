@@ -1910,7 +1910,7 @@ export default function CompoundInterest() {
                   <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     Return Scenarios (Side-by-Side Comparison)
                   </h3>
-                  <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 overscroll-x-contain">
                     <table className="w-full min-w-[560px] text-left text-xs">
                       <thead className="bg-slate-100 text-[10px] uppercase tracking-wider text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                         <tr>
@@ -2132,8 +2132,8 @@ export default function CompoundInterest() {
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
                     Percentile Distribution of Simulated Outcomes
                   </h4>
-                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                    <table className="w-full text-left text-xs">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 overscroll-x-contain">
+                    <table className="min-w-[580px] w-full text-left text-xs">
                       <thead className="bg-slate-100 text-[10px] uppercase text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                         <tr>
                           <th className="px-3 py-2.5 whitespace-nowrap">Percentile</th>
@@ -2290,7 +2290,7 @@ export default function CompoundInterest() {
                       RFC &amp; CFA Standard
                     </span>
                   </h4>
-                  <div className="space-y-2 font-mono text-[11px] bg-white/80 dark:bg-slate-950/60 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-slate-800 dark:text-slate-200 overflow-x-auto">
+                  <div className="space-y-2 font-mono text-[11px] bg-white/80 dark:bg-slate-950/60 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-slate-800 dark:text-slate-200 overflow-x-auto overscroll-x-contain">
                     <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
                       <strong>1. Discrete Lump-Sum Growth:</strong> A = P &times; (1 + r/m)^(m &times; t)
                     </p>

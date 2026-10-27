@@ -741,7 +741,7 @@ export default function EmiCalculator() {
                   </div>
                 </div>
 
-                <div className="text-3xl sm:text-5xl font-extrabold tracking-tight font-mono whitespace-nowrap overflow-x-auto py-1">
+                <div className="text-3xl sm:text-5xl font-extrabold tracking-tight font-mono whitespace-nowrap overflow-x-auto py-1 overscroll-x-contain">
                   {currency.symbol}
                   {hasCalculatedLoan ? formatCurrencyAmount(scheduledPayment, currency) : '0.00'}
                 </div>
@@ -995,7 +995,7 @@ export default function EmiCalculator() {
         {activeTab === 'schedule' && (
           <div id="panel-schedule" role="tabpanel" aria-labelledby="tab-schedule" className="p-4 sm:p-6 min-w-0">
             {schedule.length > 0 ? (
-              <div className="max-h-[520px] overflow-y-auto overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 [scrollbar-width:thin]">
+              <div className="max-h-[520px] overflow-y-auto overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 [scrollbar-width:thin] overscroll-x-contain">
                 <table className="w-full text-left border-collapse min-w-[720px] font-mono text-xs">
                   <thead className="sticky top-0 bg-slate-100 dark:bg-slate-900 shadow-sm z-10 font-sans uppercase text-[11px] text-slate-600 dark:text-slate-400">
                     <tr>
@@ -1061,7 +1061,7 @@ export default function EmiCalculator() {
         {activeTab === 'yearly' && (
           <div id="panel-yearly" role="tabpanel" aria-labelledby="tab-yearly" className="p-4 sm:p-6 min-w-0">
             {yearlySummary.length > 0 ? (
-              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 overscroll-x-contain">
                 <table className="w-full text-left border-collapse min-w-[700px] font-mono text-xs">
                   <thead className="bg-slate-100 dark:bg-slate-900 font-sans uppercase text-[11px] text-slate-600 dark:text-slate-400">
                     <tr>

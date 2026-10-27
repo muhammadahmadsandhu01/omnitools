@@ -20,6 +20,12 @@ import SqlFormatter from '@/components/tools/SqlFormatter';
 import RegexTester from '@/components/tools/RegexTester';
 import PdfMergeSplit from '@/components/tools/PdfMergeSplit';
 import ImageToPdf from '@/components/tools/ImageToPdf';
+import PdfToWord from '@/components/tools/PdfToWord';
+import WordToPdf from '@/components/tools/WordToPdf';
+import PdfToExcel from '@/components/tools/PdfToExcel';
+import ExcelToPdf from '@/components/tools/ExcelToPdf';
+import PdfToPpt from '@/components/tools/PdfToPpt';
+import PdfToJpg from '@/components/tools/PdfToJpg';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
 import ImageCompressor from '@/components/tools/ImageCompressor';
 import QrGenerator from '@/components/tools/QrGenerator';
@@ -47,6 +53,12 @@ import SqlFormatterSeo from '@/components/seo/SqlFormatterSeo';
 import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
 import PdfMergeSplitSeo from '@/components/seo/PdfMergeSplitSeo';
 import ImageToPdfSeo from '@/components/seo/ImageToPdfSeo';
+import PdfToWordSeo from '@/components/seo/PdfToWordSeo';
+import WordToPdfSeo from '@/components/seo/WordToPdfSeo';
+import PdfToExcelSeo from '@/components/seo/PdfToExcelSeo';
+import ExcelToPdfSeo from '@/components/seo/ExcelToPdfSeo';
+import PdfToPptSeo from '@/components/seo/PdfToPptSeo';
+import PdfToJpgSeo from '@/components/seo/PdfToJpgSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
 import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
 import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
@@ -82,6 +94,20 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   // Document
   'pdf-merge-split': PdfMergeSplit,
   'image-to-pdf': ImageToPdf,
+  'pdf-to-word': PdfToWord,
+  'pdf-to-docx': PdfToWord, // Alias
+  'word-to-pdf': WordToPdf,
+  'docx-to-pdf': WordToPdf, // Alias
+  'pdf-to-excel': PdfToExcel,
+  'pdf-to-xlsx': PdfToExcel, // Alias
+  'excel-to-pdf': ExcelToPdf,
+  'xlsx-to-pdf': ExcelToPdf, // Alias
+  'pdf-to-ppt': PdfToPpt,
+  'pdf-to-pptx': PdfToPpt, // Alias
+  'pdf-to-powerpoint': PdfToPpt, // Alias
+  'pdf-to-jpg': PdfToJpg,
+  'pdf-to-png': PdfToJpg, // Alias
+  'pdf-to-image': PdfToJpg, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPng,
@@ -126,6 +152,20 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,
   'image-to-pdf': ImageToPdfSeo,
+  'pdf-to-word': PdfToWordSeo,
+  'pdf-to-docx': PdfToWordSeo, // Alias
+  'word-to-pdf': WordToPdfSeo,
+  'docx-to-pdf': WordToPdfSeo, // Alias
+  'pdf-to-excel': PdfToExcelSeo,
+  'pdf-to-xlsx': PdfToExcelSeo, // Alias
+  'excel-to-pdf': ExcelToPdfSeo,
+  'xlsx-to-pdf': ExcelToPdfSeo, // Alias
+  'pdf-to-ppt': PdfToPptSeo,
+  'pdf-to-pptx': PdfToPptSeo, // Alias
+  'pdf-to-powerpoint': PdfToPptSeo, // Alias
+  'pdf-to-jpg': PdfToJpgSeo,
+  'pdf-to-png': PdfToJpgSeo, // Alias
+  'pdf-to-image': PdfToJpgSeo, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPngSeo,

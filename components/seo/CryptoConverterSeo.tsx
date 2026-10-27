@@ -255,8 +255,8 @@ export default function CryptoConverterSeo() {
           When exchanging currencies through commercial intermediaries, the rate advertised is rarely the rate received. Here is how transaction costs are distributed across providers:
         </p>
 
-        <div className="overflow-x-auto mb-6">
-          <table className="min-w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Conversion Channel</th>

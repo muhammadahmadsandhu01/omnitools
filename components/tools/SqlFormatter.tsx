@@ -2029,7 +2029,7 @@ export default function SqlFormatter() {
                 <div className="text-sm text-slate-400">Enter SQL to compare the raw input with the formatted output.</div>
               ) : (
                 <div className="rounded-xl border border-gray-200 dark:border-slate-800 overflow-auto max-h-96">
-                  <table className="w-full text-xs font-mono">
+                  <table className="min-w-[580px] w-full text-xs font-mono">
                     <thead className="sticky top-0 bg-gray-50 dark:bg-[#0a0f1a]">
                       <tr>
                         <th className="text-left p-2 w-12">#</th>

@@ -137,7 +137,7 @@ export default function SvgOptimizerSeo() {
         }}
       />
 
-      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+      <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
         {/* Zone 2: Deep-Dive Architecture & Engine Sections */}
         <section aria-labelledby="svg-optimizer-architecture" className="mb-8">
           <h2 id="svg-optimizer-architecture" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
@@ -251,8 +251,8 @@ export default function SvgOptimizerSeo() {
           <h2 id="svg-optimizer-comparison-matrix" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Technical Specification: Optimization Presets Comparison
           </h2>
-          <div className="overflow-x-auto mb-6">
-            <table className="min-w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Preset Mode</th>

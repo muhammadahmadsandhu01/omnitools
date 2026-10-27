@@ -666,7 +666,7 @@ export default function CryptoConverter() {
               </div>
 
               {/* Converted Amount Primary Display */}
-              <div className="text-3xl sm:text-5xl font-extrabold tracking-tight font-mono whitespace-nowrap overflow-x-auto py-1">
+              <div className="text-3xl sm:text-5xl font-extrabold tracking-tight font-mono whitespace-nowrap overflow-x-auto py-1 overscroll-x-contain">
                 {conversionResult.isValid && conversionResult.rawConvertedAmount !== null ? (
                   formatCurrencyAmount(
                     conversionResult.rawConvertedAmount,

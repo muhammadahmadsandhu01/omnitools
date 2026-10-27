@@ -206,8 +206,8 @@ export default function WebpToJpgPngSeo() {
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Understanding the architectural trade-offs between WebP, JPEG, and PNG ensures you choose the optimal output format for your specific workflow:
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">Specification</th>
@@ -334,8 +334,8 @@ export default function WebpToJpgPngSeo() {
         <p className="text-sm text-slate-600 dark:text-slate-400">
           Compare our client-side architecture against popular cloud-hosted image conversion platforms:
         </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[640px] w-full text-left text-xs sm:text-sm border-collapse border border-slate-200 dark:border-slate-800">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
                 <th className="p-3 border border-slate-200 dark:border-slate-800 font-semibold">Capability</th>

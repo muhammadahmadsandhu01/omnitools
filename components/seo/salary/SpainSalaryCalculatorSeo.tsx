@@ -48,7 +48,7 @@ export default function SpainSalaryCalculatorSeo() {
   };
 
   return (
-    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-8 rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
+    <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
       {/* FAQ Schema */}
       <script
         type="application/ld+json"
@@ -85,8 +85,8 @@ export default function SpainSalaryCalculatorSeo() {
       <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
         Representative Spain Salary &amp; Net Take-Home Pay Examples (2026)
       </h3>
-      <div className="overflow-x-auto mb-6">
-        <table className="w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
+        <table className="min-w-[640px] w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Annual Gross (EUR)</th>
