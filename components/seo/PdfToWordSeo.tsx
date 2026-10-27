@@ -140,7 +140,9 @@ export default function PdfToWordSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert PDF to Editable Word (.DOCX) with 100% Client-Side Privacy</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert PDF to Editable Word (.DOCX) with 100% Client-Side Privacy
+      </h2>
       <p>
         The <strong>KivaroTools PDF to Word Converter</strong> is a high-performance, browser-native document reconstruction utility engineered to transform static PDF files into fully editable <strong>Microsoft Word (<code>.docx</code>)</strong>, <strong>Markdown (<code>.md</code>)</strong>, and <strong>Plain Text (<code>.txt</code>)</strong> documents. Built on a deterministic OpenXML packaging architecture, it processes files up to <strong>250 MB</strong> entirely in local browser RAM without sending a single byte across the network.
       </p>
@@ -151,7 +153,9 @@ export default function PdfToWordSeo() {
         </p>
       </blockquote>
 
-      <h2>How Our Spatial X/Y Coordinate Reconstruction Engine Works</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        How Our Spatial X/Y Coordinate Reconstruction Engine Works
+      </h2>
       <p>
         PDF files do not store semantic paragraphs, tables, or heading tags. Instead, a PDF page contains thousands of raw positioning instructions (such as <code>BT ... ET</code> text blocks, <code>Tf</code> font selections, <code>Td</code>/<code>TD</code>/<code>Tm</code> positioning operators, and <code>Tj</code>/<code>TJ</code> character arrays). Standard scrapers dump these commands into broken, line-by-line fragments. Our engine reverses this fragmentation through a 5-stage geometric pipeline:
       </p>
@@ -173,59 +177,61 @@ export default function PdfToWordSeo() {
         </li>
       </ol>
 
-      <h2>OpenXML Typography &amp; Layout Heuristics Specification</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        OpenXML Typography &amp; Layout Heuristics Specification
+      </h2>
       <p>
         The table below details the mathematical thresholds and ECMA-376 styling tokens utilized by <code>lib/pdfToWordEngine.ts</code> to reconstruct clean, editable documents without floating text boxes:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Document Element</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Detection Heuristic</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">OpenXML Target Style</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Font &amp; Spacing Metrics</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Document Element</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Detection Heuristic</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">OpenXML Target Style</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Font &amp; Spacing Metrics</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 1 (H1)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 1 (H1)</td>
               <td className="p-3"><code>fontSize &ge; F_med &times; 1.45</code></td>
               <td className="p-3"><code>&lt;w:pStyle w:val=&quot;Heading1&quot;/&gt;</code></td>
               <td className="p-3">36 half-pt (18pt) Calibri Bold, 240 dxa space after</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 2 (H2)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 2 (H2)</td>
               <td className="p-3"><code>fontSize &ge; F_med &times; 1.22</code></td>
               <td className="p-3"><code>&lt;w:pStyle w:val=&quot;Heading2&quot;/&gt;</code></td>
               <td className="p-3">28 half-pt (14pt) Calibri Bold, 180 dxa space after</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 3 (H3)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 3 (H3)</td>
               <td className="p-3"><code>fontSize &ge; F_med &times; 1.10</code></td>
               <td className="p-3"><code>&lt;w:pStyle w:val=&quot;Heading3&quot;/&gt;</code></td>
               <td className="p-3">24 half-pt (12pt) Calibri Bold, 120 dxa space after</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Body Paragraph</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Body Paragraph</td>
               <td className="p-3"><code>fontSize &approx; F_med</code></td>
               <td className="p-3"><code>&lt;w:pStyle w:val=&quot;Normal&quot;/&gt;</code></td>
               <td className="p-3">22 half-pt (11pt) Calibri Regular, 1.15x line spacing</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Tabular Grid (Table)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Tabular Grid (Table)</td>
               <td className="p-3"><code>gap &gt; max(24 pt, 1.1 &times; fontSize)</code></td>
               <td className="p-3"><code>&lt;w:tbl&gt;</code> + <code>&lt;w:tr&gt;</code> + <code>&lt;w:tc&gt;</code></td>
               <td className="p-3">100% width, #cbd5e1 cell borders, #f1f5f9 header fill</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Bullet &amp; Numbered Lists</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Bullet &amp; Numbered Lists</td>
               <td className="p-3">Starts with <code>&bull;, &ndash;, *, 1., a)</code></td>
               <td className="p-3">Indented paragraph list block</td>
               <td className="p-3">Left hanging indent 360 dxa with bullet symbol preservation</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Page Boundary</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Page Boundary</td>
               <td className="p-3"><code>exact_page_breaks</code> mode</td>
               <td className="p-3"><code>&lt;w:br w:type=&quot;page&quot;/&gt;</code></td>
               <td className="p-3">Hard page break at each PDF page termination</td>
@@ -234,63 +240,65 @@ export default function PdfToWordSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Converters</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Converters
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools PDF to Word</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Nitro PDF Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools PDF to Word</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Nitro PDF Online</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Processing Architecture</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Processing Architecture</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% Client-Side (Local RAM)</td>
               <td className="p-3 text-red-500">Cloud Server Upload</td>
               <td className="p-3 text-red-500">Adobe Document Cloud</td>
               <td className="p-3 text-red-500">Nitro Cloud Storage</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">File Size Limit (Free)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">File Size Limit (Free)</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant In-Memory)</td>
               <td className="p-3">15 MB to 50 MB</td>
               <td className="p-3">100 MB (Requires Account)</td>
               <td className="p-3">25 MB (Email Required)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Multi-Format Triple Export</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Multi-Format Triple Export</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">.DOCX, .MD (Markdown), .TXT</td>
               <td className="p-3">.DOCX only</td>
               <td className="p-3">.DOCX / .RTF</td>
               <td className="p-3">.DOCX only</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Pre-Download Live Inspector</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Pre-Download Live Inspector</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">3-Tab Live Preview &amp; Editor</td>
               <td className="p-3 text-red-500">None (Blind Download)</td>
               <td className="p-3">Subscription Paywall</td>
               <td className="p-3 text-red-500">None</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Dual Layout Reconstruction</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Dual Layout Reconstruction</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Editable Flow vs Exact Page Breaks</td>
               <td className="p-3">Fixed Text Boxes</td>
               <td className="p-3">Proprietary Flow</td>
               <td className="p-3">Rigid Frame Blocks</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Daily Task Limits</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Daily Task Limits</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Unlimited &amp; Free Forever</td>
               <td className="p-3 text-amber-500">1–2 tasks / day cap</td>
               <td className="p-3 text-amber-500">1 free trial task</td>
               <td className="p-3 text-amber-500">5 files / month</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Data Privacy &amp; Compliance</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Data Privacy &amp; Compliance</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">HIPAA &amp; GDPR Compliant by Design</td>
               <td className="p-3">Third-Party Data Processor</td>
               <td className="p-3">Subject to Cloud Terms</td>
@@ -300,13 +308,15 @@ export default function PdfToWordSeo() {
         </table>
       </div>
 
-      <h2>PDF-to-Word Engineering &amp; Prepress Troubleshooting Diagnostic Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        PDF-to-Word Engineering &amp; Prepress Troubleshooting Diagnostic Grid
+      </h2>
       <p>
         Address common parsing anomalies, font subsetting challenges, and layout edge cases using these engineering resolutions:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Why Scanned Raster PDFs Produce Empty Text Blocks
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -315,7 +325,7 @@ export default function PdfToWordSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. Choosing Between Editable Flow and Exact Page Breaks
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -324,7 +334,7 @@ export default function PdfToWordSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Horizontal X-Gap Clustering Prevents Table Column Collapse
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -333,7 +343,7 @@ export default function PdfToWordSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Fixing Missing or Garbled Characters from Subsetted CID Fonts
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -342,7 +352,7 @@ export default function PdfToWordSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. Unlocking Password-Protected PDFs &amp; Corrupted Headers
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -351,7 +361,7 @@ export default function PdfToWordSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. Converting 100–250 MB Multi-Chapter PDFs in Browser RAM
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -360,7 +370,9 @@ export default function PdfToWordSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for Local PDF-to-DOCX Conversion</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for Local PDF-to-DOCX Conversion
+      </h2>
       <ul>
         <li>
           <strong>Legal Agreement &amp; NDA Redlining:</strong> In-house counsel and paralegals convert counterpart PDF contracts into Microsoft Word documents to initiate Track Changes and redlines without violating non-disclosure or data residency obligations.
@@ -376,7 +388,9 @@ export default function PdfToWordSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {PDF_TO_WORD_FAQS.map((faq, index) => (
           <details
@@ -384,7 +398,7 @@ export default function PdfToWordSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -394,7 +408,9 @@ export default function PdfToWordSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; PDF Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; PDF Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/word-to-pdf" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">

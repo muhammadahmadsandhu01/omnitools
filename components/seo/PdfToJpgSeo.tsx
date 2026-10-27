@@ -140,7 +140,9 @@ export default function PdfToJpgSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert PDF to High-Resolution JPG, PNG &amp; WebP with Zero Server Uploads</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert PDF to High-Resolution JPG, PNG &amp; WebP with Zero Server Uploads
+      </h2>
       <p>
         The <strong>KivaroTools PDF to JPG, PNG &amp; WebP Converter</strong> is a high-performance, client-side document rasterization suite designed for graphic designers, prepress technicians, web developers, and legal teams. Operating across <strong>72 DPI</strong>, <strong>150 DPI</strong>, <strong>300 DPI</strong>, and <strong>600 DPI</strong> tiers, it transforms PDF pages up to <strong>250 MB</strong> into crisp raster images directly in browser RAM with instant single-page and batch ZIP downloads.
       </p>
@@ -151,7 +153,9 @@ export default function PdfToJpgSeo() {
         </p>
       </blockquote>
 
-      <h2>Point-to-Pixel Scaling Mathematics &amp; DPI Engineering</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Point-to-Pixel Scaling Mathematics &amp; DPI Engineering
+      </h2>
       <p>
         PDF layout systems use PostScript points, where <code>1 point = 1/72 inch</code>. When rasterizing to pixels, the target dimensions scale directly with the chosen DPI (dots per inch) setting:
       </p>
@@ -164,45 +168,47 @@ export default function PdfToJpgSeo() {
         To protect mobile devices and browser tabs from GPU canvas buffer overflows (such as the 16-megapixel canvas limit in WebKit), KivaroTools applies a hardware-safe dimension clamp at <code>4096 px</code> maximum edge, ensuring reliable performance across all operating systems.
       </p>
 
-      <h2>4-Tier DPI Resolution &amp; Format Comparison Matrix</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        4-Tier DPI Resolution &amp; Format Comparison Matrix
+      </h2>
       <p>
         The table below details exact output pixel dimensions for standard US Letter and A4 geometries across all 4 DPI presets, alongside format encoding properties implemented in <code>lib/pdfToJpgEngine.ts</code>:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">DPI Preset</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Scale Factor</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">US Letter (612 &times; 792 pt)</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">A4 (595.28 &times; 841.89 pt)</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Format Compression &amp; Optimal Use</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">DPI Preset</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[120px]">Scale Factor</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">US Letter (612 &times; 792 pt)</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">A4 (595.28 &times; 841.89 pt)</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Format Compression &amp; Optimal Use</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">72 DPI (Screen)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">72 DPI (Screen)</td>
               <td className="p-3">1.00&times; native</td>
               <td className="p-3">612 &times; 792 px</td>
               <td className="p-3">595 &times; 842 px</td>
               <td className="p-3">JPG/WebP ~40 KB; lightweight email thumbnails &amp; quick previews</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">150 DPI (Web/Retina)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">150 DPI (Web/Retina)</td>
               <td className="p-3">2.08&times; native</td>
               <td className="p-3">1275 &times; 1650 px</td>
               <td className="p-3">1240 &times; 1754 px</td>
               <td className="p-3">WebP/JPG ~120 KB; LinkedIn carousel slides &amp; Retina blog embeds</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">300 DPI (Print/OCR)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">300 DPI (Print/OCR)</td>
               <td className="p-3">4.17&times; native</td>
               <td className="p-3">2550 &times; 3300 px</td>
               <td className="p-3">2480 &times; 3508 px</td>
               <td className="p-3">PNG/JPG ~350 KB; commercial printing, legal exhibits &amp; OCR text recognition</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">600 DPI (Archival Ultra-HD)</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">600 DPI (Archival Ultra-HD)</td>
               <td className="p-3">8.33&times; (clamped at 4096 px)</td>
               <td className="p-3">3171 &times; 4096 px</td>
               <td className="p-3">2898 &times; 4096 px</td>
@@ -212,63 +218,65 @@ export default function PdfToJpgSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Rasterizers</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Rasterizers
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools PDF to Image</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">pdf2jpg.net</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools PDF to Image</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">pdf2jpg.net</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Processing Architecture</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Processing Architecture</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% Client-Side (HTML5 Canvas)</td>
               <td className="p-3 text-red-500">Cloud Server Upload</td>
               <td className="p-3 text-red-500">Adobe Document Cloud</td>
               <td className="p-3 text-red-500">Remote Linux Server</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Resolution Tiers Available</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Resolution Tiers Available</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">72, 150, 300, and 600 DPI</td>
               <td className="p-3 text-amber-500">72 &amp; 150 DPI (300 DPI Paid)</td>
               <td className="p-3 text-amber-500">Standard only (Subscription)</td>
               <td className="p-3">Regular, Medium, Good</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Formats Supported</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Formats Supported</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">JPG, Lossless PNG, WebP</td>
               <td className="p-3">JPG only</td>
               <td className="p-3">JPG / PNG</td>
               <td className="p-3">JPG only</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Quality Adjustment Slider</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Quality Adjustment Slider</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">50% to 100% (Default 92%)</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3 text-red-500">None</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Maximum File Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Maximum File Size</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant RAM Processing)</td>
               <td className="p-3 text-amber-500">15 MB to 50 MB</td>
               <td className="p-3 text-amber-500">100 MB (Requires Account)</td>
               <td className="p-3 text-amber-500">25 MB</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Batch ZIP Bundle Export</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Batch ZIP Bundle Export</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">One-Click DEFLATE ZIP Archive</td>
               <td className="p-3">ZIP Download</td>
               <td className="p-3">ZIP Download</td>
               <td className="p-3">ZIP Download</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Privacy &amp; Compliance</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Privacy &amp; Compliance</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">HIPAA &amp; GDPR Compliant by Design</td>
               <td className="p-3 text-red-500">Third-Party Data Processor</td>
               <td className="p-3 text-red-500">Subject to Cloud Terms</td>
@@ -278,13 +286,15 @@ export default function PdfToJpgSeo() {
         </table>
       </div>
 
-      <h2>PDF-to-Image DPI, Format &amp; Canvas Memory Troubleshooting Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        PDF-to-Image DPI, Format &amp; Canvas Memory Troubleshooting Grid
+      </h2>
       <p>
         Address common resolution choices, browser memory limitations, and alpha transparency edge cases with these guidelines:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Choosing Between 72, 150, 300, and 600 DPI
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -293,7 +303,7 @@ export default function PdfToJpgSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. When to Export JPG vs. PNG vs. WebP
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -302,7 +312,7 @@ export default function PdfToJpgSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Quality Slider Behavior: Lossy JPG/WebP vs. Lossless PNG
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -311,7 +321,7 @@ export default function PdfToJpgSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Preventing GPU Memory Limits on 100+ Page PDFs
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -320,7 +330,7 @@ export default function PdfToJpgSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. Single Page Saves vs. Batch DEFLATE ZIP Archive
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -329,7 +339,7 @@ export default function PdfToJpgSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. Chaining with Image Compressor &amp; Image to PDF
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -338,7 +348,9 @@ export default function PdfToJpgSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for PDF-to-Image Rasterization</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for PDF-to-Image Rasterization
+      </h2>
       <ul>
         <li>
           <strong>LinkedIn &amp; Social Media Carousel Publishing:</strong> Marketers convert PDF presentation decks into sequences of 150 DPI JPG or WebP slides, ready for upload to LinkedIn document posts and Instagram swipe carousels.
@@ -354,7 +366,9 @@ export default function PdfToJpgSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {PDF_TO_JPG_FAQS.map((faq, index) => (
           <details
@@ -362,7 +376,7 @@ export default function PdfToJpgSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -372,7 +386,9 @@ export default function PdfToJpgSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; Image Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; Image Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/image-to-pdf" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">

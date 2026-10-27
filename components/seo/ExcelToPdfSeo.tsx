@@ -140,7 +140,9 @@ export default function ExcelToPdfSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert Excel (.XLSX) &amp; CSV to Auto-Fitted Vector PDF Reports</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert Excel (.XLSX) &amp; CSV to Auto-Fitted Vector PDF Reports
+      </h2>
       <p>
         The <strong>KivaroTools Excel to PDF Converter</strong> is an executive-grade, client-side spreadsheet typesetting engine engineered to transform <strong>Microsoft Excel (<code>.xlsx</code>, <code>.xls</code>)</strong>, <strong>Comma-Separated (<code>.csv</code>)</strong>, and <strong>Tab-Separated (<code>.tsv</code>)</strong> files into polished, presentation-ready vector PDF documents. Supporting files up to <strong>250 MB</strong> entirely within browser RAM, it eliminates the awkward horizontal column cut-offs common to desktop &ldquo;Print to PDF&rdquo; utilities.
       </p>
@@ -151,71 +153,73 @@ export default function ExcelToPdfSeo() {
         </p>
       </blockquote>
 
-      <h2>Spreadsheet Page Geometry &amp; Column Auto-Fit Specification</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Spreadsheet Page Geometry &amp; Column Auto-Fit Specification
+      </h2>
       <p>
         The table below details the mathematical column auto-fitting heuristics, page geometries, and executive styling tokens implemented in <code>lib/excelToPdfEngine.ts</code>:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Parameter / Rule</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Supported Values / Threshold</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Exact Dimensions &amp; Styling</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Production Layout Purpose</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Parameter / Rule</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Supported Values / Threshold</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Exact Dimensions &amp; Styling</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Production Layout Purpose</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">A4 Page Geometry</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">A4 Page Geometry</td>
               <td className="p-3"><code>pageSize: &apos;a4&apos;</code></td>
               <td className="p-3">595.28 &times; 841.89 pt (210 &times; 297 mm)</td>
               <td className="p-3">International standard corporate &amp; audit reports</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">US Letter Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">US Letter Size</td>
               <td className="p-3"><code>pageSize: &apos;letter&apos;</code></td>
               <td className="p-3">612.00 &times; 792.00 pt (8.5 &times; 11.0 in)</td>
               <td className="p-3">North American financial statements &amp; invoices</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">US Legal Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">US Legal Size</td>
               <td className="p-3"><code>pageSize: &apos;legal&apos;</code></td>
               <td className="p-3">612.00 &times; 1008.00 pt (8.5 &times; 14.0 in)</td>
               <td className="p-3">Long amortizations &amp; court financial exhibits</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">A3 Ledger Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">A3 Ledger Size</td>
               <td className="p-3"><code>pageSize: &apos;a3&apos;</code></td>
               <td className="p-3">841.89 &times; 1190.55 pt (297 &times; 420 mm)</td>
               <td className="p-3">Wide 15–20 column balance sheets &amp; engineering BOMs</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Auto Landscape Mode</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Auto Landscape Mode</td>
               <td className="p-3"><code>orientation: &apos;auto&apos;</code></td>
               <td className="p-3">Swaps width/height if <code>colCount &ge; 6</code></td>
               <td className="p-3">Eliminates horizontal right-column cut-off</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Column Weighting</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Column Weighting</td>
               <td className="p-3">95th-percentile (p95) sampling</td>
               <td className="p-3"><code>clamp(6, p95_length, 45)</code></td>
               <td className="p-3">Prevents single outlier cells from crushing narrow columns</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Repeating Header Row</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Repeating Header Row</td>
               <td className="p-3"><code>repeatHeader: true</code></td>
               <td className="p-3">#0f172a navy fill, white bold Helvetica</td>
               <td className="p-3">Ensures readability across multi-page continuations</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Zebra Striping</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Zebra Striping</td>
               <td className="p-3"><code>zebraStriping: true</code></td>
               <td className="p-3">#f8fafc (slate-50) fill on odd data rows</td>
               <td className="p-3">Improves horizontal eye tracking across wide ledgers</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Vector Cell Borders</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Vector Cell Borders</td>
               <td className="p-3"><code>showGridlines: true</code></td>
               <td className="p-3">0.5 pt stroke, #cbd5e1 (slate-300)</td>
               <td className="p-3">Crisp, non-blurry vector table gridlines</td>
@@ -224,63 +228,65 @@ export default function ExcelToPdfSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud Spreadsheet Converters</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud Spreadsheet Converters
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools Excel to PDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Excel Desktop &ldquo;Print to PDF&rdquo;</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools Excel to PDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Excel Desktop &ldquo;Print to PDF&rdquo;</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Column Auto-Fitting</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Column Auto-Fitting</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Proportional 95th-Percentile Auto-Fit</td>
               <td className="p-3 text-red-500">Fixed Print Boundaries</td>
               <td className="p-3">Standard Print Slicing</td>
               <td className="p-3 text-amber-500">Splits columns onto orphan pages</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Smart Auto-Landscape</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Smart Auto-Landscape</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Automatic for &ge; 6 Columns</td>
               <td className="p-3 text-red-500">Manual orientation only</td>
               <td className="p-3 text-red-500">Manual orientation only</td>
               <td className="p-3 text-red-500">Requires Page Setup dialog</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Maximum File Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Maximum File Size</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant Local RAM)</td>
               <td className="p-3 text-amber-500">15 MB to 50 MB</td>
               <td className="p-3 text-amber-500">100 MB (Requires Account)</td>
               <td className="p-3">Local Memory Bound</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Supported Formats</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Supported Formats</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">.XLSX, .XLS, .CSV, .TSV</td>
               <td className="p-3">.XLSX only</td>
               <td className="p-3">.XLSX / .XLS</td>
               <td className="p-3">Installed formats only</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Multi-Sheet Tab Filtering</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Multi-Sheet Tab Filtering</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Export All Tabs or Select Specific Sheet</td>
               <td className="p-3 text-red-500">Converts all tabs blindly</td>
               <td className="p-3 text-red-500">Converts all tabs blindly</td>
               <td className="p-3">Active Sheet or Entire Workbook</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Repeating Navy Header</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Repeating Navy Header</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Built-In Navy Fill (#0f172a)</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3">Requires Print Titles configuration</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Privacy &amp; Data Security</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Privacy &amp; Data Security</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% Client-Side (No Uploads)</td>
               <td className="p-3 text-red-500">Cloud Server Upload</td>
               <td className="p-3 text-red-500">Adobe Cloud Upload</td>
@@ -290,13 +296,15 @@ export default function ExcelToPdfSeo() {
         </table>
       </div>
 
-      <h2>Excel-to-PDF Layout &amp; Column-Fitting Troubleshooting Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Excel-to-PDF Layout &amp; Column-Fitting Troubleshooting Grid
+      </h2>
       <p>
         Diagnostic guidelines for preventing clipped columns, managing formula caches, and formatting wide financial models:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Eliminating Right-Column Cut-Offs with Auto-Landscape
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -305,7 +313,7 @@ export default function ExcelToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. Using A3 Ledger for 12–20 Column Financial Models
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -314,7 +322,7 @@ export default function ExcelToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Rendering Cached Formula Values (=SUM, =VLOOKUP)
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -323,7 +331,7 @@ export default function ExcelToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Preserving Leading Zeros in CSV ZIP Codes &amp; SKUs
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -332,7 +340,7 @@ export default function ExcelToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. Exporting Target Summary Tabs vs. All Workbook Sheets
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -341,7 +349,7 @@ export default function ExcelToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. Handling Embedded Floating Charts in Spreadsheet Workbooks
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -350,7 +358,9 @@ export default function ExcelToPdfSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for Spreadsheet-to-PDF Conversion</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for Spreadsheet-to-PDF Conversion
+      </h2>
       <ul>
         <li>
           <strong>Financial Audit &amp; General Ledger Reporting:</strong> CPAs and controllers convert multi-thousand-row trial balances, general ledgers, and cash flow schedules into immutable, audit-ready vector PDF files with repeating navy headers.
@@ -366,7 +376,9 @@ export default function ExcelToPdfSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {EXCEL_TO_PDF_FAQS.map((faq, index) => (
           <details
@@ -374,7 +386,7 @@ export default function ExcelToPdfSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -384,7 +396,9 @@ export default function ExcelToPdfSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; Spreadsheet Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; Spreadsheet Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/pdf-to-excel" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">

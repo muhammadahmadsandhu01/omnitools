@@ -140,7 +140,9 @@ export default function WordToPdfSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert Word (.DOCX) &amp; Markdown to Print-Ready Vector PDF Online</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert Word (.DOCX) &amp; Markdown to Print-Ready Vector PDF Online
+      </h2>
       <p>
         The <strong>KivaroTools Word to PDF Converter</strong> is an executive-grade, client-side typesetting engine designed to transform <strong>Microsoft Word (<code>.docx</code>)</strong>, <strong>Markdown (<code>.md</code>)</strong>, and <strong>Plain Text (<code>.txt</code>)</strong> documents into crisp, searchable vector PDF files. Processing documents up to <strong>250 MB</strong> entirely within your browser&apos;s local RAM, it eliminates the file size limits, queues, and security vulnerabilities of remote cloud conversion portals.
       </p>
@@ -151,71 +153,73 @@ export default function WordToPdfSeo() {
         </p>
       </blockquote>
 
-      <h2>Page Geometry, Margin &amp; Typography Specification</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Page Geometry, Margin &amp; Typography Specification
+      </h2>
       <p>
         The table below details the exact dimensional specifications, margin presets, and typographical scaling ratios implemented in <code>lib/wordToPdfEngine.ts</code>:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Parameter</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Supported Values</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Exact Dimensions (Points / mm)</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Target Production Use Case</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Parameter</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Supported Values</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Exact Dimensions (Points / mm)</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Target Production Use Case</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">A4 Paper Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">A4 Paper Size</td>
               <td className="p-3"><code>pageSize: &apos;a4&apos;</code></td>
               <td className="p-3">595.28 &times; 841.89 pt (210 &times; 297 mm)</td>
               <td className="p-3">International standard, UK/EU business &amp; academic</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">US Letter Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">US Letter Size</td>
               <td className="p-3"><code>pageSize: &apos;letter&apos;</code></td>
               <td className="p-3">612.00 &times; 792.00 pt (8.5 &times; 11.0 in)</td>
               <td className="p-3">North American corporate memos, invoices &amp; resumes</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">US Legal Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">US Legal Size</td>
               <td className="p-3"><code>pageSize: &apos;legal&apos;</code></td>
               <td className="p-3">612.00 &times; 1008.00 pt (8.5 &times; 14.0 in)</td>
               <td className="p-3">Court filings, loan disclosures &amp; real estate deeds</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Narrow Margin</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Narrow Margin</td>
               <td className="p-3"><code>margins: &apos;narrow&apos;</code></td>
               <td className="p-3">36.00 pt (0.50 in / 12.7 mm)</td>
               <td className="p-3">High-density single-page resumes &amp; technical specs</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Normal Margin</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Normal Margin</td>
               <td className="p-3"><code>margins: &apos;normal&apos;</code></td>
               <td className="p-3">54.00 pt (0.75 in / 19.0 mm)</td>
               <td className="p-3">Standard executive proposals &amp; formal agreements</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Wide Margin</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Wide Margin</td>
               <td className="p-3"><code>margins: &apos;wide&apos;</code></td>
               <td className="p-3">72.00 pt (1.00 in / 25.4 mm)</td>
               <td className="p-3">Spacious editorial publications &amp; legal briefs</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 1 Scale</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 1 Scale</td>
               <td className="p-3"><code>H1 = baseSize &times; 1.65</code></td>
               <td className="p-3">16.5 pt / 18.15 pt / 19.8 pt Bold</td>
               <td className="p-3">Document title and primary section divisions</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 2 Scale</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 2 Scale</td>
               <td className="p-3"><code>H2 = baseSize &times; 1.35</code></td>
               <td className="p-3">13.5 pt / 14.85 pt / 16.2 pt Bold</td>
               <td className="p-3">Major sub-sections and topic headers</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Heading 3 Scale</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Heading 3 Scale</td>
               <td className="p-3"><code>H3 = baseSize &times; 1.15</code></td>
               <td className="p-3">11.5 pt / 12.65 pt / 13.8 pt Bold</td>
               <td className="p-3">Minor sub-headings and module identifiers</td>
@@ -224,63 +228,65 @@ export default function WordToPdfSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud Word Converters</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud Word Converters
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools Word to PDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Pandoc CLI</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools Word to PDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Pandoc CLI</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Conversion Engine</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Conversion Engine</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% In-Browser (pdf-lib Vector)</td>
               <td className="p-3 text-red-500">Cloud Server Farm</td>
               <td className="p-3 text-red-500">Adobe Document Cloud</td>
               <td className="p-3">Local CLI (Requires TeX Live)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Input Formats Supported</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Input Formats Supported</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">.DOCX, .MD (Markdown), .TXT</td>
               <td className="p-3">.DOCX / .DOC only</td>
               <td className="p-3">.DOCX only</td>
               <td className="p-3">Multiple (Requires CLI flags)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Max File Size Limit</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Max File Size Limit</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant RAM Processing)</td>
               <td className="p-3 text-amber-500">15 MB to 50 MB</td>
               <td className="p-3 text-amber-500">100 MB (Requires Login)</td>
               <td className="p-3">Local Disk Bound</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">ATS Resume Compatibility</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">ATS Resume Compatibility</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% Vector Text &amp; Standard Fonts</td>
               <td className="p-3">Good (Server Font Subs)</td>
               <td className="p-3">Excellent</td>
               <td className="p-3">Good (LaTeX Dependent)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Interactive Pre-Export Controls</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Interactive Pre-Export Controls</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Page Size, Orientation, Margins, Fonts</td>
               <td className="p-3 text-red-500">None (Blind Export)</td>
               <td className="p-3">Subscription Paywalled</td>
               <td className="p-3">CLI Arguments</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Document Metadata Stamping</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Document Metadata Stamping</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Title &amp; Author /Info Metadata</td>
               <td className="p-3 text-red-500">Stripped or Vendor Branded</td>
               <td className="p-3">Preserved</td>
               <td className="p-3">YAML Frontmatter</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Daily Task Throttling</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Daily Task Throttling</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Zero Limits &amp; No Registration</td>
               <td className="p-3 text-amber-500">1–2 tasks / day cap</td>
               <td className="p-3 text-amber-500">1 trial task</td>
@@ -290,13 +296,15 @@ export default function WordToPdfSeo() {
         </table>
       </div>
 
-      <h2>Word-to-PDF Typesetting &amp; Encoding Troubleshooting Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Word-to-PDF Typesetting &amp; Encoding Troubleshooting Grid
+      </h2>
       <p>
         Resolve common document encoding, table formatting, and styling discrepancies with these diagnostic guidelines:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Why Binary .doc Files Fail and How to Save as .docx
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -305,7 +313,7 @@ export default function WordToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. sanitizeWinAnsiText() Eliminates Font Encoder Exceptions
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -314,7 +322,7 @@ export default function WordToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Preventing Clipped Columns on Wide .docx &amp; Markdown Tables
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -323,7 +331,7 @@ export default function WordToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Accepting Track Changes &amp; Flattening Floating DrawingML Boxes
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -332,7 +340,7 @@ export default function WordToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. ATS Resume Scanners Require Vector Text Streams
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -341,7 +349,7 @@ export default function WordToPdfSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. Preserving Accented Latin-1 Characters (&eacute;, &uuml;, &ntilde;, &ccedil;)
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -350,7 +358,9 @@ export default function WordToPdfSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for Word &amp; Markdown to PDF</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for Word &amp; Markdown to PDF
+      </h2>
       <ul>
         <li>
           <strong>Executive Proposals &amp; Client Deliverables:</strong> Convert finalized <code>.docx</code> business proposals and sales agreements into immutable, professional PDF documents ready for electronic signature and distribution.
@@ -366,7 +376,9 @@ export default function WordToPdfSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {WORD_TO_PDF_FAQS.map((faq, index) => (
           <details
@@ -374,7 +386,7 @@ export default function WordToPdfSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -384,7 +396,9 @@ export default function WordToPdfSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; PDF Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; PDF Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/pdf-to-word" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">

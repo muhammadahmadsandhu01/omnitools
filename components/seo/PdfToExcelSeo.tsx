@@ -140,7 +140,9 @@ export default function PdfToExcelSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert PDF Tables to Native Excel (.XLSX) &amp; CSV with Zero Server Uploads</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert PDF Tables to Native Excel (.XLSX) &amp; CSV with Zero Server Uploads
+      </h2>
       <p>
         The <strong>KivaroTools PDF to Excel &amp; CSV Converter</strong> is a high-speed, client-side table extraction suite built for financial auditors, accountants, data engineers, and quantitative researchers. Engineered with deterministic X/Y spatial coordinate clustering, it converts complex multi-page financial statements, bank transaction summaries, and invoice ledgers into native <strong>Microsoft Excel (<code>.xlsx</code>)</strong>, <strong>RFC-4180 CSV (<code>.csv</code>)</strong>, and <strong>Structured JSON (<code>.json</code>)</strong> formats up to <strong>250 MB</strong> entirely in browser RAM.
       </p>
@@ -151,7 +153,9 @@ export default function PdfToExcelSeo() {
         </p>
       </blockquote>
 
-      <h2>How Spatial Coordinate Table Extraction Works</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        How Spatial Coordinate Table Extraction Works
+      </h2>
       <p>
         Unlike plain text extractors that collapse adjacent tabular columns into a single unformatted line, our engine performs a 4-stage spatial geometric reconstruction:
       </p>
@@ -170,53 +174,55 @@ export default function PdfToExcelSeo() {
         </li>
       </ol>
 
-      <h2>Spatial Table Extraction &amp; CWE-1236 Security Specification</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Spatial Table Extraction &amp; CWE-1236 Security Specification
+      </h2>
       <p>
         The table below details the mathematical parameters, security sanitizers, and export capabilities implemented in <code>lib/pdfToExcelEngine.ts</code>:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Parameter / Rule</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Mathematical Heuristic</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Engine Behavior</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Security / Output Objective</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Parameter / Rule</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Mathematical Heuristic</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Engine Behavior</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Security / Output Objective</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">X-Coordinate Column Split</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">X-Coordinate Column Split</td>
               <td className="p-3"><code>gap &gt; max(24 pt, 1.1 &times; fontSize)</code></td>
               <td className="p-3">Partitions row into adjacent cell containers</td>
               <td className="p-3">Prevents multi-column table collapse into Column A</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Baseline Y-Tolerance</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Baseline Y-Tolerance</td>
               <td className="p-3"><code>|y1 - y2| &le; 0.45 &times; fontSize</code></td>
               <td className="p-3">Groups fragments into a single spreadsheet row</td>
               <td className="p-3">Aligns numbers with descriptions across row baseline</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Auto Column Width</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Auto Column Width</td>
               <td className="p-3"><code>wch: clamp(10, maxLen + 3, 42)</code></td>
               <td className="p-3">Assigns SheetJS <code>ws[&apos;!cols&apos;]</code> metadata</td>
               <td className="p-3">Prevents &ldquo;###&rdquo; numeric overflow in Microsoft Excel</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">CWE-1236 Dangerous Prefixes</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">CWE-1236 Dangerous Prefixes</td>
               <td className="p-3">Starts with <code>=, +, -, @, \t, \r</code></td>
               <td className="p-3">Prepends neutralizing single quote (<code>&apos;</code>)</td>
               <td className="p-3">Blocks DDE macro execution and formula injection</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Negative Number Exemption</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Negative Number Exemption</td>
               <td className="p-3"><code>/^-[0-9.,$€£¥₹%\s]+$/</code></td>
               <td className="p-3">Bypasses formula escaping for valid negatives</td>
               <td className="p-3">Preserves numeric status for accounting calculations</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Export Formats</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Export Formats</td>
               <td className="p-3"><code>.xlsx, .csv (RFC-4180), .json</code></td>
               <td className="p-3">Single-pass binary and text serialization</td>
               <td className="p-3">Immediate compatibility with Excel, Calc, and pandas</td>
@@ -225,63 +231,65 @@ export default function PdfToExcelSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Table Extractors</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud PDF Table Extractors
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools PDF to Excel</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Tabula (Desktop)</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools PDF to Excel</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Tabula (Desktop)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Processing Location</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Processing Location</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% In-Browser (Local RAM)</td>
               <td className="p-3 text-red-500">Cloud Server Upload</td>
               <td className="p-3 text-red-500">Adobe Cloud Upload</td>
               <td className="p-3">Local Desktop (Java JVM)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Maximum File Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Maximum File Size</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant RAM Processing)</td>
               <td className="p-3 text-amber-500">15 MB to 50 MB</td>
               <td className="p-3 text-amber-500">100 MB (Requires Account)</td>
               <td className="p-3">Local RAM Bound</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">CWE-1236 Formula Defense</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">CWE-1236 Formula Defense</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Automatic with Negative Number Exemption</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3 text-red-500">None</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Multi-Format Triple Export</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Multi-Format Triple Export</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">.XLSX, RFC-4180 CSV, JSON Arrays</td>
               <td className="p-3">.XLSX only</td>
               <td className="p-3">.XLSX only</td>
               <td className="p-3">CSV / TSV</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Worksheet Organization Modes</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Worksheet Organization Modes</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Merged Single Sheet vs Sheet per Page</td>
               <td className="p-3">Single Sheet only</td>
               <td className="p-3">Page per Sheet only</td>
               <td className="p-3">Separate CSVs</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Live Grid Preview &amp; Editing</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Live Grid Preview &amp; Editing</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Interactive In-Browser Grid</td>
               <td className="p-3 text-red-500">None</td>
               <td className="p-3">Subscription Paywalled</td>
               <td className="p-3">Basic Selection Box</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Daily Task Limits</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Daily Task Limits</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Unlimited &amp; 100% Free Forever</td>
               <td className="p-3 text-amber-500">1–2 tasks / day cap</td>
               <td className="p-3 text-amber-500">1 free trial task</td>
@@ -291,13 +299,15 @@ export default function PdfToExcelSeo() {
         </table>
       </div>
 
-      <h2>PDF-to-Excel Table Extraction &amp; Security Troubleshooting Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        PDF-to-Excel Table Extraction &amp; Security Troubleshooting Grid
+      </h2>
       <p>
         Address common spreadsheet alignment challenges, formula injection vulnerabilities, and multi-page anomalies:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Why Copy-Pasting PDF Tables into Excel Fails
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -306,7 +316,7 @@ export default function PdfToExcelSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. CWE-1236 Formula Defense &amp; Negative Number Safety
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -315,7 +325,7 @@ export default function PdfToExcelSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Choosing Merged Single Sheet vs. One Sheet Per Page
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -324,7 +334,7 @@ export default function PdfToExcelSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Why Scanned Image PDFs Require OCR Pre-Processing
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -333,7 +343,7 @@ export default function PdfToExcelSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. Handling Multi-Line Wrapped Descriptions in Table Cells
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -342,7 +352,7 @@ export default function PdfToExcelSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. Preserving UTF-8 Currency Symbols (€, £, ¥, ₹) in CSV
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -351,7 +361,9 @@ export default function PdfToExcelSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for PDF Table Extraction</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for PDF Table Extraction
+      </h2>
       <ul>
         <li>
           <strong>Bank Statement &amp; Ledger Reconciliation:</strong> Accountants and bookkeepers convert monthly PDF bank statements from Chase, Bank of America, Amex, and Barclays into clean Excel workbooks for QuickBooks or Xero importing.
@@ -367,7 +379,9 @@ export default function PdfToExcelSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {PDF_TO_EXCEL_FAQS.map((faq, index) => (
           <details
@@ -375,7 +389,7 @@ export default function PdfToExcelSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -385,7 +399,9 @@ export default function PdfToExcelSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; Spreadsheet Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; Spreadsheet Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/excel-to-pdf" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">

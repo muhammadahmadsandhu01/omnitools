@@ -140,7 +140,9 @@ export default function PdfToPptSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      <h2>Convert PDF to Editable PowerPoint (.PPTX) Slides with 100% Client-Side Privacy</h2>
+      <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        Convert PDF to Editable PowerPoint (.PPTX) Slides with 100% Client-Side Privacy
+      </h2>
       <p>
         The <strong>KivaroTools PDF to PowerPoint Converter</strong> is a browser-native presentation reconstruction utility designed to transform static PDF pitch decks, executive briefings, and academic lecture notes into fully editable <strong>Microsoft PowerPoint (<code>.pptx</code>)</strong> presentations. Engineered with native ECMA-376 PresentationML packaging, it converts documents up to <strong>250 MB</strong> entirely inside your browser&apos;s local RAM with zero server uploads.
       </p>
@@ -151,7 +153,9 @@ export default function PdfToPptSeo() {
         </p>
       </blockquote>
 
-      <h2>How Our Slide Decomposition &amp; Reconstruction Engine Works</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        How Our Slide Decomposition &amp; Reconstruction Engine Works
+      </h2>
       <p>
         A PDF presentation is stored as a sequence of fixed-canvas pages with arbitrary text offsets. Our engine deconstructs each page into structured slide components through a 4-phase transformation pipeline:
       </p>
@@ -170,53 +174,55 @@ export default function PdfToPptSeo() {
         </li>
       </ol>
 
-      <h2>ECMA-376 PresentationML &amp; EMU Coordinate Specification</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        ECMA-376 PresentationML &amp; EMU Coordinate Specification
+      </h2>
       <p>
         The table below details the mathematical coordinates, font metrics, and OpenXML package components implemented in <code>lib/pdfToPptEngine.ts</code>:
       </p>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Slide Element / Part</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">EMU Coordinate / Dimensions</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">OpenXML Target Tag</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Styling &amp; Typography Attributes</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Slide Element / Part</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">EMU Coordinate / Dimensions</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">OpenXML Target Tag</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[160px]">Styling &amp; Typography Attributes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">16:9 Widescreen Canvas</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">16:9 Widescreen Canvas</td>
               <td className="p-3">12,192,000 &times; 6,858,000 EMUs (13.33 &times; 7.5 in)</td>
               <td className="p-3"><code>&lt;p:sldSz cx=&quot;12192000&quot; cy=&quot;6858000&quot;/&gt;</code></td>
               <td className="p-3">Modern 16:9 widescreen presentation standard</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">4:3 Standard Canvas</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">4:3 Standard Canvas</td>
               <td className="p-3">9,144,000 &times; 6,858,000 EMUs (10.0 &times; 7.5 in)</td>
               <td className="p-3"><code>&lt;p:sldSz cx=&quot;9144000&quot; cy=&quot;6858000&quot;/&gt;</code></td>
               <td className="p-3">Legacy projectors, iPad displays, and print handbooks</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Slide Title Box</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Slide Title Box</td>
               <td className="p-3">x=609,600, y=457,200, cx=10,972,800, cy=1,066,800</td>
               <td className="p-3"><code>&lt;p:sp&gt;</code> with <code>&lt;p:nvSpPr&gt;</code></td>
               <td className="p-3">28 pt (sz=&quot;2800&quot;) Bold Calibri, Navy #0F172A</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Body Bullet Shape</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Body Bullet Shape</td>
               <td className="p-3">x=609,600, y=1,676,400, cx=10,972,800, cy=4,724,400</td>
               <td className="p-3"><code>&lt;p:sp&gt;</code> with <code>&lt;a:buChar char=&quot;&bull;&quot;/&gt;</code></td>
               <td className="p-3">18 pt (sz=&quot;1800&quot;) Regular Calibri, Slate #334155 (up to 12 bullets)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Master &amp; Layout Hierarchy</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Master &amp; Layout Hierarchy</td>
               <td className="p-3">Standard ECMA-376 relationship tree</td>
               <td className="p-3"><code>ppt/slideMasters/</code> &amp; <code>slideLayouts/</code></td>
               <td className="p-3">Valid OpenXML inheritance for seamless theme editing</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Visual Slide Card</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Visual Slide Card</td>
               <td className="p-3"><code>visual_slide_with_notes</code> mode</td>
               <td className="p-3">Framed slide card + speaker notes</td>
               <td className="p-3">#F8FAFC fill, #CBD5E1 border, summary metadata</td>
@@ -225,63 +231,65 @@ export default function PdfToPptSeo() {
         </table>
       </div>
 
-      <h2>Enterprise Feature Comparison: KivaroTools vs. Cloud PowerPoint Converters</h2>
-      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 mb-6 not-prose">
-        <table className="min-w-full text-sm text-left border-collapse">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Enterprise Feature Comparison: KivaroTools vs. Cloud PowerPoint Converters
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left border-collapse text-sm">
           <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Feature / Capability</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">KivaroTools PDF to PPT</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Smallpdf / iLovePDF</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Adobe Acrobat Online</th>
-              <th className="p-3 border-b border-slate-200 dark:border-slate-700">Canva PDF Import</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 whitespace-nowrap">Feature / Capability</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">KivaroTools PDF to PPT</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Smallpdf / iLovePDF</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Adobe Acrobat Online</th>
+              <th className="p-3 border-b border-slate-200 dark:border-slate-700 min-w-[140px]">Canva PDF Import</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Execution Architecture</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Execution Architecture</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">100% Client-Side (Local RAM)</td>
               <td className="p-3 text-red-500">Cloud Server Upload</td>
               <td className="p-3 text-red-500">Adobe Document Cloud</td>
               <td className="p-3 text-red-500">Canva Cloud Project</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Maximum File Size</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Maximum File Size</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">250 MB (Instant RAM Processing)</td>
               <td className="p-3 text-amber-500">15 MB to 50 MB</td>
               <td className="p-3 text-amber-500">100 MB (Requires Account)</td>
               <td className="p-3 text-amber-500">30 MB / 50 pages</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Interactive Storyboard Editor</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Interactive Storyboard Editor</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Toggle &amp; Delete Slides Pre-Export</td>
               <td className="p-3 text-red-500">None (Blind Download)</td>
               <td className="p-3">Subscription Paywalled</td>
               <td className="p-3">Canvas Editor (Requires Login)</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Aspect Ratio Selection</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Aspect Ratio Selection</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">16:9 Widescreen &amp; 4:3 Standard</td>
               <td className="p-3">Fixed to PDF Ratio</td>
               <td className="p-3">Automatic</td>
               <td className="p-3">Resize is Paid Feature</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Dual Slide Reconstruction Modes</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Dual Slide Reconstruction Modes</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Editable Text Boxes vs Visual + Notes</td>
               <td className="p-3">Scattered Text Frames</td>
               <td className="p-3">Proprietary Flow</td>
               <td className="p-3">Graphic Design Canvas</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Daily Task Limits</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Daily Task Limits</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Unlimited &amp; Free Forever</td>
               <td className="p-3 text-amber-500">1–2 tasks / day cap</td>
               <td className="p-3 text-amber-500">1 free trial task</td>
               <td className="p-3 text-amber-500">Free tier watermark risk</td>
             </tr>
             <tr>
-              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100">Confidentiality Guarantee</td>
+              <td className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Confidentiality Guarantee</td>
               <td className="p-3 font-medium text-emerald-600 dark:text-emerald-400">Zero Server Data Storage</td>
               <td className="p-3">Files Stored on Server</td>
               <td className="p-3">Subject to Adobe Cloud Terms</td>
@@ -291,13 +299,15 @@ export default function PdfToPptSeo() {
         </table>
       </div>
 
-      <h2>PDF-to-PowerPoint Slide Reconstruction Troubleshooting Grid</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        PDF-to-PowerPoint Slide Reconstruction Troubleshooting Grid
+      </h2>
       <p>
         Address common slide decomposition, typography scaling, and theme inheritance challenges with these diagnostic guidelines:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-8">
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             1. Choosing Between Editable Text Boxes and Visual Slide + Notes
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -306,7 +316,7 @@ export default function PdfToPptSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             2. 16:9 Widescreen vs. 4:3 Standard EMU Geometry
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -315,7 +325,7 @@ export default function PdfToPptSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             3. Why Scanned PDF Handouts Have No Selectable Text Streams
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -324,7 +334,7 @@ export default function PdfToPptSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             4. Pruning Covers and Disclaimers in the Storyboard
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -333,7 +343,7 @@ export default function PdfToPptSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             5. Applying Corporate .potx Themes in PowerPoint
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -342,7 +352,7 @@ export default function PdfToPptSeo() {
         </div>
 
         <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2">
             6. XML Entity Escaping Prevents &ldquo;File Needs Repair&rdquo; Prompts
           </h3>
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -351,7 +361,9 @@ export default function PdfToPptSeo() {
         </div>
       </div>
 
-      <h2>Common Production Use Cases for PDF-to-PowerPoint Conversion</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Common Production Use Cases for PDF-to-PowerPoint Conversion
+      </h2>
       <ul>
         <li>
           <strong>Investor Pitch Deck Updates:</strong> Startup founders convert static PDF pitch decks back into editable PowerPoint slides to update traction numbers, financials, and team slides without rebuilding from scratch.
@@ -367,7 +379,9 @@ export default function PdfToPptSeo() {
         </li>
       </ul>
 
-      <h2>Frequently Asked Questions (FAQ)</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Frequently Asked Questions (FAQ)
+      </h2>
       <div className="space-y-3 not-prose mb-8">
         {PDF_TO_PPT_FAQS.map((faq, index) => (
           <details
@@ -375,7 +389,7 @@ export default function PdfToPptSeo() {
             className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
           >
             <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">{faq.question}</h3>
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0">{faq.question}</h3>
               <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
             </summary>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
@@ -385,7 +399,9 @@ export default function PdfToPptSeo() {
         ))}
       </div>
 
-      <h2>Explore Related Document &amp; Presentation Utilities</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight mt-10 mb-4">
+        Explore Related Document &amp; Presentation Utilities
+      </h2>
       <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
         <li>
           <Link href="/document/pdf-to-jpg" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
