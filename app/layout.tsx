@@ -10,6 +10,8 @@ import {
   Search,
   Mail,
   ShieldCheck,
+  Info,
+  Scale,
 } from 'lucide-react';
 
 import './globals.css';
@@ -257,8 +259,9 @@ function SiteFooter() {
               <li>
                 <Link
                   href="/about"
-                  className="text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  className="group inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
+                  <Info className="h-4 w-4 transition group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                   About KivaroTools
                 </Link>
               </li>
@@ -266,9 +269,9 @@ function SiteFooter() {
               <li>
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  className="group inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
-                  <Mail className="h-4 w-4" />
+                  <Mail className="h-4 w-4 transition group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                   Contact &amp; Support
                 </Link>
               </li>
@@ -276,8 +279,9 @@ function SiteFooter() {
               <li>
                 <Link
                   href="/privacy"
-                  className="text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  className="group inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
+                  <ShieldCheck className="h-4 w-4 transition group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                   Privacy Policy
                 </Link>
               </li>
@@ -285,8 +289,9 @@ function SiteFooter() {
               <li>
                 <Link
                   href="/terms"
-                  className="text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
+                  className="group inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400"
                 >
+                  <Scale className="h-4 w-4 transition group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                   Terms of Service
                 </Link>
               </li>

@@ -13,7 +13,7 @@ export const SITE_URL =
  * falling back to the confirmed owner contact email.
  */
 export const CONTACT_EMAIL =
-  process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'muhammadahmadsandhu01@gmail.com';
+  process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'support@kivarotools.com';
 
 /**
  * Operating jurisdiction/location of the independent developer.
