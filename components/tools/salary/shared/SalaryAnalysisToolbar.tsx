@@ -76,12 +76,13 @@ export interface SalaryInsightsAndExportSuiteProps {
    ========================================================================= */
 
 function formatMoney(amount: number, currency: string, symbol: string, decimals: number = 0): string {
-  if (!isFinite(amount) || isNaN(amount)) return `${symbol}0`;
+  const spacing = symbol.length > 1 ? ' ' : '';
+  if (!isFinite(amount) || isNaN(amount)) return `${symbol}${spacing}0`;
   const formatted = amount.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });
-  return `${symbol}${formatted}`;
+  return `${symbol}${spacing}${formatted}`;
 }
 
 function formatPct(rate: number): string {
@@ -180,7 +181,7 @@ export function SalaryPresetBar({
               value={preTaxDeductionInput}
               onChange={(e) => onPreTaxDeductionChange?.(e.target.value)}
               placeholder="e.g. 5,000"
-              className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums"
+              className={`w-full ${symbol.length > 2 ? 'pl-12' : 'pl-8'} pr-3 py-2 bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 rounded-xl text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums`}
             />
           </div>
 
@@ -263,8 +264,8 @@ export function SalaryInsightsAndExportSuite({
       `Social Security / National Ins: ${formatMoney(socialIns, currency, symbol, decimals)} (${formatPct(socialPct)})`,
       preTax > 0 ? `Pre-Tax Deductions: ${formatMoney(preTax, currency, symbol, decimals)} (${formatPct(preTaxPct)})` : null,
       result.annualEmployerCost ? `Total Employer Cost: ${formatMoney(result.annualEmployerCost, currency, symbol, decimals)}` : null,
-      result.effectiveTaxRate ? `Effective Tax Rate: ${formatPct(result.effectiveTaxRate * 100)}` : null,
-      result.marginalRate ? `Marginal Rate: ${formatPct(result.marginalRate * 100)}` : null,
+      result.effectiveTaxRate !== undefined ? `Effective Tax Rate: ${formatPct(result.effectiveTaxRate)}` : null,
+      result.marginalRate !== undefined ? `Marginal Rate: ${formatPct(result.marginalRate)}` : null,
       `Calculated via KivaroTools: https://kivarotools.com/finance/salary-calculator`,
     ]
       .filter(Boolean)
@@ -313,13 +314,13 @@ export function SalaryInsightsAndExportSuite({
 
     const annualTarget = targetFreq === 'monthly' ? cleaned * 12 : cleaned;
 
-    // Binary search between target and 5x target
+    // High-precision binary search between target and 5x target (+ fixed buffer for pre-tax deductions)
     let low = annualTarget;
-    let high = annualTarget * 4;
+    let high = Math.max(annualTarget * 5, annualTarget + 100000);
     let bestGross = high;
     let bestDiff = Infinity;
 
-    for (let iter = 0; iter < 30; iter++) {
+    for (let iter = 0; iter < 60; iter++) {
       const mid = (low + high) / 2;
       const res = computeNetFromAnnualGross(mid);
       const diff = res.annualNet - annualTarget;
@@ -329,7 +330,7 @@ export function SalaryInsightsAndExportSuite({
         bestGross = mid;
       }
 
-      if (Math.abs(diff) < 0.5) break;
+      if (Math.abs(diff) < 0.005) break;
 
       if (diff < 0) {
         low = mid;
@@ -562,7 +563,7 @@ export function SalaryInsightsAndExportSuite({
                   value={targetNetInput}
                   onChange={(e) => setTargetNetInput(e.target.value)}
                   placeholder={targetFreq === 'monthly' ? 'e.g. 5,000' : 'e.g. 60,000'}
-                  className="w-full pl-9 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 tabular-nums"
+                  className={`w-full ${symbol.length > 2 ? 'pl-12' : 'pl-9'} pr-3 py-2.5 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 tabular-nums`}
                 />
               </div>
             </div>
@@ -576,7 +577,16 @@ export function SalaryInsightsAndExportSuite({
                   <button
                     key={f}
                     type="button"
-                    onClick={() => setTargetFreq(f)}
+                    onClick={() => {
+                      if (f !== targetFreq) {
+                        const val = parseFloat(targetNetInput.replace(/[^0-9.]/g, ''));
+                        if (!isNaN(val) && val > 0) {
+                          const converted = f === 'annual' ? val * 12 : val / 12;
+                          setTargetNetInput(String(Math.round(converted * 100) / 100));
+                        }
+                        setTargetFreq(f);
+                      }
+                    }}
                     className={`py-2 px-2 rounded-xl text-xs font-bold capitalize border transition-all ${
                       targetFreq === f
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'

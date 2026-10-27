@@ -101,10 +101,10 @@ export const categories: ToolCategory[] = [
     icon: FileText,
     color: 'text-orange-500',
     description:
-      '100% private client-side PDF & Office document utilities. Convert PDF to Word (.docx), Word to PDF, PDF to Excel (.xlsx), Excel to PDF, PDF to PowerPoint (.pptx), PDF to JPG/PNG, merge up to 50 PDFs (750 MB), and convert 100 images to PDF locally.',
-    seoTitle: 'Free PDF & Office Converters — Word, Excel, PPT & Merge PDF',
+      '100% private client-side PDF & Office document utilities. Compress PDFs to 100KB/200KB, convert PDF to Word (.docx), Word to PDF, PDF to Excel (.xlsx), Excel to PDF, PDF to PowerPoint (.pptx), PDF to JPG/PNG, and merge/split up to 50 PDFs (750 MB) locally.',
+    seoTitle: 'Free PDF Tools — Compress PDF, Word, Excel, PPT & Merge PDF',
     seoDescription:
-      'Convert PDF to Word, Word to PDF, PDF to Excel, Excel to PDF, PDF to PowerPoint, PDF to JPG/PNG, and merge or split 50 PDFs (750MB) 100% locally in your browser.',
+      'Compress PDF to 100KB/200KB, convert PDF to Word, Word to PDF, PDF to Excel, Excel to PDF, PDF to PPT, PDF to JPG/PNG, and merge/split 50 PDFs in your browser.',
     keywords: [
       'pdf tools online free',
       'pdf to word converter client side',
@@ -984,7 +984,40 @@ export const tools: Tool[] = [
       'Custom page range filtering (e.g. "1-3, 5") and adjustable perceptual quality slider (50%–100%)',
       'Interactive visual thumbnail gallery displaying exact pixel dimensions (width × height) and file sizes with individual or DEFLATE ZIP download',
     ],
-    relatedToolSlugs: ['image-to-pdf', 'image-compressor', 'webp-to-jpg-png', 'pdf-merge-split', 'pdf-to-ppt'],
+    relatedToolSlugs: ['image-to-pdf', 'compress-pdf', 'image-compressor', 'webp-to-jpg-png', 'pdf-merge-split'],
+  },
+
+  {
+    id: 'compress-pdf',
+    name: 'Compress PDF — Reduce PDF File Size to 100KB, 200KB & 500KB Locally',
+    slug: 'compress-pdf',
+    categoryId: 'document',
+    description:
+      'Shrink PDF file size by up to 90% 100% client-side with 4 compression modes (Balanced, Extreme, Lossless Vector, and Exact Target KB Solver for 50KB/100KB/200KB/500KB), PDF Space X-Ray audit, Grayscale conversion, and Before/After visual preview.',
+    isPopular: true,
+    status: 'published',
+    seoTitle: 'Compress PDF Online Free — Reduce Size to 100KB, 200KB & MB',
+    seoDescription:
+      'Compress PDF files up to 90% smaller 100% in your browser. Includes Exact Target KB solver (50KB, 100KB, 200KB, 500KB), Lossless Vector mode, Grayscale & X-Ray.',
+    keywords: [
+      'compress pdf online free no upload',
+      'reduce pdf file size without losing quality',
+      'compress pdf to 100kb 200kb 300kb 500kb',
+      'shrink pdf under 1mb for email portal',
+      'lossless vector pdf optimizer object streams',
+      'batch compress 25 pdf files zip download',
+      'convert scanned pdf to grayscale smaller size',
+      'strip xmp metadata bloat from pdf client side',
+      'before and after pdf compression quality preview',
+      'private browser based pdf size reducer',
+    ],
+    featureList: [
+      '4 specialized compression engines: Balanced Retina (150 DPI), Extreme (96 DPI), Lossless Vector Object-Stream Optimizer, and 5-Pass Binary Search Target-KB Solver (50KB, 100KB, 200KB, 300KB, 500KB, 1MB)',
+      'Interactive PDF Internal Space X-Ray Auditor breaking down byte allocation across Embedded Images, Text/Fonts, XMP Metadata, and XRef Structure before and after compression',
+      'Smart Never-Grow Integrity Guard that guarantees output PDF byte size never exceeds the original file, plus 8-Bit ITU-R BT.709 Grayscale Monochrome mode for scanned documents',
+      'Batch compress up to 25 PDF documents (up to 500 MB total) with Page 1 Before/After readability preview and 1-click DEFLATE ZIP download',
+    ],
+    relatedToolSlugs: ['pdf-merge-split', 'pdf-to-word', 'image-compressor', 'pdf-to-jpg', 'image-to-pdf'],
   },
 
   // ============================================================

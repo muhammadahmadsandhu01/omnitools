@@ -412,7 +412,7 @@ export async function renderPdfPageToDataUrl(
   pdfBytes: Uint8Array,
   pageNumberOneBased: number,
   options: {
-    dpi?: 72 | 150 | 300 | 600;
+    dpi?: number;
     format?: 'image/jpeg' | 'image/png' | 'image/webp';
     quality?: number;
     backgroundColor?: string;

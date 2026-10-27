@@ -75,7 +75,6 @@ export const METADATA = {
   ],
   "calculationScope": "Personal Allowance (£12,570 with £1-for-£2 taper > £100k), Basic (20%), Higher (40%), and Additional (45%) rates; Scottish devolved bands (19% to 48%); Class 1 Employee NI (8% and 2%); and Employer NI (15.0% above £5,000 threshold).",
   "knownExclusions": [
-    "Student Loan repayments (Plan 1/2/4/Postgraduate)",
     "Marriage Allowance transfer and Blind Person Allowance",
     "Salary sacrifice pension arrangement variations"
   ],
@@ -211,7 +210,7 @@ export default function UnitedKingdomSalaryCalculator() {
 
     const res = calculateUkTax(taxableGrossAfterPreTax, region, taxYear);
     const annualIncomeTax = res.incomeTax;
-    const studentLoanAnnual = computeUkStudentLoan(annualGross, studentLoanPlan, postgradLoan);
+    const studentLoanAnnual = computeUkStudentLoan(taxableGrossAfterPreTax, studentLoanPlan, postgradLoan);
     const annualEmployeeSocial = res.nationalInsurance + studentLoanAnnual;
     const annualTotalDeductions = annualIncomeTax + annualEmployeeSocial + effectivePreTax;
     const annualNet = Math.max(0, annualGross - annualTotalDeductions);
@@ -234,6 +233,7 @@ export default function UnitedKingdomSalaryCalculator() {
       annualPreTaxDeductions: effectivePreTax,
       annualIncomeTax,
       annualEmployeeSocial,
+      studentLoanAnnual,
       annualTotalDeductions,
       annualNet,
       annualEmployerSocial,
@@ -339,7 +339,7 @@ export default function UnitedKingdomSalaryCalculator() {
                 value={grossSalaryInput}
                 onChange={(e) => setGrossSalaryInput(e.target.value)}
                 placeholder="e.g. 50,000"
-                className="w-full pl-11 pr-4 py-3 bg-gray-50/70 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-base font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all tabular-nums"
+                className={`w-full ${METADATA.symbol.length > 2 ? 'pl-14' : 'pl-11'} pr-4 py-3 bg-gray-50/70 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-base font-semibold text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all tabular-nums`}
               />
             </div>
           </div>
@@ -393,7 +393,17 @@ export default function UnitedKingdomSalaryCalculator() {
               <button
                 key={freq}
                 type="button"
-                onClick={() => setFrequency(freq)}
+                onClick={() => {
+                  if (freq !== frequency) {
+                    if (parsedGross > 0) {
+                      const currentAnnual = parsedGross * (FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1);
+                      const nextPeriods = FREQUENCY_FACTORS[freq]?.periodsPerYear || 1;
+                      const converted = currentAnnual / nextPeriods;
+                      setGrossSalaryInput(String(Math.round(converted * 100) / 100));
+                    }
+                    setFrequency(freq);
+                  }
+                }}
                 className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize transition-all border ${
                   frequency === freq
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
@@ -544,6 +554,14 @@ export default function UnitedKingdomSalaryCalculator() {
                   {formatCurrency(result.annualGross, METADATA.currency, METADATA.symbol, METADATA.decimals)}
                 </span>
               </div>
+              {result.annualPreTaxDeductions > 0 && (
+                <div className="flex items-center justify-between text-xs py-1 border-b border-gray-100 dark:border-slate-800/80">
+                  <span className="text-slate-600 dark:text-slate-400">Pre-Tax Deductions / Salary Sacrifice</span>
+                  <span className="font-semibold text-purple-600 dark:text-purple-400 tabular-nums">
+                    −{formatCurrency(result.annualPreTaxDeductions, METADATA.currency, METADATA.symbol, METADATA.decimals)}
+                  </span>
+                </div>
+              )}
 
             <div className="flex items-center justify-between text-xs py-1 border-b border-gray-100 dark:border-slate-800/80">
               <span className="text-slate-600 dark:text-slate-400">PAYE Income Tax</span>
@@ -557,6 +575,14 @@ export default function UnitedKingdomSalaryCalculator() {
                 −{formatCurrency(result.rawRes.nationalInsurance, METADATA.currency, METADATA.symbol, METADATA.decimals)}
               </span>
             </div>
+            {result.studentLoanAnnual > 0 && (
+              <div className="flex items-center justify-between text-xs py-1 border-b border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-600 dark:text-slate-400">Student / Postgraduate Loan Repayment</span>
+                <span className="font-semibold text-rose-600 dark:text-rose-400 tabular-nums">
+                  −{formatCurrency(result.studentLoanAnnual, METADATA.currency, METADATA.symbol, METADATA.decimals)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-xs py-1 border-b border-gray-100 dark:border-slate-800/80">
               <span className="text-slate-600 dark:text-slate-400">Personal Allowance</span>
               <span className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
@@ -590,52 +616,6 @@ export default function UnitedKingdomSalaryCalculator() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Periodic Comparison Table */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-slate-800 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              Periodic Compensation Schedule
-            </h3>
-            <div className="overflow-x-auto overscroll-x-contain">
-              <table className="min-w-[580px] w-full text-xs text-left">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-slate-800 text-slate-400 font-semibold">
-                    <th className="py-2 pr-3">Frequency</th>
-                    <th className="py-2 px-3">Gross</th>
-                    <th className="py-2 px-3">Income Tax</th>
-                    <th className="py-2 px-3">Social</th>
-                    <th className="py-2 pl-3 text-right">Net Take-Home</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-800/80 text-slate-700 dark:text-slate-300">
-                  {[
-                    { label: 'Annual', periods: 1 },
-                    { label: 'Monthly', periods: 12 },
-                    { label: 'Semi-Monthly', periods: 24 },
-                    { label: 'Bi-Weekly', periods: 26 },
-                    { label: 'Weekly', periods: 52 },
-                    { label: 'Daily (260d)', periods: 260 },
-                  ].map((row) => (
-                    <tr key={row.label} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/40">
-                      <td className="py-2.5 pr-3 font-semibold text-slate-900 dark:text-slate-100">{row.label}</td>
-                      <td className="py-2.5 px-3 tabular-nums">
-                        {formatCurrency(result.annualGross / row.periods, METADATA.currency, METADATA.symbol, METADATA.decimals)}
-                      </td>
-                      <td className="py-2.5 px-3 tabular-nums text-rose-600 dark:text-rose-400">
-                        {formatCurrency(result.annualIncomeTax / row.periods, METADATA.currency, METADATA.symbol, METADATA.decimals)}
-                      </td>
-                      <td className="py-2.5 px-3 tabular-nums text-rose-600 dark:text-rose-400">
-                        {formatCurrency(result.annualEmployeeSocial / row.periods, METADATA.currency, METADATA.symbol, METADATA.decimals)}
-                      </td>
-                      <td className="py-2.5 pl-3 text-right font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                        {formatCurrency(result.annualNet / row.periods, METADATA.currency, METADATA.symbol, METADATA.decimals)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
 
@@ -705,7 +685,7 @@ export default function UnitedKingdomSalaryCalculator() {
               const effPre = Math.min(candGross, parsedPreTax);
               const r = calculateUkTax(Math.max(0, candGross - effPre), region, taxYear);
               const tax = r.incomeTax;
-              const soc = r.nationalInsurance + computeUkStudentLoan(candGross, studentLoanPlan, postgradLoan);
+              const soc = r.nationalInsurance + computeUkStudentLoan(Math.max(0, candGross - effPre), studentLoanPlan, postgradLoan);
               const tot = tax + soc + effPre;
               return { annualNet: Math.max(0, candGross - tot), annualIncomeTax: tax, annualEmployeeSocial: soc, annualTotalDeductions: tot, annualEmployerCost: candGross + r.employerNi };
             }}

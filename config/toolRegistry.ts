@@ -26,6 +26,7 @@ import PdfToExcel from '@/components/tools/PdfToExcel';
 import ExcelToPdf from '@/components/tools/ExcelToPdf';
 import PdfToPpt from '@/components/tools/PdfToPpt';
 import PdfToJpg from '@/components/tools/PdfToJpg';
+import PdfCompressor from '@/components/tools/PdfCompressor';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
 import ImageCompressor from '@/components/tools/ImageCompressor';
 import QrGenerator from '@/components/tools/QrGenerator';
@@ -59,6 +60,7 @@ import PdfToExcelSeo from '@/components/seo/PdfToExcelSeo';
 import ExcelToPdfSeo from '@/components/seo/ExcelToPdfSeo';
 import PdfToPptSeo from '@/components/seo/PdfToPptSeo';
 import PdfToJpgSeo from '@/components/seo/PdfToJpgSeo';
+import PdfCompressorSeo from '@/components/seo/PdfCompressorSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
 import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
 import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
@@ -108,6 +110,12 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'pdf-to-jpg': PdfToJpg,
   'pdf-to-png': PdfToJpg, // Alias
   'pdf-to-image': PdfToJpg, // Alias
+  'compress-pdf': PdfCompressor,
+  'pdf-compressor': PdfCompressor, // Alias
+  'reduce-pdf-size': PdfCompressor, // Alias
+  'shrink-pdf': PdfCompressor, // Alias
+  'compress-pdf-to-100kb': PdfCompressor, // Alias
+  'compress-pdf-to-200kb': PdfCompressor, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPng,
@@ -166,6 +174,12 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'pdf-to-jpg': PdfToJpgSeo,
   'pdf-to-png': PdfToJpgSeo, // Alias
   'pdf-to-image': PdfToJpgSeo, // Alias
+  'compress-pdf': PdfCompressorSeo,
+  'pdf-compressor': PdfCompressorSeo, // Alias
+  'reduce-pdf-size': PdfCompressorSeo, // Alias
+  'shrink-pdf': PdfCompressorSeo, // Alias
+  'compress-pdf-to-100kb': PdfCompressorSeo, // Alias
+  'compress-pdf-to-200kb': PdfCompressorSeo, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPngSeo,

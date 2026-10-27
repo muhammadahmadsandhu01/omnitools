@@ -51,6 +51,12 @@ function resolveCanonicalRoute(category: string, slug: string): {
       ? 'pdf-to-ppt'
       : slug === 'pdf-to-png' || slug === 'pdf-to-image'
       ? 'pdf-to-jpg'
+      : slug === 'pdf-compressor' ||
+        slug === 'reduce-pdf-size' ||
+        slug === 'shrink-pdf' ||
+        slug === 'compress-pdf-to-100kb' ||
+        slug === 'compress-pdf-to-200kb'
+      ? 'compress-pdf'
       : slug;
 
   const resolvedCategory =
@@ -61,7 +67,8 @@ function resolveCanonicalRoute(category: string, slug: string): {
     resolvedSlug === 'pdf-to-excel' ||
     resolvedSlug === 'excel-to-pdf' ||
     resolvedSlug === 'pdf-to-ppt' ||
-    resolvedSlug === 'pdf-to-jpg'
+    resolvedSlug === 'pdf-to-jpg' ||
+    resolvedSlug === 'compress-pdf'
       ? 'document'
       : category === 'pdf'
       ? 'document'

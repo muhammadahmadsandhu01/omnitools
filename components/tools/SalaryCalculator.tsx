@@ -12035,9 +12035,14 @@ export default function SalaryCalculator() {
               value={quickCountryCode}
               onChange={(e) => {
                 const nextCode = e.target.value;
-                setQuickCountryCode(nextCode);
                 const monthlySet = new Set(['PK', 'SG', 'AE', 'SA', 'BR', 'MX', 'ZA']);
-                setQuickFreq(monthlySet.has(nextCode) ? 'monthly' : 'annual');
+                const nextFreq: PayFrequency = monthlySet.has(nextCode) ? 'monthly' : 'annual';
+                if (nextFreq !== quickFreq && quickParsedGross > 0) {
+                  const converted = nextFreq === 'annual' ? quickParsedGross * 12 : quickParsedGross / 12;
+                  setQuickSalaryInput(String(Math.round(converted * 100) / 100));
+                }
+                setQuickCountryCode(nextCode);
+                setQuickFreq(nextFreq);
               }}
               className="w-full py-3 px-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -12065,7 +12070,7 @@ export default function SalaryCalculator() {
                 value={quickSalaryInput}
                 onChange={(e) => setQuickSalaryInput(e.target.value)}
                 placeholder={quickFreq === 'monthly' ? 'e.g. 150,000' : 'e.g. 85,000'}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums"
+                className={`w-full ${quickCountryDef.symbol.length > 2 ? 'pl-14' : 'pl-10'} pr-4 py-3 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-sm font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums`}
               />
             </div>
           </div>
@@ -12080,7 +12085,15 @@ export default function SalaryCalculator() {
                 <button
                   key={f}
                   type="button"
-                  onClick={() => setQuickFreq(f)}
+                  onClick={() => {
+                    if (f !== quickFreq) {
+                      if (quickParsedGross > 0) {
+                        const converted = f === 'annual' ? quickParsedGross * 12 : quickParsedGross / 12;
+                        setQuickSalaryInput(String(Math.round(converted * 100) / 100));
+                      }
+                      setQuickFreq(f);
+                    }
+                  }}
                   className={`py-3 px-3 rounded-xl text-xs font-bold capitalize border transition-all ${
                     quickFreq === f
                       ? 'bg-blue-600 text-white border-blue-600 shadow-xs'

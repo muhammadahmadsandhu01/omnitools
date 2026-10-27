@@ -50,6 +50,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/pdf/compress-pdf',
+        destination: '/document/compress-pdf',
+        permanent: true,
+      },
+      {
         source: '/pdf',
         destination: '/document',
         permanent: true,
@@ -120,6 +125,31 @@ const nextConfig: NextConfig = {
       {
         source: '/document/pdf-to-image',
         destination: '/document/pdf-to-jpg',
+        permanent: true,
+      },
+      {
+        source: '/document/pdf-compressor',
+        destination: '/document/compress-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/reduce-pdf-size',
+        destination: '/document/compress-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/shrink-pdf',
+        destination: '/document/compress-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/compress-pdf-to-100kb',
+        destination: '/document/compress-pdf',
+        permanent: true,
+      },
+      {
+        source: '/document/compress-pdf-to-200kb',
+        destination: '/document/compress-pdf',
         permanent: true,
       },
       {

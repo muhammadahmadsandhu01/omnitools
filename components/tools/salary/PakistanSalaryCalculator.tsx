@@ -386,7 +386,17 @@ export default function PakistanSalaryCalculator() {
                 <button
                   key={freq}
                   type="button"
-                  onClick={() => setFrequency(freq)}
+                  onClick={() => {
+                  if (freq !== frequency) {
+                    if (parsedGross > 0) {
+                      const currentAnnual = parsedGross * (FREQUENCY_FACTORS[frequency]?.periodsPerYear || 1);
+                      const nextPeriods = FREQUENCY_FACTORS[freq]?.periodsPerYear || 1;
+                      const converted = currentAnnual / nextPeriods;
+                      setGrossSalaryInput(String(Math.round(converted * 100) / 100));
+                    }
+                    setFrequency(freq);
+                  }
+                }}
                   className={`py-2 px-3 rounded-xl text-xs font-semibold capitalize transition-all border ${
                     frequency === freq
                       ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
