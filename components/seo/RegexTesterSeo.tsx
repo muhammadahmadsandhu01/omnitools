@@ -76,6 +76,11 @@ export const REGEX_TESTER_FAQS: FaqItem[] = [
     answer:
       'The Split tab evaluates your regular expression as a delimiter to split the test string into an indexed array of substrings, allowing you to test complex log parsing and CSV extraction logic before writing backend code.',
   },
+  {
+    question: 'How does the Regex Tester protect my browser tab against catastrophic backtracking (ReDoS)?',
+    answer:
+      'All pattern execution is isolated inside a dedicated background Web Worker guarded by a strict 1,200 ms watchdog timer. If an exponential backtracking pattern stalls, the worker terminates cleanly without freezing your UI.',
+  },
 ];
 
 export default function RegexTesterSeo() {
@@ -251,8 +256,8 @@ export default function RegexTesterSeo() {
           <h2 id="regex-tester-compatibility" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Technical Specification: Cross-Engine Regular Expression Compatibility
           </h2>
-          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain mb-6">
+            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Feature / Token</th>
@@ -384,7 +389,67 @@ export default function RegexTesterSeo() {
         </section>
 
         {/* Zone 6: Frequently Asked Questions */}
-        <section aria-labelledby="regex-tester-frequently-asked-questions" className="mb-8">
+              {/* Competitor Comparison Section */}
+      <section aria-labelledby="regex-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="regex-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Regex Tester Comparison: KivaroTools vs. Regular Expression Tools
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See why developers rely on KivaroTools for safe regular expression testing and ReDoS protection:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Regex101</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Regexr</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">ExtendsClass</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">ReDoS Watchdog &amp; Backtracking Guard</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">1.2s Web Worker Execution Guard + Risk Alert</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Server worker crash</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Browser UI freezes</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Plain-English AST Explanation</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant Token-by-Token Narrative Breakdown</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Legend pane</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Hover tooltip only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Cross-Language Code Export</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">4 Languages (JavaScript, Python, Go &amp; Java)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Code generator</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">JS only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Capture Group Offsets &amp; CSV</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Numbered ($1) &amp; Named (?&lt;name&gt;) Groups to CSV</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Match table</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Preview only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic preview</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Zero Server Logging</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser Memory (Works Offline)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Analytics tracking</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Analytics tracking</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Ad trackers</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="regex-tester-frequently-asked-questions" className="mb-8">
           <h2 id="regex-tester-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
           </h2>
@@ -452,6 +517,51 @@ export default function RegexTesterSeo() {
               — Clean bloated vector graphics and sanitize malicious scripts with sandboxed visual previewing.
             </li>
           </ul>
+        </section>
+      
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Regex Tester, Debugger &amp; Code Generator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex tester debugger online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regular expression visualizer explainer</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">redos catastrophic backtracking vulnerability checker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex capture group named group extractor</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex replace and split live preview</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate regex code javascript python go java rust</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ecmascript regex flags g i m s u y d</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero length regex match infinite loop guard</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">common regex pattern library email url ipv4</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side web worker regex sandbox</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regular expression tester online with real time match</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">redos vulnerability detector catastrophic backtracking analyzer</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">explain regex pattern in plain english step by step</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex capture groups inspector numbered and named groups</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex replace and substitution preview tester online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">javascript regex tester ecmascript v8 flags g i m s u y</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">python regex tester re module pattern matching</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">java regex tester pattern and matcher syntax</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test email validation regex pattern with edge cases</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test url and domain regex pattern online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">phone number international regex tester</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">date format yyyy mm dd regex pattern validator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">password complexity regex tester uppercase lowercase symbol</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">regex cheat sheet character classes anchors quantifiers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy regex pattern as escaped javascript python java string</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">safe regex execution web worker 1.5 second timeout</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export regex match results to csv file</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">multiline regex matching and dotall flag tester</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">lookahead and lookbehind regex assertions tester</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">greedy vs lazy non greedy regex quantifiers tester</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">unicode property escapes regex matching emoji letters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">debug complicated regex pattern with match offsets</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side regex workbench zero network logging</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free regex debugger for software engineers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test ip address ipv4 ipv6 regex patterns online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">enterprise regular expression tool with redos security score</span>
+          </div>
         </section>
       </article>
     </>

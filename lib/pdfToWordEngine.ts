@@ -29,7 +29,7 @@ export interface PdfToWordResult {
   plainText: string;
 }
 
-function escapeXml(str: string): string {
+export function escapeXml(str: string): string {
   return String(str || '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -433,4 +433,33 @@ export async function convertPdfToWord(
     markdownText,
     plainText,
   };
+}
+
+
+export function blocksToMarkdown(blocks: Array<{ type: string; text?: string; items?: string[]; rows?: string[][] }>): string {
+  const out: string[] = [];
+  for (const b of blocks) {
+    if (b.type === 'heading1') out.push(`# ${b.text || ''}`);
+    else if (b.type === 'heading2') out.push(`## ${b.text || ''}`);
+    else if (b.type === 'heading3') out.push(`### ${b.text || ''}`);
+    else if (b.type === 'paragraph' && b.text) out.push(b.text);
+    else if (b.type === 'list' && b.items) out.push(b.items.map((it) => `- ${it}`).join('\n'));
+    else if (b.type === 'table' && b.rows && b.rows.length > 0) {
+      const header = b.rows[0];
+      out.push(`| ${header.join(' | ')} |`);
+      out.push(`| ${header.map(() => '---').join(' | ')} |`);
+      for (const r of b.rows.slice(1)) out.push(`| ${r.join(' | ')} |`);
+    }
+  }
+  return out.join('\n\n');
+}
+
+export function blocksToPlainText(blocks: Array<{ type: string; text?: string; items?: string[]; rows?: string[][] }>): string {
+  const out: string[] = [];
+  for (const b of blocks) {
+    if (b.text) out.push(b.text);
+    else if (b.type === 'list' && b.items) out.push(b.items.map((it) => `• ${it}`).join('\n'));
+    else if (b.type === 'table' && b.rows) out.push(b.rows.map((r) => r.join('\t')).join('\n'));
+  }
+  return out.join('\n\n');
 }

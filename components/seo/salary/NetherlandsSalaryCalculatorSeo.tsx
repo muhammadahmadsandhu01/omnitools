@@ -30,7 +30,32 @@ export const NETHERLANDS_SALARY_FAQS: FaqItem[] = [
     question: 'Is the 8% Dutch Holiday Allowance (Vakantiegeld) taxed?',
     answer:
       'Yes. Vakantiegeld (statutory 8% holiday pay) is part of your total annual gross taxable compensation and is taxed at the marginal Box 1 rate (plus credit phase-out adjustment) when paid out, typically in May.',
-  }
+  },
+  {
+    question: 'How does the Netherlands calculator normalize Annual, Monthly, Biweekly, Weekly, Daily, and Hourly pay periods?',
+    answer:
+      'All statutory tax brackets and social security ceilings in Netherlands are evaluated on an annualized basis and then normalized across 6 standard payroll frequencies: Annual (1 period), Monthly (12 periods), Biweekly (26 periods), Weekly (52 periods), Daily (260 working days), and Hourly (2,080 standard working hours).',
+  },
+  {
+    question: 'Does this Netherlands salary calculator compute Total Employer Cost of Employment (CTC)?',
+    answer:
+      'Yes. Alongside your employee net take-home pay, the Statutory Reconciliation Ledger calculates mandatory employer-side social insurance and payroll contributions on top of contractual gross pay so HR teams and founders can budget true Total Cost of Employment.',
+  },
+  {
+    question: 'What is the difference between my marginal tax rate and effective tax rate in Netherlands?',
+    answer:
+      'Your marginal tax rate is the statutory percentage applied only to the next unit of income earned in your highest active tax bracket. Your effective tax rate is your total annual income tax divided by your total annual gross salary, which is always lower than your top marginal slab due to tax-free allowances and lower progressive bands.',
+  },
+  {
+    question: 'Can I export a complete Netherlands payslip breakdown and slab audit to CSV or Excel?',
+    answer:
+      'Yes. Click the Export CSV Payslip button inside the Statutory Reconciliation Ledger to download an RFC-4180 compliant, formula-safe CSV file containing Per-Period and Annualized Gross Pay, Income Tax, Social Security, Net Take-Home Pay, Employer Cost, and the official Ruleset ID.',
+  },
+  {
+    question: 'Are my Netherlands salary figures or tax inputs stored or uploaded to any server?',
+    answer:
+      'Never. 100% of gross-to-net calculations, progressive bracket audits, and CSV payslip exports execute locally in your browser memory (RAM) with zero server uploads, zero cookies, and zero telemetry logging.',
+  },
 ];
 
 export default function NetherlandsSalaryCalculatorSeo() {
@@ -54,8 +79,45 @@ export default function NetherlandsSalaryCalculatorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Netherlands Net Take-Home Pay, Income Tax & Employer Cost',
+            description: 'Step-by-step statutory guide to calculating gross-to-net salary, progressive income tax slabs, employee social security, and employer payroll cost in Netherlands.',
+            step: [
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Enter Contractual Gross Salary & Pay Frequency',
+                text: 'Input your gross compensation and select Annual, Monthly, Biweekly, Weekly, Daily, or Hourly pay frequency.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Select Tax Year & Regional / Filing Parameters',
+                text: 'Choose the applicable statutory tax year and any regional, filing status, or residency options for Netherlands.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Review Statutory Reconciliation Ledger & Progressive Slabs',
+                text: 'Inspect your net take-home pay, effective vs. marginal tax rate, bracket-by-bracket slab audit table, and total employer cost.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Export RFC-4180 CSV Payslip Breakdown',
+                text: 'Click Export CSV Payslip to download a complete per-period and annualized payroll schedule locally.',
+              },
+            ],
+          }),
+        }}
+      />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mb-4 text-slate-900 dark:text-white">
         Netherlands Salary Calculator 2026: Box 1 Tax, Arbeidskorting, AHK & 30% Ruling
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -63,9 +125,9 @@ export default function NetherlandsSalaryCalculatorSeo() {
       </p>
 
       {/* How It Works */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         How Netherlands Gross-to-Net Payroll &amp; Tax Withholding Is Calculated
-      </h3>
+      </h2>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <li>
           <strong>Optional 30% Expat Ruling:</strong> If enabled for qualifying highly skilled migrants, 30% of gross employment income is treated as a tax-free extraterritorial reimbursement, leaving 70% subject to Box 1 tax.
@@ -82,11 +144,11 @@ export default function NetherlandsSalaryCalculatorSeo() {
       </ol>
 
       {/* Worked Examples */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Representative Netherlands Salary &amp; Net Take-Home Pay Examples (2026)
-      </h3>
-      <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-        <table className="min-w-[640px] w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Annual Gross (EUR)</th>
@@ -130,9 +192,9 @@ export default function NetherlandsSalaryCalculatorSeo() {
       </div>
 
       {/* Statutory Provenance */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Statutory Provenance &amp; Ruleset Details
-      </h3>
+      </h2>
       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400 mb-6 space-y-2">
         <div><strong>Ruleset Identifier:</strong> NL-BELAST-2026.1</div>
         <div><strong>Source Authority:</strong> Belastingdienst (Tax and Customs Administration)</div>
@@ -149,23 +211,119 @@ export default function NetherlandsSalaryCalculatorSeo() {
         </div>
       </div>
 
+            {/* 5-Column Country-Specific Competitor Comparison Matrix */}
+      <h2 id="competitor-comparison" className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
+        Netherlands Salary Calculator Comparison: KivaroTools vs. TheTax.nl &amp; BerekenHet.nl
+      </h2>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+        See how KivaroTools compares against leading Netherlands payroll and tax calculators across statutory accuracy (Belastingdienst), pre-tax relief modeling, reverse net-to-gross solving, and client-side privacy:
+      </p>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
+          <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
+            <tr>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Capability / Statutory Feature</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-bold whitespace-nowrap">KivaroTools (100% Free)</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">TheTax.nl</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">BerekenHet.nl</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">BlueUmbrella / Talent.com</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Belastingplan Box 1 Brackets (35.82%, 37.48%, 49.50%)</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Full 3-bracket Box 1 tax + integrated Volksverzekeringen audit</td>
+              <td className="p-3">Yes (Summary total)</td>
+              <td className="p-3">Yes (Dutch only)</td>
+              <td className="p-3">Simplified 2-bracket</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">AHK (€3,068) & Arbeidskorting (€5,532) Phaseouts</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Exact income-dependent General & Labour tax credit phaseout math</td>
+              <td className="p-3">Yes</td>
+              <td className="p-3">Yes</td>
+              <td className="p-3">Approximate credits</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Interactive Expat 30% Ruling Toggle & Pension Drawer</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">1-Click 30% Ruling toggle + Pre-Tax Pensioenpremie drawer + Employer Zvw</td>
+              <td className="p-3">Yes (No pension drawer)</td>
+              <td className="p-3">Separate calculators</td>
+              <td className="p-3">No 30% ruling toggle</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Reverse Net-to-Gross Solver & 9 Pay Periods</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">60-Iteration Reverse Net Solver + 9 Pay Periods + CSV Export</td>
+              <td className="p-3">None</td>
+              <td className="p-3">Paid / limited</td>
+              <td className="p-3">None</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">100% Client-Side Privacy</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Zero Server Uploads or Expat Lead-Gen Tracking</td>
+              <td className="p-3">Clean (Limited export)</td>
+              <td className="p-3">Heavy display ads</td>
+              <td className="p-3">Tax advisor lead-gen</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Programmatic Long-Tail Search Intent & Statutory Coverage (26+ Queries) */}
+      <div className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          Netherlands Statutory Tax &amp; Payroll Search Coverage (26 Verified Long-Tail Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands salary calculator 2026</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands take home pay calculator eur</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands gross to net salary after tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands income tax brackets and slabs (Belastingdienst)</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands monthly biweekly weekly daily hourly paycheck</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands reverse net to gross target salary solver</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands total employer cost of employment ctc</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands employee social security contribution cap</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands effective tax rate vs marginal tax bracket</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands pre tax pension retirement deduction calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much tax do i pay on my salary in netherlands</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands annual to monthly and hourly net wage converter</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands expatriate and resident payroll tax comparison</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands job offer gross to net paycheck estimator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands biweekly 26 pay periods vs semi monthly 24 periods</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands daily rate 260 days and hourly rate 2080 hours</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands statutory payroll waterfall ledger csv export</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free client side netherlands tax calculator zero data logging</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands software engineer and remote worker net pay</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands bonus overtime and gross compensation tax audit</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands box 1 income tax brackets 2026 35.82 37.48 49.50 percent</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">algemene heffingskorting 3068 and arbeidskorting 5532 calculator nl</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">dutch expat 30 percent ruling net salary calculator 2026 eur</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">werkgeversheffing zvw and employer social security cost netherlands</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pensioenpremie pre tax pension deduction bruto netto calculator nl</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">thetax nl and berekenhet nl dutch salary calculator alternative</span>
+        </div>
+      </div>
+
       {/* Frequently Asked Questions */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Frequently Asked Questions (Netherlands Income Tax &amp; Payroll)
-      </h3>
-      <div className="space-y-4 mb-6">
+      </h2>
+      <div className="space-y-3 mb-6 not-prose">
         {NETHERLANDS_SALARY_FAQS.map((faq, index) => (
-          <div
+          <details
             key={index}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40"
+            className="group p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 transition-colors"
           >
-            <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">
+                {faq.question}
+              </h3>
+              <span className="text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+            </summary>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
               {faq.answer}
             </p>
-          </div>
+          </details>
         ))}
       </div>
 

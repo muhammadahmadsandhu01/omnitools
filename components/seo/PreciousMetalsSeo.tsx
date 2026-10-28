@@ -288,8 +288,8 @@ export default function PreciousMetalsSeo() {
           Never apply gold karat logic to silver or platinum. Each precious metal adheres to statutory hallmarking conventions:
         </p>
 
-        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="overflow-x-auto overscroll-x-contain mb-6">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Metal</th>
@@ -412,8 +412,8 @@ export default function PreciousMetalsSeo() {
           One of the most frequent mistakes scrap sellers make is weighing their jewelry on a household kitchen or shipping scale (which reads in avoirdupois ounces) and multiplying by the troy ounce spot price. The table below illustrates the standard physical conversions:
         </p>
 
-        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="overflow-x-auto overscroll-x-contain mb-6">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                 <th className="p-2.5 border border-gray-200 dark:border-slate-700">Weight Unit</th>
@@ -568,6 +568,73 @@ export default function PreciousMetalsSeo() {
       </section>
 
       {/* FAQ Section */}
+            {/* Competitor Comparison Section */}
+      <section aria-labelledby="precious-metals-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="precious-metals-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Precious Metals Calculator Comparison: KivaroTools vs. Global Market Leaders
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See how KivaroTools compares against leading bullion dealers and commercial scrap metal pricing websites:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Kitco Gold</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">APMEX Tools</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">GoldPrice.org</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Client-Side Privacy</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser RAM (Zero Server Logs)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Cloud Server Requests</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Commercial Tracking</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Third-Party Analytics</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Multi-Item Scrap Lot Aggregator</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Multi-item jewelry lot aggregation)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Single Metal Item Only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None (Catalog Only)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Single Item Only</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Traditional Weight Units (Tola, DWT)</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">9 Units (Tola, Masha, Ratti, DWT, Grams, Oz)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Grams &amp; Ounces Only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Troy Ounces Only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Grams &amp; Ounces Only</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Dealer Payout &amp; Refining Margin Tiers</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">70% to 98% Dealer Bid/Ask Spreads</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Fixed Dealer Quote</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Fixed Buyback Price</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Islamic Zakat Nisab Threshold</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Automated 7.5 Tola Gold / 52.5 Tola Silver Nisab</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">User Interface &amp; Ads</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Zero intrusive popups, 100% Free</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Heavy banner ads</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Sales promotion popups</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Heavy display ads</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section aria-labelledby="precious-metals-frequently-asked-questions" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
         <h3 id="precious-metals-frequently-asked-questions" className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">
           Frequently Asked Questions
@@ -639,6 +706,51 @@ export default function PreciousMetalsSeo() {
           </Link>
         </div>
       </div>
-    </article>
+    
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Precious Metals Melt Value Calculator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">scrap gold melt value calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">silver melt value calculator 925 sterling</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold rate per tola gram troy ounce</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">14k 18k 22k 24k gold price calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">platinum palladium scrap value calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">live gold spot price xau xag</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pawn shop gold payout calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">jewelry karat purity calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">troy ounce to gram tola pennyweight</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bullion melt value calculator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold price per tola calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">24k to 22k gold conversion formula</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">scrap gold melt value calculator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">18k gold scrap price per gram</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">silver 925 scrap value calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">platinum melt value calculator per gram</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">palladium scrap price calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold zakat nisab calculator pakistan</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold tola to gram conversion table</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">live gold scrap dealer spread calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how to calculate fine gold weight from gross weight</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">21k gold price calculator dubai uae</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">10 gram gold rate today calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold bullion pennyweight to gram conversion</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold jewelry making charges deduction calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">scrap silver coin melt value calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold karat fineness decimal chart calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">14k gold chain melt value calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold purity test percentage calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate gold resale value without bill</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">precious metals portfolio value tracker free</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">real time gold spot price calculator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold masha and ratti to gram calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gold price per ounce vs per tola</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bullion dealer buy back price estimator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free private gold melt value calculator no signup</span>
+          </div>
+        </section>
+      </article>
   );
 }

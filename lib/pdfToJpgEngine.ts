@@ -113,3 +113,23 @@ export async function convertPdfToImages(
     zipBlob,
   };
 }
+
+
+export const MAX_CANVAS_SIDE = 4096;
+
+export function calculateDpiDimensions(
+  widthPt: number,
+  heightPt: number,
+  dpi: 72 | 150 | 300 | 600
+): { widthPx: number; heightPx: number; scale: number } {
+  const rawScale = dpi / 72;
+  let widthPx = Math.round(widthPt * rawScale);
+  let heightPx = Math.round(heightPt * rawScale);
+  const maxEdge = Math.max(widthPx, heightPx);
+  if (maxEdge > MAX_CANVAS_SIDE) {
+    const clampRatio = MAX_CANVAS_SIDE / maxEdge;
+    widthPx = Math.round(widthPx * clampRatio);
+    heightPx = Math.round(heightPx * clampRatio);
+  }
+  return { widthPx, heightPx, scale: widthPx / widthPt };
+}

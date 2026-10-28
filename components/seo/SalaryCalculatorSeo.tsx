@@ -56,6 +56,31 @@ export const SALARY_CALCULATOR_FAQS: FaqItem[] = [
     answer:
       'Yes. Every statutory calculator includes an RFC-4180 compliant CSV export with CWE-1236 spreadsheet formula injection protection. The exported table lists Annual, Monthly, and Pay-Period figures across Gross Pay, Pre-Tax Deductions, Taxable Income, Income Tax, Social Security, Net Take-Home Pay, Employer Cost, and the official Ruleset ID.',
   },
+  {
+    question: 'How are US Federal (IRS Rev. Proc. 2025-32), FICA ($184,500 cap), and 50-State payroll taxes calculated?',
+    answer:
+      'For the United States, our engine applies the 2026 standard deduction ($16,100 Single / $32,200 Married Filing Jointly), evaluates progressive IRS brackets (10% to 37%), deducts 6.20% OASDI Social Security up to the $184,500 wage base ceiling ($11,439 max), deducts 1.45% Medicare plus 0.90% Additional Medicare above $200k/$250k, and computes state income tax across all 50 states plus DC.',
+  },
+  {
+    question: 'How does the UK HMRC PAYE engine handle the £100,000–£125,140 60% personal allowance taper and Scottish tax bands?',
+    answer:
+      'Under UK tax law (ITA 2007 s.35), the £12,570 standard Personal Allowance tapers by £1 for every £2 of adjusted net income above £100,000, creating an effective 60% marginal tax trap between £100,000 and £125,140. Our UK calculator models both England/Wales/NI (20%/40%/45%) and devolved Scottish 6-band (19% to 48%) schedules alongside Class 1 National Insurance (8% / 2% employee; 15% employer).',
+  },
+  {
+    question: 'How does the India Income Tax Calculator compare Section 115BAC New Regime vs. Old Regime with Section 87A Rebate?',
+    answer:
+      'For India (FY 2025-26 / AY 2026-27), the New Tax Regime applies a ₹75,000 standard deduction and the enhanced Section 87A rebate (up to ₹60,000 rebate for taxable income up to ₹12,00,000—making gross salaried income up to ₹12,75,000 completely tax-free), plus 4% Health & Education Cess.',
+  },
+  {
+    question: 'How does the Pakistan FBR Salaried Calculator compute Finance Act slabs, 10% surcharge, and EOBI?',
+    answer:
+      'Our Pakistan calculator applies the FBR First Schedule Part I Division I salaried slabs (0% up to PKR 600,000; 5%, 15%, 25%, 30%, and 35% above PKR 4,100,000), adds the 10% surcharge when annual taxable income exceeds PKR 10,000,000, and calculates mandatory Employee (1% = PKR 370/mo) and Employer (5% = PKR 1,850/mo) EOBI contributions.',
+  },
+  {
+    question: 'How are European and APAC social security ceilings modeled (Germany BBG, Canada CPP/CPP2, Australia Stage 3 + Super)?',
+    answer:
+      'Each statutory engine enforces exact statutory contribution ceilings: Germany models Steuerklasse I–VI with KV/PV and RV/AV Beitragsbemessungsgrenzen; Canada models Federal/Provincial tax with Basic Personal Amount, CPP1/CPP2, and EI caps; and Australia models Stage 3 tax brackets, LITO phase-out, 2% Medicare Levy, and 12% Employer Superannuation Guarantee.',
+  },
 ];
 
 const STATUTORY_COUNTRY_LINKS = [
@@ -157,9 +182,9 @@ export default function SalaryCalculatorSeo() {
 
       {/* Direct Links to All 22 Statutory Country Calculators */}
       <section aria-labelledby="salary-calculator-direct-country-links" className="mb-10 not-prose">
-        <h3 id="salary-calculator-direct-country-links" className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+        <h2 id="salary-calculator-direct-country-links" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Direct Access: 22 Statutory Country Salary Calculators (2026–2027)
-        </h3>
+        </h2>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
           Select any jurisdiction below to open its standalone statutory calculator with progressive tax bracket tables, regional/state selectors, and worked salary examples:
         </p>
@@ -187,17 +212,17 @@ export default function SalaryCalculatorSeo() {
       </section>
 
       <section aria-labelledby="salary-calculator-the-gross-to-net-payroll-deduc" className="mb-8">
-        <h3 id="salary-calculator-the-gross-to-net-payroll-deduc" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="salary-calculator-the-gross-to-net-payroll-deduc" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           The Gross-to-Net Payroll Deduction Waterfall
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Professional payroll processing follows a deterministic sequential deduction waterfall. Employee compensation is
           segregated into taxable components, deductible allowances, statutory government contributions, and voluntary
           benefits:
         </p>
 
-        <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="overflow-x-auto overscroll-x-contain mb-6">
+          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Step</th>
@@ -242,9 +267,9 @@ export default function SalaryCalculatorSeo() {
       </section>
 
       <section aria-labelledby="salary-calculator-pay-period-normalization-exact" className="mb-8">
-        <h3 id="salary-calculator-pay-period-normalization-exact" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="salary-calculator-pay-period-normalization-exact" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Pay Period Normalization: Exact Frequency Periods
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           A common payroll calculation error is assuming biweekly pay equals monthly pay divided by two. In calendar
           accounting, a standard working year consists of 52 weeks and 260 working days:
@@ -261,9 +286,9 @@ export default function SalaryCalculatorSeo() {
       </section>
 
       <section aria-labelledby="salary-calculator-total-cost-of-employment-emplo" className="mb-8">
-        <h3 id="salary-calculator-total-cost-of-employment-emplo" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="salary-calculator-total-cost-of-employment-emplo" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Total Cost of Employment (Employer Side Reconciliation)
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           In modern international hiring, gross salary is only a portion of total employment costs. Employers incur mandatory
           payroll taxes, statutory social contributions, pension matching, and healthcare provisions that do not reduce the
@@ -276,30 +301,33 @@ export default function SalaryCalculatorSeo() {
 
       {/* Frequently Asked Questions */}
       <section aria-labelledby="salary-calculator-faqs" className="mb-8">
-        <h3 id="salary-calculator-faqs" className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+        <h2 id="salary-calculator-faqs" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Frequently Asked Questions (Global Salary &amp; Payroll Taxation)
-        </h3>
-        <div className="space-y-4 not-prose">
+        </h2>
+        <div className="space-y-3 not-prose">
           {SALARY_CALCULATOR_FAQS.map((faq, index) => (
-            <div
+            <details
               key={index}
-              className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40"
+              className="group p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 transition-colors"
             >
-              <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {faq.question}
-              </h4>
-              <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">
+                  {faq.question}
+                </h3>
+                <span className="text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
                 {faq.answer}
               </p>
-            </div>
+            </details>
           ))}
         </div>
       </section>
 
       <section aria-labelledby="salary-calculator-statutory-freshness-provenance" className="mb-4">
-        <h3 id="salary-calculator-statutory-freshness-provenance" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="salary-calculator-statutory-freshness-provenance" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
           Statutory Freshness, Provenance &amp; Privacy Standard
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Unlike web tools that silently store financial figures or send salary queries across analytics APIs, KivaroTools
           operates strictly on client-side deterministic evaluation. <strong>Zero salary data is persisted</strong> to local
@@ -313,6 +341,111 @@ export default function SalaryCalculatorSeo() {
           individual payroll cycles, localized municipal taxes, specialized tax codes, and personal filing elections.
         </div>
       </section>
-    </article>
+          {/* Competitor Comparison Section */}
+      <section aria-labelledby="salary-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="salary-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Global Salary Calculator Comparison: KivaroTools vs. Market Portals
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See why international professionals and remote teams use KivaroTools for multi-country payroll calculations:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Talent.com (Neuvoo)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">SmartAsset Paycheck</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Salary.com</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Statutory Country Coverage</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">212 Jurisdictions + 22 Statutory Engines</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate sites per country</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">United States only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">US focused</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Reverse Net-to-Gross Solver</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (50-Iteration Numerical Bisection Solver)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Employer Total Cost of Employment</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Employer social, pension match &amp; overhead)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Employee view only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Employee only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Corporate paywall</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Salary Data Privacy</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser RAM (Zero Salary Logging)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Server-side rendering</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Monetizes user inputs</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Lead capture forms</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Payslip Breakdown CSV Export</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant Formula-Safe CSV Export</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Paid report only</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Global Salary &amp; Take-Home Pay Hub — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">salary calculator take home pay</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator by country</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">paycheck calculator after taxes</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">us irs fica paycheck tax calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uk hmrc paye national insurance calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto steuerklasse calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india new vs old tax regime 115bac calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salaried income tax calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada cra cpp ei payroll calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia ato stage 3 tax super calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator with progressive tax brackets</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">take home pay calculator after income tax and national insurance</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reverse salary calculator target net to required gross salary</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united states paycheck salary calculator federal and state</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united kingdom paye salary calculator with student loan</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada salary calculator federal cpp and provincial tax</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto gehaltsrechner steuerklasse</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia salary take home calculator with superannuation</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india new tax regime 115bac salary calculator with standard deduction</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salary tax calculator with eobi contribution</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uae salary calculator tax free take home and end of service</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">saudi arabia salary calculator gosi social insurance</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">singapore salary calculator iras resident and cpf board</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">france salaire brut en net calcul cotisations sociales</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">switzerland salary calculator cantonal and federal tax</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands salary calculator 30 percent ruling tax</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland salary calculator paye usc and prsi contributions</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">new zealand salary calculator with kiwisaver contribution</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">spain sueldo neto calculo irpf y seguridad social</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">italy stipendio netto calcolo irpef regionale e inps</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">employer total payroll cost calculator with benefits</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">hourly to annual salary conversion with overtime calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bonus tax withholding calculator net take home</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">biweekly vs semi monthly paycheck take home calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pre tax 401k rrsp superannuation tax savings calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export payslip salary deduction breakdown to csv</span>
+          </div>
+        </section>
+      </article>
   );
 }

@@ -40,6 +40,18 @@ export default function TermsOfServicePage() {
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            name: 'Terms of Service — KivaroTools',
+            url: `${SITE_URL}/terms`,
+            publisher: { '@type': 'Organization', name: 'KivaroTools', url: SITE_URL },
+          }),
+        }}
+      />
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-8">
           <ol className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">

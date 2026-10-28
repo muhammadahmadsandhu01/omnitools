@@ -31,6 +31,31 @@ export const GERMANY_SALARY_FAQS: FaqItem[] = [
     answer:
       'The Arbeitnehmer-Pauschbetrag is a statutory lump-sum deduction of €1,230 per year for work-related income expenses (Werbungskosten). German payroll withholding automatically incorporates this deduction into the monthly tax deduction algorithm without requiring expense receipts.',
   },
+  {
+    question: 'How does the Germany calculator normalize Annual, Monthly, Biweekly, Weekly, Daily, and Hourly pay periods?',
+    answer:
+      'All statutory tax brackets and social security ceilings in Germany are evaluated on an annualized basis and then normalized across 6 standard payroll frequencies: Annual (1 period), Monthly (12 periods), Biweekly (26 periods), Weekly (52 periods), Daily (260 working days), and Hourly (2,080 standard working hours).',
+  },
+  {
+    question: 'Does this Germany salary calculator compute Total Employer Cost of Employment (CTC)?',
+    answer:
+      'Yes. Alongside your employee net take-home pay, the Statutory Reconciliation Ledger calculates mandatory employer-side social insurance and payroll contributions on top of contractual gross pay so HR teams and founders can budget true Total Cost of Employment.',
+  },
+  {
+    question: 'What is the difference between my marginal tax rate and effective tax rate in Germany?',
+    answer:
+      'Your marginal tax rate is the statutory percentage applied only to the next unit of income earned in your highest active tax bracket. Your effective tax rate is your total annual income tax divided by your total annual gross salary, which is always lower than your top marginal slab due to tax-free allowances and lower progressive bands.',
+  },
+  {
+    question: 'Can I export a complete Germany payslip breakdown and slab audit to CSV or Excel?',
+    answer:
+      'Yes. Click the Export CSV Payslip button inside the Statutory Reconciliation Ledger to download an RFC-4180 compliant, formula-safe CSV file containing Per-Period and Annualized Gross Pay, Income Tax, Social Security, Net Take-Home Pay, Employer Cost, and the official Ruleset ID.',
+  },
+  {
+    question: 'Are my Germany salary figures or tax inputs stored or uploaded to any server?',
+    answer:
+      'Never. 100% of gross-to-net calculations, progressive bracket audits, and CSV payslip exports execute locally in your browser memory (RAM) with zero server uploads, zero cookies, and zero telemetry logging.',
+  },
 ];
 
 export default function GermanySalaryCalculatorSeo() {
@@ -54,8 +79,45 @@ export default function GermanySalaryCalculatorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Germany Net Take-Home Pay, Income Tax & Employer Cost',
+            description: 'Step-by-step statutory guide to calculating gross-to-net salary, progressive income tax slabs, employee social security, and employer payroll cost in Germany.',
+            step: [
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Enter Contractual Gross Salary & Pay Frequency',
+                text: 'Input your gross compensation and select Annual, Monthly, Biweekly, Weekly, Daily, or Hourly pay frequency.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Select Tax Year & Regional / Filing Parameters',
+                text: 'Choose the applicable statutory tax year and any regional, filing status, or residency options for Germany.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Review Statutory Reconciliation Ledger & Progressive Slabs',
+                text: 'Inspect your net take-home pay, effective vs. marginal tax rate, bracket-by-bracket slab audit table, and total employer cost.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Export RFC-4180 CSV Payslip Breakdown',
+                text: 'Click Export CSV Payslip to download a complete per-period and annualized payroll schedule locally.',
+              },
+            ],
+          }),
+        }}
+      />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mb-4 text-slate-900 dark:text-white">
         Germany Salary Calculator 2026: Brutto-Netto Rechner, Lohnsteuer &amp; Social Deductions
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -65,9 +127,9 @@ export default function GermanySalaryCalculatorSeo() {
       </p>
 
       {/* How It Works */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         How German Brutto-Netto Payroll Deductions Are Calculated
-      </h3>
+      </h2>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <li>
           <strong>Grundfreibetrag:</strong> The first €12,348 of taxable income is tax-free under Steuerklasse I.
@@ -87,11 +149,11 @@ export default function GermanySalaryCalculatorSeo() {
       </ol>
 
       {/* Worked Examples */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Representative Salary Examples (Steuerklasse I, Single, 2026)
-      </h3>
-      <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-        <table className="min-w-[640px] w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Gross (Brutto) / Year</th>
@@ -135,9 +197,9 @@ export default function GermanySalaryCalculatorSeo() {
       </div>
 
       {/* Statutory Provenance */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Statutory Provenance &amp; Ruleset Details
-      </h3>
+      </h2>
       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400 mb-6 space-y-2">
         <div><strong>Ruleset Identifier:</strong> DE-BMF-2026.1</div>
         <div><strong>Source Authority:</strong> Bundesministerium der Finanzen (BMF) &amp; BMAS</div>
@@ -154,23 +216,119 @@ export default function GermanySalaryCalculatorSeo() {
         </div>
       </div>
 
+            {/* 5-Column Country-Specific Competitor Comparison Matrix */}
+      <h2 id="competitor-comparison" className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
+        Germany Salary Calculator Comparison: KivaroTools vs. Brutto-Netto-Rechner.info &amp; Gehalt.de / StepStone
+      </h2>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+        See how KivaroTools compares against leading Germany payroll and tax calculators across statutory accuracy (BMF), pre-tax relief modeling, reverse net-to-gross solving, and client-side privacy:
+      </p>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
+          <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
+            <tr>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Capability / Statutory Feature</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-bold whitespace-nowrap">KivaroTools (100% Free)</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Brutto-Netto-Rechner.info</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Gehalt.de / StepStone</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">BMF Lohnsteuerrechner</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">2026 €12,348 Grundfreibetrag & Steuerklasse I–VI</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Full EStG §32a progressive formula across all 6 Tax Classes</td>
+              <td className="p-3">Yes (No zone breakdown)</td>
+              <td className="p-3">Yes (Summary only)</td>
+              <td className="p-3">No social security breakdown</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">All 16 Bundesländer Kirchensteuer (8% / 9%) & Soli</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Exact 8% (BY/BW) vs 9% Church Tax + 5.5% Solidaritätszuschlag</td>
+              <td className="p-3">Yes</td>
+              <td className="p-3">Yes</td>
+              <td className="p-3">Tax only</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">RV/AV (€101,400) & KV/PV (€69,750) Caps + bAV Drawer</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Dual BBG ceilings + Pre-Tax bAV / Werbungskosten drawer</td>
+              <td className="p-3">No bAV drawer</td>
+              <td className="p-3">Requires email signup</td>
+              <td className="p-3">None</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">ReverseWunsch-Netto Solver & 9 Pay Periods</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">60-Iteration Reverse Net-to-Gross Solver + 1-Click CSV</td>
+              <td className="p-3">Separate page</td>
+              <td className="p-3">None</td>
+              <td className="p-3">None</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Privacy & Ad-Free Speed</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">100% Client-Side RAM (Zero Server Logging)</td>
+              <td className="p-3">Heavy ad banners</td>
+              <td className="p-3">Recruiter lead-gen</td>
+              <td className="p-3">Legacy government form</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Programmatic Long-Tail Search Intent & Statutory Coverage (26+ Queries) */}
+      <div className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          Germany Statutory Tax &amp; Payroll Search Coverage (26 Verified Long-Tail Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany salary calculator 2026</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany take home pay calculator eur</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany gross to net salary after tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany income tax brackets and slabs (BMF)</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany monthly biweekly weekly daily hourly paycheck</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany reverse net to gross target salary solver</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany total employer cost of employment ctc</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany employee social security contribution cap</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany effective tax rate vs marginal tax bracket</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany pre tax pension retirement deduction calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much tax do i pay on my salary in germany</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany annual to monthly and hourly net wage converter</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany expatriate and resident payroll tax comparison</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany job offer gross to net paycheck estimator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany biweekly 26 pay periods vs semi monthly 24 periods</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany daily rate 260 days and hourly rate 2080 hours</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany statutory payroll waterfall ledger csv export</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free client side germany tax calculator zero data logging</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany software engineer and remote worker net pay</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany bonus overtime and gross compensation tax audit</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">brutto netto rechner 2026 steuerklasse 1 bis 6 grundfreibetrag 12348</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">kirchensteuer 8 prozent bayern baden wuerttemberg 9 prozent rechner</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">beitragsbemessungsgrenze 2026 rentenversicherung 101400 krankenversicherung 69750</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">betriebliche altersvorsorge bav steuerersparnis gehaltsrechner</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">arbeitgeberanteile sozialversicherung gesamtkosten arbeitgeber rechner</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">brutto netto rechner info und gehalt de kostenlose alternative</span>
+        </div>
+      </div>
+
       {/* Frequently Asked Questions */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Frequently Asked Questions (Lohnsteuer, Sozialabgaben &amp; Netto)
-      </h3>
-      <div className="space-y-4 mb-6">
+      </h2>
+      <div className="space-y-3 mb-6 not-prose">
         {GERMANY_SALARY_FAQS.map((faq, index) => (
-          <div
+          <details
             key={index}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40"
+            className="group p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 transition-colors"
           >
-            <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">
+                {faq.question}
+              </h3>
+              <span className="text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+            </summary>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
               {faq.answer}
             </p>
-          </div>
+          </details>
         ))}
       </div>
 

@@ -209,8 +209,8 @@ export default function QrGeneratorSeo() {
           If the service provider alters its pricing model, caps monthly scans, or goes out of business, your printed physical signs, restaurant menus, product boxes,
           and brochures immediately display 404 errors or paywall pages.
         </p>
-        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature Comparison</th>
@@ -257,8 +257,8 @@ export default function QrGeneratorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           KivaroTools natively formats eight distinct standardized payload architectures, ensuring smartphone cameras on iOS and Android trigger the exact native action:
         </p>
-        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Payload Type</th>
@@ -330,8 +330,8 @@ export default function QrGeneratorSeo() {
           QR codes incorporate mathematical <strong>Reed-Solomon error correction</strong> codes. This redundancy enables smartphones and industrial barcode readers
           to reconstruct missing or corrupted data if the code is scratched, smudged, torn, or partially covered by a central company logo:
         </p>
-        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Tier</th>
@@ -389,8 +389,8 @@ export default function QrGeneratorSeo() {
             Minimum QR Code Width = Intended Scanning Distance ÷ 10
           </p>
         </div>
-        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Medium &amp; Context</th>
@@ -498,8 +498,8 @@ export default function QrGeneratorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
           Compare KivaroTools with commercial QR services across longevity, privacy, export fidelity, and integrated optical verification:
         </p>
-        <div className="w-full overflow-x-auto mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+          <table className="min-w-[680px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Evaluation Criterion</th>
@@ -661,7 +661,7 @@ export default function QrGeneratorSeo() {
       </section>
 
       {/* SECTION 13: CALL TO ACTION */}
-      <section aria-labelledby="qr-generator-ready-to-create-your-free-perm" className="my-8 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
+      <section aria-labelledby="qr-generator-ready-to-create-your-free-perm" className="my-8 p-6 sm:p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
         <h2 id="qr-generator-ready-to-create-your-free-perm" className="text-xl sm:text-2xl font-bold mb-2 text-white">
           Ready to Create Your Free, Permanent QR Code?
         </h2>
@@ -726,6 +726,51 @@ export default function QrGeneratorSeo() {
           </Link>
         </div>
       </section>
-    </article>
+    
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Custom QR Code Generator with Logo — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free qr code generator no expiration</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">static qr code generator with logo</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">wifi qr code generator wpa2 no password typing</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vcard 3.0 digital business card qr code</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vector svg pdf high dpi png qr code maker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">qr code contrast and scan reliability checker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">built in webcam image qr code scanner verifier</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">icalendar event email sms tel qr generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reed solomon level h 30 error correction qr</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial print ready qr code studio free</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free custom qr code generator with logo center upload</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate wifi qr code connect without typing password</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vcard digital business card qr code generator free</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">website url qr code generator high resolution download</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate static qr code that never expires no subscription</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">qr code generator vector svg and print ready pdf download</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">icalendar event qr code add to calendar on scan</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">email and sms pre filled message qr code generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">phone number direct dial qr code generator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">check qr code foreground background color contrast ratio</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reed solomon error correction level h qr code generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">high scannability qr code with custom colors and quiet zone</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate qr code for restaurant menu pdf link</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate payment qr code with custom text payload</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">create qr code online without account registration</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private client side qr code generator no redirect tracking</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free bitly and qr code generator pro static alternative</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">high density qr code version estimator in browser</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">print ready 300 dpi png qr code for marketing flyers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate qr code for app store and google play link</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">custom branded qr code generator with round corners</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy qr code image directly to clipboard</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">offline qr code maker works without internet</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bulk qr code generator for inventory and events</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test qr code scannability before printing guide</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">enterprise grade qr code creation studio 100 percent free</span>
+          </div>
+        </section>
+      </article>
   );
 }

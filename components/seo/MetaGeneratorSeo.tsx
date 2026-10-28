@@ -284,7 +284,7 @@ export default function MetaGeneratorSeo() {
         </p>
 
         <div className="w-full mt-6 overflow-x-auto overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-left text-xs text-slate-700 dark:text-slate-300">
+          <table className="min-w-[680px] w-full text-left text-xs text-slate-700 dark:text-slate-300">
             <thead className="border-b border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white">
               <tr>
                 <th className="px-4 py-3 font-semibold">Element / Tag</th>
@@ -527,7 +527,7 @@ export default function MetaGeneratorSeo() {
               <AlertTriangle className="w-4 h-4" />
               <span>Before: Incomplete &amp; Risky Head Tags</span>
             </div>
-            <pre className="p-4 rounded-2xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-xs font-mono text-red-900 dark:text-red-200 overflow-x-auto leading-relaxed">
+            <pre className="p-4 rounded-2xl bg-red-50/40 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-xs font-mono text-red-900 dark:text-red-200 overflow-x-auto overscroll-x-contain leading-relaxed">
 {`<!-- Missing canonical, no social tags, unescaped quotes -->
 <head>
   <title>KivaroTools - Online Tools for Devs</title>
@@ -548,7 +548,7 @@ export default function MetaGeneratorSeo() {
               <CheckCircle2 className="w-4 h-4" />
               <span>After: Production-Ready KivaroTools Head Block</span>
             </div>
-            <pre className="p-4 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-xs font-mono text-emerald-900 dark:text-emerald-200 overflow-x-auto leading-relaxed">
+            <pre className="p-4 rounded-2xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 text-xs font-mono text-emerald-900 dark:text-emerald-200 overflow-x-auto overscroll-x-contain leading-relaxed">
 {`<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -623,7 +623,7 @@ export default function MetaGeneratorSeo() {
             <span>app/page.tsx (Generated Typed Next.js App Router Metadata)</span>
             <span className="text-emerald-400 font-bold">Auto-Generated Output</span>
           </div>
-          <pre className="text-xs font-mono overflow-x-auto text-purple-300 leading-relaxed">
+          <pre className="text-xs font-mono overflow-x-auto overscroll-x-contain text-purple-300 leading-relaxed">
 {`import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -670,7 +670,7 @@ export const metadata: Metadata = {
         </p>
 
         <div className="w-full mt-6 overflow-x-auto overscroll-x-contain">
-          <table className="min-w-[640px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse border border-slate-200 dark:border-slate-800">
+          <table className="min-w-[680px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse border border-slate-200 dark:border-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-800/70 text-slate-900 dark:text-white">
               <tr>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability</th>
@@ -929,6 +929,51 @@ export const metadata: Metadata = {
           </Link>
         </div>
       </section>
-    </article>
+    
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            SEO Meta Tag, Open Graph &amp; Schema Generator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">meta tag generator html seo</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">open graph og tag twitter card generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">google serp snippet pixel width simulator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">social media share preview facebook x linkedin discord</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">nextjs app router metadata typescript code generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">live url seo meta tag auditor health score</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canonical url robots index follow directives generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">article and ecommerce product open graph tags</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">xss safe html head metadata builder</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free webmaster on page seo meta studio</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">meta tags generator for seo and social media sharing</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">google serp snippet preview desktop and mobile pixel width</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">open graph og image and title preview generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">twitter card summary large image meta tag generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">100 point on page seo readiness audit score calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">parse and import existing html meta tags from code</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate canonical url and robots meta tag directives</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy ready nextjs app router metadata typescript code</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy w3c standard html meta tags for website head</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">facebook linkedin slack discord social share previewer</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">meta title length 60 characters 580 pixels checker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">meta description 160 characters 960 pixels truncation tool</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">structured open graph type website article product generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">twitter creator and site handle meta tag generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side meta tags generator 100 percent private</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free metatags io and opengraph xyz alternative</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">favicon and apple touch icon meta tag generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate theme color and viewport meta tag code</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">audit meta title and description for missing keywords</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">check og image recommended dimensions 1200x630 pixels</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test social media card appearance before publishing</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">meta tags generator for wordpress react and html sites</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">optimize click through rate ctr for organic search snippets</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">search engine snippet simulator for digital marketers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export complete html meta head code one click</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">enterprise seo meta tag creation and validation studio</span>
+          </div>
+        </section>
+      </article>
   );
 }

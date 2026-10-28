@@ -215,7 +215,7 @@ export default function MortgageCalculatorSeo() {
             For a conventional fully amortizing fixed-rate loan with positive principal, periodic compounding, and constant nominal annual interest rate, scheduled periodic principal and interest payment <code className="font-mono font-semibold">M</code> is governed by the standard annuity formula:
           </p>
 
-          <div className="w-full bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-6 font-mono text-sm text-center overflow-x-auto text-blue-700 dark:text-blue-300 overscroll-x-contain">
+          <div className="bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-6 font-mono text-sm text-center overflow-x-auto overscroll-x-contain text-blue-700 dark:text-blue-300">
             M = P &times; [ r(1 + r)^n ] / [ (1 + r)^n &minus; 1 ]
           </div>
 
@@ -302,8 +302,8 @@ export default function MortgageCalculatorSeo() {
             Your monthly mortgage check is rarely paid solely to the loan principal. In conventional residential lending, payments are apportioned across four financial pillars plus recurring community assessments:
           </p>
 
-          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain mb-6">
+            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Component</th>
@@ -350,8 +350,8 @@ export default function MortgageCalculatorSeo() {
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
             The following technical specification matrix outlines the computational architecture, inputs, and modeling capabilities implemented in the KivaroTools mortgage calculator:
           </p>
-          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain mb-6">
+            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Functional Module</th>
@@ -511,7 +511,67 @@ export default function MortgageCalculatorSeo() {
         </section>
 
         {/* FAQS SECTION */}
-        <section aria-labelledby="mortgage-calculator-frequently-asked-questions" className="mb-8">
+              {/* Competitor Comparison Section */}
+      <section aria-labelledby="mortgage-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="mortgage-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Mortgage Calculator Comparison: KivaroTools vs. Leading Financial Portals
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See how KivaroTools compares against commercial loan sites and traditional banking mortgage tools:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Bankrate</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Zillow Mortgage</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">NerdWallet</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Private In-Memory Execution</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side (No Lead Generation)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Collects data for loan brokers</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Lead-capture forms</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Sponsored lender ads</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Automated PMI Drop-off at 80% LTV</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Dynamic LTV tracking &amp; automatic stop</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Manual checkbox</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Flat fee throughout loan</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Static estimate</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Advanced Prepayment Options</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Lump-sum, monthly extra &amp; annual step-up</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly extra only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic monthly extra</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic extra payment</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Accelerated Bi-Weekly Schedules</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">26 pay-period accelerated amortization</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate calculator</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly only</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Downloadable Amortization CSV</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant Formula-Safe CSV Export</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Print view only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="mortgage-calculator-frequently-asked-questions" className="mb-8">
           <h3 id="mortgage-calculator-frequently-asked-questions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
             Frequently Asked Questions
           </h3>
@@ -570,6 +630,51 @@ export default function MortgageCalculatorSeo() {
             </Link>
             .
           </p>
+        </section>
+      
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Mortgage Payment &amp; PITI Calculator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage calculator with pmi and taxes</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">piti mortgage payment calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">accelerated biweekly mortgage payoff calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage amortization schedule calculator csv</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">early mortgage payoff extra principal calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">home loan cash to close estimator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">automatic 80 ltv pmi cancellation calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">15 year vs 30 year mortgage calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage discount points breakeven calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">property tax escrow hoa mortgage calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage payment calculator with pmi and taxes</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">biweekly mortgage payment amortization calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">extra mortgage principal payment payoff calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">30 year vs 15 year mortgage payoff comparison</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage pmi cancellation 80 ltv calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate monthly mortgage payment with hoa dues</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage amortization schedule with lump sum prepayment</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much principal do i pay in first year mortgage</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage closing costs and discount points calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">fha loan monthly payment and mip calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">va loan funding fee and monthly payment calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage payoff date calculator with extra 100 per month</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">annual vs monthly mortgage amortization schedule</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">fixed rate mortgage total interest paid calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage prepayment penalty and savings calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">interest only mortgage payment calculator excel free</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate effective interest rate on mortgage with points</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">jumbo loan monthly payment calculator with taxes</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">home mortgage loan payoff acceleration schedule</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage principal balance after 5 years calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private mortgage calculator client side no server</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">downloadable mortgage amortization schedule csv</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">interactive mortgage loan comparison calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial property mortgage payment calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">first time home buyer monthly budget mortgage calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free mortgage payment estimator with property insurance</span>
+          </div>
         </section>
       </article>
     </>

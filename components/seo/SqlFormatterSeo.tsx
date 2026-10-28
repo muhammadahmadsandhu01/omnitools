@@ -76,6 +76,11 @@ export const SQL_FORMATTER_FAQS: FaqItem[] = [
     answer:
       'No. Standard formatting only modifies non-semantic whitespace and token casing. Database query optimizers parse SQL into internal execution plans regardless of visual indentation. However, formatting makes index anti-patterns (like leading wildcards or Cartesian joins) immediately visible to human developers.',
   },
+  {
+    question: 'Can the SQL Formatter extract and beautify raw SQL queries from Prisma, Hibernate, or Drizzle ORM logs?',
+    answer:
+      'Yes. The built-in ORM Log Unwrapper strips timestamp prefixes, parameter arrays, and log metadata from Prisma, Hibernate, TypeORM, and Drizzle debug logs before formatting the underlying SQL AST.',
+  },
 ];
 
 export default function SqlFormatterSeo() {
@@ -251,8 +256,8 @@ export default function SqlFormatterSeo() {
           <h2 id="sql-formatter-dialects-table" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Technical Specification: Supported SQL Dialects Comparison
           </h2>
-          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain mb-6">
+            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Dialect</th>
@@ -378,7 +383,67 @@ export default function SqlFormatterSeo() {
         </section>
 
         {/* Zone 6: Frequently Asked Questions */}
-        <section aria-labelledby="sql-formatter-frequently-asked-questions" className="mb-8">
+              {/* Competitor Comparison Section */}
+      <section aria-labelledby="sql-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="sql-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          SQL Formatter Comparison: KivaroTools vs. Query Beautifiers
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See why database administrators and back-end engineers choose KivaroTools:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">SQLFormat.org</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Poor Man&apos;s T-SQL</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">CodeBeautify</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Dialects Supported</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">19 Dialects (PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, DuckDB)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Standard SQL only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">T-SQL only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Generic SQL</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">SQL Linter &amp; Security Scanner</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Flags SELECT *, WHERE 1=1 &amp; tautologies)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic syntax only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Query Complexity Metrics</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Counts Tables, JOINs, CTEs &amp; Subqueries</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic lines only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Safe Query Minifier</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Preserves comments &amp; string literals safely</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Crude regex replace</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Confidential Database Privacy</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser RAM (Queries Never Uploaded)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Transmitted over HTTP</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Server upload</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Server logging</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="sql-formatter-frequently-asked-questions" className="mb-8">
           <h2 id="sql-formatter-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
           </h2>
@@ -446,6 +511,51 @@ export default function SqlFormatterSeo() {
               — Sanitize vector graphics and prune unreferenced definitions before storing in databases.
             </li>
           </ul>
+        </section>
+      
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            SQL Query Formatter &amp; Linter — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql formatter beautifier online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql query linter syntax checker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">postgresql mysql bigquery snowflake sql formatter</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">tsql oracle plsql duckdb sqlite formatter</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql minifier compressor one line</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql static code analyzer anti pattern detector</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql query diff comparison tool</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert sql to javascript python go java string</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">preserve sql bind parameters placeholders</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side private sql query beautifier</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">format sql query online beautify indentation</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql query minifier compress sql into single line</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">postgresql sql formatter online with cte indentation</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mysql query beautifier uppercase keywords online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">google bigquery sql formatter with backtick support</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">snowflake sql formatter with dollar quote handling</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">microsoft sql server t-sql query formatter online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sqlite query beautifier format create table statements</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql syntax linter check select star and tautologies</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">format sql join clauses on new lines with indent</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql comma first vs comma last formatting style</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert sql query to uppercase lowercase or capitalize</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">safe sql formatter preserve comments and string literals</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql complexity analyzer count joins tables subqueries</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">format nested sql subqueries and window functions</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql query diff compare before and after formatting</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export formatted sql to clipboard or download file</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side sql beautifier 500kb query support</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">format sql insert statements with multiple values</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sql case statement formatter indent when then else</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">clean messy sql code generated by orms hibernate prisma</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">detect sensitive table inserts and update without where</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">database administrator sql query formatting utility</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free sql beautifier tool dark mode code editor</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private sql formatter for confidential enterprise queries</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online sql pretty printer for documentation and pull requests</span>
+          </div>
         </section>
       </article>
     </>

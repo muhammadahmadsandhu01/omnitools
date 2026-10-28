@@ -333,3 +333,9 @@ export async function convertPdfToPpt(
     pptxBlob,
   };
 }
+
+
+export const SLIDE_DIMENSIONS_EMU: Record<PptAspectRatio, { cx: number; cy: number }> = {
+  '16:9': { cx: 12192000, cy: 6858000 },
+  '4:3': { cx: 9144000, cy: 6858000 },
+};

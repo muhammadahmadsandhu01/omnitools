@@ -160,6 +160,8 @@ const popularFooterTools = [
   { name: 'JSON Formatter & Tree Viewer', href: '/developer/json-formatter' },
   { name: 'SQL Query Formatter (19 Dialects)', href: '/developer/sql-formatter' },
   { name: 'PDF Merge & Split (750 MB)', href: '/document/pdf-merge-split' },
+  { name: 'PDF to Word (.DOCX Converter)', href: '/document/pdf-to-word' },
+  { name: 'Compress PDF (Target KB)', href: '/document/compress-pdf' },
   { name: 'Image Compressor (Target KB)', href: '/media/image-compressor' },
   { name: 'Word Counter & Grammar Coach', href: '/seo/text-analyzer' },
   { name: 'Custom QR Code Generator', href: '/seo/qr-generator' },
@@ -375,9 +377,9 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <Navbar />
 
-            <main className="flex-1">
+            <div className="flex-1 w-full min-w-0 overflow-x-clip">
               {children}
-            </main>
+            </div>
 
             <SiteFooter />
           </div>

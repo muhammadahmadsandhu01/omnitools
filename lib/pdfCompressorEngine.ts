@@ -313,13 +313,14 @@ async function runRasterCompressionPass(
     outDoc.setProducer('');
   }
 
+  const clampedDpi = Math.max(48, Math.min(300, Math.round(dpi)));
   let firstPageDataUrl: string | undefined;
 
   for (let i = 0; i < pageCount; i++) {
     const { width, height } = srcPages[i].getSize();
 
     const rendered = await renderPdfPageToDataUrl(pdfBytes, i + 1, {
-      dpi,
+      dpi: clampedDpi,
       format: 'image/jpeg',
       quality: jpegQuality,
     });
@@ -387,7 +388,7 @@ export async function compressPdfDocument(
   if (typeof document !== 'undefined') {
     try {
       const beforeRender = await renderPdfPageToDataUrl(pdfBytes, 1, {
-        dpi: 150,
+        dpi: 108,
         format: 'image/jpeg',
         quality: 0.88,
       });
@@ -633,4 +634,74 @@ export async function createSampleBloatedPdf(): Promise<Uint8Array> {
 
   // Save with useObjectStreams: false so the sample file mimics a bloated legacy scanner/ERP PDF
   return await doc.save({ useObjectStreams: false });
+}
+
+
+export interface TargetKbCandidatePass {
+  pass: number;
+  dpi: number;
+  quality: number;
+}
+
+export const TARGET_KB_CANDIDATE_LADDER: TargetKbCandidatePass[] = [
+  { pass: 1, dpi: 180, quality: 0.82 },
+  { pass: 2, dpi: 144, quality: 0.70 },
+  { pass: 3, dpi: 115, quality: 0.56 },
+  { pass: 4, dpi: 92, quality: 0.44 },
+  { pass: 5, dpi: 72, quality: 0.30 },
+  { pass: 6, dpi: 60, quality: 0.22 },
+];
+
+export interface PdfSpaceXRayAudit {
+  totalBytes: number;
+  imageBytes: number;
+  contentBytes: number;
+  metadataBytes: number;
+  structureBytes: number;
+  imagePercentage: number;
+  contentPercentage: number;
+  metadataPercentage: number;
+  structurePercentage: number;
+  imageStreamCount: number;
+  fontDescriptorCount: number;
+}
+
+export function analyzePdfStructure(pdfBytes: Uint8Array): PdfSpaceXRayAudit {
+  const xray = analyzePdfSpaceXRay(pdfBytes);
+  const decoder = new TextDecoder('latin1');
+  const raw = decoder.decode(pdfBytes);
+  let rawXmpBytes = 0;
+  const xmpMatches = raw.match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/g) || [];
+  for (const m of xmpMatches) rawXmpBytes += m.length;
+  const metadataBytes = Math.max(xray.metadataAndXmpBytes, rawXmpBytes);
+  return {
+    totalBytes: xray.totalBytes,
+    imageBytes: xray.imageStreamsBytes,
+    contentBytes: xray.contentAndFontBytes,
+    metadataBytes,
+    structureBytes: xray.structureAndXrefBytes,
+    imagePercentage: xray.imagePercentage,
+    contentPercentage: xray.contentPercentage,
+    metadataPercentage: xray.metadataPercentage,
+    structurePercentage: xray.structurePercentage,
+    imageStreamCount: xray.estimatedImageCount,
+    fontDescriptorCount: Math.max(1, Math.floor(xray.estimatedObjectCount / 4)),
+  };
+}
+
+export function computeBt709GrayscaleLuminance(r: number, g: number, b: number): number {
+  return Math.max(0, Math.min(255, Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b)));
+}
+
+export function stripPdfXmpAndCompressBytes(pdfBytes: Uint8Array): Uint8Array {
+  const decoder = new TextDecoder('latin1');
+  const raw = decoder.decode(pdfBytes);
+  const cleaned = raw
+    .replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/g, '')
+    .replace(/<\?xpacket[\s\S]*?\?>/g, '');
+  const out = new Uint8Array(cleaned.length);
+  for (let i = 0; i < cleaned.length; i++) {
+    out[i] = cleaned.charCodeAt(i) & 0xff;
+  }
+  return out.byteLength <= pdfBytes.byteLength ? out : pdfBytes;
 }

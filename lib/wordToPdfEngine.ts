@@ -413,3 +413,54 @@ export async function convertWordFilesToPdf(
   const firstFileName = files[0]?.name || 'document.docx';
   return await convertWordBlocksToPdf(combinedBlocks, firstFileName, options);
 }
+
+
+export const PAGE_DIMENSIONS: Record<'a4' | 'letter' | 'legal', { width: number; height: number }> = {
+  a4: { width: 595.28, height: 841.89 },
+  letter: { width: 612, height: 792 },
+  legal: { width: 612, height: 1008 },
+};
+
+export const MARGIN_POINTS: Record<'narrow' | 'normal' | 'wide', number> = {
+  narrow: 36,
+  normal: 54,
+  wide: 72,
+};
+
+export function parseMarkdownOrTextToBlocks(rawText: string): ParsedWordBlock[] {
+  const lines = (rawText || '').split(/\r?\n/);
+  const blocks: ParsedWordBlock[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (!line) {
+      i++;
+      continue;
+    }
+    if (line.startsWith('|') && line.endsWith('|')) {
+      const rows: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        const cur = lines[i].trim();
+        if (!/^\|[\s\-:|]+\|$/.test(cur)) {
+          rows.push(cur.slice(1, -1).split('|').map((c) => sanitizeWinAnsiText(c.trim())));
+        }
+        i++;
+      }
+      if (rows.length > 0) blocks.push({ type: 'table', text: '', rows });
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      blocks.push({ type: 'heading3', text: sanitizeWinAnsiText(line.slice(4)) });
+    } else if (line.startsWith('## ')) {
+      blocks.push({ type: 'heading2', text: sanitizeWinAnsiText(line.slice(3)) });
+    } else if (line.startsWith('# ')) {
+      blocks.push({ type: 'heading1', text: sanitizeWinAnsiText(line.slice(2)) });
+    } else if (/^([\-*•]|\d+\.)\s+/.test(line)) {
+      blocks.push({ type: 'bullet', text: sanitizeWinAnsiText(line.replace(/^([\-*•]|\d+\.)\s+/, '')) });
+    } else {
+      blocks.push({ type: 'paragraph', text: sanitizeWinAnsiText(line) });
+    }
+    i++;
+  }
+  return blocks;
+}

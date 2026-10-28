@@ -270,3 +270,24 @@ export async function convertSpreadsheetSheetsToPdf(
     pdfBlob,
   };
 }
+
+
+export const EXCEL_PAGE_DIMENSIONS: Record<'a4' | 'letter' | 'legal' | 'a3', { width: number; height: number }> = {
+  a4: { width: 595.28, height: 841.89 },
+  letter: { width: 612, height: 792 },
+  legal: { width: 612, height: 1008 },
+  a3: { width: 841.89, height: 1190.55 },
+};
+
+export function computeColumnWidths(rows: string[][], availableWidth: number): number[] {
+  const colCount = rows.reduce((m, r) => Math.max(m, r.length), 0);
+  if (colCount === 0) return [];
+  const sample = rows.slice(0, 200);
+  const weights = Array.from({ length: colCount }, (_, cIdx) => {
+    const lengths = sample.map((r) => (r[cIdx] || '').trim().length).sort((a, b) => a - b);
+    const p95 = lengths[Math.floor(lengths.length * 0.95)] || 8;
+    return Math.min(45, Math.max(6, p95));
+  });
+  const totalWeight = weights.reduce((a, b) => a + b, 0) || 1;
+  return weights.map((w) => (w / totalWeight) * availableWidth);
+}

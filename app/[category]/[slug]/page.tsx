@@ -26,7 +26,7 @@ export function generateStaticParams() {
     }));
 }
 
-function resolveCanonicalRoute(category: string, slug: string): {
+export function resolveCanonicalRoute(category: string, slug: string): {
   resolvedCategory: string;
   resolvedSlug: string;
 } {

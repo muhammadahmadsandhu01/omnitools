@@ -7,28 +7,28 @@ import { SITE_URL } from '@/config/site';
 import SchemaMarkup from '@/components/SchemaMarkup';
 
 // 22 Country Calculators
-import PakistanSalaryCalculator, { PK_METADATA } from '@/components/tools/salary/PakistanSalaryCalculator';
-import UnitedStatesSalaryCalculator, { METADATA as US_METADATA } from '@/components/tools/salary/UnitedStatesSalaryCalculator';
-import UnitedKingdomSalaryCalculator, { METADATA as GB_METADATA } from '@/components/tools/salary/UnitedKingdomSalaryCalculator';
-import GermanySalaryCalculator, { METADATA as DE_METADATA } from '@/components/tools/salary/GermanySalaryCalculator';
-import IndiaSalaryCalculator, { METADATA as IN_METADATA } from '@/components/tools/salary/IndiaSalaryCalculator';
-import CanadaSalaryCalculator, { METADATA as CA_METADATA } from '@/components/tools/salary/CanadaSalaryCalculator';
-import AustraliaSalaryCalculator, { METADATA as AU_METADATA } from '@/components/tools/salary/AustraliaSalaryCalculator';
-import SingaporeSalaryCalculator, { METADATA as SG_METADATA } from '@/components/tools/salary/SingaporeSalaryCalculator';
-import UnitedArabEmiratesSalaryCalculator, { METADATA as AE_METADATA } from '@/components/tools/salary/UnitedArabEmiratesSalaryCalculator';
-import SaudiArabiaSalaryCalculator, { METADATA as SA_METADATA } from '@/components/tools/salary/SaudiArabiaSalaryCalculator';
-import FranceSalaryCalculator, { METADATA as FR_METADATA } from '@/components/tools/salary/FranceSalaryCalculator';
-import JapanSalaryCalculator, { METADATA as JP_METADATA } from '@/components/tools/salary/JapanSalaryCalculator';
-import SwitzerlandSalaryCalculator, { METADATA as CH_METADATA } from '@/components/tools/salary/SwitzerlandSalaryCalculator';
-import NetherlandsSalaryCalculator, { METADATA as NL_METADATA } from '@/components/tools/salary/NetherlandsSalaryCalculator';
-import IrelandSalaryCalculator, { METADATA as IE_METADATA } from '@/components/tools/salary/IrelandSalaryCalculator';
-import NewZealandSalaryCalculator, { METADATA as NZ_METADATA } from '@/components/tools/salary/NewZealandSalaryCalculator';
-import SpainSalaryCalculator, { METADATA as ES_METADATA } from '@/components/tools/salary/SpainSalaryCalculator';
-import ItalySalaryCalculator, { METADATA as IT_METADATA } from '@/components/tools/salary/ItalySalaryCalculator';
-import SouthAfricaSalaryCalculator, { METADATA as ZA_METADATA } from '@/components/tools/salary/SouthAfricaSalaryCalculator';
-import BrazilSalaryCalculator, { METADATA as BR_METADATA } from '@/components/tools/salary/BrazilSalaryCalculator';
-import MexicoSalaryCalculator, { METADATA as MX_METADATA } from '@/components/tools/salary/MexicoSalaryCalculator';
-import SouthKoreaSalaryCalculator, { METADATA as KR_METADATA } from '@/components/tools/salary/SouthKoreaSalaryCalculator';
+import PakistanSalaryCalculator from '@/components/tools/salary/PakistanSalaryCalculator';
+import UnitedStatesSalaryCalculator from '@/components/tools/salary/UnitedStatesSalaryCalculator';
+import UnitedKingdomSalaryCalculator from '@/components/tools/salary/UnitedKingdomSalaryCalculator';
+import GermanySalaryCalculator from '@/components/tools/salary/GermanySalaryCalculator';
+import IndiaSalaryCalculator from '@/components/tools/salary/IndiaSalaryCalculator';
+import CanadaSalaryCalculator from '@/components/tools/salary/CanadaSalaryCalculator';
+import AustraliaSalaryCalculator from '@/components/tools/salary/AustraliaSalaryCalculator';
+import SingaporeSalaryCalculator from '@/components/tools/salary/SingaporeSalaryCalculator';
+import UnitedArabEmiratesSalaryCalculator from '@/components/tools/salary/UnitedArabEmiratesSalaryCalculator';
+import SaudiArabiaSalaryCalculator from '@/components/tools/salary/SaudiArabiaSalaryCalculator';
+import FranceSalaryCalculator from '@/components/tools/salary/FranceSalaryCalculator';
+import JapanSalaryCalculator from '@/components/tools/salary/JapanSalaryCalculator';
+import SwitzerlandSalaryCalculator from '@/components/tools/salary/SwitzerlandSalaryCalculator';
+import NetherlandsSalaryCalculator from '@/components/tools/salary/NetherlandsSalaryCalculator';
+import IrelandSalaryCalculator from '@/components/tools/salary/IrelandSalaryCalculator';
+import NewZealandSalaryCalculator from '@/components/tools/salary/NewZealandSalaryCalculator';
+import SpainSalaryCalculator from '@/components/tools/salary/SpainSalaryCalculator';
+import ItalySalaryCalculator from '@/components/tools/salary/ItalySalaryCalculator';
+import SouthAfricaSalaryCalculator from '@/components/tools/salary/SouthAfricaSalaryCalculator';
+import BrazilSalaryCalculator from '@/components/tools/salary/BrazilSalaryCalculator';
+import MexicoSalaryCalculator from '@/components/tools/salary/MexicoSalaryCalculator';
+import SouthKoreaSalaryCalculator from '@/components/tools/salary/SouthKoreaSalaryCalculator';
 
 // 22 Country SEO Companions
 import PakistanSalaryCalculatorSeo from '@/components/seo/salary/PakistanSalaryCalculatorSeo';
@@ -54,23 +54,247 @@ import BrazilSalaryCalculatorSeo from '@/components/seo/salary/BrazilSalaryCalcu
 import MexicoSalaryCalculatorSeo from '@/components/seo/salary/MexicoSalaryCalculatorSeo';
 import SouthKoreaSalaryCalculatorSeo from '@/components/seo/salary/SouthKoreaSalaryCalculatorSeo';
 
+export interface CountryMetadata {
+  code: string;
+  name: string;
+  flag: string;
+  currency: string;
+  symbol: string;
+  defaultTaxYear: string;
+  rulesetId: string;
+  sourceAuthority: string;
+}
+
+export const COUNTRY_METADATA: Record<string, CountryMetadata> = {
+  PK: {
+    code: 'PK',
+    name: 'Pakistan',
+    flag: '🇵🇰',
+    currency: 'PKR',
+    symbol: '₨',
+    defaultTaxYear: '2026-2027',
+    rulesetId: 'PK-FBR-2026.2',
+    sourceAuthority: 'Federal Board of Revenue (FBR)',
+  },
+  US: {
+    code: 'US',
+    name: 'United States',
+    flag: '🇺🇸',
+    currency: 'USD',
+    symbol: '$',
+    defaultTaxYear: '2026',
+    rulesetId: 'US-FED-2026.2',
+    sourceAuthority: 'Internal Revenue Service (IRS)',
+  },
+  GB: {
+    code: 'GB',
+    name: 'United Kingdom',
+    flag: '🇬🇧',
+    currency: 'GBP',
+    symbol: '£',
+    defaultTaxYear: '2026-2027',
+    rulesetId: 'UK-HMRC-2026.2',
+    sourceAuthority: 'HM Revenue & Customs (HMRC)',
+  },
+  DE: {
+    code: 'DE',
+    name: 'Germany',
+    flag: '🇩🇪',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'DE-BMF-2026.2',
+    sourceAuthority: 'Bundesministerium der Finanzen (BMF)',
+  },
+  IN: {
+    code: 'IN',
+    name: 'India',
+    flag: '🇮🇳',
+    currency: 'INR',
+    symbol: '₹',
+    defaultTaxYear: 'FY 2025-2026 (AY 2026-2027)',
+    rulesetId: 'IN-CBDT-2026.2',
+    sourceAuthority: 'Income Tax Department (CBDT)',
+  },
+  CA: {
+    code: 'CA',
+    name: 'Canada',
+    flag: '🇨🇦',
+    currency: 'CAD',
+    symbol: '$',
+    defaultTaxYear: '2026',
+    rulesetId: 'CA-CRA-2026.2',
+    sourceAuthority: 'Canada Revenue Agency (CRA)',
+  },
+  AU: {
+    code: 'AU',
+    name: 'Australia',
+    flag: '🇦🇺',
+    currency: 'AUD',
+    symbol: '$',
+    defaultTaxYear: '2026-2027',
+    rulesetId: 'AU-ATO-2026.2',
+    sourceAuthority: 'Australian Taxation Office (ATO)',
+  },
+  SG: {
+    code: 'SG',
+    name: 'Singapore',
+    flag: '🇸🇬',
+    currency: 'SGD',
+    symbol: '$',
+    defaultTaxYear: 'YA 2026',
+    rulesetId: 'SG-IRAS-2026.2',
+    sourceAuthority: 'Inland Revenue Authority of Singapore (IRAS)',
+  },
+  AE: {
+    code: 'AE',
+    name: 'United Arab Emirates',
+    flag: '🇦🇪',
+    currency: 'AED',
+    symbol: 'د.إ',
+    defaultTaxYear: '2026',
+    rulesetId: 'AE-FTA-2026.2',
+    sourceAuthority: 'Federal Tax Authority (FTA) / GPSSA',
+  },
+  SA: {
+    code: 'SA',
+    name: 'Saudi Arabia',
+    flag: '🇸🇦',
+    currency: 'SAR',
+    symbol: '﷼',
+    defaultTaxYear: '2026',
+    rulesetId: 'SA-ZATCA-2026.2',
+    sourceAuthority: 'Zakat, Tax and Customs Authority (ZATCA) / GOSI',
+  },
+  FR: {
+    code: 'FR',
+    name: 'France',
+    flag: '🇫🇷',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'FR-DGFIP-2026.2',
+    sourceAuthority: 'Direction Générale des Finances Publiques (DGFiP)',
+  },
+  JP: {
+    code: 'JP',
+    name: 'Japan',
+    flag: '🇯🇵',
+    currency: 'JPY',
+    symbol: '¥',
+    defaultTaxYear: '2026',
+    rulesetId: 'JP-NTA-2026.2',
+    sourceAuthority: 'National Tax Agency (NTA)',
+  },
+  CH: {
+    code: 'CH',
+    name: 'Switzerland',
+    flag: '🇨🇭',
+    currency: 'CHF',
+    symbol: 'CHF',
+    defaultTaxYear: '2026',
+    rulesetId: 'CH-ESTV-2026.2',
+    sourceAuthority: 'Federal Tax Administration (ESTV)',
+  },
+  NL: {
+    code: 'NL',
+    name: 'Netherlands',
+    flag: '🇳🇱',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'NL-BELASTING-2026.2',
+    sourceAuthority: 'Belastingdienst',
+  },
+  IE: {
+    code: 'IE',
+    name: 'Ireland',
+    flag: '🇮🇪',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'IE-REVENUE-2026.2',
+    sourceAuthority: 'Revenue Commissioners',
+  },
+  NZ: {
+    code: 'NZ',
+    name: 'New Zealand',
+    flag: '🇳🇿',
+    currency: 'NZD',
+    symbol: '$',
+    defaultTaxYear: '2026-2027',
+    rulesetId: 'NZ-IRD-2026.2',
+    sourceAuthority: 'Inland Revenue (Te Tari Taake)',
+  },
+  ES: {
+    code: 'ES',
+    name: 'Spain',
+    flag: '🇪🇸',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'ES-AEAT-2026.2',
+    sourceAuthority: 'Agencia Tributaria (AEAT)',
+  },
+  IT: {
+    code: 'IT',
+    name: 'Italy',
+    flag: '🇮🇹',
+    currency: 'EUR',
+    symbol: '€',
+    defaultTaxYear: '2026',
+    rulesetId: 'IT-ENTRATE-2026.2',
+    sourceAuthority: 'Agenzia delle Entrate',
+  },
+  ZA: {
+    code: 'ZA',
+    name: 'South Africa',
+    flag: '🇿🇦',
+    currency: 'ZAR',
+    symbol: 'R',
+    defaultTaxYear: '2026-2027',
+    rulesetId: 'ZA-SARS-2026.2',
+    sourceAuthority: 'South African Revenue Service (SARS)',
+  },
+  BR: {
+    code: 'BR',
+    name: 'Brazil',
+    flag: '🇧🇷',
+    currency: 'BRL',
+    symbol: 'R$',
+    defaultTaxYear: '2026',
+    rulesetId: 'BR-RFB-2026.2',
+    sourceAuthority: 'Receita Federal do Brasil (RFB)',
+  },
+  MX: {
+    code: 'MX',
+    name: 'Mexico',
+    flag: '🇲🇽',
+    currency: 'MXN',
+    symbol: '$',
+    defaultTaxYear: '2026',
+    rulesetId: 'MX-SAT-2026.2',
+    sourceAuthority: 'Servicio de Administración Tributaria (SAT)',
+  },
+  KR: {
+    code: 'KR',
+    name: 'South Korea',
+    flag: '🇰🇷',
+    currency: 'KRW',
+    symbol: '₩',
+    defaultTaxYear: '2026',
+    rulesetId: 'KR-NTS-2026.2',
+    sourceAuthority: 'National Tax Service (NTS)',
+  },
+};
+
 interface CountryConfig {
   code: string;
   name: string;
   slug: string;
   tool: React.ComponentType;
   seo: React.ComponentType;
-  meta: {
-    name?: string;
-    countryName?: string;
-    flag: string;
-    currency: string;
-    defaultTaxYear: string;
-    calculationScope: string;
-    sourceAuthority?: string;
-    rulesetId?: string;
-    [key: string]: unknown;
-  };
+  meta: CountryMetadata;
 }
 
 export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
@@ -80,7 +304,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'pakistan',
     tool: PakistanSalaryCalculator,
     seo: PakistanSalaryCalculatorSeo,
-    meta: PK_METADATA,
+    meta: COUNTRY_METADATA.PK,
   },
   'united-states': {
     code: 'US',
@@ -88,7 +312,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'united-states',
     tool: UnitedStatesSalaryCalculator,
     seo: UnitedStatesSalaryCalculatorSeo,
-    meta: US_METADATA,
+    meta: COUNTRY_METADATA.US,
   },
   'united-kingdom': {
     code: 'GB',
@@ -96,7 +320,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'united-kingdom',
     tool: UnitedKingdomSalaryCalculator,
     seo: UnitedKingdomSalaryCalculatorSeo,
-    meta: GB_METADATA,
+    meta: COUNTRY_METADATA.GB,
   },
   'germany': {
     code: 'DE',
@@ -104,7 +328,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'germany',
     tool: GermanySalaryCalculator,
     seo: GermanySalaryCalculatorSeo,
-    meta: DE_METADATA,
+    meta: COUNTRY_METADATA.DE,
   },
   'india': {
     code: 'IN',
@@ -112,7 +336,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'india',
     tool: IndiaSalaryCalculator,
     seo: IndiaSalaryCalculatorSeo,
-    meta: IN_METADATA,
+    meta: COUNTRY_METADATA.IN,
   },
   'canada': {
     code: 'CA',
@@ -120,7 +344,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'canada',
     tool: CanadaSalaryCalculator,
     seo: CanadaSalaryCalculatorSeo,
-    meta: CA_METADATA,
+    meta: COUNTRY_METADATA.CA,
   },
   'australia': {
     code: 'AU',
@@ -128,7 +352,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'australia',
     tool: AustraliaSalaryCalculator,
     seo: AustraliaSalaryCalculatorSeo,
-    meta: AU_METADATA,
+    meta: COUNTRY_METADATA.AU,
   },
   'singapore': {
     code: 'SG',
@@ -136,7 +360,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'singapore',
     tool: SingaporeSalaryCalculator,
     seo: SingaporeSalaryCalculatorSeo,
-    meta: SG_METADATA,
+    meta: COUNTRY_METADATA.SG,
   },
   'united-arab-emirates': {
     code: 'AE',
@@ -144,7 +368,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'united-arab-emirates',
     tool: UnitedArabEmiratesSalaryCalculator,
     seo: UnitedArabEmiratesSalaryCalculatorSeo,
-    meta: AE_METADATA,
+    meta: COUNTRY_METADATA.AE,
   },
   'saudi-arabia': {
     code: 'SA',
@@ -152,7 +376,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'saudi-arabia',
     tool: SaudiArabiaSalaryCalculator,
     seo: SaudiArabiaSalaryCalculatorSeo,
-    meta: SA_METADATA,
+    meta: COUNTRY_METADATA.SA,
   },
   'france': {
     code: 'FR',
@@ -160,7 +384,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'france',
     tool: FranceSalaryCalculator,
     seo: FranceSalaryCalculatorSeo,
-    meta: FR_METADATA,
+    meta: COUNTRY_METADATA.FR,
   },
   'japan': {
     code: 'JP',
@@ -168,7 +392,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'japan',
     tool: JapanSalaryCalculator,
     seo: JapanSalaryCalculatorSeo,
-    meta: JP_METADATA,
+    meta: COUNTRY_METADATA.JP,
   },
   'switzerland': {
     code: 'CH',
@@ -176,7 +400,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'switzerland',
     tool: SwitzerlandSalaryCalculator,
     seo: SwitzerlandSalaryCalculatorSeo,
-    meta: CH_METADATA,
+    meta: COUNTRY_METADATA.CH,
   },
   'netherlands': {
     code: 'NL',
@@ -184,7 +408,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'netherlands',
     tool: NetherlandsSalaryCalculator,
     seo: NetherlandsSalaryCalculatorSeo,
-    meta: NL_METADATA,
+    meta: COUNTRY_METADATA.NL,
   },
   'ireland': {
     code: 'IE',
@@ -192,7 +416,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'ireland',
     tool: IrelandSalaryCalculator,
     seo: IrelandSalaryCalculatorSeo,
-    meta: IE_METADATA,
+    meta: COUNTRY_METADATA.IE,
   },
   'new-zealand': {
     code: 'NZ',
@@ -200,7 +424,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'new-zealand',
     tool: NewZealandSalaryCalculator,
     seo: NewZealandSalaryCalculatorSeo,
-    meta: NZ_METADATA,
+    meta: COUNTRY_METADATA.NZ,
   },
   'spain': {
     code: 'ES',
@@ -208,7 +432,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'spain',
     tool: SpainSalaryCalculator,
     seo: SpainSalaryCalculatorSeo,
-    meta: ES_METADATA,
+    meta: COUNTRY_METADATA.ES,
   },
   'italy': {
     code: 'IT',
@@ -216,7 +440,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'italy',
     tool: ItalySalaryCalculator,
     seo: ItalySalaryCalculatorSeo,
-    meta: IT_METADATA,
+    meta: COUNTRY_METADATA.IT,
   },
   'south-africa': {
     code: 'ZA',
@@ -224,7 +448,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'south-africa',
     tool: SouthAfricaSalaryCalculator,
     seo: SouthAfricaSalaryCalculatorSeo,
-    meta: ZA_METADATA,
+    meta: COUNTRY_METADATA.ZA,
   },
   'brazil': {
     code: 'BR',
@@ -232,7 +456,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'brazil',
     tool: BrazilSalaryCalculator,
     seo: BrazilSalaryCalculatorSeo,
-    meta: BR_METADATA,
+    meta: COUNTRY_METADATA.BR,
   },
   'mexico': {
     code: 'MX',
@@ -240,7 +464,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'mexico',
     tool: MexicoSalaryCalculator,
     seo: MexicoSalaryCalculatorSeo,
-    meta: MX_METADATA,
+    meta: COUNTRY_METADATA.MX,
   },
   'south-korea': {
     code: 'KR',
@@ -248,7 +472,7 @@ export const COUNTRY_REGISTRY: Record<string, CountryConfig> = {
     slug: 'south-korea',
     tool: SouthKoreaSalaryCalculator,
     seo: SouthKoreaSalaryCalculatorSeo,
-    meta: KR_METADATA,
+    meta: COUNTRY_METADATA.KR,
   },
 };
 
@@ -285,6 +509,58 @@ const DEFAULT_TAX_YEARS: Record<string, string> = {
   KR: '2026',
 };
 
+export function buildCountryProgrammaticKeywords(
+  countryName = '',
+  currency = '',
+  taxYear = '',
+  authority = '',
+  rulesetId = ''
+): string[] {
+  const lower = String(countryName || '').toLowerCase();
+  const curLower = String(currency || '').toLowerCase();
+  const cleanAuth = String(authority || '').replace(/[()]/g, '').trim();
+  return [
+    `${countryName} salary calculator`,
+    `${countryName} take home pay ${taxYear}`,
+    `${countryName} income tax calculator`,
+    `${currency} net salary calculator`,
+    `${lower} income tax calculator`,
+    `${lower} gross to net salary ${currency}`,
+    `${lower} paycheck tax calculator`,
+    `${lower} payroll cost calculator`,
+    `${lower} salary calculator`,
+    `${lower} take home pay calculator ${taxYear}`,
+    `${lower} income tax calculator ${taxYear}`,
+    `${lower} gross to net salary calculator ${curLower}`,
+    `${lower} net salary calculator after tax and social security`,
+    `${lower} paycheck calculator monthly biweekly weekly daily hourly`,
+    `${lower} total employer cost of employment ctc calculator`,
+    `${lower} progressive tax brackets and marginal vs effective tax rate`,
+    `${lower} statutory payroll deduction ledger ${rulesetId.toLowerCase()}`,
+    `${lower} salary after tax ${currency} ${taxYear} ${cleanAuth.toLowerCase()}`,
+    `calculate net take home pay in ${lower} from gross salary`,
+    `${lower} employee social security and employer payroll contribution calculator`,
+    `${lower} annual to monthly and hourly net wage converter`,
+    `${lower} tax free allowance and progressive slab breakdown ${taxYear}`,
+    `free client side ${lower} salary and payroll tax calculator no signup`,
+    `${lower} expatriate and resident net salary comparison ${currency}`,
+    `${lower} job offer gross to net paycheck estimator ${taxYear}`,
+    `${lower} biweekly 26 pay periods vs monthly 12 pay periods calculator`,
+    `${lower} daily rate 260 working days and hourly rate 2080 hours tax`,
+    `${lower} statutory income tax reconciliation table csv export`,
+    `how much tax do i pay on my salary in ${lower} ${taxYear}`,
+    `${lower} effective tax rate vs marginal tax bracket calculator`,
+    `${lower} employer social insurance surcharge and payroll overhead`,
+    `${lower} private in-browser salary tax calculator zero data logging`,
+    `${lower} talent.com and adp paycheck calculator free alternative`,
+    `${lower} glassdoor and payscale gross to net take home alternative`,
+    `${lower} statutory tax ruleset ${rulesetId} verified payroll model`,
+    `${lower} remote worker and software engineer net salary calculator`,
+    `${lower} overtime bonus and gross compensation tax withholding`,
+    `${lower} ${currency} payslip generator and tax audit breakdown ${taxYear}`,
+  ];
+}
+
 export function generateStaticParams() {
   return Object.keys(COUNTRY_REGISTRY).map((country) => ({
     category: 'finance',
@@ -292,32 +568,6 @@ export function generateStaticParams() {
     country,
   }));
 }
-
-
-const countryLocales: Record<string, string> = {
-  'united-states': 'en-US',
-  'united-kingdom': 'en-GB',
-  'germany': 'en-DE',
-  'india': 'en-IN',
-  'canada': 'en-CA',
-  'australia': 'en-AU',
-  'singapore': 'en-SG',
-  'united-arab-emirates': 'en-AE',
-  'saudi-arabia': 'en-SA',
-  'pakistan': 'en-PK',
-  'france': 'en-FR',
-  'japan': 'en-JP',
-  'switzerland': 'en-CH',
-  'netherlands': 'en-NL',
-  'ireland': 'en-IE',
-  'new-zealand': 'en-NZ',
-  'spain': 'en-ES',
-  'italy': 'en-IT',
-  'south-africa': 'en-ZA',
-  'brazil': 'en-BR',
-  'mexico': 'en-MX',
-  'south-korea': 'en-KR',
-};
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category, slug, country } = await params;
@@ -346,23 +596,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    keywords: [
-      `${entry.name.toLowerCase()} salary calculator`,
-      `${entry.name.toLowerCase()} take home pay calculator ${taxYear}`,
-      `${entry.name.toLowerCase()} income tax calculator`,
-      `${entry.name.toLowerCase()} gross to net salary ${entry.meta.currency}`,
-      `${entry.name.toLowerCase()} paycheck tax calculator`,
-      `${entry.name.toLowerCase()} payroll cost calculator`,
-    ],
+    keywords: buildCountryProgrammaticKeywords(
+      entry.name,
+      entry.meta.currency,
+      taxYear,
+      String(entry.meta.sourceAuthority || ''),
+      String(entry.meta.rulesetId || entry.code)
+    ),
     alternates: {
       canonical: canonicalUrl,
-      languages: {
-        'x-default': `${SITE_URL}/finance/salary-calculator`,
-        ...Object.keys(countryLocales).reduce((acc, c) => {
-          acc[countryLocales[c]] = `${SITE_URL}/finance/salary-calculator/${c}`;
-          return acc;
-        }, {} as Record<string, string>),
-      },
     },
     robots: {
       index: true,
@@ -429,12 +671,13 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
               `Annual, Monthly, Biweekly, Weekly, Daily, and Hourly pay period normalization`,
               `Total Employer Cost of Employment reconciliation and CSV payroll export`,
             ]}
-            keywords={[
-              `${entry.name} salary calculator`,
-              `${entry.name} take home pay ${taxYear}`,
-              `${entry.name} income tax calculator`,
-              `${entry.meta.currency} net salary calculator`,
-            ]}
+            keywords={buildCountryProgrammaticKeywords(
+              entry.name,
+              entry.meta.currency,
+              taxYear,
+              String(entry.meta.sourceAuthority || ''),
+              String(entry.meta.rulesetId || entry.code)
+            )}
           />
           <script
             type="application/ld+json"

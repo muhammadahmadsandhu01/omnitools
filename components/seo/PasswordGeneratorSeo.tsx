@@ -76,6 +76,11 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
     answer:
       'KivaroTools supports SHA-256, SHA-384, SHA-512, SHA-1, and MD5 for text hashing and HMAC calculation, and SHA-256, SHA-384, and SHA-512 for streaming file integrity checksum verification.',
   },
+  {
+    question: 'How does the Bulk Password Generator calculate entropy across 100 simultaneous passwords?',
+    answer:
+      'Every password in a 1-to-100 bulk generation batch is independently drawn from Web Crypto API crypto.getRandomValues() with zero-modulo-bias rejection sampling and audited individually for exact pool entropy bits.',
+  },
 ];
 
 export default function PasswordGeneratorSeo() {
@@ -250,8 +255,8 @@ export default function PasswordGeneratorSeo() {
           <h2 id="password-generator-strength-matrix" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Technical Specification: Entropy, Crack Times &amp; Security Ratings
           </h2>
-          <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-            <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+          <div className="overflow-x-auto overscroll-x-contain mb-6">
+            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
               <thead>
                 <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
                   <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Format / Length</th>
@@ -377,7 +382,67 @@ export default function PasswordGeneratorSeo() {
         </section>
 
         {/* Zone 6: Frequently Asked Questions */}
-        <section aria-labelledby="password-generator-frequently-asked-questions" className="mb-8">
+              {/* Competitor Comparison Section */}
+      <section aria-labelledby="password-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="password-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+          Password Generator Comparison: KivaroTools vs. Password Managers
+        </h2>
+        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+          See why security-conscious users trust KivaroTools for zero-log cryptographic entropy:
+        </p>
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">1Password Generator</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">LastPass Generator</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Bitwarden Generator</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Cryptographic Randomness</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Web Crypto API crypto.getRandomValues() CSPRNG</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">CSPRNG</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">CSPRNG</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">CSPRNG</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">EFF Diceware Passphrases</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Full 7,776-word EFF list + custom delimiters</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic wordlist</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Character only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic wordlist</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Bulk Generation Volume</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Up to 100 passwords in Bulk Mode + 1 GB File Checksums</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">1 password at a time</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">1 at a time</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">1 at a time</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Shannon &amp; NIST Entropy Audit</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Exact Shannon bits + GPU crack time table</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Strength bar only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Weak/Good label</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Entropy bits only</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Subscription / Upsell Prompts</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Zero subscription upsells (100% Free)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Pushes 1Password subscription</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Pushes LastPass plan</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Bitwarden upsell</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="password-generator-frequently-asked-questions" className="mb-8">
           <h2 id="password-generator-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
           </h2>
@@ -445,6 +510,51 @@ export default function PasswordGeneratorSeo() {
               — Sanitize vector graphics, remove XSS scripts, and minify SVG markup with sandboxed previewing.
             </li>
           </ul>
+        </section>
+      
+                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+            Cryptographic Password &amp; Secret Generator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">cryptographic password generator csprng</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">eff diceware memorable passphrase generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sha256 sha512 md5 hash generator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">hmac sha256 signature generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">api key jwt secret uuid v4 generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side 1gb file checksum verifier</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">have i been pwned k anonymity breach checker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero modulo bias random password maker</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pbkdf2 key derivation calculator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bulk password generator csv json export</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">secure random password generator crypto web api</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">eff diceware passphrase generator memorable words</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate random pin code 4 digit 6 digit 8 digit</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">shannon entropy password strength auditor in bits</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bulk password generator generate 50 passwords at once</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">password generator exclude ambiguous lookalike characters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">custom symbol password generator for banking requirements</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate strong password without vowels or numbers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side password generator 100 private zero server</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">password crack time estimator brute force gpu resistance</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate cryptographically secure hash secret keys</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">nist compliant password generator special characters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">random alphanumeric string generator 32 64 128 characters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">wifi network wpa2 wpa3 password generator secure</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">database administrator strong root password generator</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">api token and webhook secret key generator online</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">memorable password generator with word capitalization</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy generated password to clipboard one click auto clear</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">password strength checker zxcvbn entropy score</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">offline password generator works without internet</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">customizable password length 8 to 128 characters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate password with exact mix of uppercase lowercase numbers</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">enterprise team password rotation generator free</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">random character generator no repeating characters</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero log cryptographic password tool in browser</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">strongest password generator for master passwords</span>
+          </div>
         </section>
       </article>
     </>

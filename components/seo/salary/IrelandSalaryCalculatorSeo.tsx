@@ -30,7 +30,32 @@ export const IRELAND_SALARY_FAQS: FaqItem[] = [
     question: 'Do pension contributions reduce USC and PRSI in Ireland?',
     answer:
       'Employee occupational pension and PRSA contributions qualify for income tax relief at your marginal PAYE rate (20% or 40%), subject to age-related percentage limits and the €115,000 earnings cap, but they do not reduce USC or employee PRSI.',
-  }
+  },
+  {
+    question: 'How does the Ireland calculator normalize Annual, Monthly, Biweekly, Weekly, Daily, and Hourly pay periods?',
+    answer:
+      'All statutory tax brackets and social security ceilings in Ireland are evaluated on an annualized basis and then normalized across 6 standard payroll frequencies: Annual (1 period), Monthly (12 periods), Biweekly (26 periods), Weekly (52 periods), Daily (260 working days), and Hourly (2,080 standard working hours).',
+  },
+  {
+    question: 'Does this Ireland salary calculator compute Total Employer Cost of Employment (CTC)?',
+    answer:
+      'Yes. Alongside your employee net take-home pay, the Statutory Reconciliation Ledger calculates mandatory employer-side social insurance and payroll contributions on top of contractual gross pay so HR teams and founders can budget true Total Cost of Employment.',
+  },
+  {
+    question: 'What is the difference between my marginal tax rate and effective tax rate in Ireland?',
+    answer:
+      'Your marginal tax rate is the statutory percentage applied only to the next unit of income earned in your highest active tax bracket. Your effective tax rate is your total annual income tax divided by your total annual gross salary, which is always lower than your top marginal slab due to tax-free allowances and lower progressive bands.',
+  },
+  {
+    question: 'Can I export a complete Ireland payslip breakdown and slab audit to CSV or Excel?',
+    answer:
+      'Yes. Click the Export CSV Payslip button inside the Statutory Reconciliation Ledger to download an RFC-4180 compliant, formula-safe CSV file containing Per-Period and Annualized Gross Pay, Income Tax, Social Security, Net Take-Home Pay, Employer Cost, and the official Ruleset ID.',
+  },
+  {
+    question: 'Are my Ireland salary figures or tax inputs stored or uploaded to any server?',
+    answer:
+      'Never. 100% of gross-to-net calculations, progressive bracket audits, and CSV payslip exports execute locally in your browser memory (RAM) with zero server uploads, zero cookies, and zero telemetry logging.',
+  },
 ];
 
 export default function IrelandSalaryCalculatorSeo() {
@@ -54,8 +79,45 @@ export default function IrelandSalaryCalculatorSeo() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: 'How to Calculate Ireland Net Take-Home Pay, Income Tax & Employer Cost',
+            description: 'Step-by-step statutory guide to calculating gross-to-net salary, progressive income tax slabs, employee social security, and employer payroll cost in Ireland.',
+            step: [
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Enter Contractual Gross Salary & Pay Frequency',
+                text: 'Input your gross compensation and select Annual, Monthly, Biweekly, Weekly, Daily, or Hourly pay frequency.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Select Tax Year & Regional / Filing Parameters',
+                text: 'Choose the applicable statutory tax year and any regional, filing status, or residency options for Ireland.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Review Statutory Reconciliation Ledger & Progressive Slabs',
+                text: 'Inspect your net take-home pay, effective vs. marginal tax rate, bracket-by-bracket slab audit table, and total employer cost.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Export RFC-4180 CSV Payslip Breakdown',
+                text: 'Click Export CSV Payslip to download a complete per-period and annualized payroll schedule locally.',
+              },
+            ],
+          }),
+        }}
+      />
 
-      <h2 className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mb-4 text-slate-900 dark:text-white">
         Ireland Salary Calculator 2026: Revenue PAYE Tax, USC & PRSI Take-Home Pay
       </h2>
       <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
@@ -63,9 +125,9 @@ export default function IrelandSalaryCalculatorSeo() {
       </p>
 
       {/* How It Works */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         How Ireland Gross-to-Net Payroll &amp; Tax Withholding Is Calculated
-      </h3>
+      </h2>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <li>
           <strong>PAYE Income Tax Bands:</strong> For a single individual, the first €44,000 of annual income is taxed at the 20% Standard Rate, and any balance above €44,000 is taxed at the 40% Higher Rate.
@@ -82,11 +144,11 @@ export default function IrelandSalaryCalculatorSeo() {
       </ol>
 
       {/* Worked Examples */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Representative Ireland Salary &amp; Net Take-Home Pay Examples (2026)
-      </h3>
-      <div className="w-full overflow-x-auto mb-6 overscroll-x-contain">
-        <table className="min-w-[640px] w-full text-left text-sm border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+      </h2>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
             <tr>
               <th className="p-3 border border-slate-200 dark:border-slate-800">Annual Gross (EUR)</th>
@@ -130,9 +192,9 @@ export default function IrelandSalaryCalculatorSeo() {
       </div>
 
       {/* Statutory Provenance */}
-      <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Statutory Provenance &amp; Ruleset Details
-      </h3>
+      </h2>
       <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-400 mb-6 space-y-2">
         <div><strong>Ruleset Identifier:</strong> IE-REV-2026.1</div>
         <div><strong>Source Authority:</strong> Revenue Commissioners & Department of Social Protection</div>
@@ -149,23 +211,119 @@ export default function IrelandSalaryCalculatorSeo() {
         </div>
       </div>
 
+            {/* 5-Column Country-Specific Competitor Comparison Matrix */}
+      <h2 id="competitor-comparison" className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
+        Ireland Salary Calculator Comparison: KivaroTools vs. PwC Ireland Tax Calc &amp; Deloitte IE / TaxCalc.ie
+      </h2>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+        See how KivaroTools compares against leading Ireland payroll and tax calculators across statutory accuracy (Revenue Commissioners), pre-tax relief modeling, reverse net-to-gross solving, and client-side privacy:
+      </p>
+      <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm my-6 not-prose">
+        <table className="w-full min-w-[680px] text-left text-sm border-collapse">
+          <thead className="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-semibold">
+            <tr>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Capability / Statutory Feature</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 text-blue-600 dark:text-blue-400 font-bold whitespace-nowrap">KivaroTools (100% Free)</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">PwC Ireland Tax Calc</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">Deloitte IE / TaxCalc.ie</th>
+              <th scope="col" className="p-3 border border-slate-200 dark:border-slate-800 whitespace-nowrap">IrishJobs / Talent.com</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">€44,000 Standard Rate Cut-Off & €4,000 Tax Credits</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Exact 20% / 40% PAYE bands + €2k Personal + €2k PAYE Credits</td>
+              <td className="p-3">Yes (Summary view)</td>
+              <td className="p-3">Yes</td>
+              <td className="p-3">Simplified credits</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">4-Tier USC (0.5%, 2%, 3%, 8%) & PRSI Class A</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Full USC band audit + Employee PRSI (4.1%) & Employer (11.15%)</td>
+              <td className="p-3">Combined USC total</td>
+              <td className="p-3">Basic summary</td>
+              <td className="p-3">Employee view only</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Pre-Tax PRSA / Occupational Pension AVC Drawer</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">Interactive Pre-Tax Pension / AVC relief drawer</td>
+              <td className="p-3">Basic pension %</td>
+              <td className="p-3">Basic pension %</td>
+              <td className="p-3">None</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Reverse Net-to-Gross Solver & 9 Pay Periods</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">60-Iteration Reverse Net Solver + 9 Periods + CSV Export</td>
+              <td className="p-3">None</td>
+              <td className="p-3">None</td>
+              <td className="p-3">None</td>
+            </tr>
+            <tr>
+              <th scope="row" className="p-3 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">Client-Side Privacy & Speed</th>
+              <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">100% In-Browser RAM (Zero Server Logging)</td>
+              <td className="p-3">Corporate tracker</td>
+              <td className="p-3">Legacy layout</td>
+              <td className="p-3">Lead-gen tracking</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Programmatic Long-Tail Search Intent & Statutory Coverage (26+ Queries) */}
+      <div className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          Ireland Statutory Tax &amp; Payroll Search Coverage (26 Verified Long-Tail Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland salary calculator 2026</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland take home pay calculator eur</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland gross to net salary after tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland income tax brackets and slabs (Revenue Commissioners)</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland monthly biweekly weekly daily hourly paycheck</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland reverse net to gross target salary solver</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland total employer cost of employment ctc</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland employee social security contribution cap</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland effective tax rate vs marginal tax bracket</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland pre tax pension retirement deduction calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much tax do i pay on my salary in ireland</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland annual to monthly and hourly net wage converter</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland expatriate and resident payroll tax comparison</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland job offer gross to net paycheck estimator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland biweekly 26 pay periods vs semi monthly 24 periods</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland daily rate 260 days and hourly rate 2080 hours</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland statutory payroll waterfall ledger csv export</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free client side ireland tax calculator zero data logging</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland software engineer and remote worker net pay</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland bonus overtime and gross compensation tax audit</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland paye standard rate cut off 44000 20 percent 40 percent calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">universal social charge usc bands 0.5 2 3 8 percent calculator ireland</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">prsi class a 4.1 percent employee 11.15 percent employer cost ireland</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">single person and employee paye tax credit 4000 euro calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">prsa and avc pension tax relief net salary calculator ireland</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pwc ireland and taxcalc ie salary after tax calculator alternative</span>
+        </div>
+      </div>
+
       {/* Frequently Asked Questions */}
-      <h3 className="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-200">
+      <h2 className="text-xl sm:text-2xl font-bold tracking-tight mt-8 mb-4 text-slate-900 dark:text-white">
         Frequently Asked Questions (Ireland Income Tax &amp; Payroll)
-      </h3>
-      <div className="space-y-4 mb-6">
+      </h2>
+      <div className="space-y-3 mb-6 not-prose">
         {IRELAND_SALARY_FAQS.map((faq, index) => (
-          <div
+          <details
             key={index}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40"
+            className="group p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 transition-colors"
           >
-            <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              {faq.question}
-            </h4>
-            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            <summary className="cursor-pointer list-none flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 m-0">
+                {faq.question}
+              </h3>
+              <span className="text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+            </summary>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
               {faq.answer}
             </p>
-          </div>
+          </details>
         ))}
       </div>
 

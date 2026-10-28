@@ -381,8 +381,8 @@ export default function PakistanSalaryCalculator() {
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
               Pay Frequency
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(['monthly', 'annual', 'biweekly', 'weekly'] as PayFrequency[]).map((freq) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {(['monthly', 'annual', 'biweekly', 'weekly', 'daily', 'hourly'] as PayFrequency[]).map((freq) => (
                 <button
                   key={freq}
                   type="button"
@@ -544,10 +544,38 @@ export default function PakistanSalaryCalculator() {
 
           {/* Reconciliation Ledger */}
           <div className="bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-slate-800 shadow-sm space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Statutory Reconciliation Ledger (FY {taxYear})</span>
-            </h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Statutory Reconciliation Ledger (FY {taxYear})</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  const csvRows = [
+                    ["Metric", "Per Period (" + frequency + ")", "Annualized (" + PK_METADATA.currency + ")"],
+                    ["Contractual Gross Salary", result.periodGross.toFixed(0), result.annualGross.toFixed(0)],
+                    ["Statutory Income Tax", result.periodTax.toFixed(0), result.annualIncomeTax.toFixed(0)],
+                    ["Total Deductions", (result.annualTotalDeductions / periodsPerYear).toFixed(0), result.annualTotalDeductions.toFixed(0)],
+                    ["Net Take-Home Pay", result.periodNet.toFixed(0), result.annualNet.toFixed(0)],
+                    ["Total Employer Cost (CTC)", result.periodEmployerCost.toFixed(0), result.annualEmployerCost.toFixed(0)],
+                    ["Effective Tax Rate (%)", result.effectiveTaxRate.toFixed(2) + "%", result.effectiveTotalRate.toFixed(2) + "%"],
+                    ["Ruleset ID", PK_METADATA.rulesetId, taxYear],
+                  ];
+                  const csvContent = csvRows.map((r) => r.map((v) => "\"" + String(v).replace(/"/g, "\"\"") + "\"").join(",")).join("\r\n");
+                  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "pakistan-payslip-" + taxYear + ".csv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold hover:bg-blue-100 transition-colors"
+              >
+                Export CSV Payslip
+              </button>
+            </div>
 
             <div className="overflow-x-auto overscroll-x-contain">
               <table className="min-w-[580px] w-full text-xs text-left border-collapse">

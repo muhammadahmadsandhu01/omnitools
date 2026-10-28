@@ -30,11 +30,11 @@ export interface PdfToExcelResult {
  * Prefixes cells starting with =, +, -, @, \t, or \r (unless it's a pure negative number like -150.25)
  * with a single quote so Excel/Google Sheets never execute malicious formulas.
  */
-export function sanitizeSpreadsheetCell(val: string): string {
+export function sanitizeSpreadsheetCell(val: string, sanitizeFormulas = true): string {
   const trimmed = String(val ?? '').trim();
-  if (!trimmed) return '';
-  if (/^-[\d.,]+%?$/.test(trimmed)) {
-    return trimmed; // Valid negative numeric value
+  if (!trimmed || !sanitizeFormulas) return trimmed;
+  if (/^-[$€£¥₹₨₩]?\s*[\d.,]+%?$/.test(trimmed)) {
+    return trimmed; // Valid negative numeric or currency value
   }
   if (/^[=+\-@\t\r]/.test(trimmed)) {
     return "'" + trimmed;
@@ -135,7 +135,7 @@ export async function convertPdfToExcel(
   for (const page of pages) {
     const pageRowsRaw = extractTableFromPdfPage(page);
     const pageRows = sanitizeFormulas
-      ? pageRowsRaw.map((r) => r.map(sanitizeSpreadsheetCell))
+      ? pageRowsRaw.map((r) => r.map((c) => sanitizeSpreadsheetCell(c, sanitizeFormulas)))
       : pageRowsRaw;
 
     for (const r of pageRows) {
