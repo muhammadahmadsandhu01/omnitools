@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import HomeClient from '@/components/home/HomeClient';
 import { HOME_FAQS } from '@/config/homeFaqs';
-import { SITE_URL, CONTACT_EMAIL } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OFFICIAL_SOCIAL_PROFILES } from '@/config/site';
 import { getPublicTools } from '@/config/toolsData';
 
 export const metadata: Metadata = {
@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@kivarotools',
     title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
     description:
       'Explore 23+ free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
@@ -47,6 +48,7 @@ export default function HomePage() {
     name: 'KivaroTools',
     url: SITE_URL,
     logo: `${SITE_URL}/icon-512.png`,
+    sameAs: [...OFFICIAL_SOCIAL_PROFILES],
     contactPoint: {
       '@type': 'ContactPoint',
       email: CONTACT_EMAIL,

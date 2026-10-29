@@ -19,3 +19,17 @@ export const CONTACT_EMAIL =
  * Operating jurisdiction/location of the independent developer.
  */
 export const OPERATOR_LOCATION = 'Pakistan';
+
+/**
+ * Verified Official KivaroTools Company & Organization social profile URLs.
+ * Used for Schema.org JSON-LD sameAs entity resolution, Google Knowledge Graph verification,
+ * and site-wide footer navigation.
+ */
+export const OFFICIAL_SOCIAL_PROFILES = [
+  'https://github.com/kivarotools',
+  'https://www.linkedin.com/company/kivarotools',
+  'https://x.com/kivarotools',
+  'https://www.instagram.com/kivaro_tools/',
+  'https://www.facebook.com/profile.php?id=61595701754284',
+] as const;
+

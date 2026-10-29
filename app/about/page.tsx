@@ -14,7 +14,7 @@ import {
   Scale,
 } from 'lucide-react';
 import { categories } from '@/config/toolsData';
-import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, OFFICIAL_SOCIAL_PROFILES } from '@/config/site';
 
 export const metadata: Metadata = {
   title: 'About KivaroTools — Architecture, Methodology & Privacy Standards',
@@ -32,6 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    site: '@kivarotools',
     title: 'About KivaroTools — Architecture, Methodology & Privacy Standards',
     description:
       'Learn about KivaroTools, our 100% client-side browser utility architecture, mathematical & statutory verification methodology, and commitment to privacy-conscious computing.',
@@ -51,6 +52,7 @@ export default function AboutPage() {
       name: 'KivaroTools',
       url: SITE_URL,
       email: CONTACT_EMAIL,
+      sameAs: [...OFFICIAL_SOCIAL_PROFILES],
     },
   };
 
