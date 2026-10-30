@@ -119,7 +119,10 @@ export const metadata: Metadata = {
   },
 
   verification: {
-    google: 'XmdHQQlKLYufqU-aZ50nGfT5BQkGJNvQCWaUsTA06yw',
+    google: [
+      'XmdHQQlKLYufqU-aZ50nGfT5BQkGJNvQCWaUsTA06yw',
+      '_ouivC-YA-UT_rTiGPnWkZBsDyN7imgIjWFVWrTNL0I',
+    ],
     other: {
       'msvalidate.01': '7E84D5AEA17F465BC45D70FAE5117606',
     },
@@ -477,6 +480,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          name="google-site-verification"
+          content="_ouivC-YA-UT_rTiGPnWkZBsDyN7imgIjWFVWrTNL0I"
+        />
         {/* Google tag (gtag.js) */}
         <script
           async
