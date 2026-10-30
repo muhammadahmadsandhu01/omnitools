@@ -477,6 +477,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Google tag (gtag.js) */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-263WZKH2LL"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-263WZKH2LL');`,
+          }}
+        />
         <script
           src="https://analytics.ahrefs.com/analytics.js"
           data-key="twpg3hiqDH4n7rhyfDlD2Q"
