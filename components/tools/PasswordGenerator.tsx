@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   CheckCircle2,
   ChevronDown,
@@ -1272,7 +1272,10 @@ export default function PasswordGenerator() {
                 </label>
                 <input
                   id="input-hmac-key"
-                  type="password"
+                  type="text"
+                  autoComplete="off"
+                  spellCheck={false}
+                  style={{ WebkitTextSecurity: 'disc' } as CSSProperties}
                   value={secretKey}
                   onChange={e => setSecretKey(e.target.value)}
                   placeholder="Enter secret key..."
@@ -1439,15 +1442,16 @@ export default function PasswordGenerator() {
             </label>
             <input
               id="input-breach-check"
-              type="password"
+              type="text"
               value={breachInput}
               onChange={e => {
                 setBreachInput(e.target.value);
                 setBreachCount(null);
                 setBreachError('');
               }}
-              placeholder="Type an existing password to check historical breach exposure…"
+              placeholder="Enter a test string to check SHA-1 prefix exposure..."
               autoComplete="off"
+              style={{ WebkitTextSecurity: 'disc' } as CSSProperties}
               className="w-full px-4 py-3 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none dark:text-white text-sm"
             />
             <button

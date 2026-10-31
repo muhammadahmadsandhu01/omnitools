@@ -1377,14 +1377,15 @@ export default function QrGenerator() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="wifi-pass-input" className={labelClass}>Password</label>
+                    <label htmlFor="wifi-pass-input" className={labelClass}>Wi-Fi Network Key</label>
                     <input
                       id="wifi-pass-input"
-                      type="password"
+                      type="text"
+                      autoComplete="off"
                       value={wifiPass}
                       onChange={(e) => setWifiPass(e.target.value)}
                       disabled={wifiEnc === 'nopass'}
-                      placeholder={wifiEnc === 'nopass' ? 'Open Network' : 'Network Password'}
+                      placeholder={wifiEnc === 'nopass' ? 'Open Network' : 'Wi-Fi Key / Passkey'}
                       className={inputClass}
                     />
                   </div>

@@ -9,6 +9,21 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/health',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/health/bmi-calculator',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/finance/auto-loan-calculator',
+        destination: '/finance/emi-calculator',
+        permanent: true,
+      },
+      {
         source: '/dev/urandom',
         destination: '/developer/password-generator',
         permanent: true,

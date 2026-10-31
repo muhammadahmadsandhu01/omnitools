@@ -34,6 +34,10 @@ export function resolveCanonicalRoute(category: string, slug: string): {
     return { resolvedCategory: 'developer', resolvedSlug: 'password-generator' };
   }
 
+  if (slug === 'auto-loan-calculator') {
+    return { resolvedCategory: 'finance', resolvedSlug: 'emi-calculator' };
+  }
+
   const resolvedSlug =
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'
@@ -93,6 +97,13 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { category, slug } = await params;
 
+  if (category === 'health' || slug === 'bmi-calculator') {
+    return {
+      title: 'Health Calculator',
+      robots: { index: false, follow: false },
+    };
+  }
+
   const { resolvedCategory, resolvedSlug } = resolveCanonicalRoute(category, slug);
 
   const tool =
@@ -151,6 +162,10 @@ export async function generateMetadata({
  */
 export default async function ToolPage({ params }: PageProps) {
   const { category, slug } = await params;
+
+  if (category === 'health' || slug === 'bmi-calculator') {
+    permanentRedirect('/');
+  }
 
   const { resolvedCategory, resolvedSlug } = resolveCanonicalRoute(category, slug);
 

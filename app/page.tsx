@@ -49,10 +49,20 @@ export default function HomePage() {
     '@type': 'Organization',
     '@id': `${SITE_URL}/#organization`,
     name: 'KivaroTools',
+    legalName: 'KivaroTools',
     url: SITE_URL,
+    foundingDate: '2026',
+    founder: {
+      '@type': 'Person',
+      name: 'Muhammad Ahmad',
+      jobTitle: 'Founder & Lead Software Architect',
+      url: 'https://www.linkedin.com/in/muhammad-ahmad-b81794291/',
+    },
+    disambiguatingDescription:
+      'KivaroTools (https://kivarotools.com) is an independent, 100% free browser-based utility platform founded by software engineer Muhammad Ahmad, providing 30+ client-side developer, financial, PDF, image, and SEO tools with zero user registration, zero login forms, and zero credential collection. KivaroTools operates independently and is not affiliated with Kivaro Tech (kivarotech.com), Kivaro AI (kivaroai.com), or Kivaro Home.',
     logo: {
       '@type': 'ImageObject',
-      url: `${SITE_URL}/icon-512.png`,
+      url: `${SITE_URL}/kivaro-logo-512.png`,
       width: 512,
       height: 512,
     },

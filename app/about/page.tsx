@@ -52,10 +52,33 @@ export default function AboutPage() {
       'Overview of KivaroTools client-side software architecture, editorial & mathematical accuracy verification standards, and privacy model.',
     mainEntity: {
       '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
       name: 'KivaroTools',
+      legalName: 'KivaroTools',
       url: SITE_URL,
-      email: CONTACT_EMAIL,
-      sameAs: [...OFFICIAL_SOCIAL_LINKS],
+      foundingDate: '2026',
+      founder: {
+        '@type': 'Person',
+        name: 'Muhammad Ahmad',
+        jobTitle: 'Founder & Lead Software Architect',
+        url: 'https://www.linkedin.com/in/muhammad-ahmad-b81794291/',
+      },
+      disambiguatingDescription:
+        'KivaroTools (https://kivarotools.com) is an independent, 100% free browser-based utility platform founded by software engineer Muhammad Ahmad, providing 30+ client-side developer, financial, PDF, image, and SEO tools with zero user registration, zero login forms, and zero credential collection. KivaroTools operates independently and is not affiliated with Kivaro Tech (kivarotech.com), Kivaro AI (kivaroai.com), or Kivaro Home.',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/kivaro-logo-512.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${SITE_URL}/og-image.png`,
+      sameAs: OFFICIAL_SOCIAL_LINKS,
+      contactPoint: {
+        '@type': 'ContactPoint',
+        email: CONTACT_EMAIL,
+        contactType: 'customer support',
+        availableLanguage: ['English'],
+      },
     },
   };
 
@@ -105,6 +128,19 @@ export default function AboutPage() {
             watermarks, or server data uploads.
           </p>
         </header>
+
+        {/* Brand Independence & Zero-Credential Security Notice */}
+        <section aria-label="Brand Independence Notice" className="mb-12 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 dark:border-emerald-900/60 dark:bg-emerald-950/20">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+            <div className="text-sm leading-6 text-emerald-950 dark:text-emerald-200">
+              <span className="font-bold text-emerald-900 dark:text-emerald-300">
+                Brand Independence &amp; Zero-Credential Security Notice:
+              </span>{' '}
+              KivaroTools (kivarotools.com) is an independent browser utility platform founded and engineered by Muhammad Ahmad (BSCS). KivaroTools is not affiliated with Kivaro Tech (kivarotech.com), Kivaro AI (kivaroai.com), or Kivaro Home. KivaroTools has zero user accounts, zero login or registration forms, and never asks for passwords, credentials, or payment details.
+            </div>
+          </div>
+        </section>
 
         {/* Core Architecture Principles */}
         <section className="mb-12 space-y-6">

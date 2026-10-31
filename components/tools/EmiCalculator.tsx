@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Calculator,
   PieChart,
@@ -112,7 +112,6 @@ export default function EmiCalculator() {
   const [activeTab, setActiveTab] = useState<'schedule' | 'yearly' | 'methodology'>('schedule');
 
   const [copied, setCopied] = useState<boolean>(false);
-  const formRef = useRef<HTMLFormElement>(null);
 
   // Enforce 100% clean / fresh state on normal route load and page refresh (F5).
   // Strictly resets both React state and DOM input elements to 0 / empty,
@@ -150,9 +149,6 @@ export default function EmiCalculator() {
         setRecurringFee(0);
 
         // Wipe any browser session-history / bfcache / reload form restoration
-        if (formRef.current) {
-          formRef.current.reset();
-        }
 
         const inputIds = [
           'emi-principal',
@@ -297,9 +293,6 @@ export default function EmiCalculator() {
     setRecurringFee(0);
     setShowAdvanced(false);
 
-    if (formRef.current) {
-      formRef.current.reset();
-    }
     const inputIds = [
       'emi-principal',
       'emi-rate',
@@ -362,7 +355,7 @@ export default function EmiCalculator() {
             </div>
 
             {/* Input Controls Form */}
-            <form ref={formRef} autoComplete="off" onSubmit={(e) => e.preventDefault()} className="space-y-5">
+            <div role="region" aria-label="Loan input controls" className="space-y-5">
               {/* Currency Selector */}
               <div>
                 <label htmlFor="emi-currency" className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
@@ -684,7 +677,7 @@ export default function EmiCalculator() {
                   </div>
                 )}
               </div>
-            </form>
+            </div>
           </div>
         </section>
 

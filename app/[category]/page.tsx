@@ -108,6 +108,10 @@ export default async function CategoryPage({
     permanentRedirect('/');
   }
 
+  if (categorySlug === 'health') {
+    permanentRedirect('/');
+  }
+
   if (categorySlug === 'image') {
     permanentRedirect('/media');
   }
