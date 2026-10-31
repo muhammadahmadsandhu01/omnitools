@@ -131,7 +131,7 @@ export const metadata: Metadata = {
     ],
     other: {
       'msvalidate.01': '7E84D5AEA17F465BC45D70FAE5117606',
-      'gridinsoft-key': 'ipguy8rm3ru7m3g8pwzf13fls6a93wn21fvrp6syhuxcpvj8pmh19fcpohjk92nz',
+      'gridinsoft-key': 'ipguy8rm3ru7m3g8pwzf13fls6a93wn2lfvrp6syhuxcpvj8pmh19fcpohjk92nz',
     },
   },
 };
@@ -494,7 +494,7 @@ export default function RootLayout({
         />
         <meta
           name="gridinsoft-key"
-          content="ipguy8rm3ru7m3g8pwzf13fls6a93wn21fvrp6syhuxcpvj8pmh19fcpohjk92nz"
+          content="ipguy8rm3ru7m3g8pwzf13fls6a93wn2lfvrp6syhuxcpvj8pmh19fcpohjk92nz"
         />
         {/* Google tag (gtag.js) */}
         <script
