@@ -12,27 +12,31 @@ import {
   FileText,
   UserCheck,
 } from 'lucide-react';
-import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, DEFAULT_OG_IMAGE } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — Client-Side Processing, Cookies & AdSense Disclosures',
+  title: 'Privacy Policy — Zero Upload Browser Tools',
   description:
-    'KivaroTools Privacy Policy. Detailed disclosures regarding 100% client-side browser processing, server logs, Google AdSense advertising cookies, analytics, and GDPR/CCPA user rights.',
+    'Read the KivaroTools Privacy Policy covering 100% client-side file processing, zero server storage, cookies, analytics, and global GDPR/CCPA user rights.',
   alternates: {
     canonical: `${SITE_URL}/privacy`,
   },
   openGraph: {
-    title: 'Privacy Policy — KivaroTools',
+    title: 'Privacy Policy — Zero Upload Browser Tools | KivaroTools',
     description:
-      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, Google AdSense advertising cookies, and worldwide user rights.',
+      'Read the KivaroTools Privacy Policy covering 100% client-side file processing, zero server storage, cookies, analytics, and global GDPR/CCPA user rights.',
     url: `${SITE_URL}/privacy`,
     type: 'website',
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Privacy Policy — KivaroTools',
+    site: '@kivarotools',
+    creator: '@kivarotools',
+    title: 'Privacy Policy — Zero Upload Browser Tools | KivaroTools',
     description:
-      'KivaroTools Privacy Policy. Detailed disclosures regarding client-side processing, server logs, Google AdSense advertising cookies, and worldwide user rights.',
+      'Read the KivaroTools Privacy Policy covering 100% client-side file processing, zero server storage, cookies, analytics, and global GDPR/CCPA user rights.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 

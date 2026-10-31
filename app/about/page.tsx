@@ -14,28 +14,31 @@ import {
   Scale,
 } from 'lucide-react';
 import { categories } from '@/config/toolsData';
-import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, OFFICIAL_SOCIAL_PROFILES } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, OFFICIAL_SOCIAL_LINKS, DEFAULT_OG_IMAGE } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'About KivaroTools — Architecture, Methodology & Privacy Standards',
+  title: 'About KivaroTools — Privacy & Architecture',
   description:
-    'Learn about KivaroTools, our 100% client-side browser utility architecture, mathematical & statutory verification methodology, and commitment to privacy-conscious computing.',
+    'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
-    title: 'About KivaroTools — Architecture, Methodology & Privacy Standards',
+    title: 'About KivaroTools — Privacy & Architecture | KivaroTools',
     description:
-      'Learn about KivaroTools, our 100% client-side browser utility architecture, mathematical & statutory verification methodology, and commitment to privacy-conscious computing.',
+      'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
     url: `${SITE_URL}/about`,
     type: 'website',
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@kivarotools',
-    title: 'About KivaroTools — Architecture, Methodology & Privacy Standards',
+    creator: '@kivarotools',
+    title: 'About KivaroTools — Privacy & Architecture | KivaroTools',
     description:
-      'Learn about KivaroTools, our 100% client-side browser utility architecture, mathematical & statutory verification methodology, and commitment to privacy-conscious computing.',
+      'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 
@@ -52,7 +55,7 @@ export default function AboutPage() {
       name: 'KivaroTools',
       url: SITE_URL,
       email: CONTACT_EMAIL,
-      sameAs: [...OFFICIAL_SOCIAL_PROFILES],
+      sameAs: [...OFFICIAL_SOCIAL_LINKS],
     },
   };
 

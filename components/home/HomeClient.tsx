@@ -23,6 +23,31 @@ export { HOME_FAQS };
 
 type FilterCategory = 'all' | CategoryId;
 
+const GLOBAL_SALARY_COUNTRIES = [
+  { name: 'Pakistan', slug: 'pakistan', flag: '🇵🇰', currency: 'PKR' },
+  { name: 'United States', slug: 'united-states', flag: '🇺🇸', currency: 'USD' },
+  { name: 'United Kingdom', slug: 'united-kingdom', flag: '🇬🇧', currency: 'GBP' },
+  { name: 'Germany', slug: 'germany', flag: '🇩🇪', currency: 'EUR' },
+  { name: 'India', slug: 'india', flag: '🇮🇳', currency: 'INR' },
+  { name: 'Canada', slug: 'canada', flag: '🇨🇦', currency: 'CAD' },
+  { name: 'Australia', slug: 'australia', flag: '🇦🇺', currency: 'AUD' },
+  { name: 'Singapore', slug: 'singapore', flag: '🇸🇬', currency: 'SGD' },
+  { name: 'UAE', slug: 'united-arab-emirates', flag: '🇦🇪', currency: 'AED' },
+  { name: 'Saudi Arabia', slug: 'saudi-arabia', flag: '🇸🇦', currency: 'SAR' },
+  { name: 'France', slug: 'france', flag: '🇫🇷', currency: 'EUR' },
+  { name: 'Japan', slug: 'japan', flag: '🇯🇵', currency: 'JPY' },
+  { name: 'Switzerland', slug: 'switzerland', flag: '🇨🇭', currency: 'CHF' },
+  { name: 'Netherlands', slug: 'netherlands', flag: '🇳🇱', currency: 'EUR' },
+  { name: 'Ireland', slug: 'ireland', flag: '🇮🇪', currency: 'EUR' },
+  { name: 'New Zealand', slug: 'new-zealand', flag: '🇳🇿', currency: 'NZD' },
+  { name: 'Spain', slug: 'spain', flag: '🇪🇸', currency: 'EUR' },
+  { name: 'Italy', slug: 'italy', flag: '🇮🇹', currency: 'EUR' },
+  { name: 'South Africa', slug: 'south-africa', flag: '🇿🇦', currency: 'ZAR' },
+  { name: 'Brazil', slug: 'brazil', flag: '🇧🇷', currency: 'BRL' },
+  { name: 'Mexico', slug: 'mexico', flag: '🇲🇽', currency: 'MXN' },
+  { name: 'South Korea', slug: 'south-korea', flag: '🇰🇷', currency: 'KRW' },
+];
+
 export default function HomeClient() {
   const [activeCategory, setActiveCategory] =
     useState<FilterCategory>('all');
@@ -329,6 +354,49 @@ export default function HomeClient() {
             >
               Browse all tools
             </button>
+          </div>
+        )}
+
+        {/* Global Salary & Take-Home Pay Calculators (22 Countries) */}
+        {(activeCategory === 'all' || activeCategory === 'finance') && (
+          <div className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
+              <div>
+                <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
+                  Global Salary & Take-Home Pay Calculators (22 Countries)
+                </h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  Calculate gross-to-net pay, statutory income tax brackets, social contributions, and employer cost with 2026 rules:
+                </p>
+              </div>
+              <Link
+                href="/finance/salary-calculator"
+                className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                <span>All Salary Calculators</span>
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {GLOBAL_SALARY_COUNTRIES.map((country) => (
+                <Link
+                  key={country.slug}
+                  href={`/finance/salary-calculator/${country.slug}`}
+                  className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium text-slate-700 transition hover:border-blue-400 hover:bg-white hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-slate-800 dark:hover:text-blue-400"
+                >
+                  <span className="text-base leading-none">{country.flag}</span>
+                  <div className="truncate">
+                    <span className="block truncate font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                      {country.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {country.currency}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         )}
       </section>

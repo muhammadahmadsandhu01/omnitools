@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 import { categories, tools } from '@/config/toolsData';
-import { SITE_URL } from '@/config/site';
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
 
 type CategoryPageProps = {
   params: Promise<{
@@ -86,11 +86,15 @@ export async function generateMetadata({
       description: categoryDescription,
       url: canonicalUrl,
       type: 'website',
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: 'summary_large_image',
+      site: '@kivarotools',
+      creator: '@kivarotools',
       title: `${categoryTitle} — KivaroTools`,
       description: categoryDescription,
+      images: [`${SITE_URL}/og-image.png`],
     },
   };
 }
@@ -99,6 +103,10 @@ export default async function CategoryPage({
   params,
 }: CategoryPageProps) {
   const { category: categorySlug } = await params;
+
+  if (categorySlug === '$' || categorySlug === '&' || categorySlug === '%24' || categorySlug === '%26') {
+    permanentRedirect('/');
+  }
 
   if (categorySlug === 'image') {
     permanentRedirect('/media');

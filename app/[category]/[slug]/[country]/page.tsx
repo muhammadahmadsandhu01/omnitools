@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
 import AdUnit from '@/components/ads/AdUnit';
-import { SITE_URL } from '@/config/site';
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
 import SchemaMarkup from '@/components/SchemaMarkup';
 
 // 22 Country Calculators
@@ -569,6 +569,97 @@ export function generateStaticParams() {
   }));
 }
 
+export const COUNTRY_SEO_META: Record<string, { title: string; description: string }> = {
+  'pakistan': {
+    title: 'Salary Tax Calculator Pakistan 2026-27 (FBR)',
+    description: 'Calculate monthly in-hand salary and FBR income tax in Pakistan (PKR) for FY 2026-2027. Includes latest FBR salaried tax slabs, surcharge, and EOBI net pay.',
+  },
+  'united-states': {
+    title: 'US Salary Paycheck Calculator 2026 — Net Pay',
+    description: 'Calculate US take-home pay in USD across all 50 states and DC for 2026. Includes IRS federal tax brackets, standard deduction, state tax, FICA, and Medicare.',
+  },
+  'united-kingdom': {
+    title: 'UK Salary Calculator 2026/27 — Take-Home Pay',
+    description: 'Calculate UK net take-home pay in GBP for 2026/27. Includes HMRC PAYE bands (England, Wales, NI & Scotland), £12,570 allowance taper, and Class 1 NI rates.',
+  },
+  'germany': {
+    title: 'Germany Salary Calculator 2026 (Brutto Netto)',
+    description: 'Calculate German net salary (Brutto Netto Rechner) in EUR for 2026 across Tax Classes I–VI. Includes Lohnsteuer, church tax, Soli, and social insurance.',
+  },
+  'india': {
+    title: 'India In-Hand Salary Calculator FY 2026-27',
+    description: 'Calculate monthly in-hand salary from CTC in India (INR) for FY 2025-26 / AY 2026-27. Compare New vs Old Tax Regime slabs, Section 87A rebate, EPF, and cess.',
+  },
+  'canada': {
+    title: 'Canada Salary Calculator 2026 — After-Tax Pay',
+    description: 'Calculate Canadian take-home pay in CAD for 2026. Includes CRA federal tax brackets (14%–33%), basic personal amount, provincial tax, CPP, and EI premiums.',
+  },
+  'australia': {
+    title: 'Australia Pay Calculator 2026-27 — Take-Home',
+    description: 'Calculate Australian take-home pay in AUD for FY 2026-27. Includes ATO Stage 3 resident tax brackets, LITO offset, 2% Medicare levy, and Superannuation.',
+  },
+  'singapore': {
+    title: 'Singapore Salary & CPF Calculator 2026 (SGD)',
+    description: 'Calculate Singapore net take-home pay in SGD for YA 2026. Includes IRAS progressive resident tax (2%–24%) and Citizen/PR CPF (20% employee, 17% employer).',
+  },
+  'united-arab-emirates': {
+    title: 'UAE Salary Calculator 2026 — Net Pay in AED',
+    description: 'Calculate UAE monthly and annual take-home salary in AED for expats and UAE/GCC nationals. Includes 0% income tax, GPSSA pension, and end-of-service gratuity.',
+  },
+  'saudi-arabia': {
+    title: 'Saudi Arabia Salary & GOSI Calculator 2026',
+    description: 'Calculate Saudi Arabia net take-home salary in SAR for Saudi nationals and expats. Includes 0% income tax, GOSI pension & SANED deductions, and employer cost.',
+  },
+  'france': {
+    title: 'France Net Salary Calculator 2026 (Brut/Net)',
+    description: 'Calculate French net take-home salary (Salaire Brut en Net) in EUR for 2026. Includes CGI progressive income tax (0%–45%), 10% deduction, and social charges.',
+  },
+  'japan': {
+    title: 'Japan Take-Home Salary Calculator 2026 (JPY)',
+    description: 'Calculate Japan net salary in JPY for 2026. Includes employment income deduction, NTA national income tax, 10% resident tax, and Shakai Hoken social insurance.',
+  },
+  'switzerland': {
+    title: 'Switzerland Net Salary Calculator 2026 (CHF)',
+    description: 'Calculate Swiss gross-to-net salary in CHF for 2026. Includes federal & cantonal tax benchmarks, AHV/IV/EO, ALV unemployment, and BVG pension deductions.',
+  },
+  'netherlands': {
+    title: 'Netherlands Net Salary Calculator 2026 (EUR)',
+    description: 'Calculate Dutch gross-to-net pay (Bruto Netto) in EUR for 2026. Includes Belastingdienst Box 1 tax brackets, general & labor tax credits, and 30% ruling.',
+  },
+  'ireland': {
+    title: 'Ireland Salary After Tax Calculator 2026',
+    description: 'Calculate Irish net take-home pay in EUR for 2026. Includes Revenue PAYE 20% and 40% tax bands, Universal Social Charge (USC), PRSI, and €4,000 tax credits.',
+  },
+  'new-zealand': {
+    title: 'New Zealand PAYE Salary Calculator 2026-27',
+    description: 'Calculate NZ take-home pay in NZD for 2026-27. Includes IRD progressive PAYE income tax brackets (10.5%–39%), ACC Earners Levy, and KiwiSaver (0%–10%).',
+  },
+  'spain': {
+    title: 'Spain Salary Calculator 2026 (Sueldo Neto)',
+    description: 'Calculate Spanish net salary (Calculadora Sueldo Bruto a Neto) in EUR for 2026. Includes progressive IRPF income tax bands and Seguridad Social deductions.',
+  },
+  'italy': {
+    title: 'Italy Net Salary Calculator 2026 (Stipendio)',
+    description: 'Calculate Italian net take-home pay (Calcolo Stipendio Netto) in EUR for 2026. Includes 3-band IRPEF income tax, INPS social contributions, and surcharges.',
+  },
+  'south-africa': {
+    title: 'South Africa Tax & Salary Calculator 2026',
+    description: 'Calculate South African net take-home pay in ZAR for 2026/27. Includes SARS 7-bracket PAYE income tax, Primary Tax Rebate (R 17,235), 1% UIF, and 1% SDL.',
+  },
+  'brazil': {
+    title: 'Brazil CLT Net Salary Calculator 2026 (BRL)',
+    description: 'Calculate Brazilian net salary (Salário Líquido CLT) in BRL for 2026. Includes progressive INSS social security, IRRF withholding tax, and employer FGTS.',
+  },
+  'mexico': {
+    title: 'Mexico Net Salary & ISR Tax Calculator 2026',
+    description: 'Calculate Mexican net take-home salary (Sueldo Neto) in MXN for 2026. Includes SAT 11-bracket ISR income tax tariff, IMSS employee quotas, and employer cost.',
+  },
+  'south-korea': {
+    title: 'South Korea Net Salary Calculator 2026 (KRW)',
+    description: 'Calculate South Korean take-home pay in KRW for 2026. Includes NTS 8-bracket income tax, 10% local tax, National Pension, and health/employment insurance.',
+  },
+};
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { category, slug, country } = await params;
 
@@ -588,9 +679,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const taxYear = (entry.meta && entry.meta.defaultTaxYear) || DEFAULT_TAX_YEARS[entry.code] || '2026';
-  const authority = entry.meta?.sourceAuthority ? ` (${entry.meta.sourceAuthority})` : '';
-  const title = `${entry.name} Salary Calculator ${taxYear} — Gross to Net Take-Home Pay`;
-  const description = `Calculate ${entry.name} salary take-home pay in ${entry.meta.currency} using ${taxYear} statutory income tax brackets${authority}, employee social contributions, and employer payroll cost.`;
+  const seoEntry = COUNTRY_SEO_META[entry.slug];
+  const title = seoEntry?.title || `${entry.name} Salary Calculator ${taxYear} — Take-Home Pay`;
+  const description =
+    seoEntry?.description ||
+    `Calculate ${entry.name} salary take-home pay in ${entry.meta.currency} using ${taxYear} statutory income tax brackets, employee social contributions, and employer payroll cost.`;
   const canonicalUrl = `${SITE_URL}/finance/salary-calculator/${entry.slug}`;
 
   return {
@@ -615,11 +708,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       url: canonicalUrl,
       type: 'website',
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      site: '@kivarotools',
+      creator: '@kivarotools',
+      title: `${title} — KivaroTools`,
       description,
+      images: [`${SITE_URL}/og-image.png`],
     },
   };
 }
@@ -750,6 +847,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
 
           {/* Main Country Tool Component */}
           <main className="mb-12">
+            <h2 className="sr-only">{toolName} Interactive Workspace</h2>
             <ToolComponent />
           </main>
 
@@ -759,6 +857,32 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           {/* Country SEO & Educational Methodology Component */}
           <section className="mt-12" aria-label="Statutory Methodology and Ruleset Documentation">
             <SeoComponent />
+          </section>
+
+          {/* Explore All 22 Country Salary & Tax Calculators */}
+          <section className="mt-16 border-t border-slate-200 dark:border-slate-800 pt-10" aria-label="Global Salary & Tax Calculators">
+            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl mb-4">
+              Explore All 22 Country Salary & Tax Calculators
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              Compare take-home pay, statutory income tax brackets, social contributions, and payroll overhead across global jurisdictions:
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {Object.values(COUNTRY_REGISTRY).map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/finance/salary-calculator/${item.slug}`}
+                  className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all ${
+                    item.slug === entry.slug
+                      ? 'border-blue-600 bg-blue-50/50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-400 font-semibold shadow-xs'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400'
+                  }`}
+                >
+                  <span className="text-base leading-none">{item.meta.flag}</span>
+                  <span className="truncate">{item.name}</span>
+                </Link>
+              ))}
+            </div>
           </section>
         </div>
       </div>

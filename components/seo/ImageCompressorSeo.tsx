@@ -647,9 +647,9 @@ export default function ImageCompressorSeo() {
 
       {/* Section 11: Related Tools & Internal Navigation */}
       <div className="pt-6 border-t border-gray-200 dark:border-slate-800">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
           Related Media &amp; Developer Tools
-        </h4>
+        </h3>
         <div className="flex flex-wrap gap-3 text-sm">
           <Link
             href="/media/webp-to-jpg-png"

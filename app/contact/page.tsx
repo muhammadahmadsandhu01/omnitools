@@ -11,27 +11,31 @@ import {
   Globe,
   Clock,
 } from 'lucide-react';
-import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, DEFAULT_OG_IMAGE } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
+  title: 'Contact KivaroTools — Support & Bug Reports',
   description:
-    'Get in touch with KivaroTools for feedback, bug reports, calculation discrepancy inquiries, or tool suggestions. Serving users worldwide.',
+    'Contact the KivaroTools engineering team for support, bug reports, tax or financial calculation inquiries, and new browser utility requests worldwide.',
   alternates: {
     canonical: `${SITE_URL}/contact`,
   },
   openGraph: {
-    title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
+    title: 'Contact KivaroTools — Support & Bug Reports | KivaroTools',
     description:
-      'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
+      'Contact the KivaroTools engineering team for support, bug reports, tax or financial calculation inquiries, and new browser utility requests worldwide.',
     url: `${SITE_URL}/contact`,
     type: 'website',
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact KivaroTools — Support, Bug Reports & Feedback',
+    site: '@kivarotools',
+    creator: '@kivarotools',
+    title: 'Contact KivaroTools — Support & Bug Reports | KivaroTools',
     description:
-      'Get in touch with KivaroTools for feedback, bug reports, tool suggestions, or general inquiries.',
+      'Contact the KivaroTools engineering team for support, bug reports, tax or financial calculation inquiries, and new browser utility requests worldwide.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 

@@ -5,7 +5,7 @@ import { ChevronRight, Home } from 'lucide-react';
 
 import { categories, tools, getRelatedTools } from '@/config/toolsData';
 import AdUnit from '@/components/ads/AdUnit';
-import { SITE_URL } from '@/config/site';
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
 
 import { toolComponents, seoComponents } from '@/config/toolRegistry';
 import SchemaMarkup from '@/components/SchemaMarkup';
@@ -30,6 +30,10 @@ export function resolveCanonicalRoute(category: string, slug: string): {
   resolvedCategory: string;
   resolvedSlug: string;
 } {
+  if (category === 'dev' && slug === 'urandom') {
+    return { resolvedCategory: 'developer', resolvedSlug: 'password-generator' };
+  }
+
   const resolvedSlug =
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'
@@ -129,11 +133,15 @@ export async function generateMetadata({
       description: metaDescription,
       url: canonicalUrl,
       type: 'website',
+      images: [DEFAULT_OG_IMAGE],
     },
     twitter: {
       card: 'summary_large_image',
+      site: '@kivarotools',
+      creator: '@kivarotools',
       title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
+      images: [`${SITE_URL}/og-image.png`],
     },
   };
 }
@@ -282,6 +290,7 @@ export default async function ToolPage({ params }: PageProps) {
           aria-label={`${tool.name} tool`}
           className="mb-8 min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-6 lg:p-8"
         >
+          <h2 className="sr-only">{tool.name} Interactive Workspace</h2>
           {ToolComponent ? (
             <ToolComponent />
           ) : (

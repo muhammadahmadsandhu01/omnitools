@@ -1,29 +1,32 @@
 import type { Metadata } from 'next';
 import HomeClient from '@/components/home/HomeClient';
 import { HOME_FAQS } from '@/config/homeFaqs';
-import { SITE_URL, CONTACT_EMAIL, OFFICIAL_SOCIAL_PROFILES } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OFFICIAL_SOCIAL_LINKS, DEFAULT_OG_IMAGE } from '@/config/site';
 import { getPublicTools } from '@/config/toolsData';
 
 export const metadata: Metadata = {
-  title: 'Free Online Tools for Finance, Developers, PDF, Media & SEO',
+  title: 'Free Online Tools — PDF, JSON, Finance & SEO',
   description:
-    'Explore 23+ enterprise-grade free online tools and 22 statutory country salary calculators. Format JSON & SQL, merge/split PDFs, compress images to target KB, and calculate mortgages, EMIs, SIPs, and gold melt values 100% locally in your browser.',
+    'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
   alternates: {
     canonical: SITE_URL,
   },
   openGraph: {
-    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
+    title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Explore 23+ free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
+      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
     url: SITE_URL,
     type: 'website',
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@kivarotools',
-    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
+    creator: '@kivarotools',
+    title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Explore 23+ free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
+      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 
@@ -47,8 +50,14 @@ export default function HomePage() {
     '@id': `${SITE_URL}/#organization`,
     name: 'KivaroTools',
     url: SITE_URL,
-    logo: `${SITE_URL}/icon-512.png`,
-    sameAs: [...OFFICIAL_SOCIAL_PROFILES],
+    logo: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/icon-512.png`,
+      width: 512,
+      height: 512,
+    },
+    image: `${SITE_URL}/og-image.png`,
+    sameAs: OFFICIAL_SOCIAL_LINKS,
     contactPoint: {
       '@type': 'ContactPoint',
       email: CONTACT_EMAIL,

@@ -58,9 +58,9 @@ export const categories: ToolCategory[] = [
     color: 'text-blue-500',
     description:
       'Enterprise-grade financial calculators for loans, mortgages, compound interest, mutual fund SIPs, global statutory salary take-home pay, multi-currency FX & crypto conversions, precious metals melt values, and print-ready PDF invoices.',
-    seoTitle: 'Free Financial Calculators — Mortgage, Loan EMI, Salary, SIP, Compound Interest & Gold Melt',
+    seoTitle: "Financial Calculators — Loan, Tax, SIP & Gold",
     seoDescription:
-      'Calculate mortgage PITI & PMI, personal/auto loan EMIs, compound interest, mutual fund SIP returns, 22-country post-tax salaries, live gold/silver scrap melt values, FX/crypto rates, and A4 PDF invoices 100% locally in your browser.',
+      "Free online financial calculators for mortgages (PITI & PMI), loan EMIs, compound interest, step-up SIPs, live scrap gold melt value, and 22 country taxes.",
     keywords: [
       'financial calculators',
       'mortgage calculator PITI PMI',
@@ -80,9 +80,9 @@ export const categories: ToolCategory[] = [
     color: 'text-green-500',
     description:
       'Zero-upload browser-based developer utilities for formatting and validating JSON, converting JSON to CSV/Excel/YAML/XML, formatting 19 SQL dialects, testing regular expressions with ReDoS guards, optimizing SVG vectors, encoding Base64, and generating CSPRNG passwords & SHA hashes.',
-    seoTitle: 'Free Developer Tools — JSON Formatter, JSON to Excel/CSV, SQL Formatter, Regex & SVG Optimizer',
+    seoTitle: "Developer Tools Online — JSON, SQL & Regex",
     seoDescription:
-      'Format & validate 25MB JSON payloads, convert JSON to CSV/Excel/YAML, beautify & lint 19 SQL dialects, debug Regex with ReDoS protection, minify SVGs, encode UTF-8 Base64, and generate CSPRNG passwords & SHA-256 hashes 100% client-side.',
+      "Free browser-based developer tools: format & repair 25MB JSON, convert JSON to Excel/CSV, beautify 19 SQL dialects, test regex, and minify SVGs locally.",
     keywords: [
       'developer tools online',
       'json formatter validator',
@@ -102,9 +102,9 @@ export const categories: ToolCategory[] = [
     color: 'text-orange-500',
     description:
       '100% private client-side PDF document utilities. Merge up to 50 PDFs (750 MB), split or extract custom page ranges into ZIP archives, and convert up to 100 JPG, PNG, WebP, HEIC, and SVG images into print-ready PDF documents with zero server uploads.',
-    seoTitle: 'Free PDF & Document Tools — Merge PDF, Split PDF Pages & Convert Images/HEIC to PDF Locally',
+    seoTitle: "Free Online PDF Tools — Merge, Split & Convert",
     seoDescription:
-      'Merge up to 50 PDF files (750 MB), extract or split PDF page ranges into ZIP archives, and convert up to 100 JPG, PNG, WebP, HEIC, and SVG images to PDF 100% in your browser with zero server uploads.',
+      "Merge, split, and compress PDFs to 100KB/200KB, or convert PDF to Word, Excel, PowerPoint, and 600 DPI JPG images 100% locally in your browser.",
     keywords: [
       'pdf tools online free',
       'pdf to word converter client side',
@@ -130,9 +130,9 @@ export const categories: ToolCategory[] = [
     color: 'text-pink-500',
     description:
       'High-speed client-side image compression and format transcoding. Compress JPG, PNG, WebP, AVIF, and HEIC images to exact target KB sizes (20KB, 50KB, 100KB) with perceptual SSIM scoring, and batch-convert WebP images to JPG or lossless PNG.',
-    seoTitle: 'Free Image Tools — Compress Images to Target KB (20KB/50KB/100KB) & Convert WebP to JPG/PNG',
+    seoTitle: "Free Online Image Tools — Compress & Convert",
     seoDescription:
-      'Compress up to 100 JPG, PNG, WebP, AVIF, and HEIC images locally with perceptual SSIM quality scoring and exact Target KB sizing (20KB, 50KB, 100KB). Batch-convert WebP to JPG or transparent PNG with zero server uploads.',
+      "Compress JPG, PNG, WebP, AVIF, and HEIC images to exact KB sizes (20KB, 50KB, 100KB) or batch convert WebP to JPG and PNG locally with zero uploads.",
     keywords: [
       'image compressor online',
       'compress image to 20kb 50kb 100kb',
@@ -150,9 +150,9 @@ export const categories: ToolCategory[] = [
     color: 'text-purple-500',
     description:
       'Professional SEO, publishing, and linguistic utilities. Generate unexpiring static QR codes with custom logos & vector SVG/PDF export, analyze word count, readability & grammar, convert text across 15 editorial & developer cases in 191 locales, and author HTML/Open Graph/Next.js metadata.',
-    seoTitle: 'Free SEO & Text Tools — QR Code Generator, Word Counter & Grammar, Case Converter & Meta Tags',
+    seoTitle: "Free SEO & Text Tools — QR, Word & Meta Tags",
     seoDescription:
-      'Create custom static QR codes (SVG/PDF/Logo), analyze word count, Flesch readability & grammar, convert text across 15 naming & editorial cases (191 languages), and generate HTML Open Graph & Next.js metadata with live SERP previews.',
+      "Create custom QR codes with logos (SVG/PNG), count words and check readability/grammar, convert 15 text cases, and preview Open Graph & HTML meta tags.",
     keywords: [
       'seo tools online free',
       'qr code generator with logo svg pdf',
@@ -189,9 +189,9 @@ export const tools: Tool[] = [
       'Live Gold, Silver, Platinum & Palladium spot prices, multi-item scrap jewelry melt calculator, karat purity conversions, and 30-day charts across 32 currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Precious Metals Market Rates & Scrap Gold/Silver Melt Calculator',
+    seoTitle: "Scrap Gold & Silver Melt Value Calculator",
     seoDescription:
-      'Track live Gold (XAU), Silver (XAG), Platinum (XPT), and Palladium (XPD) spot prices across 32 currencies. Calculate exact scrap jewelry melt values by karat (24K–9K), 9 weight units (troy oz, grams, tola, dwt), and dealer payout tiers (75%–100%).',
+      "Calculate live Gold, Silver, Platinum, and Palladium melt values in 32 currencies. Enter weight in grams, oz, or tola and karat purity (10K–24K) instantly.",
     keywords: [
       'scrap gold melt value calculator',
       'silver melt value calculator 925 sterling',
@@ -248,9 +248,9 @@ export const tools: Tool[] = [
       'Calculate monthly or accelerated biweekly mortgage payments, PITI escrow, automatic 80% LTV PMI drop-off, cash to close, and complete amortization schedules.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Mortgage Calculator — PITI, Automatic 80% LTV PMI Drop-Off & Biweekly Amortization',
+    seoTitle: "Mortgage Calculator with PMI, Taxes & Escrow",
     seoDescription:
-      'Calculate monthly and accelerated biweekly mortgage payments with full PITI escrow (property tax, home insurance, HOA), automatic 80% LTV PMI cancellation, cash to close, extra principal prepayments, and reconciled amortization schedules.',
+      "Estimate monthly and biweekly mortgage payments with PITI taxes, insurance, HOA, automatic 80% LTV PMI drop-off, extra payments, and amortization tables.",
     keywords: [
       'mortgage calculator with pmi and taxes',
       'piti mortgage payment calculator',
@@ -307,9 +307,9 @@ export const tools: Tool[] = [
       'Create, customize, and download print-ready A4 PDF invoices locally in your browser with custom branding, proportional VAT/GST tax allocation, and 30+ currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free PDF Invoice Generator — Multi-Currency, VAT/GST, A4 Pagination & No Signup',
+    seoTitle: "Free Invoice Generator — PDF, No Signup",
     seoDescription:
-      'Create, customize, and download professional A4 PDF invoices 100% in your browser with zero signup. Features company logo upload, 30+ ISO-4217 currencies, proportional VAT/GST tax allocation, multi-page A4 pagination, and local auto-save.',
+      "Create and download professional A4 PDF invoices online for free with no signup or watermarks. Add custom logos, 30+ currencies, VAT/GST tax, and discounts.",
     keywords: [
       'free invoice generator pdf no signup',
       'online invoice maker with logo',
@@ -366,9 +366,9 @@ export const tools: Tool[] = [
       'Calculate reducing-balance equated installments (monthly, biweekly, weekly), compare tenure reduction vs payment recast prepayments, and audit loan fees across 42 currencies.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Loan EMI Calculator — Personal, Auto & Home Loan Amortization + Prepayment Modes',
+    seoTitle: "Loan EMI Calculator with Amortization Table",
     seoDescription:
-      'Calculate Equated Monthly Installments (EMI), biweekly/weekly payments, and reducing-balance amortization across 42 currencies. Compare Tenure Reduction vs Payment Recast prepayments, Ordinary vs Annuity Due timing, and origination fee drag.',
+      "Calculate Equated Monthly Installment (EMI), biweekly, and weekly loan payments across 42 currencies. Compare prepayments, fees, and amortization tables.",
     keywords: [
       'loan emi calculator online',
       'personal loan auto loan emi calculator',
@@ -425,9 +425,9 @@ export const tools: Tool[] = [
       'Model compound growth with step-up contributions, 5 compounding frequencies, AUM fee and tax drag, Fisher real purchasing power, retirement drawdown, and 2,000-path Monte Carlo risk analysis.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Compound Interest Calculator — Daily/Monthly Growth, Tax Drag, Drawdown & Monte Carlo',
+    seoTitle: "Compound Interest Calculator (Daily/Monthly)",
     seoDescription:
-      'Calculate compound interest across 154 currencies with daily to annual compounding, step-up contributions, AUM fee & tax drag (Taxable, Deferred, Roth), Fisher inflation discounting, retirement drawdown, goal solvers, and 2,000-path Monte Carlo simulations.',
+      "Calculate compound interest with daily, monthly, quarterly, or annual compounding across 154 currencies. Model step-up deposits and retirement withdrawals.",
     keywords: [
       'compound interest calculator daily monthly annual',
       'investment growth calculator with inflation',
@@ -484,9 +484,9 @@ export const tools: Tool[] = [
       'Calculate systematic investment plan (SIP) and lump-sum mutual fund returns with annual step-ups, TER expense drag, capital gains tax, inflation discounting, and 3,000-path Monte Carlo simulations.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SIP Calculator — Step-Up Mutual Fund Returns, TER Expense Drag, Tax & 3,000-Path Monte Carlo',
+    seoTitle: "Step-Up SIP & Mutual Fund Return Calculator",
     seoDescription:
-      'Calculate Mutual Fund SIP and Lump Sum returns across 154 currencies. Model annual Step-Up top-ups, Nominal APR vs Effective APY, Total Expense Ratio (TER) drag, Capital Gains Tax, Fisher inflation, 80-iteration Goal Solver, and 3,000-path Monte Carlo risk.',
+      "Calculate Mutual Fund SIP and Lump Sum maturity returns in 154 currencies. Plan wealth goals with annual step-up % increases, inflation, and expense ratios.",
     keywords: [
       'sip calculator online',
       'step up sip calculator with inflation',
@@ -545,9 +545,9 @@ export const tools: Tool[] = [
     status: 'published',
     hidden: false,
     excludeFromSitemap: false,
-    seoTitle: 'Salary & Net Take-Home Pay Calculator — 22 Statutory Tax Engines (US, UK, DE, IN, PK, CA, AU)',
+    seoTitle: "Salary After Tax Calculator (22 Countries)",
     seoDescription:
-      'Calculate exact net take-home pay, income tax brackets, social security deductions, and total employer cost across 22 statutory jurisdictions (US IRS/FICA, UK HMRC PAYE/NI, Germany EStG, India 115BAC, Pakistan FBR, Canada, Australia, UAE, KSA) and 212 countries.',
+      "Calculate gross-to-net take-home pay, income tax brackets, social security deductions, and employer cost across 22 countries using 2026 statutory tax rules.",
     keywords: [
       'salary calculator take home pay',
       'gross to net salary calculator by country',
@@ -618,9 +618,9 @@ export const tools: Tool[] = [
       'Convert 160+ world fiat currencies and top cryptocurrencies with live ECB and CoinGecko mid-market exchange rates, 30-day historical trend charts, and bank spread markup simulation.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Currency & Crypto Converter — 160+ Fiat & Top Cryptos, Mid-Market Rates & Bank Fee Simulator',
+    seoTitle: "Currency & Crypto Converter — Live FX Rates",
     seoDescription:
-      'Convert 160+ world fiat currencies and 8 major cryptocurrencies (BTC, ETH, USDT, SOL, BNB, XRP, ADA, DOGE) using live ECB & CoinGecko mid-market rates. Simulate bank spread markups (0.5%–3.0%), fixed wire fees, satoshi precision, and 30-day FX charts.',
+      "Convert 160+ world currencies and major cryptocurrencies (BTC, ETH, USDT, SOL) using live exchange rates, custom bank FX spreads, and reverse unit tables.",
     keywords: [
       'currency and crypto converter live',
       'foreign exchange rate calculator 160 currencies',
@@ -681,9 +681,9 @@ export const tools: Tool[] = [
       'Format, validate, beautify, minify, and auto-repair JSON up to 25 MB 100% client-side with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON Formatter, Validator & Tree Viewer — Beautify, Minify & Repair',
+    seoTitle: "JSON Formatter, Validator & Tree Viewer",
     seoDescription:
-      'Free client-side JSON formatter, validator, beautifier, and minifier. Explore 25MB payloads in a 60,000-node virtual tree, auto-repair broken JSON, run JSONPath queries, detect 64-bit BigInt precision loss, and generate TypeScript or Draft-07 Schema locally.',
+      "Format, validate, beautify, minify, and auto-repair JSON up to 25MB online. Explore 60FPS interactive tree views, run JSONPath queries, and export TypeScript.",
     keywords: [
       'json formatter validator online',
       'json beautifier minifier tree viewer',
@@ -740,9 +740,9 @@ export const tools: Tool[] = [
       'Compress SVG markup, strip Figma & Illustrator bloat, prune unreferenced defs, and round path coordinates locally in your browser with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SVG Optimizer, Cleaner & Minifier — Compress Vector Graphics Locally',
+    seoTitle: "SVG Optimizer — Minify & Clean SVG Online",
     seoDescription:
-      'Optimize, clean, and compress SVG files up to 10MB 100% client-side in your browser. Strip Figma & Illustrator metadata, prune unused <defs> via BFS traversal, round path coordinates (0–4 decimals), preserve viewBox, and preview in an XSS-safe sandbox.',
+      "Optimize, clean, and minify SVG files up to 10MB in your browser. Remove editor metadata, shrink path precision, strip XSS scripts, and copy React JSX code.",
     keywords: [
       'svg optimizer minifier online',
       'clean compress svg vector graphics',
@@ -799,9 +799,9 @@ export const tools: Tool[] = [
       'Create zero-bias CSPRNG passwords, multi-word passphrases, Hex/Base64URL developer secrets, HMAC digests, and 1 GB streaming file checksums locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Secure Password, Passphrase, API Secret & SHA-256 Hash Generator',
+    seoTitle: "Random Password & Passphrase Generator",
     seoDescription:
-      'Generate cryptographically secure passwords, EFF Diceware passphrases, 128-to-512 bit API/JWT secrets, HMAC-SHA256 tokens, and 1GB file checksums 100% in your browser via Web Crypto API with zero modulo bias and k-Anonymity breach checks.',
+      "Generate cryptographically secure random passwords, EFF Diceware passphrases, API secrets, and SHA-256 hashes locally in your browser with breach checks.",
     keywords: [
       'cryptographic password generator csprng',
       'eff diceware memorable passphrase generator',
@@ -858,9 +858,9 @@ export const tools: Tool[] = [
       'Flatten deeply nested JSON payloads up to 50 MB (200,000 rows) into spreadsheets and structured formats directly in your browser with CSV Formula Injection defense.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JSON Converter — Convert JSON to CSV, Excel (.xlsx), YAML, XML & JSONL',
+    seoTitle: "JSON to CSV & Excel (.XLSX) Converter Online",
     seoDescription:
-      'Convert and flatten nested JSON up to 50MB into CSV, native Excel (.xlsx), YAML, XML, TSV, and JSONL 100% client-side. Features custom path separators, array exploding, column selection, UTF-8 BOM, and CSV Formula Injection defense.',
+      "Convert and flatten nested JSON arrays up to 50MB into CSV, Excel (.xlsx), YAML, XML, Markdown tables, and SQL insert statements locally in your browser.",
     keywords: [
       'json to csv converter online',
       'json to excel xlsx converter client side',
@@ -917,9 +917,9 @@ export const tools: Tool[] = [
       'Encode and decode UTF-8 text, emojis, Base64URL tokens, Data URIs, and binary files up to 25 MB locally in your browser with RFC 4648 strict validation.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Base64 Encoder & Decoder — UTF-8, Base64URL, Data URI & Binary Files',
+    seoTitle: "Base64 Encode & Decode Online (UTF-8 & File)",
     seoDescription:
-      'Encode and decode Base64 strings, URL-safe Base64URL tokens, Data URIs, and binary files up to 25MB 100% client-side. Features lossless WHATWG UTF-8 Unicode handling, RFC 4648 strict validation, MIME/PEM line wrapping, and magic-byte file detection.',
+      "Encode and decode Base64 text, Base64URL tokens, Data URIs, and binary files up to 25MB in your browser with UTF-8 safety, RFC 4648 validation, and hex view.",
     keywords: [
       'base64 encoder decoder utf8 online',
       'base64url encoder decoder jwt safe',
@@ -976,9 +976,9 @@ export const tools: Tool[] = [
       'Format, beautify, minify, lint, and analyze SQL queries across 19 database dialects 100% locally in your browser with zero query logging.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'SQL Query Formatter, Beautifier & Linter — 19 Dialects (PostgreSQL, BigQuery, T-SQL)',
+    seoTitle: "SQL Formatter & Beautifier Online (Free)",
     seoDescription:
-      'Format, beautify, minify, lint, and analyze SQL queries 100% client-side across 19 dialects (PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle PL/SQL, DuckDB). Includes static anti-pattern linting, AST complexity analysis, SQL diff, and JS/Python code export.',
+      "Format, beautify, minify, and lint SQL queries online across 19 dialects including PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, and SQLite.",
     keywords: [
       'sql formatter beautifier online',
       'sql query linter syntax checker',
@@ -1035,9 +1035,9 @@ export const tools: Tool[] = [
       'Test regular expressions in real time with capture group extraction, live replace/split previews, ReDoS catastrophic backtracking analysis, and ready-to-use code snippets.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Regex Tester, Debugger, Visualizer & Code Generator (JS, Python, Go, Java)',
+    seoTitle: "Regex Tester & Debugger Online (JS, Python)",
     seoDescription:
-      'Test, debug, and explain regular expressions in real time 100% client-side. Features 7 ECMAScript flags (g, i, m, s, u, y, d), capture group tables, live replace & split testing, ReDoS vulnerability scoring with 1.2s Web Worker guard, and JS, Python, Go & Java code generation.',
+      "Test and debug regular expressions live with real-time match highlighting, capture group breakdowns, ReDoS protection, and JS, Python, and Go code export.",
     keywords: [
       'regex tester debugger online',
       'regular expression visualizer explainer',
@@ -1098,9 +1098,9 @@ export const tools: Tool[] = [
       'Merge up to 50 PDF files (750 MB total), extract custom page intervals, or split documents into individual pages and multi-range ZIP archives 100% client-side with zero server uploads.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Merge & Split Tool — Combine 50 PDFs (750 MB), Extract Pages & ZIP (Zero Upload)',
+    seoTitle: "Merge & Split PDF Online Free (No Upload)",
     seoDescription:
-      'Merge up to 50 PDF files (750 MB batch / 250 MB per file), extract custom page ranges, or split PDFs into individual pages and semicolon-range ZIP archives 100% in your browser with zero server uploads.',
+      "Combine up to 50 PDF files (750 MB batch) or split PDFs by custom page ranges in your browser. Zero server uploads, no watermarks, and instant ZIP export.",
     keywords: [
       'merge pdf files online free no upload',
       'split pdf extract pages client side',
@@ -1157,9 +1157,9 @@ export const tools: Tool[] = [
       'Convert up to 100 JPG, PNG, WebP, HEIC/HEIF, BMP, GIF, and SVG images (up to 500 MB) into a single multi-page PDF or separate ZIP PDFs 100% client-side with custom page geometry and lossless stream embedding.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image to PDF Converter — Convert JPG, PNG, WebP, HEIC & SVG to PDF (Zero Upload)',
+    seoTitle: "JPG to PDF & Image to PDF Converter Free",
     seoDescription:
-      'Convert up to 100 images (500 MB) across 9 formats (JPG, PNG, WebP, HEIC/HEIF, SVG, BMP, GIF) to a single PDF or separate ZIP PDFs 100% in your browser. Custom A4/Letter/Fit page sizes, margins, auto-orientation, and lossless embedding.',
+      "Convert up to 100 JPG, PNG, WebP, HEIC, and SVG images into a single PDF document in your browser. Customize page size, orientation, margins, and quality.",
     keywords: [
       'image to pdf converter online free',
       'jpg to pdf png to pdf converter',
@@ -1216,9 +1216,9 @@ export const tools: Tool[] = [
       'Convert PDF documents into editable Microsoft Word (.docx), Markdown (.md), and Plain Text (.txt) files 100% client-side with spatial X/Y table, heading, and paragraph reconstruction.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF to Word Converter — Free Editable .DOCX & Markdown',
+    seoTitle: "PDF to Word Converter — Free PDF to DOCX",
     seoDescription:
-      'Convert PDF files to editable Microsoft Word (.docx), Markdown (.md), or Text 100% in your browser. Preserves tables, H1-H3 headings, and lists with zero uploads.',
+      "Convert PDF documents into editable Microsoft Word (.docx), Markdown, or text files online for free. Reconstructs headings, lists, and tables in your browser.",
     keywords: [
       'pdf to word converter online free',
       'convert pdf to editable docx client side',
@@ -1270,9 +1270,9 @@ export const tools: Tool[] = [
       'Transform Microsoft Word (.docx), Markdown (.md), and Plain Text (.txt) files into print-ready, searchable vector PDF documents 100% locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Word to PDF Converter — .DOCX & Markdown to Vector PDF',
+    seoTitle: "Word to PDF Converter — Free DOCX to PDF",
     seoDescription:
-      'Convert Microsoft Word (.docx), Markdown (.md), and text files into searchable vector PDF documents in your browser with A4/Letter sizing, margins & page numbers.',
+      "Convert Microsoft Word (.docx), Markdown, and text files into crisp, searchable vector PDF documents online for free with custom page sizes and numbering.",
     keywords: [
       'word to pdf converter online free',
       'convert docx to pdf client side no upload',
@@ -1321,9 +1321,9 @@ export const tools: Tool[] = [
       'Extract financial tables, bank statements, and tabular schedules from PDF documents into native multi-sheet Microsoft Excel (.xlsx), RFC-4180 CSV, and JSON files 100% in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF to Excel & CSV Converter — Extract PDF Tables to .XLSX',
+    seoTitle: "PDF to Excel & CSV Converter (Free to XLSX)",
     seoDescription:
-      'Extract tables, bank statements, and invoices from PDF to native Microsoft Excel (.xlsx), CSV, or JSON 100% client-side with live cell editing & formula guards.',
+      "Extract tables, financial statements, and invoices from PDF into editable Microsoft Excel (.xlsx) and CSV spreadsheets online with multi-sheet support.",
     keywords: [
       'pdf to excel converter online free',
       'extract tables from pdf to xlsx csv',
@@ -1373,9 +1373,9 @@ export const tools: Tool[] = [
       'Convert Microsoft Excel (.xlsx, .xls), CSV, and TSV spreadsheets into print-ready vector PDF reports with proportional column auto-fitting, repeating headers, and zebra striping.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Excel to PDF Converter — .XLSX & CSV to Vector PDF Tables',
+    seoTitle: "Excel to PDF Converter — Free XLSX to PDF",
     seoDescription:
-      'Convert Excel (.xlsx, .xls) and CSV spreadsheets to vector PDF tables in your browser. Features proportional column auto-fit, landscape mode & repeating headers.',
+      "Convert Microsoft Excel (.xlsx, .xls) and CSV spreadsheets into clean, multi-page vector PDF tables online with auto-fit columns and repeating headers.",
     keywords: [
       'excel to pdf converter online free',
       'convert xlsx xls csv to pdf no cut off columns',
@@ -1422,9 +1422,9 @@ export const tools: Tool[] = [
       'Transform PDF presentations, pitch decks, and reports into native 16:9 Widescreen or 4:3 Standard Microsoft PowerPoint (.pptx) slide decks 100% locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF to PowerPoint Converter — Free .PDF to .PPTX Slide Deck',
+    seoTitle: "PDF to PPT Converter — Free PDF to PPTX",
     seoDescription:
-      'Convert PDF pitch decks and reports into native Microsoft PowerPoint (.pptx) presentations in your browser. Supports 16:9 & 4:3 slides, editable text & high-DPI.',
+      "Transform PDF presentations and reports into editable Microsoft PowerPoint (.pptx) slide decks online for free with editable text boxes or HD visual slides.",
     keywords: [
       'pdf to powerpoint converter online free',
       'convert pdf to pptx slide deck client side',
@@ -1472,9 +1472,9 @@ export const tools: Tool[] = [
       'Render PDF pages into high-resolution JPG, lossless PNG, or WebP images at 72, 150, 300, or 600 DPI 100% locally in your browser with single-click or batch ZIP download.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF to JPG, PNG & WebP Converter — 300 & 600 DPI Extractor',
+    seoTitle: "PDF to JPG & PNG Converter (300 & 600 DPI)",
     seoDescription:
-      'Convert PDF pages to high-resolution JPG, lossless PNG, or WebP images up to 600 DPI in your browser. Preview dimensions, filter page ranges & download ZIP.',
+      "Convert PDF pages into high-resolution JPG, lossless PNG, or WebP images up to 600 DPI in your browser. Download individual pages or batch export as a ZIP.",
     keywords: [
       'pdf to jpg converter high resolution 300 dpi',
       'pdf to png lossless transparent converter',
@@ -1525,9 +1525,9 @@ export const tools: Tool[] = [
       'Shrink PDF file size by up to 90% 100% client-side with 4 compression modes (Balanced, Extreme, Lossless Vector, and Exact Target KB Solver for 50KB/100KB/200KB/500KB), PDF Space X-Ray audit, Grayscale conversion, and Before/After visual preview.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Compress PDF Online Free — Reduce Size to 100KB, 200KB & MB',
+    seoTitle: "Compress PDF Online Free (To 100KB & 200KB)",
     seoDescription:
-      'Compress PDF files up to 90% smaller 100% in your browser. Includes Exact Target KB solver (50KB, 100KB, 200KB, 500KB), Lossless Vector mode, Grayscale & X-Ray.',
+      "Reduce PDF file size up to 90% in your browser for free. Compress PDFs to exact target sizes like 100KB, 200KB, or 500KB with zero server uploads.",
     keywords: [
       'compress pdf online free no upload',
       'reduce pdf file size without losing quality',
@@ -1580,9 +1580,9 @@ export const tools: Tool[] = [
       'Convert up to 50 WebP images (up to 250 MB batch) to standard JPG or lossless 8-bit alpha PNG directly in your browser with custom background matte colors, adjustable JPEG quality, and one-click ZIP export.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'WebP to JPG & PNG Converter — Batch Convert 50 Files, Alpha Matte & ZIP (Zero Upload)',
+    seoTitle: "WebP to JPG & PNG Converter (Free Batch)",
     seoDescription:
-      'Convert up to 50 WebP images (50 MB per file / 250 MB batch) to high-resolution JPG or lossless PNG 100% in your browser. Features custom alpha background matte fill, 10%–100% JPEG quality, animated WebP poster extraction, and instant ZIP download.',
+      "Batch convert up to 50 WebP images into high-quality JPG or transparent PNG files in your browser. Adjust compression quality and download all as a ZIP.",
     keywords: [
       'webp to jpg converter online free',
       'webp to png transparent converter',
@@ -1639,9 +1639,9 @@ export const tools: Tool[] = [
       'Compress and resize up to 100 images (100 MB per file) 100% client-side with perceptual SSIM scoring, 5-pass binary search Target KB sizing (10 KB–100 MB), automatic EXIF stripping, and interactive Before/After split comparison.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Image Compressor & Optimizer — Reduce Size to 20KB/50KB/100KB, WebP/AVIF/HEIC (Zero Upload)',
+    seoTitle: "Compress Image to 20KB, 50KB & 100KB Free",
     seoDescription:
-      'Compress up to 100 JPG, PNG, WebP, AVIF, HEIC, and TIFF images (100 MB per file) 100% in your browser. Features 5-pass binary search Target KB sizing (20KB, 50KB, 100KB), perceptual SSIM scoring, batch resizing, EXIF stripping, and split preview.',
+      "Compress up to 100 JPG, PNG, WebP, AVIF, and HEIC photos online in your browser. Hit exact target file sizes (20KB, 50KB, 100KB) for portals and web speed.",
     keywords: [
       'image compressor online to 20kb 50kb 100kb',
       'compress jpg png webp avif heic client side',
@@ -1702,9 +1702,9 @@ export const tools: Tool[] = [
       'Generate 100% permanent, unexpiring static QR codes across 8 payload types with custom colors, center logos, live 0–95 scan reliability scoring, in-browser optical verification, and print-ready PNG, SVG, WebP, JPEG, or A4 PDF exports.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free QR Code Generator Online — Custom Logo, Wi-Fi, vCard, Vector SVG & PDF (No Expiry)',
+    seoTitle: "Free QR Code Generator with Logo (SVG, PNG)",
     seoDescription:
-      'Generate permanent, unexpiring static QR codes for URLs, Wi-Fi, vCard 3.0 contacts, emails, SMS, and events 100% in your browser. Add custom logos (Level H 30%), check WCAG contrast & scan reliability (0–95), test with built-in scanner, and export PNG, SVG, or A4 PDF.',
+      "Create custom, non-expiring static QR codes for URLs, Wi-Fi, vCard, Email, and WhatsApp. Add your logo, customize colors, and download in SVG, PNG, or PDF.",
     keywords: [
       'free qr code generator no expiration',
       'static qr code generator with logo',
@@ -1763,9 +1763,9 @@ export const tools: Tool[] = [
     status: 'published',
     hidden: false,
     excludeFromSitemap: false,
-    seoTitle: 'Word Counter, Readability Checker & Grammar Analyzer — Flesch, Keyword Density & Pacing',
+    seoTitle: "Free Word Counter, Readability & Grammar Tool",
     seoDescription:
-      'Free client-side word counter, character counter, readability calculator (Flesch Reading Ease, Flesch-Kincaid, Gunning Fog, SMOG, ARI), 1/2/3-word N-gram keyword density analyzer, speaking timer, and 8-layer grammar & style writing coach.',
+      "Count words, characters, sentences, and reading time live. Check 6 readability formulas (Flesch-Kincaid, Gunning Fog), passive voice, grammar, and keywords.",
     keywords: [
       'word counter character counter online',
       'readability score calculator flesch kincaid gunning fog',
@@ -1822,9 +1822,9 @@ export const tools: Tool[] = [
       'Transform text instantly across 7 editorial writing cases and 8 developer identifier formats with acronym-aware tokenization, 191-language Unicode rules, 5 whitespace/line-ending cleanups, and live reading/speaking telemetry.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Text Case Converter — 15 Writing & Developer Formats, Title Case, camelCase & snake_case',
+    seoTitle: "Case Converter — Upper, Lower & Title Case",
     seoDescription:
-      'Convert text across 15 modes: UPPERCASE, lowercase, AP/Chicago Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, and CONSTANT_CASE. Features 191-language Unicode rules (Turkish, German, Dutch, Greek), acronym tokenization, 5 text cleanups, and live word/reading counters.',
+      "Convert text between 15 letter cases online: UPPERCASE, lowercase, AP/Chicago Title Case, Sentence case, camelCase, PascalCase, snake_case, and kebab-case.",
     keywords: [
       'text case converter online',
       'ap chicago style title case converter',
@@ -1881,9 +1881,9 @@ export const tools: Tool[] = [
       'Author HTML meta tags, Open Graph markup, Twitter/X Cards, and typed Next.js App Router Metadata objects with 6 live SERP/social previews and a built-in 0–100 URL & HTML SEO Auditor.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Meta Tag & Open Graph Generator — Live SERP/Social Preview, Auditor & Next.js Export',
+    seoTitle: "Meta Tag & Open Graph Generator + Preview",
     seoDescription:
-      'Generate W3C HTML meta tags, Open Graph (og:*), Twitter/X Cards, and typed Next.js App Router Metadata objects. Preview across Google SERP, Facebook, X, LinkedIn & Discord, or audit any URL/HTML with a 0–100 SEO health score.',
+      "Generate SEO HTML meta tags, Open Graph (og:*), Twitter/X Cards, and Next.js metadata with live Google SERP previews and a 100-point SEO diagnostic audit.",
     keywords: [
       'meta tag generator html seo',
       'open graph og tag twitter card generator',

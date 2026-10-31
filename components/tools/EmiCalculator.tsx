@@ -1048,7 +1048,7 @@ export default function EmiCalculator() {
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
                   <Calculator className="h-6 w-6" />
                 </div>
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Start Your Loan Calculation</h4>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Start Your Loan Calculation</h3>
                 <p className="max-w-md mx-auto text-xs text-slate-500 dark:text-slate-400">
                   Enter your loan principal amount and repayment tenure on the left to instantly generate your period-by-period amortization schedule.
                 </p>
@@ -1114,7 +1114,7 @@ export default function EmiCalculator() {
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-600 dark:bg-slate-900 dark:text-slate-400">
                   <Layers className="h-6 w-6" />
                 </div>
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">Yearly Breakdown Awaiting Input</h4>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Yearly Breakdown Awaiting Input</h3>
                 <p className="max-w-md mx-auto text-xs text-slate-500 dark:text-slate-400">
                   Year-by-year principal, interest, and closing balance aggregations will populate here automatically once loan details are entered.
                 </p>

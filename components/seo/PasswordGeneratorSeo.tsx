@@ -9,7 +9,7 @@ export const PASSWORD_GENERATOR_FAQS: FaqItem[] = [
   {
     question: 'How does KivaroTools generate cryptographically secure passwords and secrets?',
     answer:
-      'KivaroTools uses the standard Web Cryptography API (window.crypto.getRandomValues) implemented in modern browser engines (V8, JavaScriptCore, SpiderMonkey). Unlike pseudo-random generators like Math.random() that rely on predictable linear congruential algorithms, crypto.getRandomValues interfaces directly with OS-level entropy pools (/dev/urandom on Linux/macOS or CryptGenRandom / BCryptGenRandom on Windows) to generate cryptographically unpredictable bytes.',
+      'KivaroTools uses the standard Web Cryptography API (window.crypto.getRandomValues) implemented in modern browser engines (V8, JavaScriptCore, SpiderMonkey). Unlike pseudo-random generators like Math.random() that rely on predictable linear congruential algorithms, crypto.getRandomValues interfaces directly with OS-level entropy pools (dev/urandom on Linux/macOS or CryptGenRandom / BCryptGenRandom on Windows) to generate cryptographically unpredictable bytes.',
   },
   {
     question: 'What is modulo bias and how does rejection sampling eliminate it?',
@@ -157,7 +157,7 @@ export default function PasswordGeneratorSeo() {
             Generating production credentials requires mathematical randomness. Most web applications and simple online generators mistakenly rely on JavaScript&apos;s native <code>Math.random()</code>, which utilizes a pseudo-random number generator (such as the xoshiro128+ or v8:MathRandom PRNG). PRNGs are deterministic and susceptible to state-recovery attacks, rendering them completely unsuitable for cryptographic keys, authentication tokens, or enterprise passwords.
           </p>
           <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-            KivaroTools exclusively leverages the <strong>Web Cryptography API</strong> (<code>window.crypto.getRandomValues</code> and <code>crypto.subtle.digest</code>), interfacing directly with operating system entropy seeds (Linux/macOS <code>/dev/urandom</code>, Windows <code>BCryptGenRandom</code>).
+            KivaroTools exclusively leverages the <strong>Web Cryptography API</strong> (<code>window.crypto.getRandomValues</code> and <code>crypto.subtle.digest</code>), interfacing directly with operating system entropy seeds (Linux/macOS <code>dev/urandom</code>, Windows <code>BCryptGenRandom</code>).
           </p>
 
           <h3 className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">

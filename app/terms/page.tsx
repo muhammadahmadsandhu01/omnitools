@@ -12,27 +12,31 @@ import {
   Ban,
   CheckCircle,
 } from 'lucide-react';
-import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION } from '@/config/site';
+import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, DEFAULT_OG_IMAGE } from '@/config/site';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — Usage Terms & Financial/Technical Disclaimers',
+  title: 'Terms of Service & Usage Disclaimers',
   description:
-    'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, financial calculators, and file converters.',
+    'Review the KivaroTools Terms of Service governing our free browser-based developer tools, financial & tax calculators, and PDF/image conversion utilities.',
   alternates: {
     canonical: `${SITE_URL}/terms`,
   },
   openGraph: {
-    title: 'Terms of Service — KivaroTools',
+    title: 'Terms of Service & Usage Disclaimers | KivaroTools',
     description:
-      'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+      'Review the KivaroTools Terms of Service governing our free browser-based developer tools, financial & tax calculators, and PDF/image conversion utilities.',
     url: `${SITE_URL}/terms`,
     type: 'website',
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Terms of Service — KivaroTools',
+    site: '@kivarotools',
+    creator: '@kivarotools',
+    title: 'Terms of Service & Usage Disclaimers | KivaroTools',
     description:
-      'KivaroTools Terms of Service. Essential terms governing the use of our free browser-based computational utilities, calculators, and converters.',
+      'Review the KivaroTools Terms of Service governing our free browser-based developer tools, financial & tax calculators, and PDF/image conversion utilities.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 };
 

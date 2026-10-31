@@ -8,6 +8,21 @@ const nextConfig: NextConfig = {
         destination: '/',
         permanent: true,
       },
+      {
+        source: '/dev/urandom',
+        destination: '/developer/password-generator',
+        permanent: true,
+      },
+      {
+        source: '/$',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/&',
+        destination: '/',
+        permanent: true,
+      },
       // 1. Specific legacy alias with category change (must precede generic /image/:slug)
       {
         source: '/pdf/image-to-pdf',

@@ -18,7 +18,7 @@ import './globals.css';
 
 import Navbar from '@/components/layout/Navbar';
 import { ThemeProvider } from '@/components/ThemeProvider';
-import { SITE_URL } from '@/config/site';
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
 import { KtMonogram } from '@/components/brand/KivaroLogo';
 
 const inter = Inter({
@@ -33,12 +33,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
+    default: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     template: '%s | KivaroTools',
   },
 
   description:
-    'Free enterprise-grade, browser-based online tools for developers, financial planning, PDFs, image compression, and SEO. 100% client-side execution with zero server uploads and no registration.',
+    'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
 
   applicationName: 'KivaroTools',
 
@@ -93,28 +93,34 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     siteName: 'KivaroTools',
-    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
+    title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
+      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
     url: SITE_URL,
+    images: [DEFAULT_OG_IMAGE],
   },
 
   twitter: {
     card: 'summary_large_image',
     site: '@kivarotools',
     creator: '@kivarotools',
-    title: 'KivaroTools — Free Enterprise-Grade Online Tools (Private by Design)',
+    title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Free browser-based tools for developers, finance, PDFs, images, and SEO. 100% client-side processing with zero server uploads.',
+      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
+    images: [`${SITE_URL}/og-image.png`],
   },
 
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.ico?v=2', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/favicon-48x48.png?v=2', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon-96x96.png?v=2', sizes: '96x96', type: 'image/png' },
+      { url: '/icon-192.png?v=2', sizes: '192x192', type: 'image/png' },
+      { url: '/icon-512.png?v=2', sizes: '512x512', type: 'image/png' },
     ],
+    shortcut: ['/favicon.ico?v=2'],
     apple: [
-      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-touch-icon.png?v=2', sizes: '180x180', type: 'image/png' },
     ],
   },
 
@@ -278,6 +284,7 @@ function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <h2 className="sr-only">Site Footer Navigation</h2>
         {/* Main footer grid */}
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
