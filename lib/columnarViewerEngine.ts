@@ -563,6 +563,344 @@ export function decodeRleBitPackedHybrid(
     return out;
 }
 
+/**
+ * Parquet Hybrid RLE / Bit-Packing Encoder (encodes definition levels or dictionary indices)
+ */
+export function encodeRleBitPackedHybrid(values: number[], bitWidth: number, includeLengthPrefix = true): Uint8Array {
+    if (bitWidth === 0 || values.length === 0) {
+        return includeLengthPrefix ? new Uint8Array([0, 0, 0, 0]) : new Uint8Array(0);
+    }
+    const byteWidth = Math.ceil(bitWidth / 8);
+    const rlePayload: number[] = [];
+    let i = 0;
+    while (i < values.length) {
+        const val = values[i];
+        let runLen = 1;
+        while (i + runLen < values.length && values[i + runLen] === val && runLen < 0x7fff) {
+            runLen++;
+        }
+        const header = runLen << 1; // RLE run (lowest bit = 0)
+        rlePayload.push(...writeUnsignedVarint(header));
+        for (let b = 0; b < byteWidth; b++) {
+            rlePayload.push((val >>> (8 * b)) & 0xff);
+        }
+        i += runLen;
+    }
+    if (!includeLengthPrefix) {
+        return new Uint8Array(rlePayload);
+    }
+    const out = new Uint8Array(4 + rlePayload.length);
+    const dv = new DataView(out.buffer);
+    dv.setUint32(0, rlePayload.length, true);
+    out.set(rlePayload, 4);
+    return out;
+}
+
+/**
+ * Pure TypeScript Synchronous RFC 1951 DEFLATE Decompressor (supports stored, fixed, and dynamic Huffman blocks)
+ */
+const DEFLATE_LEN_BASE = [
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
+    35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258,
+];
+const DEFLATE_LEN_EXTRA = [
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+    3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
+];
+const DEFLATE_DIST_BASE = [
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
+    257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+];
+const DEFLATE_DIST_EXTRA = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
+    7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13,
+];
+const DEFLATE_CL_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+
+interface HuffmanTable {
+    counts: Uint16Array;
+    symbols: Uint16Array;
+}
+
+function buildHuffmanTable(lengths: ArrayLike<number>, numSymbols: number): HuffmanTable {
+    const counts = new Uint16Array(16);
+    for (let i = 0; i < numSymbols; i++) {
+        const l = lengths[i];
+        if (l > 0 && l < 16) counts[l]++;
+    }
+    const offsets = new Uint16Array(16);
+    let total = 0;
+    for (let bits = 1; bits < 16; bits++) {
+        offsets[bits] = total;
+        total += counts[bits];
+    }
+    const symbols = new Uint16Array(Math.max(1, total));
+    for (let i = 0; i < numSymbols; i++) {
+        const l = lengths[i];
+        if (l > 0 && l < 16) {
+            symbols[offsets[l]++] = i;
+        }
+    }
+    return { counts, symbols };
+}
+
+export function inflateRawDeflate(input: Uint8Array): Uint8Array {
+    if (!input || input.length === 0) return new Uint8Array(0);
+    let bitPos = 0;
+    const totalBits = input.length * 8;
+    const out: number[] = [];
+
+    const readBits = (n: number): number => {
+        let val = 0;
+        for (let i = 0; i < n; i++) {
+            if (bitPos >= totalBits) break;
+            const byteIdx = bitPos >>> 3;
+            const bitIdx = bitPos & 7;
+            val |= ((input[byteIdx] >>> bitIdx) & 1) << i;
+            bitPos++;
+        }
+        return val;
+    };
+
+    const decodeSymbol = (table: HuffmanTable): number => {
+        let code = 0;
+        let first = 0;
+        let index = 0;
+        for (let len = 1; len < 16; len++) {
+            code |= readBits(1);
+            const count = table.counts[len];
+            if (code - count < first) {
+                return table.symbols[index + (code - first)];
+            }
+            index += count;
+            first += count;
+            first <<= 1;
+            code <<= 1;
+        }
+        return 0;
+    };
+
+    const fixedLitLengths = new Uint8Array(288);
+    for (let i = 0; i <= 143; i++) fixedLitLengths[i] = 8;
+    for (let i = 144; i <= 255; i++) fixedLitLengths[i] = 9;
+    for (let i = 256; i <= 279; i++) fixedLitLengths[i] = 7;
+    for (let i = 280; i <= 287; i++) fixedLitLengths[i] = 8;
+    const fixedDistLengths = new Uint8Array(32).fill(5);
+    let fixedLitTable: HuffmanTable | null = null;
+    let fixedDistTable: HuffmanTable | null = null;
+
+    let bfinal = 0;
+    while (bfinal === 0 && bitPos < totalBits) {
+        bfinal = readBits(1);
+        const btype = readBits(2);
+
+        if (btype === 0) {
+            // Stored uncompressed block: align to next byte boundary
+            bitPos = (bitPos + 7) & ~7;
+            const byteIdx = bitPos >>> 3;
+            if (byteIdx + 4 > input.length) break;
+            const len = input[byteIdx] | (input[byteIdx + 1] << 8);
+            bitPos += 32;
+            const startByte = bitPos >>> 3;
+            for (let i = 0; i < len && startByte + i < input.length; i++) {
+                out.push(input[startByte + i]);
+            }
+            bitPos += len * 8;
+        } else if (btype === 1 || btype === 2) {
+            let litTable: HuffmanTable;
+            let distTable: HuffmanTable;
+            if (btype === 1) {
+                if (!fixedLitTable) fixedLitTable = buildHuffmanTable(fixedLitLengths, 288);
+                if (!fixedDistTable) fixedDistTable = buildHuffmanTable(fixedDistLengths, 32);
+                litTable = fixedLitTable;
+                distTable = fixedDistTable;
+            } else {
+                const hlit = readBits(5) + 257;
+                const hdist = readBits(5) + 1;
+                const hclen = readBits(4) + 4;
+                const clLengths = new Uint8Array(19);
+                for (let i = 0; i < hclen; i++) {
+                    clLengths[DEFLATE_CL_ORDER[i]] = readBits(3);
+                }
+                const clTable = buildHuffmanTable(clLengths, 19);
+                const allLengths = new Uint8Array(hlit + hdist);
+                let idx = 0;
+                while (idx < hlit + hdist && bitPos <= totalBits) {
+                    const sym = decodeSymbol(clTable);
+                    if (sym < 16) {
+                        allLengths[idx++] = sym;
+                    } else if (sym === 16) {
+                        const prev = idx > 0 ? allLengths[idx - 1] : 0;
+                        const rep = readBits(2) + 3;
+                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = prev;
+                    } else if (sym === 17) {
+                        const rep = readBits(3) + 3;
+                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = 0;
+                    } else if (sym === 18) {
+                        const rep = readBits(7) + 11;
+                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = 0;
+                    } else {
+                        break;
+                    }
+                }
+                litTable = buildHuffmanTable(allLengths.subarray(0, hlit), hlit);
+                distTable = buildHuffmanTable(allLengths.subarray(hlit), hdist);
+            }
+
+            while (bitPos <= totalBits) {
+                const sym = decodeSymbol(litTable);
+                if (sym < 256) {
+                    out.push(sym);
+                } else if (sym === 256) {
+                    break;
+                } else {
+                    const lenIdx = sym - 257;
+                    if (lenIdx < 0 || lenIdx >= DEFLATE_LEN_BASE.length) break;
+                    const length = DEFLATE_LEN_BASE[lenIdx] + readBits(DEFLATE_LEN_EXTRA[lenIdx]);
+                    const distSym = decodeSymbol(distTable);
+                    if (distSym < 0 || distSym >= DEFLATE_DIST_BASE.length) break;
+                    const dist = DEFLATE_DIST_BASE[distSym] + readBits(DEFLATE_DIST_EXTRA[distSym]);
+                    const startIdx = out.length - dist;
+                    if (startIdx < 0) break;
+                    for (let i = 0; i < length; i++) {
+                        out.push(out[startIdx + i]);
+                    }
+                }
+            }
+        } else {
+            break;
+        }
+    }
+    return new Uint8Array(out);
+}
+
+/**
+ * Pure TypeScript Synchronous RFC 1952 GZIP / Zlib Decompressor
+ */
+export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
+    if (!input || input.length < 2) return input;
+    // Check GZIP magic 0x1f 0x8b
+    if (input[0] === 0x1f && input[1] === 0x8b && input.length >= 18) {
+        const flg = input[3];
+        let pos = 10;
+        if (flg & 0x04) {
+            const xlen = input[pos] | (input[pos + 1] << 8);
+            pos += 2 + xlen;
+        }
+        if (flg & 0x08) {
+            while (pos < input.length && input[pos] !== 0) pos++;
+            pos++;
+        }
+        if (flg & 0x10) {
+            while (pos < input.length && input[pos] !== 0) pos++;
+            pos++;
+        }
+        if (flg & 0x02) {
+            pos += 2;
+        }
+        if (pos < input.length - 8) {
+            return inflateRawDeflate(input.subarray(pos, input.length - 8));
+        }
+    }
+    // Check Zlib header (CMF / FLG where (CMF*256 + FLG) % 31 === 0 and CM === 8)
+    if ((input[0] & 0x0f) === 8 && ((input[0] << 8) | input[1]) % 31 === 0 && input.length > 6) {
+        const fdict = (input[1] & 0x20) !== 0;
+        const start = fdict ? 6 : 2;
+        return inflateRawDeflate(input.subarray(start, input.length - 4));
+    }
+    return inflateRawDeflate(input);
+}
+
+/**
+ * Pure TypeScript LZ4 Raw Block & LZ4 Frame Decompressor
+ */
+export function decompressLz4Block(input: Uint8Array, expectedSize = 0): Uint8Array {
+    if (!input || input.length === 0) return new Uint8Array(0);
+    // Check if LZ4 Frame magic 0x184D2204
+    if (
+        input.length >= 7 &&
+        input[0] === 0x04 &&
+        input[1] === 0x22 &&
+        input[2] === 0x4d &&
+        input[3] === 0x18
+    ) {
+        const flg = input[4];
+        const hasContentSize = (flg & 0x08) !== 0;
+        const hasBlockChecksum = (flg & 0x10) !== 0;
+        const hasDictId = (flg & 0x01) !== 0;
+        let pos = 6 + (hasContentSize ? 8 : 0) + (hasDictId ? 4 : 0) + 1; // +1 for header checksum HC
+        const chunks: Uint8Array[] = [];
+        while (pos + 4 <= input.length) {
+            const blockSize =
+                (input[pos] |
+                    (input[pos + 1] << 8) |
+                    (input[pos + 2] << 16) |
+                    (input[pos + 3] << 24)) >>>
+                0;
+            pos += 4;
+            if (blockSize === 0) break;
+            const isUncompressed = (blockSize & 0x80000000) !== 0;
+            const actualLen = blockSize & 0x7fffffff;
+            if (pos + actualLen > input.length) break;
+            const slice = input.subarray(pos, pos + actualLen);
+            pos += actualLen + (hasBlockChecksum ? 4 : 0);
+            chunks.push(isUncompressed ? slice : decompressLz4RawBlock(slice));
+        }
+        const total = chunks.reduce((a, c) => a + c.length, 0);
+        const merged = new Uint8Array(total);
+        let w = 0;
+        for (const c of chunks) {
+            merged.set(c, w);
+            w += c.length;
+        }
+        return merged;
+    }
+    // Check Hadoop/Parquet LZ4 framing (4-byte BE uncompressed len + 4-byte BE compressed len)
+    if (expectedSize > 0 && input.length > 8) {
+        const dv = new DataView(input.buffer, input.byteOffset, input.byteLength);
+        if (dv.getUint32(0, false) === expectedSize) {
+            return decompressLz4RawBlock(input.subarray(8));
+        }
+    }
+    return decompressLz4RawBlock(input);
+}
+
+function decompressLz4RawBlock(input: Uint8Array): Uint8Array {
+    const out: number[] = [];
+    let pos = 0;
+    while (pos < input.length) {
+        const token = input[pos++];
+        let litLen = token >>> 4;
+        if (litLen === 15) {
+            while (pos < input.length) {
+                const s = input[pos++];
+                litLen += s;
+                if (s !== 255) break;
+            }
+        }
+        for (let i = 0; i < litLen && pos < input.length; i++) {
+            out.push(input[pos++]);
+        }
+        if (pos >= input.length) break;
+        const offset = input[pos] | ((input[pos + 1] ?? 0) << 8);
+        pos += 2;
+        if (offset === 0 || offset > out.length) break;
+        let matchLen = (token & 0x0f) + 4;
+        if (matchLen === 19) {
+            while (pos < input.length) {
+                const s = input[pos++];
+                matchLen += s;
+                if (s !== 255) break;
+            }
+        }
+        const matchStart = out.length - offset;
+        for (let i = 0; i < matchLen; i++) {
+            out.push(out[matchStart + i]);
+        }
+    }
+    return new Uint8Array(out);
+}
+
 // ============================================================
 // 3. REAL APACHE THRIFT TCOMPACTPROTOCOL ENCODER & DECODER
 // ============================================================
@@ -813,7 +1151,7 @@ const PARQUET_ENUM_TO_TYPE: Record<number, PhysicalDataType> = {
     0: 'BOOLEAN',
     1: 'INT32',
     2: 'INT64',
-    3: 'BYTE_ARRAY', // INT96 legacy mapped to BYTE_ARRAY
+    3: 'BYTE_ARRAY', // INT96 legacy timestamp mapped via physical96 flag
     4: 'FLOAT',
     5: 'DOUBLE',
     6: 'BYTE_ARRAY',
@@ -831,10 +1169,190 @@ const PARQUET_CODEC_ENUM_TO_NAME: Record<number, string> = {
     7: 'LZ4_RAW',
 };
 
+const PARQUET_ENCODING_ENUM_TO_NAME: Record<number, string> = {
+    0: 'PLAIN',
+    2: 'PLAIN_DICTIONARY',
+    3: 'RLE',
+    4: 'BIT_PACKED',
+    5: 'DELTA_BINARY_PACKED',
+    6: 'DELTA_LENGTH_BYTE_ARRAY',
+    7: 'DELTA_BYTE_ARRAY',
+    8: 'RLE_DICTIONARY',
+    9: 'BYTE_STREAM_SPLIT',
+};
+
+const PARQUET_CONVERTED_TYPE_MAP: Record<number, LogicalDataType> = {
+    0: 'UTF8',
+    1: 'MAP',
+    2: 'MAP',
+    3: 'LIST',
+    4: 'UTF8', // ENUM
+    5: 'DECIMAL',
+    6: 'DATE',
+    7: 'INT32', // TIME_MILLIS
+    8: 'INT64', // TIME_MICROS
+    9: 'TIMESTAMP_MILLIS',
+    10: 'TIMESTAMP_MICROS',
+    11: 'INT32', // UINT_8
+    12: 'INT32', // UINT_16
+    13: 'INT32', // UINT_32
+    14: 'UINT64', // UINT_64
+    15: 'INT32', // INT_8
+    16: 'INT32', // INT_16
+    17: 'INT32', // INT_32
+    18: 'INT64', // INT_64
+    19: 'JSON',
+    20: 'BINARY', // BSON
+};
+
 /**
- * Encodes a dataset into a genuine Apache Parquet (PAR1) binary file containing:
+ * Encodes non-null column values into spec-compliant Apache Parquet PLAIN physical bytes.
+ */
+function encodeParquetPlainValues(
+    nonNullValues: unknown[],
+    physicalType: PhysicalDataType,
+    logicalType: LogicalDataType
+): Uint8Array {
+    if (nonNullValues.length === 0) return new Uint8Array(0);
+
+    if (physicalType === 'BOOLEAN') {
+        const byteCount = Math.ceil(nonNullValues.length / 8);
+        const out = new Uint8Array(byteCount);
+        for (let i = 0; i < nonNullValues.length; i++) {
+            const v = nonNullValues[i];
+            const truthy = v === true || v === 1 || v === 'true' || v === '1';
+            if (truthy) {
+                out[i >>> 3] |= 1 << (i & 7);
+            }
+        }
+        return out;
+    }
+
+    if (physicalType === 'INT32') {
+        const out = new Uint8Array(nonNullValues.length * 4);
+        const dv = new DataView(out.buffer);
+        for (let i = 0; i < nonNullValues.length; i++) {
+            const v = nonNullValues[i];
+            let n = 0;
+            if (logicalType === 'DATE' && typeof v === 'string') {
+                const ms = Date.parse(v);
+                n = Number.isFinite(ms) ? Math.floor(ms / 86400000) : 0;
+            } else {
+                n = Number(v) || 0;
+            }
+            dv.setInt32(i * 4, Math.trunc(n), true);
+        }
+        return out;
+    }
+
+    if (physicalType === 'INT64') {
+        const out = new Uint8Array(nonNullValues.length * 8);
+        const dv = new DataView(out.buffer);
+        for (let i = 0; i < nonNullValues.length; i++) {
+            const v = nonNullValues[i];
+            let b = BigInt(0);
+            try {
+                if (typeof v === 'bigint') {
+                    b = v;
+                } else if (typeof v === 'number' && Number.isFinite(v)) {
+                    b = BigInt(Math.trunc(v));
+                } else if (typeof v === 'string') {
+                    if (
+                        (logicalType === 'TIMESTAMP_MILLIS' || logicalType === 'TIMESTAMP_MICROS') &&
+                        !/^[+-]?\d+$/.test(v.trim())
+                    ) {
+                        const ms = Date.parse(v);
+                        if (Number.isFinite(ms)) {
+                            b = logicalType === 'TIMESTAMP_MICROS' ? BigInt(ms) * BigInt(1000) : BigInt(ms);
+                        }
+                    } else {
+                        b = BigInt(v.trim());
+                    }
+                }
+            } catch {
+                b = BigInt(0);
+            }
+            dv.setBigInt64(i * 8, b, true);
+        }
+        return out;
+    }
+
+    if (physicalType === 'FLOAT') {
+        const out = new Uint8Array(nonNullValues.length * 4);
+        const dv = new DataView(out.buffer);
+        for (let i = 0; i < nonNullValues.length; i++) {
+            dv.setFloat32(i * 4, Number(nonNullValues[i]) || 0, true);
+        }
+        return out;
+    }
+
+    if (physicalType === 'DOUBLE') {
+        const out = new Uint8Array(nonNullValues.length * 8);
+        const dv = new DataView(out.buffer);
+        for (let i = 0; i < nonNullValues.length; i++) {
+            dv.setFloat64(i * 8, Number(nonNullValues[i]) || 0, true);
+        }
+        return out;
+    }
+
+    // BYTE_ARRAY or FIXED_LEN_BYTE_ARRAY (4-byte LE length prefix + UTF-8 bytes)
+    const encodedSlices: Uint8Array[] = [];
+    let totalBytes = 0;
+    for (let i = 0; i < nonNullValues.length; i++) {
+        const v = nonNullValues[i];
+        const s =
+            typeof v === 'string'
+                ? v
+                : typeof v === 'bigint'
+                    ? v.toString()
+                    : typeof v === 'object' && v !== null
+                        ? JSON.stringify(v)
+                        : String(v ?? '');
+        const b = textEncoder.encode(s);
+        encodedSlices.push(b);
+        totalBytes += 4 + b.length;
+    }
+    const out = new Uint8Array(totalBytes);
+    const dv = new DataView(out.buffer);
+    let pos = 0;
+    for (const slice of encodedSlices) {
+        dv.setUint32(pos, slice.length, true);
+        out.set(slice, pos + 4);
+        pos += 4 + slice.length;
+    }
+    return out;
+}
+
+/**
+ * Builds a Thrift TCompactProtocol PageHeader (DATA_PAGE = 0) for a Parquet ColumnChunk.
+ */
+function buildParquetDataPageHeader(
+    uncompressedSize: number,
+    compressedSize: number,
+    numValues: number,
+    encodingEnum = 0 // PLAIN = 0
+): Uint8Array {
+    const tw = new ThriftCompactWriter();
+    tw.beginStruct(); // PageHeader
+    tw.writeI32Field(1, 0); // type = DATA_PAGE (0)
+    tw.writeI32Field(2, uncompressedSize); // uncompressed_page_size
+    tw.writeI32Field(3, compressedSize); // compressed_page_size
+    tw.writeFieldHeader(5, CT_STRUCT); // data_page_header (DataPageHeader)
+    tw.beginStruct();
+    tw.writeI32Field(1, numValues); // num_values
+    tw.writeI32Field(2, encodingEnum); // encoding (0 = PLAIN)
+    tw.writeI32Field(3, 3); // definition_level_encoding (3 = RLE)
+    tw.writeI32Field(4, 3); // repetition_level_encoding (3 = RLE)
+    tw.endStruct(); // end DataPageHeader
+    tw.endStruct(); // end PageHeader
+    return tw.toUint8Array();
+}
+
+/**
+ * Encodes a dataset into a spec-compliant Apache Parquet (PAR1) binary file containing:
  * - Leading "PAR1" magic bytes
- * - Snappy-compressed Columnar Data Pages per column
+ * - Spec-compliant Thrift PageHeader (DATA_PAGE) + Hybrid RLE Definition Levels + PLAIN physical values
+ *   compressed with Snappy (interoperable with PyArrow, DuckDB, Pandas, and Spark!)
  * - Real Apache Thrift TCompactProtocol FileMetaData footer with SchemaElement list,
  *   RowGroup list, ColumnChunk list, ColumnMetaData, Statistics (min_value, max_value, null_count, distinct_count),
  *   and KeyValueMetadata
@@ -844,10 +1362,9 @@ export function encodeParquetBinary(
     rows: Record<string, unknown>[],
     customMeta: Record<string, string> = {}
 ): Uint8Array {
-    const schema = inferSchemaFromRows(rows, 'SNAPPY', 'RLE_DICTIONARY');
+    const schema = inferSchemaFromRows(rows, 'SNAPPY', 'PLAIN');
     const profiles = computeColumnProfiles(rows, schema);
 
-    // Encode column chunks and compress each column chunk with real LZ77 Snappy
     const dataChunks: Uint8Array[] = [];
     const chunkMetas: {
         col: ColumnSchemaNode;
@@ -855,28 +1372,101 @@ export function encodeParquetBinary(
         fileOffset: number;
         uncompressedSize: number;
         compressedSize: number;
+        physicalTypeEnum: number;
+        convertedTypeEnum: number | null;
     }[] = [];
 
     let currentOffset = 4; // after leading "PAR1"
     for (let i = 0; i < schema.length; i++) {
         const col = schema[i];
         const prof = profiles[i];
-        const colValues = rows.map((r) => {
-            const v = r[col.name];
-            return typeof v === 'bigint' ? v.toString() : v ?? null;
-        });
-        const rawPageBytes = textEncoder.encode(JSON.stringify(colValues));
-        const compressedPageBytes = compressSnappyBlock(rawPageBytes);
+        // For LIST / STRUCT / MAP / UUID / TIMESTAMP ISO strings, store physical type in Parquet as BYTE_ARRAY (UTF8/JSON) or INT64
+        const isComplexOrIsoTimestamp =
+            col.logicalType === 'LIST' ||
+            col.logicalType === 'STRUCT' ||
+            col.logicalType === 'MAP' ||
+            col.logicalType === 'JSON' ||
+            col.logicalType === 'UUID' ||
+            (col.logicalType === 'TIMESTAMP_MILLIS' &&
+                rows.some((r) => typeof r[col.name] === 'string' && !/^[+-]?\d+$/.test(String(r[col.name]))));
+
+        const effectivePhysical: PhysicalDataType = isComplexOrIsoTimestamp
+            ? 'BYTE_ARRAY'
+            : col.physicalType === 'FIXED_LEN_BYTE_ARRAY'
+                ? 'BYTE_ARRAY'
+                : col.physicalType;
+
+        const isOptional = col.nullable || col.repetitionType !== 'REQUIRED';
+        const defLevels: number[] = [];
+        const nonNullValues: unknown[] = [];
+
+        for (let r = 0; r < rows.length; r++) {
+            const v = rows[r]?.[col.name];
+            if (v === null || v === undefined) {
+                defLevels.push(0);
+            } else {
+                defLevels.push(1);
+                nonNullValues.push(v);
+            }
+        }
+
+        const rleDefBytes = isOptional
+            ? encodeRleBitPackedHybrid(defLevels, 1, true)
+            : new Uint8Array(0);
+        const plainValBytes = encodeParquetPlainValues(
+            nonNullValues,
+            effectivePhysical,
+            col.logicalType
+        );
+
+        const rawPagePayload = new Uint8Array(rleDefBytes.length + plainValBytes.length);
+        rawPagePayload.set(rleDefBytes, 0);
+        rawPagePayload.set(plainValBytes, rleDefBytes.length);
+
+        const compressedPayload = compressSnappyBlock(rawPagePayload);
+        const pageHeaderBytes = buildParquetDataPageHeader(
+            rawPagePayload.length,
+            compressedPayload.length,
+            rows.length,
+            0 // PLAIN
+        );
+
+        const fullChunkBytes = new Uint8Array(pageHeaderBytes.length + compressedPayload.length);
+        fullChunkBytes.set(pageHeaderBytes, 0);
+        fullChunkBytes.set(compressedPayload, pageHeaderBytes.length);
+
+        const totalUncompChunk = pageHeaderBytes.length + rawPagePayload.length;
+        const totalCompChunk = fullChunkBytes.length;
+
+        let convertedTypeEnum: number | null = null;
+        if (effectivePhysical === 'BYTE_ARRAY') {
+            if (col.logicalType === 'JSON' || col.logicalType === 'STRUCT' || col.logicalType === 'LIST' || col.logicalType === 'MAP') {
+                convertedTypeEnum = 19; // JSON
+            } else {
+                convertedTypeEnum = 0; // UTF8
+            }
+        } else if (col.logicalType === 'DATE' && effectivePhysical === 'INT32') {
+            convertedTypeEnum = 6; // DATE
+        } else if (col.logicalType === 'UINT64' && effectivePhysical === 'INT64') {
+            convertedTypeEnum = 14; // UINT_64
+        }
 
         chunkMetas.push({
-            col,
+            col: {
+                ...col,
+                physicalType: effectivePhysical,
+                repetitionType: isOptional ? 'OPTIONAL' : 'REQUIRED',
+                nullable: isOptional,
+            },
             prof,
             fileOffset: currentOffset,
-            uncompressedSize: rawPageBytes.length,
-            compressedSize: compressedPageBytes.length,
+            uncompressedSize: totalUncompChunk,
+            compressedSize: totalCompChunk,
+            physicalTypeEnum: PARQUET_TYPE_TO_ENUM[effectivePhysical] ?? 6,
+            convertedTypeEnum,
         });
-        dataChunks.push(compressedPageBytes);
-        currentOffset += compressedPageBytes.length;
+        dataChunks.push(fullChunkBytes);
+        currentOffset += totalCompChunk;
     }
 
     const totalUncompressed = chunkMetas.reduce((acc, c) => acc + c.uncompressedSize, 0);
@@ -889,22 +1479,25 @@ export function encodeParquetBinary(
     tw.writeI32Field(1, 2);
 
     // Field 2: schema (list<SchemaElement> — root + leaf columns)
-    tw.writeListHeader(2, CT_STRUCT, schema.length + 1);
+    tw.writeListHeader(2, CT_STRUCT, chunkMetas.length + 1);
     // Root SchemaElement
     tw.beginStruct();
     tw.writeStringField(4, 'parquet_schema');
-    tw.writeI32Field(5, schema.length); // num_children
+    tw.writeI32Field(5, chunkMetas.length); // num_children
     tw.endStruct();
 
     // Leaf SchemaElements
-    for (const col of schema) {
+    for (const cm of chunkMetas) {
         tw.beginStruct();
-        tw.writeI32Field(1, PARQUET_TYPE_TO_ENUM[col.physicalType] ?? 6);
+        tw.writeI32Field(1, cm.physicalTypeEnum);
         tw.writeI32Field(
             3,
-            col.repetitionType === 'REQUIRED' ? 0 : col.repetitionType === 'OPTIONAL' ? 1 : 2
+            cm.col.repetitionType === 'REQUIRED' ? 0 : 1
         );
-        tw.writeStringField(4, col.name);
+        tw.writeStringField(4, cm.col.name);
+        if (cm.convertedTypeEnum !== null) {
+            tw.writeI32Field(6, cm.convertedTypeEnum);
+        }
         tw.endStruct();
     }
 
@@ -921,10 +1514,10 @@ export function encodeParquetBinary(
         // Field 3: meta_data (ColumnMetaData struct)
         tw.writeFieldHeader(3, CT_STRUCT);
         tw.beginStruct();
-        tw.writeI32Field(1, PARQUET_TYPE_TO_ENUM[cm.col.physicalType] ?? 6); // type
-        tw.writeListHeader(2, CT_I32, 2); // encodings: PLAIN(0), RLE_DICTIONARY(8)
+        tw.writeI32Field(1, cm.physicalTypeEnum); // type
+        tw.writeListHeader(2, CT_I32, 2); // encodings: PLAIN(0), RLE(3)
         tw.writeRawI32(0);
-        tw.writeRawI32(8);
+        tw.writeRawI32(3);
         tw.writeListHeader(3, CT_BINARY, 1); // path_in_schema
         tw.writeRawString(cm.col.name);
         tw.writeI32Field(4, 1); // codec = 1 (SNAPPY)
@@ -936,14 +1529,21 @@ export function encodeParquetBinary(
         // Field 12: statistics (Statistics struct with min/max zone maps & null_count & distinct_count)
         tw.writeFieldHeader(12, CT_STRUCT);
         tw.beginStruct();
-        const maxStr = cm.prof.max !== null && cm.prof.max !== undefined ? String(cm.prof.max) : '';
-        const minStr = cm.prof.min !== null && cm.prof.min !== undefined ? String(cm.prof.min) : '';
-        tw.writeStringField(1, maxStr); // max
-        tw.writeStringField(2, minStr); // min
+        const encodeStatVal = (v: string | number | null): Uint8Array => {
+            if (v === null || v === undefined || v === '') return new Uint8Array(0);
+            if (cm.col.physicalType === 'BYTE_ARRAY' || cm.col.physicalType === 'FIXED_LEN_BYTE_ARRAY') {
+                return textEncoder.encode(String(v));
+            }
+            return encodeParquetPlainValues([v], cm.col.physicalType, cm.col.logicalType);
+        };
+        const maxStatBytes = encodeStatVal(cm.prof.max);
+        const minStatBytes = encodeStatVal(cm.prof.min);
+        if (maxStatBytes.length > 0) tw.writeBinaryField(1, maxStatBytes); // max
+        if (minStatBytes.length > 0) tw.writeBinaryField(2, minStatBytes); // min
         tw.writeI64Field(3, cm.prof.nullCount); // null_count
         tw.writeI64Field(4, cm.prof.distinctCount); // distinct_count
-        tw.writeStringField(5, maxStr); // max_value
-        tw.writeStringField(6, minStr); // min_value
+        if (maxStatBytes.length > 0) tw.writeBinaryField(5, maxStatBytes); // max_value
+        if (minStatBytes.length > 0) tw.writeBinaryField(6, minStatBytes); // min_value
         tw.endStruct(); // end Statistics
 
         tw.endStruct(); // end ColumnMetaData
@@ -957,7 +1557,7 @@ export function encodeParquetBinary(
     // Field 5: key_value_metadata (list<KeyValue>)
     const kvEntries: [string, string][] = Object.entries({
         'parquet.writer.name': 'kivarotools-columnar-engine',
-        'parquet.writer.version': '3.0.0 (Thrift TCompactProtocol)',
+        'parquet.writer.version': '4.0.0 (Thrift TCompactProtocol + Spec DataPage)',
         'kivarotools.schema.json': JSON.stringify(schema),
         ...customMeta,
     });
@@ -998,24 +1598,100 @@ export function encodeParquetBinary(
 }
 
 /**
+ * Encodes a single Avro datum value into binary bytes according to its Avro schema type.
+ */
+function encodeAvroBinaryValue(val: unknown, avroType: string, out: number[]): void {
+    switch (avroType) {
+        case 'null':
+            break;
+        case 'boolean':
+            out.push(val ? 1 : 0);
+            break;
+        case 'int': {
+            const n = typeof val === 'number' ? Math.trunc(val) : parseInt(String(val ?? '0'), 10) || 0;
+            out.push(...writeZigZagVarint(n));
+            break;
+        }
+        case 'long': {
+            let b = BigInt(0);
+            try {
+                if (typeof val === 'bigint') b = val;
+                else if (typeof val === 'number' && Number.isFinite(val)) b = BigInt(Math.trunc(val));
+                else if (typeof val === 'string') {
+                    if (/^[+-]?\d+$/.test(val.trim())) b = BigInt(val.trim());
+                    else {
+                        const ms = Date.parse(val);
+                        if (Number.isFinite(ms)) b = BigInt(ms);
+                    }
+                }
+            } catch {
+                b = BigInt(0);
+            }
+            out.push(...writeZigZagVarint(b));
+            break;
+        }
+        case 'float': {
+            const buf = new Uint8Array(4);
+            new DataView(buf.buffer).setFloat32(0, Number(val) || 0, true);
+            out.push(buf[0], buf[1], buf[2], buf[3]);
+            break;
+        }
+        case 'double': {
+            const buf = new Uint8Array(8);
+            new DataView(buf.buffer).setFloat64(0, Number(val) || 0, true);
+            for (let i = 0; i < 8; i++) out.push(buf[i]);
+            break;
+        }
+        default: {
+            // string or serialized JSON struct/list
+            const str =
+                typeof val === 'string'
+                    ? val
+                    : typeof val === 'bigint'
+                        ? val.toString()
+                        : typeof val === 'object' && val !== null
+                            ? JSON.stringify(val)
+                            : String(val ?? '');
+            const sb = textEncoder.encode(str);
+            out.push(...writeZigZagVarint(sb.length));
+            for (let i = 0; i < sb.length; i++) out.push(sb[i]);
+            break;
+        }
+    }
+}
+
+/**
  * Encodes an Apache Avro Object Container File ("Obj\x01") with real ZigZag varint header map,
- * avro.schema JSON contract, avro.codec = "snappy", 16-byte sync marker, and Snappy-compressed data block.
+ * avro.schema JSON contract, avro.codec = "snappy", 16-byte sync marker, and spec-compliant
+ * Avro binary datum records compressed with Snappy + 4-byte Big-Endian CRC32.
  */
 export function encodeAvroBinary(
     rows: Record<string, unknown>[],
     recordName = 'KivaroAvroRecord'
 ): Uint8Array {
     const schema = inferSchemaFromRows(rows, 'SNAPPY', 'AVRO_ZIGZAG_BINARY');
+    const avroFields = schema.map((col) => {
+        const isTimestampIso =
+            (col.logicalType === 'TIMESTAMP_MILLIS' || col.logicalType === 'TIMESTAMP_MICROS') &&
+            rows.some((r) => typeof r[col.name] === 'string' && !/^[+-]?\d+$/.test(String(r[col.name])));
+        const prim = isTimestampIso ? 'string' : mapLogicalToAvroPrimitive(col.logicalType);
+        return {
+            name: col.name,
+            prim,
+            nullable: col.nullable,
+            type: col.nullable ? ['null', prim] : prim,
+            ...(col.nullable ? { default: null } : {}),
+        };
+    });
+
     const avroSchemaJson = JSON.stringify({
         type: 'record',
         name: recordName.replace(/[^a-zA-Z0-9_]/g, '_') || 'KivaroAvroRecord',
         namespace: 'com.kivarotools.analytics',
-        fields: schema.map((col) => ({
-            name: col.name,
-            type: col.nullable
-                ? ['null', mapLogicalToAvroPrimitive(col.logicalType)]
-                : mapLogicalToAvroPrimitive(col.logicalType),
-            ...(col.nullable ? { default: null } : {}),
+        fields: avroFields.map(({ name, type, default: def }) => ({
+            name,
+            type,
+            ...(def !== undefined ? { default: def } : {}),
         })),
     });
 
@@ -1041,19 +1717,25 @@ export function encodeAvroBinary(
     headerBuf.push(0x00); // End of Avro header map
     headerBuf.push(...Array.from(syncMarker));
 
-    // Compress records block with Snappy
-    const rawBlockBytes = textEncoder.encode(
-        JSON.stringify(
-            rows.map((r) => {
-                const o: Record<string, unknown> = {};
-                for (const k of Object.keys(r)) {
-                    const val = r[k];
-                    o[k] = typeof val === 'bigint' ? val.toString() : val;
+    // Encode records using spec-compliant Apache Avro binary datum encoding
+    const datumBytesList: number[] = [];
+    for (const r of rows) {
+        for (const f of avroFields) {
+            const val = r[f.name];
+            if (f.nullable) {
+                if (val === null || val === undefined) {
+                    datumBytesList.push(...writeZigZagVarint(0)); // union branch 0 = null
+                } else {
+                    datumBytesList.push(...writeZigZagVarint(1)); // union branch 1 = prim
+                    encodeAvroBinaryValue(val, f.prim, datumBytesList);
                 }
-                return o;
-            })
-        )
-    );
+            } else {
+                encodeAvroBinaryValue(val, f.prim, datumBytesList);
+            }
+        }
+    }
+
+    const rawBlockBytes = new Uint8Array(datumBytesList);
     const compressedBlock = compressSnappyBlock(rawBlockBytes);
     const crc = computeCrc32(rawBlockBytes);
     const crcBytes = [
@@ -1137,7 +1819,6 @@ function buildArrowFlatBufferFooter(
     rowCount: number,
     bodyLength: number
 ): Uint8Array {
-    // FlatBuffers table with root offset (12), vtable (size=12, tableSize=16, version=4, rowCount=8, bodyLen=12)
     const colNamesJson = textEncoder.encode(JSON.stringify(schema.map((s) => s.name)));
     const buf = new Uint8Array(28 + colNamesJson.length);
     const view = new DataView(buf.buffer);
@@ -1269,7 +1950,7 @@ export function generateSampleBinaryFile(
 }
 
 // ============================================================
-// 6. UNIVERSAL PARSER (PARQUET THRIFT, AVRO OCF, FEATHER FLATBUFFERS)
+// 6. UNIVERSAL PARSER (PARQUET THRIFT + DATAPAGES, AVRO OCF, FEATHER FLATBUFFERS)
 // ============================================================
 
 export function parseColumnarFile(
@@ -1439,9 +2120,497 @@ function createEmptyParseResult(fileName: string, warnings: string[]): ColumnarP
 }
 
 /**
+ * Decodes Parquet binary Statistics min/max bytes (handles both binary LE values written by PyArrow/Spark
+ * and UTF-8 string statistics).
+ */
+function decodeParquetStatBytes(
+    raw: Uint8Array,
+    physicalType: PhysicalDataType,
+    logicalType: LogicalDataType,
+    isInt96 = false
+): string | number | null {
+    if (!raw || raw.length === 0) return null;
+    // Check if it's purely printable ASCII digits/float written by string-based writers
+    const asText = textDecoder.decode(raw);
+    const isAsciiNumeric = /^[+-]?\d+(?:\.\d+)?$/.test(asText);
+
+    if (physicalType === 'INT32' && raw.length === 4 && !isAsciiNumeric) {
+        const v = new DataView(raw.buffer, raw.byteOffset, 4).getInt32(0, true);
+        if (logicalType === 'DATE') {
+            return new Date(v * 86400000).toISOString().slice(0, 10);
+        }
+        return v;
+    }
+    if (physicalType === 'INT64' && raw.length === 8 && !isAsciiNumeric) {
+        const b = new DataView(raw.buffer, raw.byteOffset, 8).getBigInt64(0, true);
+        if (logicalType === 'TIMESTAMP_MILLIS') {
+            return new Date(Number(b)).toISOString();
+        }
+        if (logicalType === 'TIMESTAMP_MICROS') {
+            return new Date(Number(b / BigInt(1000))).toISOString();
+        }
+        if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
+            return b.toString();
+        }
+        return Number(b);
+    }
+    if (isInt96 && raw.length === 12) {
+        const dv = new DataView(raw.buffer, raw.byteOffset, 12);
+        const nanos = dv.getBigInt64(0, true);
+        const julianDay = dv.getInt32(8, true);
+        const unixMs = (julianDay - 2440588) * 86400000 + Number(nanos / BigInt(1000000));
+        return new Date(unixMs).toISOString();
+    }
+    if (physicalType === 'FLOAT' && raw.length === 4 && !isAsciiNumeric) {
+        const f = new DataView(raw.buffer, raw.byteOffset, 4).getFloat32(0, true);
+        return Number.isFinite(f) ? Number(f.toFixed(6)) : null;
+    }
+    if (physicalType === 'DOUBLE' && raw.length === 8 && !isAsciiNumeric) {
+        const d = new DataView(raw.buffer, raw.byteOffset, 8).getFloat64(0, true);
+        return Number.isFinite(d) ? Number(d.toFixed(6)) : null;
+    }
+    if (physicalType === 'BOOLEAN' && raw.length === 1 && raw[0] <= 1) {
+        return raw[0] !== 0 ? 'true' : 'false';
+    }
+    if (asText !== '') {
+        return coerceNumericStat(asText);
+    }
+    return null;
+}
+
+/**
+ * Decodes physical PLAIN values from a Parquet DataPage or DictionaryPage buffer.
+ */
+function decodeParquetPlainValues(
+    bytes: Uint8Array,
+    startOffset: number,
+    count: number,
+    physicalType: PhysicalDataType,
+    logicalType: LogicalDataType,
+    typeLength = 0,
+    isInt96 = false
+): { values: unknown[]; nextOffset: number } {
+    const values: unknown[] = [];
+    let pos = startOffset;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+
+    if (physicalType === 'BOOLEAN') {
+        const byteCount = Math.ceil(count / 8);
+        for (let i = 0; i < count; i++) {
+            const bIdx = pos + (i >>> 3);
+            const bit = i & 7;
+            const b = bIdx < bytes.length ? bytes[bIdx] : 0;
+            values.push(((b >>> bit) & 1) === 1);
+        }
+        return { values, nextOffset: Math.min(bytes.length, pos + byteCount) };
+    }
+
+    if (physicalType === 'INT32') {
+        for (let i = 0; i < count && pos + 4 <= bytes.length; i++) {
+            const v = view.getInt32(pos, true);
+            pos += 4;
+            if (logicalType === 'DATE') {
+                values.push(new Date(v * 86400000).toISOString().slice(0, 10));
+            } else {
+                values.push(v);
+            }
+        }
+        return { values, nextOffset: pos };
+    }
+
+    if (physicalType === 'INT64') {
+        for (let i = 0; i < count && pos + 8 <= bytes.length; i++) {
+            const b = view.getBigInt64(pos, true);
+            pos += 8;
+            if (logicalType === 'TIMESTAMP_MILLIS') {
+                values.push(new Date(Number(b)).toISOString());
+            } else if (logicalType === 'TIMESTAMP_MICROS') {
+                values.push(new Date(Number(b / BigInt(1000))).toISOString());
+            } else if (logicalType === 'UINT64' && b < BigInt(0)) {
+                const u = BigInt.asUintN(64, b);
+                values.push(u > BigInt(Number.MAX_SAFE_INTEGER) ? u.toString() : Number(u));
+            } else if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
+                values.push(b.toString());
+            } else {
+                values.push(Number(b));
+            }
+        }
+        return { values, nextOffset: pos };
+    }
+
+    if (isInt96) {
+        for (let i = 0; i < count && pos + 12 <= bytes.length; i++) {
+            const nanos = view.getBigInt64(pos, true);
+            const julianDay = view.getInt32(pos + 8, true);
+            pos += 12;
+            const unixMs = (julianDay - 2440588) * 86400000 + Number(nanos / BigInt(1000000));
+            values.push(new Date(unixMs).toISOString());
+        }
+        return { values, nextOffset: pos };
+    }
+
+    if (physicalType === 'FLOAT') {
+        for (let i = 0; i < count && pos + 4 <= bytes.length; i++) {
+            const f = view.getFloat32(pos, true);
+            pos += 4;
+            values.push(Number(f.toFixed(6)));
+        }
+        return { values, nextOffset: pos };
+    }
+
+    if (physicalType === 'DOUBLE') {
+        for (let i = 0; i < count && pos + 8 <= bytes.length; i++) {
+            const d = view.getFloat64(pos, true);
+            pos += 8;
+            values.push(d);
+        }
+        return { values, nextOffset: pos };
+    }
+
+    if (physicalType === 'FIXED_LEN_BYTE_ARRAY' && typeLength > 0) {
+        for (let i = 0; i < count && pos + typeLength <= bytes.length; i++) {
+            const slice = bytes.subarray(pos, pos + typeLength);
+            pos += typeLength;
+            if (logicalType === 'UUID' && typeLength === 16) {
+                const hex = Array.from(slice)
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('');
+                values.push(
+                    `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+                );
+            } else {
+                values.push(textDecoder.decode(slice));
+            }
+        }
+        return { values, nextOffset: pos };
+    }
+
+    // BYTE_ARRAY (4-byte LE length + bytes)
+    for (let i = 0; i < count && pos + 4 <= bytes.length; i++) {
+        const len = view.getUint32(pos, true);
+        pos += 4;
+        if (len > bytes.length - pos) break;
+        const slice = bytes.subarray(pos, pos + len);
+        pos += len;
+        const str = textDecoder.decode(slice);
+        if (
+            (logicalType === 'JSON' ||
+                logicalType === 'STRUCT' ||
+                logicalType === 'LIST' ||
+                logicalType === 'MAP') &&
+            (str.startsWith('{') || str.startsWith('['))
+        ) {
+            try {
+                values.push(JSON.parse(str));
+                continue;
+            } catch {
+                // keep as string
+            }
+        }
+        values.push(str);
+    }
+    return { values, nextOffset: pos };
+}
+
+function decompressParquetPagePayload(
+    compressedSlice: Uint8Array,
+    codec: string,
+    uncompressedSize: number
+): Uint8Array {
+    if (codec === 'UNCOMPRESSED' || codec === 'NONE') return compressedSlice;
+    if (codec === 'SNAPPY') return decompressSnappyBlock(compressedSlice);
+    if (codec === 'GZIP') return decompressGzipOrDeflate(compressedSlice);
+    if (codec === 'LZ4_RAW' || codec === 'LZ4') {
+        return decompressLz4Block(compressedSlice, uncompressedSize);
+    }
+    return compressedSlice;
+}
+
+/**
+ * Decodes a single Parquet ColumnChunk (supporting DICTIONARY_PAGE + DATA_PAGE v1 + DATA_PAGE_V2,
+ * PLAIN + RLE_DICTIONARY + PLAIN_DICTIONARY, and legacy KivaroTools JSON-array chunks).
+ */
+function decodeParquetColumnChunkValues(
+    fileBytes: Uint8Array,
+    footerStart: number,
+    colChunk: RowGroupColumnChunkMeta & { dictionaryPageOffset?: number; isInt96?: boolean; typeLength?: number },
+    logicalType: LogicalDataType,
+    maxDefLevel: number,
+    maxRepLevel: number,
+    expectedRows: number
+): unknown[] | null {
+    const dictOffset = colChunk.dictionaryPageOffset ?? 0;
+    const startOffset =
+        dictOffset > 0 && dictOffset < colChunk.dataPageOffset
+            ? dictOffset
+            : colChunk.dataPageOffset;
+    const endOffset = Math.min(footerStart, startOffset + colChunk.compressedSize);
+
+    if (startOffset < 4 || startOffset >= endOffset || colChunk.compressedSize <= 0) {
+        return null;
+    }
+
+    // 1. First check if this is a legacy JSON-array chunk (for 100% backward compatibility)
+    const rawChunkSlice = fileBytes.subarray(startOffset, endOffset);
+    if (rawChunkSlice[0] !== 0x15) {
+        const decompLegacy = decompressParquetPagePayload(
+            rawChunkSlice,
+            colChunk.codec,
+            colChunk.uncompressedSize
+        );
+        if (decompLegacy.length > 0 && decompLegacy[0] === 0x5b) {
+            try {
+                const parsed = JSON.parse(textDecoder.decode(decompLegacy));
+                if (Array.isArray(parsed)) return parsed;
+            } catch {
+                // continue to Thrift PageHeader parser
+            }
+        }
+    }
+
+    // 2. Spec-compliant Apache Parquet Thrift PageHeader + DataPage v1/v2 / DictionaryPage reader
+    let pos = startOffset;
+    let dictPool: unknown[] = [];
+    const columnValues: unknown[] = [];
+
+    while (pos < endOffset && columnValues.length < expectedRows) {
+        const pr = new ThriftCompactReader(fileBytes, pos);
+        pr.beginStruct(); // PageHeader
+
+        let pageType = -1;
+        let uncompressedPageSize = 0;
+        let compressedPageSize = 0;
+        let numValues = 0;
+        let pageEncoding = 0;
+        let defLevelsByteLenV2 = 0;
+        let repLevelsByteLenV2 = 0;
+        let isCompressedV2 = true;
+
+        while (pr.pos < endOffset) {
+            const pf = pr.readFieldHeader();
+            if (pf.fieldType === CT_STOP) break;
+            if (pf.fieldId === 1 && pf.fieldType === CT_I32) {
+                pageType = pr.readI32();
+            } else if (pf.fieldId === 2 && pf.fieldType === CT_I32) {
+                uncompressedPageSize = pr.readI32();
+            } else if (pf.fieldId === 3 && pf.fieldType === CT_I32) {
+                compressedPageSize = pr.readI32();
+            } else if (pf.fieldId === 5 && pf.fieldType === CT_STRUCT) {
+                // DataPageHeader (v1)
+                pr.beginStruct();
+                while (pr.pos < endOffset) {
+                    const dpf = pr.readFieldHeader();
+                    if (dpf.fieldType === CT_STOP) break;
+                    if (dpf.fieldId === 1 && dpf.fieldType === CT_I32) numValues = pr.readI32();
+                    else if (dpf.fieldId === 2 && dpf.fieldType === CT_I32) pageEncoding = pr.readI32();
+                    else pr.skipField(dpf.fieldType);
+                }
+                pr.endStruct();
+            } else if (pf.fieldId === 7 && pf.fieldType === CT_STRUCT) {
+                // DictionaryPageHeader
+                pr.beginStruct();
+                while (pr.pos < endOffset) {
+                    const dicf = pr.readFieldHeader();
+                    if (dicf.fieldType === CT_STOP) break;
+                    if (dicf.fieldId === 1 && dicf.fieldType === CT_I32) numValues = pr.readI32();
+                    else if (dicf.fieldId === 2 && dicf.fieldType === CT_I32) pageEncoding = pr.readI32();
+                    else pr.skipField(dicf.fieldType);
+                }
+                pr.endStruct();
+            } else if (pf.fieldId === 8 && pf.fieldType === CT_STRUCT) {
+                // DataPageHeaderV2
+                pr.beginStruct();
+                while (pr.pos < endOffset) {
+                    const v2f = pr.readFieldHeader();
+                    if (v2f.fieldType === CT_STOP) break;
+                    if (v2f.fieldId === 1 && v2f.fieldType === CT_I32) numValues = pr.readI32();
+                    else if (v2f.fieldId === 4 && v2f.fieldType === CT_I32) pageEncoding = pr.readI32();
+                    else if (v2f.fieldId === 5 && v2f.fieldType === CT_I32) defLevelsByteLenV2 = pr.readI32();
+                    else if (v2f.fieldId === 6 && v2f.fieldType === CT_I32) repLevelsByteLenV2 = pr.readI32();
+                    else if (v2f.fieldId === 7) isCompressedV2 = v2f.fieldType === CT_BOOLEAN_TRUE;
+                    else pr.skipField(v2f.fieldType);
+                }
+                pr.endStruct();
+            } else {
+                pr.skipField(pf.fieldType);
+            }
+        }
+        pr.endStruct();
+
+        if (pageType < 0 || compressedPageSize < 0 || pr.pos + compressedPageSize > endOffset) {
+            break;
+        }
+
+        const pageCompressedSlice = fileBytes.subarray(pr.pos, pr.pos + compressedPageSize);
+        pos = pr.pos + compressedPageSize;
+
+        if (pageType === 2) {
+            // DICTIONARY_PAGE
+            const decomp = decompressParquetPagePayload(
+                pageCompressedSlice,
+                colChunk.codec,
+                uncompressedPageSize
+            );
+            const decodedDict = decodeParquetPlainValues(
+                decomp,
+                0,
+                numValues,
+                colChunk.physicalType,
+                logicalType,
+                colChunk.typeLength ?? 0,
+                colChunk.isInt96 ?? false
+            );
+            dictPool = decodedDict.values;
+        } else if (pageType === 0) {
+            // DATA_PAGE v1
+            const decomp = decompressParquetPagePayload(
+                pageCompressedSlice,
+                colChunk.codec,
+                uncompressedPageSize
+            );
+            // Check if legacy JSON array inside decompressed page
+            if (decomp.length > 0 && decomp[0] === 0x5b && numValues === 0) {
+                try {
+                    const arr = JSON.parse(textDecoder.decode(decomp));
+                    if (Array.isArray(arr)) return arr;
+                } catch {
+                    // continue
+                }
+            }
+
+            let innerPos = 0;
+            const dv = new DataView(decomp.buffer, decomp.byteOffset, decomp.byteLength);
+
+            // 1. Repetition levels (if maxRepLevel > 0)
+            if (maxRepLevel > 0 && innerPos + 4 <= decomp.length) {
+                const repByteLen = dv.getUint32(innerPos, true);
+                innerPos += 4 + repByteLen;
+            }
+
+            // 2. Definition levels (if maxDefLevel > 0)
+            let defLevels: number[] | null = null;
+            if (maxDefLevel > 0 && innerPos + 4 <= decomp.length) {
+                const defByteLen = dv.getUint32(innerPos, true);
+                innerPos += 4;
+                const defBitWidth = Math.max(1, Math.ceil(Math.log2(maxDefLevel + 1)));
+                defLevels = decodeRleBitPackedHybrid(
+                    decomp.subarray(innerPos, innerPos + defByteLen),
+                    defBitWidth,
+                    numValues
+                );
+                innerPos += defByteLen;
+            }
+
+            const nonNullCount = defLevels
+                ? defLevels.filter((d) => d >= maxDefLevel).length
+                : numValues;
+
+            let nonNullVals: unknown[] = [];
+            if (pageEncoding === 8 || pageEncoding === 2) {
+                // RLE_DICTIONARY (8) or PLAIN_DICTIONARY (2)
+                if (innerPos < decomp.length && nonNullCount > 0) {
+                    const bitWidth = decomp[innerPos++];
+                    const indices = decodeRleBitPackedHybrid(
+                        decomp.subarray(innerPos),
+                        bitWidth,
+                        nonNullCount
+                    );
+                    nonNullVals = indices.map((idx) => dictPool[idx] ?? null);
+                }
+            } else {
+                // PLAIN (0)
+                const plainRes = decodeParquetPlainValues(
+                    decomp,
+                    innerPos,
+                    nonNullCount,
+                    colChunk.physicalType,
+                    logicalType,
+                    colChunk.typeLength ?? 0,
+                    colChunk.isInt96 ?? false
+                );
+                nonNullVals = plainRes.values;
+            }
+
+            let valIdx = 0;
+            for (let i = 0; i < numValues && columnValues.length < expectedRows; i++) {
+                if (defLevels && defLevels[i] < maxDefLevel) {
+                    columnValues.push(null);
+                } else {
+                    columnValues.push(nonNullVals[valIdx++] ?? null);
+                }
+            }
+        } else if (pageType === 3) {
+            // DATA_PAGE_V2 (rep & def levels are uncompressed; only values section is compressed)
+            let innerPos = repLevelsByteLenV2;
+            let defLevels: number[] | null = null;
+            if (maxDefLevel > 0 && defLevelsByteLenV2 > 0 && innerPos + defLevelsByteLenV2 <= pageCompressedSlice.length) {
+                const defBitWidth = Math.max(1, Math.ceil(Math.log2(maxDefLevel + 1)));
+                defLevels = decodeRleBitPackedHybrid(
+                    pageCompressedSlice.subarray(innerPos, innerPos + defLevelsByteLenV2),
+                    defBitWidth,
+                    numValues
+                );
+                innerPos += defLevelsByteLenV2;
+            }
+            const rawValSlice = pageCompressedSlice.subarray(innerPos);
+            const decompVals = isCompressedV2
+                ? decompressParquetPagePayload(
+                    rawValSlice,
+                    colChunk.codec,
+                    Math.max(0, uncompressedPageSize - innerPos)
+                )
+                : rawValSlice;
+
+            const nonNullCount = defLevels
+                ? defLevels.filter((d) => d >= maxDefLevel).length
+                : numValues;
+
+            let nonNullVals: unknown[] = [];
+            if (pageEncoding === 8 || pageEncoding === 2) {
+                if (decompVals.length > 0 && nonNullCount > 0) {
+                    const bitWidth = decompVals[0];
+                    const indices = decodeRleBitPackedHybrid(
+                        decompVals.subarray(1),
+                        bitWidth,
+                        nonNullCount
+                    );
+                    nonNullVals = indices.map((idx) => dictPool[idx] ?? null);
+                }
+            } else if (pageEncoding === 3 && colChunk.physicalType === 'BOOLEAN') {
+                const hasLenPrefix =
+                    decompVals.length > 4 &&
+                    new DataView(decompVals.buffer, decompVals.byteOffset, 4).getUint32(0, true) === decompVals.length - 4;
+                const rlePayload = hasLenPrefix ? decompVals.subarray(4) : decompVals;
+                nonNullVals = decodeRleBitPackedHybrid(rlePayload, 1, nonNullCount).map((b) => b === 1);
+            } else {
+                nonNullVals = decodeParquetPlainValues(
+                    decompVals,
+                    0,
+                    nonNullCount,
+                    colChunk.physicalType,
+                    logicalType,
+                    colChunk.typeLength ?? 0,
+                    colChunk.isInt96 ?? false
+                ).values;
+            }
+
+            let valIdx = 0;
+            for (let i = 0; i < numValues && columnValues.length < expectedRows; i++) {
+                if (defLevels && defLevels[i] < maxDefLevel) {
+                    columnValues.push(null);
+                } else {
+                    columnValues.push(nonNullVals[valIdx++] ?? null);
+                }
+            }
+        }
+    }
+
+    return columnValues.length > 0 ? columnValues : null;
+}
+
+/**
  * Decodes Apache Parquet (PAR1) binary files using our real Apache Thrift TCompactProtocol
- * FileMetaData footer parser, extracting SchemaElement definitions, RowGroup & ColumnChunk
- * byte sizes, Statistics (min_value, max_value, null_count, distinct_count), and Snappy-compressed column pages.
+ * FileMetaData footer parser and spec-compliant DataPage v1/v2 + DictionaryPage decoder.
  */
 function parseParquetBinary(
     bytes: Uint8Array,
@@ -1510,11 +2679,20 @@ function parseParquetBinary(
     const rawSchemaElements: {
         name: string;
         physicalType: PhysicalDataType;
+        logicalType: LogicalDataType;
         repetitionType: RepetitionType;
         numChildren: number;
+        typeLength: number;
+        isInt96: boolean;
     }[] = [];
     const keyValueMetadata: Record<string, string> = {};
-    const decodedRowGroups: RowGroupMeta[] = [];
+    const decodedRowGroups: (RowGroupMeta & {
+        columns: (RowGroupColumnChunkMeta & {
+            dictionaryPageOffset?: number;
+            isInt96?: boolean;
+            typeLength?: number;
+        })[];
+    })[] = [];
 
     while (tr.pos < footerBytes.length) {
         const { fieldId, fieldType } = tr.readFieldHeader();
@@ -1527,14 +2705,22 @@ function parseParquetBinary(
             for (let i = 0; i < count; i++) {
                 tr.beginStruct();
                 let pType: PhysicalDataType = 'BYTE_ARRAY';
+                let lType: LogicalDataType | null = null;
                 let repType: RepetitionType = 'OPTIONAL';
                 let name = `col_${i}`;
                 let numChildren = 0;
+                let typeLength = 0;
+                let isInt96 = false;
+
                 while (tr.pos < footerBytes.length) {
                     const sf = tr.readFieldHeader();
                     if (sf.fieldType === CT_STOP) break;
                     if (sf.fieldId === 1 && sf.fieldType === CT_I32) {
-                        pType = PARQUET_ENUM_TO_TYPE[tr.readI32()] ?? 'BYTE_ARRAY';
+                        const rawEnum = tr.readI32();
+                        if (rawEnum === 3) isInt96 = true;
+                        pType = PARQUET_ENUM_TO_TYPE[rawEnum] ?? 'BYTE_ARRAY';
+                    } else if (sf.fieldId === 2 && sf.fieldType === CT_I32) {
+                        typeLength = tr.readI32();
                     } else if (sf.fieldId === 3 && sf.fieldType === CT_I32) {
                         const r = tr.readI32();
                         repType = r === 0 ? 'REQUIRED' : r === 1 ? 'OPTIONAL' : 'REPEATED';
@@ -1542,20 +2728,66 @@ function parseParquetBinary(
                         name = tr.readString();
                     } else if (sf.fieldId === 5 && sf.fieldType === CT_I32) {
                         numChildren = tr.readI32();
+                    } else if (sf.fieldId === 6 && sf.fieldType === CT_I32) {
+                        const ct = tr.readI32();
+                        if (PARQUET_CONVERTED_TYPE_MAP[ct]) {
+                            lType = PARQUET_CONVERTED_TYPE_MAP[ct];
+                        }
+                    } else if (sf.fieldId === 10 && sf.fieldType === CT_STRUCT) {
+                        // LogicalType union struct
+                        tr.beginStruct();
+                        while (tr.pos < footerBytes.length) {
+                            const lf = tr.readFieldHeader();
+                            if (lf.fieldType === CT_STOP) break;
+                            if (lf.fieldId === 1) lType = 'UTF8';
+                            else if (lf.fieldId === 2) lType = 'MAP';
+                            else if (lf.fieldId === 3) lType = 'LIST';
+                            else if (lf.fieldId === 5) lType = 'DECIMAL';
+                            else if (lf.fieldId === 6) lType = 'DATE';
+                            else if (lf.fieldId === 8 && lf.fieldType === CT_STRUCT) {
+                                lType = 'TIMESTAMP_MILLIS';
+                            } else if (lf.fieldId === 12) lType = 'JSON';
+                            else if (lf.fieldId === 14) lType = 'UUID';
+                            tr.skipField(lf.fieldType);
+                        }
+                        tr.endStruct();
                     } else {
                         tr.skipField(sf.fieldType);
                     }
                 }
                 tr.endStruct();
-                rawSchemaElements.push({ name, physicalType: pType, repetitionType: repType, numChildren });
+
+                const resolvedLogical: LogicalDataType =
+                    lType ??
+                    (isInt96
+                        ? 'TIMESTAMP_MILLIS'
+                        : pType === 'BYTE_ARRAY'
+                            ? 'UTF8'
+                            : (pType as LogicalDataType));
+
+                rawSchemaElements.push({
+                    name,
+                    physicalType: pType,
+                    logicalType: resolvedLogical,
+                    repetitionType: repType,
+                    numChildren,
+                    typeLength,
+                    isInt96,
+                });
             }
         } else if (fieldId === 3 && fieldType === CT_I64) {
             numRows = Number(tr.readI64());
         } else if (fieldId === 4 && fieldType === CT_LIST) {
             const { count: rgCount } = tr.readListHeader();
+            const leafRefs = rawSchemaElements.filter((e) => e.numChildren === 0);
+
             for (let rgIdx = 0; rgIdx < rgCount; rgIdx++) {
                 tr.beginStruct();
-                const rgCols: RowGroupColumnChunkMeta[] = [];
+                const rgCols: (RowGroupColumnChunkMeta & {
+                    dictionaryPageOffset?: number;
+                    isInt96?: boolean;
+                    typeLength?: number;
+                })[] = [];
                 let rgTotalByteSize = 0;
                 let rgNumRows = 0;
                 let rgCompressedBytes = 0;
@@ -1567,14 +2799,18 @@ function parseParquetBinary(
                         const { count: colCount } = tr.readListHeader();
                         for (let cIdx = 0; cIdx < colCount; cIdx++) {
                             tr.beginStruct(); // ColumnChunk
+                            const leafRef = leafRefs[cIdx];
                             let fileOffset = 4;
-                            let colType: PhysicalDataType = 'BYTE_ARRAY';
+                            let colType: PhysicalDataType = leafRef?.physicalType ?? 'BYTE_ARRAY';
+                            let isInt96 = leafRef?.isInt96 ?? false;
                             let codecName = 'SNAPPY';
+                            const encodingsList: string[] = [];
                             let numValues = 0;
                             let uncompSize = 0;
                             let compSize = 0;
-                            let dataPageOffset = 4;
-                            let pathName = `col_${cIdx}`;
+                            let dataPageOffset = 0;
+                            let dictionaryPageOffset = 0;
+                            let pathName = leafRef?.name ?? `col_${cIdx}`;
                             let minVal: string | number | null = null;
                             let maxVal: string | number | null = null;
                             let nullCount = 0;
@@ -1591,7 +2827,16 @@ function parseParquetBinary(
                                         const mf = tr.readFieldHeader();
                                         if (mf.fieldType === CT_STOP) break;
                                         if (mf.fieldId === 1 && mf.fieldType === CT_I32) {
-                                            colType = PARQUET_ENUM_TO_TYPE[tr.readI32()] ?? 'BYTE_ARRAY';
+                                            const rawT = tr.readI32();
+                                            if (rawT === 3) isInt96 = true;
+                                            colType = PARQUET_ENUM_TO_TYPE[rawT] ?? 'BYTE_ARRAY';
+                                        } else if (mf.fieldId === 2 && mf.fieldType === CT_LIST) {
+                                            const { count: encCount } = tr.readListHeader();
+                                            for (let e = 0; e < encCount; e++) {
+                                                const encId = tr.readI32();
+                                                const encName = PARQUET_ENCODING_ENUM_TO_NAME[encId] ?? `ENC_${encId}`;
+                                                if (!encodingsList.includes(encName)) encodingsList.push(encName);
+                                            }
                                         } else if (mf.fieldId === 3 && mf.fieldType === CT_LIST) {
                                             const { count: pCount } = tr.readListHeader();
                                             const parts: string[] = [];
@@ -1607,17 +2852,22 @@ function parseParquetBinary(
                                             compSize = Number(tr.readI64());
                                         } else if (mf.fieldId === 9 && mf.fieldType === CT_I64) {
                                             dataPageOffset = Number(tr.readI64());
+                                        } else if (mf.fieldId === 11 && mf.fieldType === CT_I64) {
+                                            dictionaryPageOffset = Number(tr.readI64());
                                         } else if (mf.fieldId === 12 && mf.fieldType === CT_STRUCT) {
                                             tr.beginStruct(); // Statistics
+                                            const lType = leafRef?.logicalType ?? 'UTF8';
                                             while (tr.pos < footerBytes.length) {
                                                 const stf = tr.readFieldHeader();
                                                 if (stf.fieldType === CT_STOP) break;
                                                 if ((stf.fieldId === 1 || stf.fieldId === 5) && stf.fieldType === CT_BINARY) {
-                                                    const s = tr.readString();
-                                                    if (s !== '') maxVal = coerceNumericStat(s);
+                                                    const rawB = tr.readBinary();
+                                                    const dec = decodeParquetStatBytes(rawB, colType, lType, isInt96);
+                                                    if (dec !== null) maxVal = dec;
                                                 } else if ((stf.fieldId === 2 || stf.fieldId === 6) && stf.fieldType === CT_BINARY) {
-                                                    const s = tr.readString();
-                                                    if (s !== '') minVal = coerceNumericStat(s);
+                                                    const rawB = tr.readBinary();
+                                                    const dec = decodeParquetStatBytes(rawB, colType, lType, isInt96);
+                                                    if (dec !== null) minVal = dec;
                                                 } else if (stf.fieldId === 3 && stf.fieldType === CT_I64) {
                                                     nullCount = Number(tr.readI64());
                                                 } else if (stf.fieldId === 4 && stf.fieldType === CT_I64) {
@@ -1642,12 +2892,15 @@ function parseParquetBinary(
                                 name: pathName,
                                 physicalType: colType,
                                 codec: codecName,
-                                encodings: ['PLAIN', 'RLE_DICTIONARY'],
+                                encodings: encodingsList.length > 0 ? encodingsList : ['PLAIN', 'RLE_DICTIONARY'],
                                 numValues,
                                 compressedSize: compSize,
                                 uncompressedSize: uncompSize,
                                 compressionRatio: compSize > 0 ? Number((uncompSize / compSize).toFixed(2)) : 1,
-                                dataPageOffset: dataPageOffset || fileOffset,
+                                dataPageOffset: dataPageOffset || fileOffset || 4,
+                                dictionaryPageOffset,
+                                isInt96,
+                                typeLength: leafRef?.typeLength ?? 0,
                                 nullCount,
                                 distinctCount,
                                 minValue: minVal,
@@ -1708,46 +2961,55 @@ function parseParquetBinary(
     }
     tr.endStruct();
 
-    // Reconstruct rows from decoded ColumnChunk pages
+    let savedSchema: ColumnSchemaNode[] = [];
+    if (keyValueMetadata['kivarotools.schema.json']) {
+        try {
+            savedSchema = JSON.parse(keyValueMetadata['kivarotools.schema.json']);
+            delete keyValueMetadata['kivarotools.schema.json'];
+        } catch {
+            savedSchema = [];
+        }
+    }
+
+    // Reconstruct rows from decoded ColumnChunk pages across all RowGroups
     const leafElements = rawSchemaElements.filter((e) => e.numChildren === 0);
     const rows: Record<string, unknown>[] = Array.from({ length: numRows }, () => ({}));
     let decodedColumnsSuccess = false;
+    let globalRowOffset = 0;
 
     for (const rg of decodedRowGroups) {
-        for (const colChunk of rg.columns) {
-            const start = colChunk.dataPageOffset;
-            const end = start + colChunk.compressedSize;
-            if (start >= 4 && end <= footerStart && colChunk.compressedSize > 0) {
-                const pageSlice = bytes.subarray(start, end);
-                const decompressed =
-                    colChunk.codec === 'SNAPPY' ? decompressSnappyBlock(pageSlice) : pageSlice;
-                try {
-                    const colArr = JSON.parse(textDecoder.decode(decompressed));
-                    if (Array.isArray(colArr)) {
-                        decodedColumnsSuccess = true;
-                        for (let r = 0; r < Math.min(numRows, colArr.length); r++) {
-                            rows[r][colChunk.name] = colArr[r];
-                        }
+        const rgRowCount = rg.rowCount || numRows;
+        for (let cIdx = 0; cIdx < rg.columns.length; cIdx++) {
+            const colChunk = rg.columns[cIdx];
+            const leaf = leafElements[cIdx] ?? leafElements.find((l) => l.name === colChunk.name);
+            const savedCol = savedSchema.find((s) => s.name === colChunk.name);
+            const logicalType: LogicalDataType =
+                savedCol?.logicalType ?? leaf?.logicalType ?? 'UTF8';
+            const maxDefLevel = leaf && leaf.repetitionType === 'REQUIRED' ? 0 : 1;
+            const maxRepLevel = leaf && leaf.repetitionType === 'REPEATED' ? 1 : 0;
+
+            const decodedVals = decodeParquetColumnChunkValues(
+                bytes,
+                footerStart,
+                colChunk,
+                logicalType,
+                maxDefLevel,
+                maxRepLevel,
+                rgRowCount
+            );
+            if (decodedVals && decodedVals.length > 0) {
+                decodedColumnsSuccess = true;
+                for (let r = 0; r < Math.min(rgRowCount, decodedVals.length); r++) {
+                    if (globalRowOffset + r < rows.length) {
+                        rows[globalRowOffset + r][colChunk.name] = decodedVals[r];
                     }
-                } catch {
-                    // External non-JSON page payload handled below
                 }
             }
         }
-    }
-
-    let schema: ColumnSchemaNode[] = [];
-    if (keyValueMetadata['kivarotools.schema.json']) {
-        try {
-            schema = JSON.parse(keyValueMetadata['kivarotools.schema.json']);
-            delete keyValueMetadata['kivarotools.schema.json'];
-        } catch {
-            schema = [];
-        }
+        globalRowOffset += rgRowCount;
     }
 
     if (!decodedColumnsSuccess && numRows > 0 && leafElements.length > 0) {
-        // External binary page value decoder
         const dataRegion = bytes.subarray(4, footerStart);
         const printableTokens = extractPrintableStrings(dataRegion, 2);
         const colNames = leafElements.map((e) => e.name);
@@ -1759,20 +3021,39 @@ function parseParquetBinary(
         }
     }
 
+    let schema: ColumnSchemaNode[] = savedSchema;
     if (schema.length === 0) {
-        if (rows.length > 0) {
+        if (leafElements.length > 0) {
+            schema = leafElements.map((e, idx) => {
+                const rgCol = decodedRowGroups[0]?.columns[idx];
+                return {
+                    index: idx,
+                    name: e.name,
+                    physicalType: e.physicalType,
+                    logicalType: e.logicalType,
+                    repetitionType: e.repetitionType,
+                    nullable: e.repetitionType !== 'REQUIRED',
+                    compressionCodec: rgCol?.codec || 'SNAPPY',
+                    encoding: rgCol?.encodings?.[0] || 'RLE_DICTIONARY',
+                };
+            });
+        } else if (rows.length > 0) {
             schema = inferSchemaFromRows(rows, decodedRowGroups[0]?.columns[0]?.codec || 'SNAPPY', 'RLE_DICTIONARY');
-        } else if (leafElements.length > 0) {
-            schema = leafElements.map((e, idx) => ({
-                index: idx,
-                name: e.name,
-                physicalType: e.physicalType,
-                logicalType: e.physicalType === 'BYTE_ARRAY' ? 'UTF8' : (e.physicalType as LogicalDataType),
-                repetitionType: e.repetitionType,
-                nullable: e.repetitionType !== 'REQUIRED',
-                compressionCodec: decodedRowGroups[0]?.columns[idx]?.codec || 'SNAPPY',
-                encoding: 'RLE_DICTIONARY',
-            }));
+        }
+    }
+
+    // Backfill distinctCount & min/max in rowGroup columns if external file omitted distinct_count in footer
+    if (rows.length > 0 && schema.length > 0) {
+        const computedProfs = computeColumnProfiles(rows, schema);
+        for (const rg of decodedRowGroups) {
+            for (const c of rg.columns) {
+                const p = computedProfs.find((cp) => cp.name === c.name);
+                if (p) {
+                    if (!c.distinctCount) c.distinctCount = p.distinctCount;
+                    if (c.minValue === null) c.minValue = p.min;
+                    if (c.maxValue === null) c.maxValue = p.max;
+                }
+            }
         }
     }
 
@@ -1808,7 +3089,231 @@ function coerceNumericStat(s: string): string | number {
 }
 
 /**
- * Decodes Apache Avro Object Container Files ("Obj\x01")
+ * Recursive Apache Avro Binary Datum Decoder (decodes records, primitives, unions, arrays, maps, enums, fixed).
+ */
+function readAvroBinaryDatum(
+    schemaNode: unknown,
+    bytes: Uint8Array,
+    offset: number
+): { value: unknown; nextOffset: number } {
+    if (offset > bytes.length) return { value: null, nextOffset: offset };
+
+    if (typeof schemaNode === 'string') {
+        switch (schemaNode) {
+            case 'null':
+                return { value: null, nextOffset: offset };
+            case 'boolean':
+                return { value: bytes[offset] !== 0, nextOffset: offset + 1 };
+            case 'int': {
+                const zz = readZigZagVarint(bytes, offset);
+                return { value: zz.value, nextOffset: zz.nextOffset };
+            }
+            case 'long': {
+                const zz = readZigZagVarint(bytes, offset);
+                const b = zz.bigValue;
+                const val =
+                    b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
+                        ? b.toString()
+                        : Number(b);
+                return { value: val, nextOffset: zz.nextOffset };
+            }
+            case 'float': {
+                if (offset + 4 > bytes.length) return { value: 0, nextOffset: bytes.length };
+                const dv = new DataView(bytes.buffer, bytes.byteOffset + offset, 4);
+                return { value: Number(dv.getFloat32(0, true).toFixed(6)), nextOffset: offset + 4 };
+            }
+            case 'double': {
+                if (offset + 8 > bytes.length) return { value: 0, nextOffset: bytes.length };
+                const dv = new DataView(bytes.buffer, bytes.byteOffset + offset, 8);
+                return { value: dv.getFloat64(0, true), nextOffset: offset + 8 };
+            }
+            case 'bytes':
+            case 'string': {
+                const lenVar = readZigZagVarint(bytes, offset);
+                const len = Math.max(0, lenVar.value);
+                const start = lenVar.nextOffset;
+                const end = Math.min(bytes.length, start + len);
+                const s = textDecoder.decode(bytes.subarray(start, end));
+                if (s.startsWith('{') || s.startsWith('[')) {
+                    try {
+                        return { value: JSON.parse(s), nextOffset: end };
+                    } catch {
+                        // return plain string
+                    }
+                }
+                return { value: s, nextOffset: end };
+            }
+            default:
+                return { value: null, nextOffset: offset };
+        }
+    }
+
+    if (Array.isArray(schemaNode)) {
+        // Avro Union: ZigZag branch index followed by branch value
+        const idxVar = readZigZagVarint(bytes, offset);
+        const branchSchema = schemaNode[idxVar.value] ?? 'null';
+        return readAvroBinaryDatum(branchSchema, bytes, idxVar.nextOffset);
+    }
+
+    if (schemaNode && typeof schemaNode === 'object') {
+        const obj = schemaNode as Record<string, unknown>;
+        const t = obj.type;
+
+        if (t === 'record' && Array.isArray(obj.fields)) {
+            const rec: Record<string, unknown> = {};
+            let cur = offset;
+            for (const f of obj.fields as Record<string, unknown>[]) {
+                const fname = String(f.name ?? '');
+                const res = readAvroBinaryDatum(f.type, bytes, cur);
+                rec[fname] = res.value;
+                cur = res.nextOffset;
+            }
+            return { value: rec, nextOffset: cur };
+        }
+
+        if (t === 'array') {
+            const items: unknown[] = [];
+            let cur = offset;
+            while (cur < bytes.length) {
+                const countVar = readZigZagVarint(bytes, cur);
+                cur = countVar.nextOffset;
+                let count = countVar.value;
+                if (count === 0) break;
+                if (count < 0) {
+                    count = -count;
+                    const byteSizeVar = readZigZagVarint(bytes, cur);
+                    cur = byteSizeVar.nextOffset;
+                }
+                for (let i = 0; i < count && cur < bytes.length; i++) {
+                    const elem = readAvroBinaryDatum(obj.items, bytes, cur);
+                    items.push(elem.value);
+                    cur = elem.nextOffset;
+                }
+            }
+            return { value: items, nextOffset: cur };
+        }
+
+        if (t === 'map') {
+            const mapObj: Record<string, unknown> = {};
+            let cur = offset;
+            while (cur < bytes.length) {
+                const countVar = readZigZagVarint(bytes, cur);
+                cur = countVar.nextOffset;
+                let count = countVar.value;
+                if (count === 0) break;
+                if (count < 0) {
+                    count = -count;
+                    const byteSizeVar = readZigZagVarint(bytes, cur);
+                    cur = byteSizeVar.nextOffset;
+                }
+                for (let i = 0; i < count && cur < bytes.length; i++) {
+                    const kRes = readAvroBinaryDatum('string', bytes, cur);
+                    const vRes = readAvroBinaryDatum(obj.values, bytes, kRes.nextOffset);
+                    mapObj[String(kRes.value)] = vRes.value;
+                    cur = vRes.nextOffset;
+                }
+            }
+            return { value: mapObj, nextOffset: cur };
+        }
+
+        if (t === 'enum' && Array.isArray(obj.symbols)) {
+            const idxVar = readZigZagVarint(bytes, offset);
+            return {
+                value: (obj.symbols as string[])[idxVar.value] ?? null,
+                nextOffset: idxVar.nextOffset,
+            };
+        }
+
+        if (t === 'fixed' && typeof obj.size === 'number') {
+            const end = Math.min(bytes.length, offset + obj.size);
+            return {
+                value: bytesToHex(bytes.subarray(offset, end), obj.size),
+                nextOffset: end,
+            };
+        }
+
+        if (typeof t === 'string') {
+            const res = readAvroBinaryDatum(t, bytes, offset);
+            if (obj.logicalType === 'date' && typeof res.value === 'number') {
+                return {
+                    value: new Date(res.value * 86400000).toISOString().slice(0, 10),
+                    nextOffset: res.nextOffset,
+                };
+            }
+            if (obj.logicalType === 'timestamp-millis' && (typeof res.value === 'number' || typeof res.value === 'string')) {
+                return {
+                    value: new Date(Number(res.value)).toISOString(),
+                    nextOffset: res.nextOffset,
+                };
+            }
+            return res;
+        }
+    }
+
+    return { value: null, nextOffset: offset };
+}
+
+function buildSchemaFromAvroJson(avroSchemaObj: Record<string, unknown>, codec: string): ColumnSchemaNode[] {
+    if (!avroSchemaObj || !Array.isArray(avroSchemaObj.fields)) return [];
+    return (avroSchemaObj.fields as Record<string, unknown>[]).map((f, index) => {
+        const name = String(f.name ?? `col_${index}`);
+        let rawType = f.type;
+        let nullable = false;
+        if (Array.isArray(rawType)) {
+            nullable = rawType.includes('null');
+            rawType = rawType.find((t) => t !== 'null') ?? 'string';
+        }
+        const prim =
+            typeof rawType === 'string'
+                ? rawType
+                : typeof rawType === 'object' && rawType !== null
+                    ? String((rawType as Record<string, unknown>).type ?? 'string')
+                    : 'string';
+
+        let physicalType: PhysicalDataType = 'BYTE_ARRAY';
+        let logicalType: LogicalDataType = 'UTF8';
+        if (prim === 'boolean') {
+            physicalType = 'BOOLEAN';
+            logicalType = 'BOOLEAN';
+        } else if (prim === 'int') {
+            physicalType = 'INT32';
+            logicalType = 'INT32';
+        } else if (prim === 'long') {
+            physicalType = 'INT64';
+            logicalType = 'INT64';
+        } else if (prim === 'float') {
+            physicalType = 'FLOAT';
+            logicalType = 'FLOAT';
+        } else if (prim === 'double') {
+            physicalType = 'DOUBLE';
+            logicalType = 'DOUBLE';
+        } else if (prim === 'array') {
+            physicalType = 'BYTE_ARRAY';
+            logicalType = 'LIST';
+        } else if (prim === 'record') {
+            physicalType = 'BYTE_ARRAY';
+            logicalType = 'STRUCT';
+        } else if (prim === 'map') {
+            physicalType = 'BYTE_ARRAY';
+            logicalType = 'MAP';
+        }
+
+        return {
+            index,
+            name,
+            physicalType,
+            logicalType,
+            repetitionType: logicalType === 'LIST' ? 'REPEATED' : nullable ? 'OPTIONAL' : 'REQUIRED',
+            nullable,
+            compressionCodec: codec,
+            encoding: 'AVRO_ZIGZAG_BINARY',
+        };
+    });
+}
+
+/**
+ * Decodes Apache Avro Object Container Files ("Obj\x01") across all blocks using the embedded
+ * avro.schema JSON and our recursive Avro binary datum reader (supporting null, deflate, and snappy+CRC32).
  */
 function parseAvroBinary(
     bytes: Uint8Array,
@@ -1858,40 +3363,82 @@ function parseAvroBinary(
         }
     }
 
-    let rows: Record<string, unknown>[] = [];
-    let uncompressedBytes = bytes.length;
-    let compressedBytes = bytes.length;
+    let parsedAvroSchema: Record<string, unknown> | null = null;
+    if (metaMap['avro.schema']) {
+        try {
+            parsedAvroSchema = JSON.parse(metaMap['avro.schema']);
+        } catch {
+            parsedAvroSchema = null;
+        }
+    }
 
-    if (pos < bytes.length) {
+    const rows: Record<string, unknown>[] = [];
+    let totalUncomp = 0;
+    let totalComp = 0;
+
+    while (pos < bytes.length) {
         const recCountVar = readZigZagVarint(bytes, pos);
         pos = recCountVar.nextOffset;
         const blockByteLenVar = readZigZagVarint(bytes, pos);
         pos = blockByteLenVar.nextOffset;
 
+        const recCount = recCountVar.value;
         const blockByteLen = blockByteLenVar.value;
-        if (blockByteLen > 0 && pos + blockByteLen <= bytes.length) {
-            compressedBytes = blockByteLen;
-            const blockPayload =
-                codec === 'SNAPPY' && blockByteLen > 4
-                    ? decompressSnappyBlock(bytes.subarray(pos, pos + blockByteLen - 4))
-                    : bytes.subarray(pos, pos + blockByteLen);
-            uncompressedBytes = blockPayload.length;
+        if (recCount <= 0 || blockByteLen <= 0 || pos + blockByteLen > bytes.length) {
+            break;
+        }
+
+        totalComp += blockByteLen;
+        let blockPayload = bytes.subarray(pos, pos + blockByteLen);
+        if (codec === 'SNAPPY' && blockByteLen > 4) {
+            blockPayload = decompressSnappyBlock(bytes.subarray(pos, pos + blockByteLen - 4));
+        } else if (codec === 'DEFLATE') {
+            blockPayload = decompressGzipOrDeflate(blockPayload);
+        }
+        totalUncomp += blockPayload.length;
+
+        // Advance pos past block + 16-byte sync marker
+        pos += blockByteLen + 16;
+
+        // 1. Check if blockPayload is legacy JSON array
+        let decodedViaJson = false;
+        if (blockPayload.length > 0 && blockPayload[0] === 0x5b) {
             try {
                 const parsedRows = JSON.parse(textDecoder.decode(blockPayload));
                 if (Array.isArray(parsedRows)) {
-                    rows = parsedRows;
+                    rows.push(...parsedRows);
+                    decodedViaJson = true;
                 }
             } catch {
-                warnings.push('Decoded external Avro binary block via schema field reader.');
-                rows = extractFallbackRecordsFromBinary(blockPayload, 'avro');
+                decodedViaJson = false;
             }
+        }
+
+        // 2. Decode genuine Apache Avro binary datum records using parsedAvroSchema
+        if (!decodedViaJson && parsedAvroSchema) {
+            let datumOffset = 0;
+            for (let r = 0; r < recCount && datumOffset < blockPayload.length; r++) {
+                const res = readAvroBinaryDatum(parsedAvroSchema, blockPayload, datumOffset);
+                if (res.value && typeof res.value === 'object' && !Array.isArray(res.value)) {
+                    rows.push(res.value as Record<string, unknown>);
+                }
+                if (res.nextOffset <= datumOffset) break;
+                datumOffset = res.nextOffset;
+            }
+        } else if (!decodedViaJson) {
+            warnings.push('Decoded Avro binary block without embedded record schema.');
+            rows.push(...extractFallbackRecordsFromBinary(blockPayload, 'avro'));
         }
     }
 
     const schema =
         savedSchema.length > 0
             ? savedSchema
-            : inferSchemaFromRows(rows, codec, 'AVRO_ZIGZAG');
+            : rows.length > 0
+                ? inferSchemaFromRows(rows, codec, 'AVRO_ZIGZAG_BINARY')
+                : parsedAvroSchema
+                    ? buildSchemaFromAvroJson(parsedAvroSchema, codec)
+                    : [];
 
     return {
         rows,
@@ -1899,14 +3446,373 @@ function parseAvroBinary(
         codec,
         keyValueMetadata: metaMap,
         syncMarkerHex: bytesToHex(syncMarker, 16),
-        uncompressedBytes,
-        compressedBytes,
+        uncompressedBytes: totalUncomp || bytes.length,
+        compressedBytes: totalComp || bytes.length,
     };
 }
 
 /**
- * Decodes Apache Arrow IPC / Feather v1 (FEA1) & v2 (ARROW1) binary files using FlatBuffers
- * Footer inspection and Snappy block decompression.
+ * Low-level FlatBuffers Table Reader for Apache Arrow IPC / Feather v2 (ARROW1 & 0xFFFFFFFF)
+ */
+interface ArrowIpcFieldDesc {
+    name: string;
+    nullable: boolean;
+    typeType: number;
+    bitWidth: number;
+    isSigned: boolean;
+    floatPrecision: number;
+    dateUnit: number;
+    timeUnit: number;
+    physicalType: PhysicalDataType;
+    logicalType: LogicalDataType;
+}
+
+function fbReadTableSlots(buf: Uint8Array, tablePos: number): number[] {
+    if (tablePos < 0 || tablePos + 4 > buf.length) return [];
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    const vtableSoff = dv.getInt32(tablePos, true);
+    const vtablePos = tablePos - vtableSoff;
+    if (vtablePos < 0 || vtablePos + 4 > buf.length) return [];
+    const vlen = dv.getUint16(vtablePos, true);
+    const numSlots = Math.max(0, Math.floor((vlen - 4) / 2));
+    const slots: number[] = [];
+    for (let i = 0; i < numSlots && vtablePos + 4 + 2 * i + 2 <= buf.length; i++) {
+        slots.push(dv.getUint16(vtablePos + 4 + 2 * i, true));
+    }
+    return slots;
+}
+
+function fbDeref(buf: Uint8Array, pos: number): number {
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    return pos + dv.getUint32(pos, true);
+}
+
+function fbReadString(buf: Uint8Array, fieldPos: number): string {
+    const strPos = fbDeref(buf, fieldPos);
+    if (strPos < 0 || strPos + 4 > buf.length) return '';
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    const len = dv.getUint32(strPos, true);
+    return textDecoder.decode(buf.subarray(strPos + 4, Math.min(buf.length, strPos + 4 + len)));
+}
+
+function decodeGenuineArrowIpcStream(
+    bytes: Uint8Array,
+    startOffset: number,
+    endOffset: number
+): {
+    rows: Record<string, unknown>[];
+    schema: ColumnSchemaNode[];
+    codec: string;
+    keyValueMetadata: Record<string, string>;
+    uncompressedBytes: number;
+    compressedBytes: number;
+} | null {
+    const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let pos = startOffset;
+    const fields: ArrowIpcFieldDesc[] = [];
+    const keyValueMetadata: Record<string, string> = {};
+    const rows: Record<string, unknown>[] = [];
+    let codec = 'UNCOMPRESSED';
+    let totalUncomp = 0;
+    let totalComp = 0;
+
+    while (pos + 8 <= endOffset) {
+        const firstWord = dv.getUint32(pos, true);
+        let metaLen = 0;
+        let msgStart = pos;
+        if (firstWord === 0xffffffff) {
+            metaLen = dv.getUint32(pos + 4, true);
+            msgStart = pos + 8;
+        } else {
+            metaLen = firstWord;
+            msgStart = pos + 4;
+        }
+        if (metaLen === 0 || msgStart + metaLen > endOffset) break;
+
+        const msgBuf = bytes.subarray(msgStart, msgStart + metaLen);
+        const msgDv = new DataView(msgBuf.buffer, msgBuf.byteOffset, msgBuf.byteLength);
+        const rootPos = msgDv.getUint32(0, true);
+        const mSlots = fbReadTableSlots(msgBuf, rootPos);
+        if (mSlots.length < 3) break;
+
+        const headerType = mSlots[1] ? msgBuf[rootPos + mSlots[1]] : 0;
+        const headerPos = mSlots[2] ? fbDeref(msgBuf, rootPos + mSlots[2]) : 0;
+        const bodyLen =
+            mSlots.length > 3 && mSlots[3]
+                ? Number(msgDv.getBigInt64(rootPos + mSlots[3], true))
+                : 0;
+
+        const bodyStart = msgStart + metaLen;
+        const bodyEnd = Math.min(endOffset, bodyStart + Math.max(0, bodyLen));
+        pos = bodyEnd;
+
+        if (headerType === 1 && headerPos > 0) {
+            // Schema Message
+            const sSlots = fbReadTableSlots(msgBuf, headerPos);
+            if (sSlots.length > 1 && sSlots[1]) {
+                const fieldsVec = fbDeref(msgBuf, headerPos + sSlots[1]);
+                const numFields = msgDv.getUint32(fieldsVec, true);
+                for (let i = 0; i < numFields; i++) {
+                    const fPos = fbDeref(msgBuf, fieldsVec + 4 + 4 * i);
+                    const fSlots = fbReadTableSlots(msgBuf, fPos);
+                    const name = fSlots[0] ? fbReadString(msgBuf, fPos + fSlots[0]) : `col_${i}`;
+                    const nullable =
+                        fSlots.length > 1 && fSlots[1] ? msgBuf[fPos + fSlots[1]] !== 0 : true;
+                    const typeType = fSlots.length > 2 && fSlots[2] ? msgBuf[fPos + fSlots[2]] : 5;
+                    const typePos =
+                        fSlots.length > 3 && fSlots[3] ? fbDeref(msgBuf, fPos + fSlots[3]) : 0;
+                    const tSlots = typePos > 0 ? fbReadTableSlots(msgBuf, typePos) : [];
+
+                    let bitWidth = 32;
+                    let isSigned = true;
+                    let floatPrecision = 2; // DOUBLE
+                    let dateUnit = 0;
+                    let timeUnit = 1;
+                    let physicalType: PhysicalDataType = 'BYTE_ARRAY';
+                    let logicalType: LogicalDataType = 'UTF8';
+
+                    if (typeType === 2) {
+                        // Int
+                        bitWidth = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 32;
+                        isSigned = tSlots.length > 1 && tSlots[1] ? msgBuf[typePos + tSlots[1]] !== 0 : false;
+                        physicalType = bitWidth === 64 ? 'INT64' : 'INT32';
+                        logicalType = bitWidth === 64 ? (isSigned ? 'INT64' : 'UINT64') : 'INT32';
+                    } else if (typeType === 3) {
+                        // FloatingPoint
+                        floatPrecision = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
+                        physicalType = floatPrecision === 1 ? 'FLOAT' : 'DOUBLE';
+                        logicalType = floatPrecision === 1 ? 'FLOAT' : 'DOUBLE';
+                    } else if (typeType === 6) {
+                        // Bool
+                        physicalType = 'BOOLEAN';
+                        logicalType = 'BOOLEAN';
+                    } else if (typeType === 8) {
+                        // Date
+                        dateUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
+                        physicalType = dateUnit === 0 ? 'INT32' : 'INT64';
+                        logicalType = 'DATE';
+                    } else if (typeType === 10) {
+                        // Timestamp
+                        timeUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 1;
+                        physicalType = 'INT64';
+                        logicalType = timeUnit >= 2 ? 'TIMESTAMP_MICROS' : 'TIMESTAMP_MILLIS';
+                    } else {
+                        physicalType = 'BYTE_ARRAY';
+                        logicalType = 'UTF8';
+                    }
+
+                    fields.push({
+                        name,
+                        nullable,
+                        typeType,
+                        bitWidth,
+                        isSigned,
+                        floatPrecision,
+                        dateUnit,
+                        timeUnit,
+                        physicalType,
+                        logicalType,
+                    });
+                }
+            }
+            // Extract custom_metadata if present (slot 2 of Schema)
+            if (sSlots.length > 2 && sSlots[2]) {
+                const kvVec = fbDeref(msgBuf, headerPos + sSlots[2]);
+                const numKv = msgDv.getUint32(kvVec, true);
+                for (let k = 0; k < Math.min(numKv, 64); k++) {
+                    const kvPos = fbDeref(msgBuf, kvVec + 4 + 4 * k);
+                    const kvSlots = fbReadTableSlots(msgBuf, kvPos);
+                    const key = kvSlots[0] ? fbReadString(msgBuf, kvPos + kvSlots[0]) : '';
+                    const val = kvSlots.length > 1 && kvSlots[1] ? fbReadString(msgBuf, kvPos + kvSlots[1]) : '';
+                    if (key) keyValueMetadata[key] = val;
+                }
+            }
+        } else if (headerType === 3 && headerPos > 0 && fields.length > 0) {
+            // RecordBatch Message
+            const rbSlots = fbReadTableSlots(msgBuf, headerPos);
+            const batchRows = rbSlots[0]
+                ? Number(msgDv.getBigInt64(headerPos + rbSlots[0], true))
+                : 0;
+            if (batchRows <= 0) continue;
+
+            // Check optional BodyCompression (slot 3 of RecordBatch)
+            let isLz4Compressed = false;
+            if (rbSlots.length > 3 && rbSlots[3]) {
+                const compPos = fbDeref(msgBuf, headerPos + rbSlots[3]);
+                const compSlots = fbReadTableSlots(msgBuf, compPos);
+                const codecId = compSlots[0] ? msgBuf[compPos + compSlots[0]] : 0;
+                codec = codecId === 1 ? 'ZSTD' : 'LZ4_FRAME';
+                isLz4Compressed = codecId === 0;
+            }
+
+            const nodesVec = rbSlots.length > 1 && rbSlots[1] ? fbDeref(msgBuf, headerPos + rbSlots[1]) : 0;
+            const bufsVec = rbSlots.length > 2 && rbSlots[2] ? fbDeref(msgBuf, headerPos + rbSlots[2]) : 0;
+            if (!nodesVec || !bufsVec) continue;
+
+            const numBufs = msgDv.getUint32(bufsVec, true);
+            const bufDescs: { offset: number; length: number }[] = [];
+            for (let b = 0; b < numBufs; b++) {
+                const bOff = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b, true));
+                const bLen = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b + 8, true));
+                bufDescs.push({ offset: bOff, length: bLen });
+            }
+
+            const bodyBytes = bytes.subarray(bodyStart, bodyEnd);
+            totalComp += bodyBytes.length;
+
+            const getBufferSlice = (idx: number): Uint8Array => {
+                const bd = bufDescs[idx];
+                if (!bd || bd.length <= 0 || bd.offset < 0 || bd.offset + bd.length > bodyBytes.length) {
+                    return new Uint8Array(0);
+                }
+                const rawSlice = bodyBytes.subarray(bd.offset, bd.offset + bd.length);
+                if (isLz4Compressed && rawSlice.length >= 8) {
+                    const sDv = new DataView(rawSlice.buffer, rawSlice.byteOffset, rawSlice.byteLength);
+                    const uncompLen = Number(sDv.getBigInt64(0, true));
+                    if (uncompLen === -1) return rawSlice.subarray(8);
+                    if (uncompLen > 0) return decompressLz4Block(rawSlice.subarray(8), uncompLen);
+                }
+                return rawSlice;
+            };
+
+            const batchRecords: Record<string, unknown>[] = Array.from({ length: batchRows }, () => ({}));
+            let bIdx = 0;
+
+            for (let fIdx = 0; fIdx < fields.length; fIdx++) {
+                const f = fields[fIdx];
+                const validityBuf = getBufferSlice(bIdx++);
+                const isNullAt = (r: number): boolean => {
+                    if (validityBuf.length === 0) return false;
+                    return ((validityBuf[r >>> 3] >>> (r & 7)) & 1) === 0;
+                };
+
+                if (f.typeType === 5 || f.typeType === 4) {
+                    // Utf8 (5) or Binary (4): 32-bit offsets buffer + data buffer
+                    const offsetsBuf = getBufferSlice(bIdx++);
+                    const dataBuf = getBufferSlice(bIdx++);
+                    totalUncomp += validityBuf.length + offsetsBuf.length + dataBuf.length;
+                    const oDv = new DataView(offsetsBuf.buffer, offsetsBuf.byteOffset, offsetsBuf.byteLength);
+                    for (let r = 0; r < batchRows; r++) {
+                        if (isNullAt(r) || (r + 1) * 4 > offsetsBuf.length) {
+                            batchRecords[r][f.name] = null;
+                        } else {
+                            const sOff = oDv.getInt32(r * 4, true);
+                            const eOff = oDv.getInt32((r + 1) * 4, true);
+                            batchRecords[r][f.name] = textDecoder.decode(dataBuf.subarray(sOff, eOff));
+                        }
+                    }
+                } else if (f.typeType === 20 || f.typeType === 21) {
+                    // LargeUtf8 (20) or LargeBinary (21): 64-bit offsets buffer + data buffer
+                    const offsetsBuf = getBufferSlice(bIdx++);
+                    const dataBuf = getBufferSlice(bIdx++);
+                    totalUncomp += validityBuf.length + offsetsBuf.length + dataBuf.length;
+                    const oDv = new DataView(offsetsBuf.buffer, offsetsBuf.byteOffset, offsetsBuf.byteLength);
+                    for (let r = 0; r < batchRows; r++) {
+                        if (isNullAt(r) || (r + 1) * 8 > offsetsBuf.length) {
+                            batchRecords[r][f.name] = null;
+                        } else {
+                            const sOff = Number(oDv.getBigInt64(r * 8, true));
+                            const eOff = Number(oDv.getBigInt64((r + 1) * 8, true));
+                            batchRecords[r][f.name] = textDecoder.decode(dataBuf.subarray(sOff, eOff));
+                        }
+                    }
+                } else {
+                    // Fixed-width primitive buffer
+                    const valBuf = getBufferSlice(bIdx++);
+                    totalUncomp += validityBuf.length + valBuf.length;
+                    const vDv = new DataView(valBuf.buffer, valBuf.byteOffset, valBuf.byteLength);
+
+                    for (let r = 0; r < batchRows; r++) {
+                        if (isNullAt(r)) {
+                            batchRecords[r][f.name] = null;
+                            continue;
+                        }
+                        if (f.typeType === 6) {
+                            // Bool bitmap
+                            batchRecords[r][f.name] = ((valBuf[r >>> 3] >>> (r & 7)) & 1) === 1;
+                        } else if (f.typeType === 2) {
+                            // Int
+                            if (f.bitWidth === 8) {
+                                batchRecords[r][f.name] = f.isSigned ? vDv.getInt8(r) : vDv.getUint8(r);
+                            } else if (f.bitWidth === 16) {
+                                batchRecords[r][f.name] = f.isSigned
+                                    ? vDv.getInt16(r * 2, true)
+                                    : vDv.getUint16(r * 2, true);
+                            } else if (f.bitWidth === 32) {
+                                batchRecords[r][f.name] = f.isSigned
+                                    ? vDv.getInt32(r * 4, true)
+                                    : vDv.getUint32(r * 4, true);
+                            } else if (f.bitWidth === 64 && (r + 1) * 8 <= valBuf.length) {
+                                const b = f.isSigned
+                                    ? vDv.getBigInt64(r * 8, true)
+                                    : vDv.getBigUint64(r * 8, true);
+                                batchRecords[r][f.name] =
+                                    b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
+                                        ? b.toString()
+                                        : Number(b);
+                            }
+                        } else if (f.typeType === 3) {
+                            // FloatingPoint
+                            if (f.floatPrecision === 1 && (r + 1) * 4 <= valBuf.length) {
+                                batchRecords[r][f.name] = Number(vDv.getFloat32(r * 4, true).toFixed(6));
+                            } else if ((r + 1) * 8 <= valBuf.length) {
+                                batchRecords[r][f.name] = vDv.getFloat64(r * 8, true);
+                            }
+                        } else if (f.typeType === 8) {
+                            // Date
+                            if (f.dateUnit === 0 && (r + 1) * 4 <= valBuf.length) {
+                                const days = vDv.getInt32(r * 4, true);
+                                batchRecords[r][f.name] = new Date(days * 86400000).toISOString().slice(0, 10);
+                            } else if ((r + 1) * 8 <= valBuf.length) {
+                                const ms = Number(vDv.getBigInt64(r * 8, true));
+                                batchRecords[r][f.name] = new Date(ms).toISOString().slice(0, 10);
+                            }
+                        } else if (f.typeType === 10 && (r + 1) * 8 <= valBuf.length) {
+                            // Timestamp
+                            const rawTs = vDv.getBigInt64(r * 8, true);
+                            const ms =
+                                f.timeUnit === 0
+                                    ? Number(rawTs) * 1000
+                                    : f.timeUnit === 1
+                                        ? Number(rawTs)
+                                        : f.timeUnit === 2
+                                            ? Number(rawTs / BigInt(1000))
+                                            : Number(rawTs / BigInt(1000000));
+                            batchRecords[r][f.name] = new Date(ms).toISOString();
+                        }
+                    }
+                }
+            }
+            rows.push(...batchRecords);
+        }
+    }
+
+    if (fields.length === 0) return null;
+
+    const schema: ColumnSchemaNode[] = fields.map((f, index) => ({
+        index,
+        name: f.name,
+        physicalType: f.physicalType,
+        logicalType: f.logicalType,
+        repetitionType: f.nullable ? 'OPTIONAL' : 'REQUIRED',
+        nullable: f.nullable,
+        compressionCodec: codec,
+        encoding: 'ARROW_IPC_CONTIGUOUS',
+    }));
+
+    return {
+        rows,
+        schema,
+        codec,
+        keyValueMetadata,
+        uncompressedBytes: totalUncomp || bytes.length,
+        compressedBytes: totalComp || bytes.length,
+    };
+}
+
+/**
+ * Decodes Apache Arrow IPC / Feather v1 (FEA1) & v2 (ARROW1 / 0xFFFFFFFF Stream) binary files
+ * using both our genuine FlatBuffers Schema + RecordBatch decoder and Snappy container reader.
  */
 function parseFeatherBinary(
     bytes: Uint8Array,
@@ -1920,6 +3826,7 @@ function parseFeatherBinary(
     uncompressedBytes: number;
     compressedBytes: number;
 } {
+    // 1. Check ARROW1 (Feather v2 / Arrow IPC File)
     if (
         bytes.length > 20 &&
         bytes[0] === 0x41 &&
@@ -1935,6 +3842,18 @@ function parseFeatherBinary(
                 ? bytes.length - 10 - fbFooterLen
                 : bytes.length - 6;
 
+        // First check if it starts with an Arrow IPC message (0xFFFFFFFF continuation at byte 8)
+        if (bytes.length >= 16 && view.getUint32(8, true) === 0xffffffff) {
+            const ipcDecoded = decodeGenuineArrowIpcStream(bytes, 8, bodyEnd);
+            if (ipcDecoded && ipcDecoded.schema.length > 0) {
+                return {
+                    ...ipcDecoded,
+                    formatVersion: 'Arrow IPC / Feather v2 (FlatBuffers)',
+                };
+            }
+        }
+
+        // Otherwise check KivaroTools Snappy-compressed Feather container
         const bodySlice = bytes.subarray(8, bodyEnd);
         const decompressed = decompressSnappyBlock(bodySlice);
         try {
@@ -1953,7 +3872,37 @@ function parseFeatherBinary(
                 };
             }
         } catch {
-            // Fallback to general FlatBuffer scanner
+            // continue to stream check
+        }
+    }
+
+    // 2. Check Arrow IPC Stream (0xFFFFFFFF continuation at byte 0)
+    if (bytes.length >= 8 && bytes[0] === 0xff && bytes[1] === 0xff && bytes[2] === 0xff && bytes[3] === 0xff) {
+        const streamDecoded = decodeGenuineArrowIpcStream(bytes, 0, bytes.length);
+        if (streamDecoded && streamDecoded.schema.length > 0) {
+            return {
+                ...streamDecoded,
+                formatVersion: 'Arrow IPC Stream (0xFFFFFFFF FlatBuffers)',
+            };
+        }
+        try {
+            const body = decompressSnappyBlock(bytes.subarray(8));
+            const parsed = JSON.parse(textDecoder.decode(body));
+            if (parsed && Array.isArray(parsed.rows)) {
+                return {
+                    rows: parsed.rows,
+                    schema: Array.isArray(parsed.schema)
+                        ? parsed.schema
+                        : inferSchemaFromRows(parsed.rows, parsed.codec || 'UNCOMPRESSED', 'ARROW_STREAM'),
+                    codec: parsed.codec || 'UNCOMPRESSED',
+                    formatVersion: 'Arrow IPC Stream (0xFFFFFFFF)',
+                    keyValueMetadata: parsed.keyValueMetadata || {},
+                    uncompressedBytes: body.length,
+                    compressedBytes: bytes.length,
+                };
+            }
+        } catch {
+            // continue to fallback
         }
     }
 
@@ -2140,7 +4089,7 @@ export function inferSchemaFromRows(
                 detectedLogical = 'INT64';
                 detectedPhysical = 'INT64';
             } else if (typeof v === 'number') {
-                if (Number.isInteger(v)) {
+                if (Number.isSafeInteger(v)) {
                     if (v > 2147483647 || v < -2147483648) {
                         detectedLogical = 'INT64';
                         detectedPhysical = 'INT64';
@@ -2154,7 +4103,16 @@ export function inferSchemaFromRows(
                 }
             } else if (typeof v === 'string') {
                 if (/^-?\d{16,20}$/.test(v)) {
-                    detectedLogical = 'INT64';
+                    try {
+                        const bVal = BigInt(v);
+                        if (bVal > BigInt('9223372036854775807')) {
+                            detectedLogical = 'UINT64';
+                        } else {
+                            detectedLogical = 'INT64';
+                        }
+                    } catch {
+                        detectedLogical = 'INT64';
+                    }
                     detectedPhysical = 'INT64';
                 } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)) {
                     detectedLogical = 'TIMESTAMP_MILLIS';
@@ -2218,6 +4176,7 @@ export function computeColumnProfiles(
         const freqMap = new Map<string, number>();
         const numericValues: number[] = [];
         const bigIntValues: bigint[] = [];
+        let hasUnsafeBigInt = false;
         const stringLengths: number[] = [];
 
         for (const row of rows) {
@@ -2233,18 +4192,28 @@ export function computeColumnProfiles(
 
             if (typeof val === 'bigint') {
                 bigIntValues.push(val);
-            } else if (typeof val === 'number' && Number.isFinite(val)) {
-                numericValues.push(val);
-            } else if (typeof val === 'string' && /^-?\d+$/.test(val)) {
-                const b = BigInt(val);
-                if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
-                    bigIntValues.push(b);
+                if (val > BigInt(Number.MAX_SAFE_INTEGER) || val < BigInt(Number.MIN_SAFE_INTEGER)) {
+                    hasUnsafeBigInt = true;
                 } else {
                     numericValues.push(Number(val));
                 }
+            } else if (typeof val === 'number' && Number.isFinite(val)) {
+                numericValues.push(val);
+                if (Number.isInteger(val)) {
+                    bigIntValues.push(BigInt(Math.trunc(val)));
+                }
+            } else if (typeof val === 'string' && /^[+-]?\d+$/.test(val.trim())) {
+                const trimmed = val.trim();
+                const b = BigInt(trimmed);
+                bigIntValues.push(b);
+                if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
+                    hasUnsafeBigInt = true;
+                } else {
+                    numericValues.push(Number(trimmed));
+                }
                 stringLengths.push(val.length);
-            } else if (typeof val === 'string' && /^-?\d+\.\d+$/.test(val)) {
-                const num = Number(val);
+            } else if (typeof val === 'string' && /^[+-]?\d+\.\d+$/.test(val.trim())) {
+                const num = Number(val.trim());
                 if (Number.isFinite(num)) numericValues.push(num);
                 stringLengths.push(val.length);
             } else if (typeof val === 'string') {
@@ -2269,7 +4238,7 @@ export function computeColumnProfiles(
         let median: number | null = null;
         let p75: number | null = null;
 
-        if (bigIntValues.length > 0) {
+        if (hasUnsafeBigInt && bigIntValues.length > 0) {
             bigIntValues.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
             min = bigIntValues[0].toString();
             max = bigIntValues[bigIntValues.length - 1].toString();
@@ -2388,8 +4357,109 @@ function buildRowGroupMetadata(
 }
 
 // ============================================================
-// 9. INTERACTIVE FILTER (AND + OR LOGIC), SORT, SEARCH & PROJECTION
+// 9. INTERACTIVE FILTER (AND + OR LOGIC, EXACT 64-BIT BIGINT), SORT, SEARCH & PROJECTION
 // ============================================================
+
+interface ExactDecimalParts {
+    sign: 1 | -1;
+    intPart: bigint;
+    fracDigits: string;
+}
+
+/**
+ * Parses a number, bigint, or numeric string (including 64-bit / 128-bit integers, decimals, and scientific notation)
+ * into exact signed BigInt integer + fractional digit components without IEEE-754 float truncation.
+ */
+function parseExactDecimalParts(raw: unknown): ExactDecimalParts | null {
+    if (typeof raw === 'bigint') {
+        if (raw === BigInt(0)) return { sign: 1, intPart: BigInt(0), fracDigits: '' };
+        return {
+            sign: raw < BigInt(0) ? -1 : 1,
+            intPart: raw < BigInt(0) ? -raw : raw,
+            fracDigits: '',
+        };
+    }
+    if (typeof raw === 'number') {
+        if (!Number.isFinite(raw)) return null;
+        if (Object.is(raw, -0) || raw === 0) return { sign: 1, intPart: BigInt(0), fracDigits: '' };
+        if (Number.isSafeInteger(raw)) {
+            const b = BigInt(raw);
+            return {
+                sign: b < BigInt(0) ? -1 : 1,
+                intPart: b < BigInt(0) ? -b : b,
+                fracDigits: '',
+            };
+        }
+    }
+    if (typeof raw !== 'string' && typeof raw !== 'number') return null;
+
+    const str = String(raw).trim();
+    if (!str) return null;
+
+    // Match optional sign, digits, optional decimal digits, optional exponent
+    const m = /^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(str);
+    if (!m) return null;
+
+    const signChar = m[1];
+    let intDigits = m[2];
+    let fracDigits = m[3] ?? '';
+    const expStr = m[4];
+
+    if (expStr !== undefined) {
+        const exp = parseInt(expStr, 10);
+        if (!Number.isFinite(exp) || Math.abs(exp) > 1000) return null;
+        const combined = intDigits + fracDigits;
+        const pointPos = intDigits.length + exp;
+        if (pointPos <= 0) {
+            intDigits = '0';
+            fracDigits = '0'.repeat(-pointPos) + combined;
+        } else if (pointPos >= combined.length) {
+            intDigits = combined + '0'.repeat(pointPos - combined.length);
+            fracDigits = '';
+        } else {
+            intDigits = combined.slice(0, pointPos);
+            fracDigits = combined.slice(pointPos);
+        }
+    }
+
+    // Strip trailing zeros from fractional part
+    fracDigits = fracDigits.replace(/0+$/, '');
+    const intPart = BigInt(intDigits || '0');
+    if (intPart === BigInt(0) && fracDigits === '') {
+        return { sign: 1, intPart: BigInt(0), fracDigits: '' };
+    }
+    const sign: 1 | -1 = signChar === '-' ? -1 : 1;
+    return { sign, intPart, fracDigits };
+}
+
+/**
+ * Exact 64-Bit BigInt & Arbitrary-Precision Decimal Comparator.
+ * Returns -1 if a < b, 0 if a === b, +1 if a > b, or null if either input is not a valid number.
+ */
+export function compareExactNumericValues(a: unknown, b: unknown): number | null {
+    const pa = parseExactDecimalParts(a);
+    const pb = parseExactDecimalParts(b);
+    if (!pa || !pb) return null;
+
+    if (pa.sign !== pb.sign) {
+        return pa.sign < pb.sign ? -1 : 1;
+    }
+
+    const signMul = pa.sign;
+    if (pa.intPart !== pb.intPart) {
+        return (pa.intPart < pb.intPart ? -1 : 1) * signMul;
+    }
+
+    if (pa.fracDigits === pb.fracDigits) {
+        return 0;
+    }
+
+    const maxFracLen = Math.max(pa.fracDigits.length, pb.fracDigits.length);
+    const fa = BigInt(pa.fracDigits.padEnd(maxFracLen, '0') || '0');
+    const fb = BigInt(pb.fracDigits.padEnd(maxFracLen, '0') || '0');
+    if (fa === fb) return 0;
+    return (fa < fb ? -1 : 1) * signMul;
+}
 
 function evaluateSingleCondition(row: Record<string, unknown>, f: FilterCondition): boolean {
     const rawVal = row[f.column];
@@ -2404,28 +4474,30 @@ function evaluateSingleCondition(row: Record<string, unknown>, f: FilterConditio
     const strVal = typeof rawVal === 'object' ? JSON.stringify(rawVal) : String(rawVal);
     const targetStr = f.value;
     const targetTrimmed = f.value.trim();
-    const numVal = Number(strVal);
-    const numTarget = Number(targetTrimmed);
-    const bothNumeric =
-        !Number.isNaN(numVal) && !Number.isNaN(numTarget) && targetTrimmed !== '';
+
+    // Use exact 64-bit BigInt & arbitrary-precision decimal comparison whenever both operands are numeric
+    const exactCmp =
+        typeof rawVal !== 'boolean' && typeof rawVal !== 'object' && targetTrimmed !== ''
+            ? compareExactNumericValues(rawVal, targetTrimmed)
+            : null;
 
     switch (f.operator) {
         case 'eq':
-            return bothNumeric
-                ? numVal === numTarget
+            return exactCmp !== null
+                ? exactCmp === 0
                 : strVal.toLowerCase() === targetStr.toLowerCase();
         case 'neq':
-            return bothNumeric
-                ? numVal !== numTarget
+            return exactCmp !== null
+                ? exactCmp !== 0
                 : strVal.toLowerCase() !== targetStr.toLowerCase();
         case 'gt':
-            return bothNumeric ? numVal > numTarget : strVal > targetStr;
+            return exactCmp !== null ? exactCmp > 0 : strVal > targetStr;
         case 'gte':
-            return bothNumeric ? numVal >= numTarget : strVal >= targetStr;
+            return exactCmp !== null ? exactCmp >= 0 : strVal >= targetStr;
         case 'lt':
-            return bothNumeric ? numVal < numTarget : strVal < targetStr;
+            return exactCmp !== null ? exactCmp < 0 : strVal < targetStr;
         case 'lte':
-            return bothNumeric ? numVal <= numTarget : strVal <= targetStr;
+            return exactCmp !== null ? exactCmp <= 0 : strVal <= targetStr;
         case 'contains':
             return strVal.toLowerCase().includes(targetStr.toLowerCase());
         case 'starts_with':
@@ -2482,7 +4554,7 @@ export function queryDataset(
         return true;
     });
 
-    // 3. Sorting with deterministic NULL-last guarantee
+    // 3. Sorting with deterministic NULL-last guarantee and exact 64-bit BigInt / decimal precision
     if (sort && sort.column) {
         const { column, direction } = sort;
         const mul = direction === 'asc' ? 1 : -1;
@@ -2494,16 +4566,16 @@ export function queryDataset(
             if (aNull && bNull) return 0;
             if (aNull) return 1;
             if (bNull) return -1;
-            if (typeof va === 'number' && typeof vb === 'number') {
-                return (va - vb) * mul;
+
+            if (typeof va !== 'boolean' && typeof vb !== 'boolean' && typeof va !== 'object' && typeof vb !== 'object') {
+                const exactCmp = compareExactNumericValues(va, vb);
+                if (exactCmp !== null) {
+                    return exactCmp * mul;
+                }
             }
+
             const sa = typeof va === 'object' ? JSON.stringify(va) : String(va);
             const sb = typeof vb === 'object' ? JSON.stringify(vb) : String(vb);
-            if (/^-?\d+$/.test(sa) && /^-?\d+$/.test(sb)) {
-                const ba = BigInt(sa);
-                const bb = BigInt(sb);
-                return (ba < bb ? -1 : ba > bb ? 1 : 0) * mul;
-            }
             return sa.localeCompare(sb, undefined, { numeric: true }) * mul;
         });
     }
@@ -2925,6 +4997,7 @@ export function encodeXlsxWorkbookBinary(
 
     const escXml = (s: string) =>
         s
+            .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
@@ -2968,7 +5041,11 @@ export function encodeXlsxWorkbookBinary(
             const ref = `${colIndexToLetter(cIdx)}${rowNum}`;
             const val = rowObj[col];
             if (val === null || val === undefined) continue;
-            if (typeof val === 'number' && Number.isFinite(val)) {
+            if (
+                typeof val === 'number' &&
+                Number.isFinite(val) &&
+                (!Number.isInteger(val) || Math.abs(val) < 1e15)
+            ) {
                 cells.push(`<c r="${ref}" t="n"><v>${val}</v></c>`);
             } else if (typeof val === 'boolean') {
                 cells.push(`<c r="${ref}" t="b"><v>${val ? 1 : 0}</v></c>`);
@@ -3025,13 +5102,19 @@ export function encodeXlsxWorkbookBinary(
     <font><sz val="11"/><name val="Calibri"/></font>
     <font><b/><sz val="11"/><name val="Calibri"/></font>
   </fonts>
-  <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+  <fills count="2">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+  </fills>
   <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
   <cellXfs count="2">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
   </cellXfs>
+  <cellStyles count="1">
+    <cellStyle name="Normal" xfId="0" builtinId="0"/>
+  </cellStyles>
 </styleSheet>`;
 
     return buildPkZipArchive([

@@ -54,3 +54,4 @@ kivarotools-public/
 test-results/
 verify-seo.js
 scripts/apply-all-seo-upgrades.js
+.tmp_ext_fixtures/

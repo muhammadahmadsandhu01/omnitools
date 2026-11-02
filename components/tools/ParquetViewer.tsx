@@ -140,6 +140,8 @@ export default function ParquetViewer() {
     const [showColumnPicker, setShowColumnPicker] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
+    const [gridMode, setGridMode] = useState<'paginated' | 'virtualized'>('paginated');
+    const [virtualScrollTop, setVirtualScrollTop] = useState(0);
     const [inspectedRowIndex, setInspectedRowIndex] = useState<number | null>(null);
 
     // Schema & Code Generator state
@@ -249,6 +251,28 @@ export default function ParquetViewer() {
         const start = (safePage - 1) * pageSize;
         return queriedResult.rows.slice(start, start + pageSize);
     }, [queriedResult.rows, safePage, pageSize]);
+
+    // Windowed Row Virtualization (for Virtualized Scroll mode)
+    const VIRTUAL_ROW_HEIGHT = 36;
+    const VIRTUAL_VIEWPORT_HEIGHT = 504;
+    const VIRTUAL_OVERSCAN = 12;
+    const virtualWindow = useMemo(() => {
+        const total = queriedResult.rows.length;
+        const startIdx = Math.max(0, Math.floor(virtualScrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+        const endIdx = Math.min(
+            total,
+            Math.ceil((virtualScrollTop + VIRTUAL_VIEWPORT_HEIGHT) / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN
+        );
+        return {
+            startIdx,
+            endIdx,
+            topSpacerHeight: startIdx * VIRTUAL_ROW_HEIGHT,
+            bottomSpacerHeight: Math.max(0, (total - endIdx) * VIRTUAL_ROW_HEIGHT),
+            rows: queriedResult.rows.slice(startIdx, endIdx),
+        };
+    }, [queriedResult.rows, virtualScrollTop]);
+
+    const displayedRows = gridMode === 'virtualized' ? virtualWindow.rows : paginatedRows;
 
     // Visible columns in grid
     const visibleSchema = useMemo(() => {
@@ -471,8 +495,8 @@ export default function ParquetViewer() {
                             }
                         }}
                         className={`min-w-0 lg:col-span-7 flex flex-col justify-center items-center text-center rounded-xl border-2 border-dashed p-5 sm:p-6 transition-all cursor-pointer ${isDragging
-                                ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/30'
-                                : 'border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 bg-slate-50/60 dark:bg-slate-800/40'
+                            ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/30'
+                            : 'border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 bg-slate-50/60 dark:bg-slate-800/40'
                             }`}
                     >
                         <input
@@ -493,14 +517,14 @@ export default function ParquetViewer() {
                             Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift TCompactProtocol, Snappy/RLE),{' '}
-                            <span className="font-mono font-semibold">.avro</span> (Obj1 Binary),{' '}
+                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift TCompactProtocol, PLAIN/RLE_DICTIONARY, Snappy/GZIP/LZ4),{' '}
+                            <span className="font-mono font-semibold">.avro</span> (Obj1 Binary, Null/Deflate/Snappy),{' '}
                             <span className="font-mono font-semibold">.feather / .arrow</span> (Arrow IPC FlatBuffers), plus{' '}
-                            <span className="font-mono font-semibold">.jsonl / .csv</span>. 100% client-side in browser memory.
+                            <span className="font-mono font-semibold">.jsonl / .csv</span>. Files are processed locally in your browser and never uploaded to KivaroTools servers.
                         </p>
                         <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
                             <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>Zero Server Upload • Native .XLSX &amp; CSV • CWE-1236 Safe</span>
+                            <span>Local In-Browser Processing • Exact 64-Bit BigInt Filters • Native .XLSX &amp; CSV</span>
                         </div>
                     </div>
 
@@ -529,8 +553,8 @@ export default function ParquetViewer() {
                                             type="button"
                                             onClick={() => handleSelectSample(sample.id)}
                                             className={`w-full text-left p-2.5 rounded-lg border transition-all ${isCurrent
-                                                    ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs'
-                                                    : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 hover:border-blue-400'
+                                                ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs'
+                                                : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 hover:border-blue-400'
                                                 }`}
                                         >
                                             <div className="flex flex-wrap items-center justify-between gap-1.5">
@@ -683,8 +707,8 @@ export default function ParquetViewer() {
                             type="button"
                             onClick={() => setActiveTab(tab.id)}
                             className={`inline-flex items-center justify-between sm:justify-start gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${isActive
-                                    ? 'bg-blue-600 text-white shadow-sm'
-                                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-blue-400'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-blue-400'
                                 }`}
                         >
                             <span className="inline-flex items-center gap-2">
@@ -694,8 +718,8 @@ export default function ParquetViewer() {
                             {tab.badge && (
                                 <span
                                     className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${isActive
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                        ? 'bg-white/20 text-white'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                                         }`}
                                 >
                                     {tab.badge}
@@ -801,8 +825,8 @@ export default function ParquetViewer() {
                                                 type="button"
                                                 onClick={() => handleToggleColumn(col.name)}
                                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${checked
-                                                        ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold'
-                                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'
+                                                    ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold'
+                                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'
                                                     }`}
                                             >
                                                 {checked ? (
@@ -834,8 +858,8 @@ export default function ParquetViewer() {
                                             type="button"
                                             onClick={() => setFilterLogic(mode)}
                                             className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all ${filterLogic === mode
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                                                 }`}
                                         >
                                             {mode}
@@ -946,8 +970,15 @@ export default function ParquetViewer() {
                             className={`min-w-0 ${inspectedRow ? 'lg:col-span-8' : 'lg:col-span-12'
                                 } rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm`}
                         >
-                            <div className="w-full overflow-x-auto overscroll-x-contain max-h-[540px]">
-                                <table className="w-full text-left border-collapse">
+                            <div
+                                onScroll={(e) => {
+                                    if (gridMode === 'virtualized') {
+                                        setVirtualScrollTop(e.currentTarget.scrollTop);
+                                    }
+                                }}
+                                className="w-full overflow-x-auto overscroll-x-contain max-h-[540px]"
+                            >
+                                <table className="min-w-[680px] w-full text-left border-collapse">
                                     <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700">
                                         <tr>
                                             <th className="py-2.5 px-3 text-[11px] font-mono uppercase text-slate-400 w-12 text-center">
@@ -982,7 +1013,7 @@ export default function ParquetViewer() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs font-mono">
-                                        {paginatedRows.length === 0 ? (
+                                        {displayedRows.length === 0 ? (
                                             <tr>
                                                 <td
                                                     colSpan={visibleSchema.length + 1}
@@ -992,60 +1023,81 @@ export default function ParquetViewer() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            paginatedRows.map((row, idx) => {
-                                                const absoluteRowIdx = (safePage - 1) * pageSize + idx;
-                                                const isSelected = inspectedRowIndex === absoluteRowIdx;
-                                                return (
-                                                    <tr
-                                                        key={absoluteRowIdx}
-                                                        onClick={() =>
-                                                            setInspectedRowIndex(isSelected ? null : absoluteRowIdx)
-                                                        }
-                                                        className={`cursor-pointer transition-colors ${isSelected
+                                            <>
+                                                {gridMode === 'virtualized' && virtualWindow.topSpacerHeight > 0 && (
+                                                    <tr aria-hidden="true">
+                                                        <td
+                                                            colSpan={visibleSchema.length + 1}
+                                                            style={{ height: `${virtualWindow.topSpacerHeight}px`, padding: 0, border: 0 }}
+                                                        />
+                                                    </tr>
+                                                )}
+                                                {displayedRows.map((row, idx) => {
+                                                    const absoluteRowIdx =
+                                                        gridMode === 'virtualized'
+                                                            ? virtualWindow.startIdx + idx
+                                                            : (safePage - 1) * pageSize + idx;
+                                                    const isSelected = inspectedRowIndex === absoluteRowIdx;
+                                                    return (
+                                                        <tr
+                                                            key={absoluteRowIdx}
+                                                            onClick={() =>
+                                                                setInspectedRowIndex(isSelected ? null : absoluteRowIdx)
+                                                            }
+                                                            className={`cursor-pointer transition-colors ${isSelected
                                                                 ? 'bg-blue-50/90 dark:bg-blue-950/50'
                                                                 : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                                            }`}
-                                                    >
-                                                        <td className="py-2 px-3 text-center text-[11px] text-slate-400 font-semibold">
-                                                            {absoluteRowIdx + 1}
-                                                        </td>
-                                                        {visibleSchema.map((col) => {
-                                                            const val = row[col.name];
-                                                            const isNull = val === null || val === undefined;
-                                                            const isBool = typeof val === 'boolean';
-                                                            const isObj = typeof val === 'object' && val !== null;
-                                                            return (
-                                                                <td
-                                                                    key={col.name}
-                                                                    className="py-2 px-3.5 max-w-[260px] truncate text-slate-800 dark:text-slate-200"
-                                                                    title={formatCellPreview(val)}
-                                                                >
-                                                                    {isNull ? (
-                                                                        <span className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-400 text-[10px] italic">
-                                                                            NULL
-                                                                        </span>
-                                                                    ) : isBool ? (
-                                                                        <span
-                                                                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${val
+                                                                }`}
+                                                        >
+                                                            <td className="py-2 px-3 text-center text-[11px] text-slate-400 font-semibold">
+                                                                {absoluteRowIdx + 1}
+                                                            </td>
+                                                            {visibleSchema.map((col) => {
+                                                                const val = row[col.name];
+                                                                const isNull = val === null || val === undefined;
+                                                                const isBool = typeof val === 'boolean';
+                                                                const isObj = typeof val === 'object' && val !== null;
+                                                                return (
+                                                                    <td
+                                                                        key={col.name}
+                                                                        className="py-2 px-3.5 max-w-[260px] truncate text-slate-800 dark:text-slate-200"
+                                                                        title={formatCellPreview(val)}
+                                                                    >
+                                                                        {isNull ? (
+                                                                            <span className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-400 text-[10px] italic">
+                                                                                NULL
+                                                                            </span>
+                                                                        ) : isBool ? (
+                                                                            <span
+                                                                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${val
                                                                                     ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                                                     : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                                                                                }`}
-                                                                        >
-                                                                            {String(val)}
-                                                                        </span>
-                                                                    ) : isObj ? (
-                                                                        <span className="text-indigo-600 dark:text-indigo-400">
-                                                                            {formatCellPreview(val)}
-                                                                        </span>
-                                                                    ) : (
-                                                                        formatCellPreview(val)
-                                                                    )}
-                                                                </td>
-                                                            );
-                                                        })}
+                                                                                    }`}
+                                                                            >
+                                                                                {String(val)}
+                                                                            </span>
+                                                                        ) : isObj ? (
+                                                                            <span className="text-indigo-600 dark:text-indigo-400">
+                                                                                {formatCellPreview(val)}
+                                                                            </span>
+                                                                        ) : (
+                                                                            formatCellPreview(val)
+                                                                        )}
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                    );
+                                                })}
+                                                {gridMode === 'virtualized' && virtualWindow.bottomSpacerHeight > 0 && (
+                                                    <tr aria-hidden="true">
+                                                        <td
+                                                            colSpan={visibleSchema.length + 1}
+                                                            style={{ height: `${virtualWindow.bottomSpacerHeight}px`, padding: 0, border: 0 }}
+                                                        />
                                                     </tr>
-                                                );
-                                            })
+                                                )}
+                                            </>
                                         )}
                                     </tbody>
                                 </table>
@@ -1077,7 +1129,36 @@ export default function ParquetViewer() {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center justify-between sm:justify-end gap-3">
+                                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3">
+                                    <div
+                                        role="group"
+                                        aria-label="Data grid rendering mode"
+                                        className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-white dark:bg-slate-900"
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() => setGridMode('paginated')}
+                                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${gridMode === 'paginated'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'text-slate-600 dark:text-slate-400'
+                                                }`}
+                                        >
+                                            Paginated
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setGridMode('virtualized');
+                                                setVirtualScrollTop(0);
+                                            }}
+                                            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${gridMode === 'virtualized'
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'text-slate-600 dark:text-slate-400'
+                                                }`}
+                                        >
+                                            Virtualized Scroll
+                                        </button>
+                                    </div>
                                     <select
                                         value={pageSize}
                                         onChange={(e) => {
@@ -1218,7 +1299,7 @@ export default function ParquetViewer() {
                         </div>
 
                         <div className="w-full overflow-x-auto overscroll-x-contain">
-                            <table className="w-full text-left border-collapse text-xs">
+                            <table className="min-w-[680px] w-full text-left border-collapse text-xs">
                                 <thead>
                                     <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[11px]">
                                         <th className="py-2 px-2.5">#</th>
@@ -1245,8 +1326,8 @@ export default function ParquetViewer() {
                                             <td className="py-2.5 px-2.5">
                                                 <span
                                                     className={`px-1.5 py-0.5 rounded text-[10px] ${col.nullable
-                                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                                                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                                        : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                                                         }`}
                                                 >
                                                     {col.repetitionType}
@@ -1289,8 +1370,8 @@ export default function ParquetViewer() {
                                     type="button"
                                     onClick={() => setSchemaTarget(t.id)}
                                     className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${schemaTarget === t.id
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                                         }`}
                                 >
                                     {t.label}
@@ -1536,7 +1617,7 @@ export default function ParquetViewer() {
                                     </span>
                                 </div>
                                 <div className="w-full overflow-x-auto overscroll-x-contain">
-                                    <table className="w-full text-left border-collapse text-xs font-mono">
+                                    <table className="min-w-[680px] w-full text-left border-collapse text-xs font-mono">
                                         <thead>
                                             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[11px] uppercase">
                                                 <th className="py-2 px-3">Column Chunk</th>
@@ -1603,8 +1684,8 @@ export default function ParquetViewer() {
                                     type="button"
                                     onClick={() => setExportScope('filtered')}
                                     className={`p-2.5 rounded-xl border text-left text-xs font-bold ${exportScope === 'filtered'
-                                            ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
-                                            : 'border-slate-200 dark:border-slate-800 text-slate-600'
+                                        ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                        : 'border-slate-200 dark:border-slate-800 text-slate-600'
                                         }`}
                                 >
                                     Filtered &amp; Projected ({queriedResult.matchedCount} rows, {selectedColumns.length}{' '}
@@ -1614,8 +1695,8 @@ export default function ParquetViewer() {
                                     type="button"
                                     onClick={() => setExportScope('all')}
                                     className={`p-2.5 rounded-xl border text-left text-xs font-bold ${exportScope === 'all'
-                                            ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
-                                            : 'border-slate-200 dark:border-slate-800 text-slate-600'
+                                        ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                        : 'border-slate-200 dark:border-slate-800 text-slate-600'
                                         }`}
                                 >
                                     Full Dataset ({dataset.rows.length} rows, {dataset.schema.length} cols)
@@ -1644,8 +1725,8 @@ export default function ParquetViewer() {
                                         type="button"
                                         onClick={() => setExportFormat(fmt.id)}
                                         className={`px-3 py-2 rounded-xl border text-xs font-bold text-left transition-all ${exportFormat === fmt.id
-                                                ? 'border-blue-600 bg-blue-600 text-white'
-                                                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                                            ? 'border-blue-600 bg-blue-600 text-white'
+                                            : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300'
                                             }`}
                                     >
                                         {fmt.label}

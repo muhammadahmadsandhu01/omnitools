@@ -11,7 +11,7 @@
     "test:emi": "tsx scripts/test-emi-150-suite.ts && tsx scripts/test-user-emi-suite.ts",
     "test:compound": "tsx scripts/test-compound-interest-150-suite.ts && tsx scripts/test-user-compound-interest-suite.ts",
     "test:json-converter": "tsx scripts/test-json-converter-150-suite.ts && tsx scripts/test-user-json-converter-suite.ts",
-    "test:parquet": "tsx scripts/test-parquet-viewer.ts && tsx scripts/test-user-parquet-viewer-suite.ts && tsx scripts/test-parquet-500-complex-suite.ts && tsx scripts/test-parquet-1000-enterprise-suite.ts",
+    "test:parquet": "tsx scripts/test-parquet-viewer.ts && tsx scripts/test-user-parquet-viewer-suite.ts && tsx scripts/test-parquet-500-complex-suite.ts && tsx scripts/test-parquet-1000-enterprise-suite.ts && tsx scripts/test_parquet_viewer_1000_plus_suite.ts",
     "test:base64": "tsx scripts/test-base64-decoder.ts",
     "test:mortgage": "tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts",
     "test:password": "tsx scripts/test-password-generator.ts",

@@ -24,7 +24,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'How do I open and view a .parquet file online without Python or uploading to a server?',
     answer:
-      'Drag and drop your .parquet file directly into the KivaroTools Parquet, Avro & Feather Viewer. The binary container is decoded 100% locally inside your browser memory using JavaScript ArrayBuffer and DataView readers. You do not need to install Python, Pandas, PyArrow, or DuckDB CLI, and your confidential data lake files are never uploaded to any remote server.',
+      'Drag and drop your .parquet file directly into the KivaroTools Parquet, Avro & Feather Viewer. Files are processed locally in your browser using JavaScript ArrayBuffer and DataView readers. Your dataset files and their contents are not uploaded to KivaroTools servers (while the webpage itself may load standard analytics scripts to measure general site traffic). You do not need to install Python, Pandas, PyArrow, or DuckDB CLI.',
   },
   {
     question: 'What is the difference between Apache Parquet, Apache Avro, and Apache Arrow Feather (.arrow)?',
@@ -34,7 +34,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'How does KivaroTools prevent 64-bit integer (INT64 / UINT64) precision loss in the browser?',
     answer:
-      'Standard JavaScript numbers use IEEE-754 double-precision floating-point values, which only guarantee exact integer precision up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991). In ordinary online Parquet or JSON viewers, 64-bit Snowflake IDs, Stripe/Twitter transaction IDs, and nanosecond timestamps silently round to trailing zeros. KivaroTools decodes 64-bit physical integers using native JavaScript BigInt and serializes values exceeding safe bounds as exact decimal strings across the Data Grid, JSON/JSONL exports, SQL INSERT batches, and CSV/Excel downloads.',
+      'Standard JavaScript numbers use IEEE-754 double-precision floating-point values, which only guarantee exact integer precision up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991). In ordinary online Parquet or JSON viewers, 64-bit Snowflake IDs, Stripe/Twitter transaction IDs, and nanosecond timestamps silently round to trailing zeros. KivaroTools decodes 64-bit physical integers using native JavaScript BigInt, executes exact BigInt-aware numeric predicate filtering (=, !=, >, >=, <, <= via compareExactNumericValues) and sorting without float conversion, and serializes values exceeding safe bounds as exact decimal strings across the Data Grid, JSON/JSONL exports, SQL INSERT batches, and CSV/Excel downloads.',
   },
   {
     question: 'Can I convert Parquet, Avro, and Feather files to CSV and Microsoft Excel (.xlsx) for free without row caps?',
@@ -54,7 +54,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'What compression codecs and encodings are supported for Parquet, Avro, and Feather files?',
     answer:
-      'The client-side binary engine supports Uncompressed (PLAIN), Snappy (LZ77 block decompression with Avro CRC32 checksum verification), GZIP / DEFLATE (RFC 1951), and LZ4 frame/block payloads, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY) for definition levels, repetition levels, and dictionary-encoded columns.',
+      'The pure-TypeScript binary engine decodes Uncompressed (PLAIN), Snappy (LZ77 block decompression with Avro CRC32 checksum verification), GZIP / DEFLATE (synchronous RFC 1951 / RFC 1952 INFLATE), and LZ4 (LZ4_RAW / LZ4_FRAME) blocks, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY) for DataPage v1/v2 and DictionaryPage columns. For Parquet files compressed with external native C++ codecs (such as ZSTD, Brotli, or LZO), the engine parses the full Thrift FileMetaData footer, schema tree, and Row Group zone map statistics while noting the external codec.',
   },
   {
     question: 'What is CWE-1236 CSV Formula Injection protection and why does it matter when exporting data?',
@@ -193,10 +193,9 @@ export default function ParquetViewerSeo() {
 
         <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 m-0 leading-relaxed">
-            <strong>Zero-Upload Privacy Guarantee:</strong> Production data warehouse partitions and Kafka event dumps
-            routinely contain confidential financial records, customer PII, and proprietary telemetry. Every byte of
-            your <code>.parquet</code>, <code>.avro</code>, or <code>.feather</code> file is decoded locally inside your
-            browser&apos;s <code>ArrayBuffer</code> memory sandbox—nothing is ever transmitted to an external server.
+            <strong>Local Browser Processing Guarantee:</strong> Files are processed locally in your browser inside a
+            client-side <code>ArrayBuffer</code> memory sandbox. Your dataset files and their contents are not uploaded
+            to KivaroTools servers. The website may load standard analytics scripts to measure general site traffic.
           </p>
         </blockquote>
 
@@ -285,7 +284,7 @@ export default function ParquetViewerSeo() {
         </div>
         <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           When you drop a binary file into the studio, <code>lib/columnarViewerEngine.ts</code> executes a deterministic
-          5-stage pipeline inside browser memory without making a single network request:
+          5-stage pipeline locally inside browser memory without uploading your dataset to any server:
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -340,9 +339,9 @@ export default function ParquetViewerSeo() {
               BigInt Guard &amp; Column Profiling
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Preserves 64-bit integers outside <code>±9,007,199,254,740,991</code> as exact strings, while computing
-              single-pass statistical profiles: null ratios, distinct cardinality, mean, standard deviation, and exact{' '}
-              <code>P25 / P50 / P75</code> quantiles.
+              Preserves 64-bit integers outside <code>±9,007,199,254,740,991</code> as exact strings across display,
+              sorting, and BigInt-aware numeric filters (<code>compareExactNumericValues</code>), while computing
+              null ratios, distinct cardinality, mean, StdDev, and <code>P25 / P50 / P75</code> quantiles.
             </p>
           </div>
 
