@@ -168,29 +168,28 @@ export default function ParquetViewerSeo() {
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-architecture-overview"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2
-              id="parquet-viewer-architecture-overview"
-              className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"
-            >
-              Client-Side Apache Parquet, Avro &amp; Feather Viewer, Schema Inspector &amp; Converter
-            </h2>
-            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-3xl leading-relaxed">
-              Open, query, profile, and convert binary <strong>Apache Parquet (<code>.parquet</code>)</strong>,{' '}
-              <strong>Apache Avro (<code>.avro</code>)</strong>, and{' '}
-              <strong>Apache Arrow Feather (<code>.feather</code> / <code>.arrow</code> / <code>.ipc</code>)</strong>{' '}
-              datasets directly in your browser—with zero Python setup, zero server uploads, and 64-bit{' '}
-              <code>BigInt</code> precision safety.
-            </p>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <h2
+            id="parquet-viewer-architecture-overview"
+            className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"
+          >
+            Client-Side Apache Parquet, Avro &amp; Feather Viewer, Schema Inspector &amp; Converter
+          </h2>
           <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
             <Sparkles className="h-3.5 w-3.5" />
             100% In-Browser Binary Engine
           </span>
         </div>
+
+        <p className="mt-3 w-full text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed break-words">
+          Open, query, profile, and convert binary <strong>Apache Parquet (<code>.parquet</code>)</strong>,{' '}
+          <strong>Apache Avro (<code>.avro</code>)</strong>, and{' '}
+          <strong>Apache Arrow Feather (<code>.feather</code> / <code>.arrow</code> / <code>.ipc</code>)</strong>{' '}
+          datasets directly in your browser—with zero Python setup, zero server uploads, and 64-bit{' '}
+          <code>BigInt</code> precision safety.
+        </p>
 
         <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 m-0 leading-relaxed">
@@ -225,7 +224,7 @@ export default function ParquetViewerSeo() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/40 min-w-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
               <Database className="h-5 w-5" />
             </div>
@@ -239,7 +238,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/40 min-w-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400">
               <Binary className="h-5 w-5" />
             </div>
@@ -253,7 +252,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5 dark:border-slate-800 dark:bg-slate-800/40">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/40 min-w-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400">
               <ShieldCheck className="h-5 w-5" />
             </div>
@@ -273,7 +272,7 @@ export default function ParquetViewerSeo() {
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-working-structure"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2.5 mb-2">
           <Cpu className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -284,13 +283,13 @@ export default function ParquetViewerSeo() {
             Complete Working Structure: How the Client-Side Binary Engine Works
           </h2>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+        <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           When you drop a binary file into the studio, <code>lib/columnarViewerEngine.ts</code> executes a deterministic
           5-stage pipeline inside browser memory without making a single network request:
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-5">
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">
               1
             </span>
@@ -305,7 +304,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-xs font-bold text-white">
               2
             </span>
@@ -319,7 +318,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-xs font-bold text-white">
               3
             </span>
@@ -333,7 +332,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-amber-600 text-xs font-bold text-white">
               4
             </span>
@@ -347,7 +346,7 @@ export default function ParquetViewerSeo() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white">
               5
             </span>
@@ -398,7 +397,7 @@ export default function ParquetViewerSeo() {
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-real-examples"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-8"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-8"
       >
         <div>
           <div className="flex items-center gap-2 mb-2">
@@ -410,7 +409,7 @@ export default function ParquetViewerSeo() {
               Real-World Examples: Schema Extraction, SQL DDL &amp; Safe CSV Conversion
             </h2>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
             Examine three real production scenarios demonstrating how KivaroTools decodes binary metadata, preserves
             64-bit Snowflake IDs, compiles cloud warehouse DDL, and sanitizes spreadsheet exports:
           </p>
@@ -424,18 +423,18 @@ export default function ParquetViewerSeo() {
               Apache Parquet Partition → Snowflake / PostgreSQL DDL &amp; PyArrow Schema Generation
             </span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
             Suppose you drop an e-commerce lakehouse partition (<code>ecommerce_orders_v2.parquet</code>) containing
             64-bit Snowflake IDs, nullable string columns, decimal prices, and nested shipping structs. Here is the
             extracted binary schema alongside the auto-generated Snowflake SQL DDL and Python PyArrow schema:
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto">
               <div className="text-blue-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                 Extracted Binary Parquet Footer Metadata &amp; Schema
               </div>
-              <pre className="leading-relaxed">{`Format:        Apache Parquet v2.6.0 (Magic: 0x50 0x41 0x52 0x31 "PAR1")
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`Format:        Apache Parquet v2.6.0 (Magic: 0x50 0x41 0x52 0x31 "PAR1")
 Codec:         SNAPPY (Compression Ratio: 2.84x)
 Row Groups:    1 Row Group (25 Rows × 11 Columns)
 Created By:    kivarotools-columnar-engine (build PAR1)
@@ -451,11 +450,11 @@ Columns Decoded:
   8. shipping_meta          BYTE_ARRAY -> STRUCT           (REQUIRED)`}</pre>
             </div>
 
-            <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto">
               <div className="text-emerald-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                 Generated Snowflake DDL &amp; Python PyArrow Schema
               </div>
-              <pre className="leading-relaxed">{`-- 1. Snowflake Data Cloud DDL
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`-- 1. Snowflake Data Cloud DDL
 CREATE OR REPLACE TABLE "E_COMMERCE_ORDERS_V2" (
   "order_id" NUMBER(38, 0) NOT NULL,
   "customer_snowflake_id" NUMBER(38, 0) NOT NULL,
@@ -488,19 +487,19 @@ ecommerce_orders_v2_schema = pa.schema([
               64-Bit INT64 Precision Loss vs. KivaroTools BigInt-Safe JSON &amp; CSV Serialization
             </span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
             Compare what happens to a 64-bit Snowflake transaction ID (<code>9007199254740999123</code>) in a naive
             JavaScript viewer using <code>JSON.parse</code> / <code>Number()</code> versus KivaroTools&apos; BigInt-safe
             pipeline:
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-red-50/50 dark:bg-red-950/20 p-4 border border-red-200 dark:border-red-900/50 text-xs font-mono text-red-900 dark:text-red-200 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-red-50/50 dark:bg-red-950/20 p-4 border border-red-200 dark:border-red-900/50 text-xs font-mono text-red-900 dark:text-red-200 overflow-x-auto">
               <div className="flex items-center gap-1.5 font-bold text-red-600 dark:text-red-400 mb-2">
                 <AlertTriangle className="w-4 h-4" />
                 <span>Standard Browser Viewer (Silent IEEE-754 Corruption)</span>
               </div>
-              <pre className="leading-relaxed">{`// Raw 64-bit INT64 in Parquet column: 9007199254740999123
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`// Raw 64-bit INT64 in Parquet column: 9007199254740999123
 // Cast to JS Number(): 9007199254740999000 (Last 3 digits destroyed!)
 {
   "order_id": 100450,
@@ -509,12 +508,12 @@ ecommerce_orders_v2_schema = pa.schema([
 }`}</pre>
             </div>
 
-            <div className="rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 p-4 border border-emerald-200 dark:border-emerald-900/50 text-xs font-mono text-emerald-900 dark:text-emerald-200 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 p-4 border border-emerald-200 dark:border-emerald-900/50 text-xs font-mono text-emerald-900 dark:text-emerald-200 overflow-x-auto">
               <div className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 mb-2">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>KivaroTools Export (Exact 64-Bit Digits + CWE-1236 Guard)</span>
               </div>
-              <pre className="leading-relaxed">{`// Exact 64-bit BigInt preserved & CWE-1236 formula neutralized:
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`// Exact 64-bit BigInt preserved & CWE-1236 formula neutralized:
 {
   "order_id": 100450,
   "customer_snowflake_id": "9007199254740999123",
@@ -532,18 +531,18 @@ ecommerce_orders_v2_schema = pa.schema([
               Kafka Apache Avro (Obj\x01) Container → JSON Lines (.jsonl / NDJSON) &amp; .avsc Schema Extraction
             </span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
             When debugging a Kafka topic dump (<code>iot_sensor_stream.avro</code>), KivaroTools extracts the embedded{' '}
             <code>avro.schema</code> JSON contract from the container header and converts the ZigZag-encoded binary
             records into streamable NDJSON (<code>.jsonl</code>):
           </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto">
               <div className="text-indigo-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                 Extracted Avro Schema (.avsc) with Nullable Unions
               </div>
-              <pre className="leading-relaxed">{`{
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`{
   "type": "record",
   "name": "IoTTelemetryEvent",
   "namespace": "com.kivarotools.analytics",
@@ -556,11 +555,11 @@ ecommerce_orders_v2_schema = pa.schema([
 }`}</pre>
             </div>
 
-            <div className="rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-amber-300 overflow-x-auto">
+            <div className="min-w-0 rounded-2xl bg-slate-950 p-4 border border-slate-800 text-xs font-mono text-amber-300 overflow-x-auto">
               <div className="text-amber-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                 Converted JSON Lines (.jsonl / NDJSON) Stream Output
               </div>
-              <pre className="leading-relaxed">{`{"event_seq":500001,"device_uuid":"dev-8840-0001","temperature_c":62.4,"alert_code":"WARN_TEMP_900"}
+              <pre className="leading-relaxed overflow-x-auto max-w-full">{`{"event_seq":500001,"device_uuid":"dev-8840-0001","temperature_c":62.4,"alert_code":"WARN_TEMP_900"}
 {"event_seq":500002,"device_uuid":"dev-8840-0002","temperature_c":72.33,"alert_code":null}
 {"event_seq":500003,"device_uuid":"dev-8840-0003","temperature_c":73.13,"alert_code":null}`}</pre>
             </div>
@@ -573,7 +572,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-format-comparison"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <h2
           id="parquet-viewer-format-comparison"
@@ -581,13 +580,13 @@ ecommerce_orders_v2_schema = pa.schema([
         >
           Technical Specification: Apache Parquet vs. Apache Avro vs. Arrow Feather vs. CSV
         </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           Compare the internal binary layout, magic byte headers, schema storage locations, encodings, and performance
           trade-offs of modern data engineering formats:
         </p>
 
-        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain">
-          <table className="min-w-[720px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
+          <table className="min-w-[720px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white">
               <tr>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Architectural Dimension</th>
@@ -719,7 +718,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-competitor-matrix"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <h2
           id="parquet-viewer-competitor-matrix"
@@ -727,13 +726,13 @@ ecommerce_orders_v2_schema = pa.schema([
         >
           Enterprise Capabilities Benchmark: KivaroTools vs. Existing Online Viewers
         </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           See how the KivaroTools Parquet, Avro &amp; Feather Studio compares against standalone single-format viewers
           and freemium conversion portals:
         </p>
 
-        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain">
-          <table className="min-w-[740px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
+          <table className="min-w-[740px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white">
               <tr>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Capability / Feature</th>
@@ -845,7 +844,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-export-targets"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2 mb-2">
           <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -856,13 +855,13 @@ ecommerce_orders_v2_schema = pa.schema([
             Supported Export Formats &amp; Polyglot Schema Code Targets
           </h2>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           Every dataset loaded into the studio can be exported or compiled into the following tabular, streaming, and
           data warehouse formats:
         </p>
 
-        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain">
-          <table className="min-w-[680px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse border border-slate-200 dark:border-slate-800">
+        <div className="w-full mt-6 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
+          <table className="min-w-[680px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white">
               <tr>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Target Output</th>
@@ -967,7 +966,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-troubleshooting-guide"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <h2
           id="parquet-viewer-troubleshooting-guide"
@@ -975,13 +974,13 @@ ecommerce_orders_v2_schema = pa.schema([
         >
           Common Parquet, Avro &amp; Feather Errors, Edge Cases &amp; Fixes
         </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           Diagnose and resolve the 6 most common binary data engineering issues encountered when working with lakehouse
           and streaming files:
         </p>
 
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               1. Missing Trailing &quot;PAR1&quot; Footer Magic Bytes
@@ -996,7 +995,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               2. 64-Bit Snowflake IDs Rounding to Zeros in Excel
@@ -1012,7 +1011,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               3. Confluent Wire Format vs. Avro Object Container Files
@@ -1028,7 +1027,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               4. Legacy Spark / Impala INT96 Timestamps
@@ -1043,7 +1042,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               5. Garbled UTF-8 Characters in Windows Excel (Mojibake)
@@ -1058,7 +1057,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
             <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
               6. Feather v1 (FEA1) vs. Feather v2 / Arrow IPC (ARROW1)
@@ -1079,7 +1078,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-workflow-coverage"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2 mb-2">
           <Search className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1090,14 +1089,14 @@ ecommerce_orders_v2_schema = pa.schema([
             Supported Lakehouse, Streaming &amp; Conversion Workflows
           </h2>
         </div>
-        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+        <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
           Whether you are debugging an AWS S3 data lake partition, inspecting a Kafka dead-letter queue, or converting a
           Polars dataframe for spreadsheet review, this unified studio consolidates 30+ specialized data workflows into
           one privacy-first interface:
         </p>
 
         <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5">
+          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">
               Parquet Viewer &amp; Converter Workflows
             </h3>
@@ -1113,7 +1112,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </ul>
           </div>
 
-          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5">
+          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">
               Avro &amp; Kafka Streaming Workflows
             </h3>
@@ -1129,7 +1128,7 @@ ecommerce_orders_v2_schema = pa.schema([
             </ul>
           </div>
 
-          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5">
+          <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
             <h3 className="font-bold text-slate-900 dark:text-white text-sm">
               Arrow Feather, DDL &amp; Profiling Workflows
             </h3>
@@ -1152,7 +1151,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-frequently-asked-questions"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2 mb-4">
           <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1176,7 +1175,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   &#9662;
                 </span>
               </summary>
-              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 break-words">
                 {faq.answer}
               </p>
             </details>
@@ -1189,7 +1188,7 @@ ecommerce_orders_v2_schema = pa.schema([
           ============================================================================ */}
       <section
         aria-labelledby="parquet-viewer-related-utilities"
-        className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900"
       >
         <div className="flex items-center gap-2 mb-2">
           <Layers className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1200,7 +1199,7 @@ ecommerce_orders_v2_schema = pa.schema([
             Related Client-Side Data Engineering &amp; Developer Utilities
           </h2>
         </div>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-4">
+        <p className="w-full text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed break-words">
           Continue your data transformation, schema formatting, and binary inspection workflow with our integrated
           browser tools:
         </p>
