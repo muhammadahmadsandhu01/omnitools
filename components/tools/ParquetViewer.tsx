@@ -188,6 +188,8 @@ export default function ParquetViewer() {
                 .toLowerCase();
             if (cleanName) setTableName(cleanName);
         } catch (err: unknown) {
+            setDataset(null);
+            setInspectedRowIndex(null);
             setErrorMsg(err instanceof Error ? err.message : 'Unable to parse binary file.');
         }
     }, []);
@@ -517,14 +519,17 @@ export default function ParquetViewer() {
                             Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift TCompactProtocol, PLAIN/RLE_DICTIONARY, Snappy/GZIP/LZ4),{' '}
-                            <span className="font-mono font-semibold">.avro</span> (Obj1 Binary, Null/Deflate/Snappy),{' '}
-                            <span className="font-mono font-semibold">.feather / .arrow</span> (Arrow IPC FlatBuffers), plus{' '}
-                            <span className="font-mono font-semibold">.jsonl / .csv</span>. Files are processed locally in your browser and never uploaded to KivaroTools servers.
+                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4),{' '}
+                            <span className="font-mono font-semibold">.avro</span> (Obj OCF, Null/Deflate/Snappy),{' '}
+                            <span className="font-mono font-semibold">.feather</span> (V1 <span className="font-mono">FEA1</span> CTable &amp; V2 <span className="font-mono">ARROW1</span> IPC),{' '}
+                            <span className="font-mono font-semibold">.arrow / .ipc</span>, plus <span className="font-mono font-semibold">.jsonl / .csv</span>.
                         </p>
-                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 max-w-xl">
+                            Your selected file contents are processed locally in your browser and are not uploaded to KivaroTools servers. The website may still load general analytics or other third-party website resources.
+                        </p>
+                        <div className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
                             <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>Local In-Browser Processing • Exact 64-Bit BigInt Filters • Native .XLSX &amp; CSV</span>
+                            <span>Local Browser Processing • Exact 64-Bit BigInt Filters • Native .XLSX &amp; CSV</span>
                         </div>
                     </div>
 
@@ -601,10 +606,10 @@ export default function ParquetViewer() {
                             <span className="text-[11px] font-semibold uppercase text-slate-400 block">
                                 Detected Format
                             </span>
-                            <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mt-1 min-w-0" title={dataset.metadata.formatVersion}>
                                 <Database className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                                 <span className="text-sm font-bold text-slate-900 dark:text-white uppercase truncate">
-                                    {dataset.format}
+                                    {dataset.metadata.magicBytes === 'FEA1' ? 'FEATHER V1' : dataset.metadata.magicBytes === 'ARROW1' ? 'FEATHER V2' : dataset.format}
                                 </span>
                                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
                                     {dataset.metadata.magicBytes}
@@ -664,6 +669,44 @@ export default function ParquetViewer() {
                         </div>
                     </div>
                 )}
+
+                {/* Transparent Format Capabilities, Supported Codecs & Limitations Disclosure */}
+                <details className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 group">
+                    <summary className="cursor-pointer select-none font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                        <span>Supported Formats, Codecs, Known Limitations &amp; Quick-Start Guide</span>
+                        <span className="text-[11px] text-blue-600 dark:text-blue-400 group-open:underline">
+                            View Technical Specs &amp; How to Use
+                        </span>
+                    </summary>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                            <span className="font-bold text-slate-900 dark:text-white block">
+                                1. Supported Formats &amp; Codecs
+                            </span>
+                            <p className="leading-relaxed">
+                                <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, 1-level Dremel LIST, DECIMAL, INT96) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
+                                <strong>Avro OCF (Obj):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified).<br />
+                                <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (<span className="font-mono">UNCOMPRESSED</span>) &amp; V2 Arrow IPC FlatBuffers parser (<span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">LZ4_FRAME</span>).
+                            </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                            <span className="font-bold text-slate-900 dark:text-white block">
+                                2. Disclosed Limitations &amp; Safeguards
+                            </span>
+                            <p className="leading-relaxed">
+                                Files compressed with native C++ codecs (<span className="font-mono">ZSTD</span>, <span className="font-mono">BROTLI</span>, <span className="font-mono">LZO</span>, <span className="font-mono">bzip2</span>, <span className="font-mono">xz</span>), delta encodings (<span className="font-mono">DELTA_BINARY_PACKED</span>), multi-level nested repetition (<span className="font-mono">maxRepLevel &gt; 1</span>), or KMS-encrypted Parquet (<span className="font-mono">PARE</span>) are explicitly rejected with an actionable error message rather than returning fabricated rows. Input buffer safeguard: <span className="font-mono">250 MB</span> (actual capacity depends on device memory).
+                            </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
+                            <span className="font-bold text-slate-900 dark:text-white block">
+                                3. Quick-Start Workflow
+                            </span>
+                            <p className="leading-relaxed">
+                                Drop a file or click a sample preset above → filter across 11 operators (with exact 64-bit <span className="font-mono">BigInt</span> comparison and <span className="font-mono">AND/OR</span> logic) → toggle <strong>Paginated</strong> or <strong>Virtualized Scroll</strong> mode → click any row to inspect nested JSON → switch tabs for 10-dialect SQL DDL, Column Quantiles, Binary X-Ray, or Native <span className="font-mono">.XLSX</span> / CSV export.
+                            </p>
+                        </div>
+                    </div>
+                </details>
             </div>
 
             {/* 5-Tab Workbench Navigation */}

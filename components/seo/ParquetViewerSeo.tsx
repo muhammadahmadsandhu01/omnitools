@@ -24,12 +24,12 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'How do I open and view a .parquet file online without Python or uploading to a server?',
     answer:
-      'Drag and drop your .parquet file directly into the KivaroTools Parquet, Avro & Feather Viewer. Files are processed locally in your browser using JavaScript ArrayBuffer and DataView readers. Your dataset files and their contents are not uploaded to KivaroTools servers (while the webpage itself may load standard analytics scripts to measure general site traffic). You do not need to install Python, Pandas, PyArrow, or DuckDB CLI.',
+      'Drag and drop your .parquet file directly into the KivaroTools Parquet, Avro & Feather Viewer. Your selected file contents are processed locally in your browser and are not uploaded to KivaroTools servers. The website may still load general analytics or other third-party website resources. You do not need to install Python, Pandas, PyArrow, or DuckDB CLI.',
   },
   {
     question: 'What is the difference between Apache Parquet, Apache Avro, and Apache Arrow Feather (.arrow)?',
     answer:
-      'Apache Parquet (.parquet) is a compressed columnar storage format with a trailing Thrift FileMetaData footer, engineered for analytical OLAP data warehouses (Snowflake, AWS Athena, Google BigQuery, Databricks, DuckDB). Apache Avro (.avro) is a row-oriented binary container that embeds its JSON schema (avro.schema) in the file header alongside a 16-byte sync marker, making it ideal for Kafka event streaming and schema evolution. Apache Arrow Feather (.feather / .arrow / .ipc) is an in-memory columnar IPC format built on FlatBuffers for zero-copy dataframe exchange between Python (Pandas, Polars, PyArrow), R, and C++.',
+      'Apache Parquet (.parquet) is a compressed columnar storage format with a trailing Thrift FileMetaData footer, engineered for analytical OLAP data warehouses (Snowflake, AWS Athena, Google BigQuery, Databricks, DuckDB). Apache Avro (.avro) is a row-oriented Object Container File (Obj\\x01) that embeds its JSON schema (avro.schema) in the file header alongside a 16-byte sync marker. Feather exists in two distinct binary architectures: legacy Feather V1 (FEA1 magic bytes, which stores uncompressed columns described by a trailing CTable / PrimitiveArray FlatBuffer) and Feather V2 (ARROW1 magic bytes, which uses the Apache Arrow IPC encapsulated Schema + RecordBatch format with optional LZ4_FRAME compression). KivaroTools implements dedicated, separate parsers for both Feather V1 and Feather V2.',
   },
   {
     question: 'How does KivaroTools prevent 64-bit integer (INT64 / UINT64) precision loss in the browser?',
@@ -54,12 +54,12 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'What compression codecs and encodings are supported for Parquet, Avro, and Feather files?',
     answer:
-      'The pure-TypeScript binary engine decodes Uncompressed (PLAIN), Snappy (LZ77 block decompression with Avro CRC32 checksum verification), GZIP / DEFLATE (synchronous RFC 1951 / RFC 1952 INFLATE), and LZ4 (LZ4_RAW / LZ4_FRAME) blocks, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY) for DataPage v1/v2 and DictionaryPage columns. For Parquet files compressed with external native C++ codecs (such as ZSTD, Brotli, or LZO), the engine parses the full Thrift FileMetaData footer, schema tree, and Row Group zone map statistics while noting the external codec.',
+      'The pure-TypeScript binary engine decodes Uncompressed (PLAIN), Snappy (LZ77 block decompression with Avro 4-byte CRC32 checksum verification), GZIP / DEFLATE (synchronous RFC 1951 / RFC 1952 INFLATE), and LZ4 (LZ4_RAW in Parquet and LZ4_FRAME in Feather V2) blocks, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE) across DataPage v1, DataPage v2, and DictionaryPage structures. If a file uses an unsupported compression codec (such as ZSTD, Brotli, LZO, bzip2, or xz) or an unsupported delta page encoding (such as DELTA_BINARY_PACKED), the parser displays an explicit unsupported-codec diagnostic message rather than returning fabricated or corrupted data.',
   },
   {
     question: 'What is CWE-1236 CSV Formula Injection protection and why does it matter when exporting data?',
     answer:
-      'When exporting untrusted string columns from a data lake or Kafka topic into CSV or Excel (.xlsx), cell values beginning with =, +, -, or @ can be interpreted by Microsoft Excel, Google Sheets, or LibreOffice Calc as executable formulas or DDE system commands (CWE-1236). KivaroTools includes a comprehensive 15-vector CWE-1236 Formula Guard that strips leading whitespace/tabs/CR/LF and neutralizes triggers including full-width Unicode equivalents (\\uFF1D, \\uFF0B, \\uFF20, \\uFF0D) and en/em-dashes by prepending a single quote (\'), while preserving legitimate negative numbers (such as -42.5 or -1.5e-4) untouched.',
+      'When exporting untrusted string columns into CSV or Excel (.xlsx), cell values beginning with =, +, -, or @ may be interpreted by spreadsheet programs as formulas or DDE commands (CWE-1236). KivaroTools provides a tested 15-vector formula-injection mitigation that detects leading =, +, -, @, whitespace/tab/CR/LF/control prefixes, full-width Unicode variants (\\uFF1D, \\uFF0B, \\uFF20, \\uFF0D), and en/em-dashes, prepending a literal single quote (\') while preserving legitimate negative numbers (such as -42.5 or -1.5e-4). Because spreadsheet applications vary in how they parse imported text, this mitigation should be combined with safe import settings in your target spreadsheet tool.',
   },
   {
     question: 'Why do international characters and emojis look garbled when opening exported CSVs in Windows Excel?',
@@ -89,7 +89,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'Why does my Parquet file fail to open with a "Missing trailing PAR1 footer magic bytes" warning?',
     answer:
-      'Unlike CSV or JSON files which stream top-to-bottom, Apache Parquet stores its schema and row group offsets at the very end of the file right before the trailing 4-byte "PAR1" magic signature. If a file download from Amazon S3, GCS, or Azure Blob Storage was interrupted midway, the footer is missing. KivaroTools detects truncated PAR1 containers, alerts you to the incomplete transfer, and attempts heuristic recovery of readable payload tokens.',
+      'Unlike CSV or JSON files which stream top-to-bottom, Apache Parquet stores its Thrift FileMetaData schema and Row Group offsets at the very end of the file right before the trailing 4-byte "PAR1" magic signature. If a file download from Amazon S3, GCS, or Azure Blob Storage was interrupted midway, the trailing PAR1 signature or footer is missing. KivaroTools strictly validates both leading and trailing magic bytes plus footer byte bounds and immediately displays a clear truncation error so incomplete files are never mistaken for valid datasets.',
   },
   {
     question: 'How does KivaroTools handle Encrypted Parquet (PARE) files?',
@@ -193,9 +193,7 @@ export default function ParquetViewerSeo() {
 
         <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 m-0 leading-relaxed">
-            <strong>Local Browser Processing Guarantee:</strong> Files are processed locally in your browser inside a
-            client-side <code>ArrayBuffer</code> memory sandbox. Your dataset files and their contents are not uploaded
-            to KivaroTools servers. The website may load standard analytics scripts to measure general site traffic.
+            <strong>Local Browser Processing Guarantee:</strong> Files are processed locally in your browser inside a client-side <code>ArrayBuffer</code> memory sandbox. Your dataset files and their contents are not uploaded to KivaroTools servers. The website may load standard analytics scripts to measure general site traffic.
           </p>
         </blockquote>
 
@@ -387,6 +385,184 @@ export default function ParquetViewerSeo() {
               data blocks use compact variable-length <strong>ZigZag encoding</strong>—mapping signed integers to
               unsigned varints so small negative and positive numbers occupy only a single byte.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================================
+          SECTION 2B: COMPLETE STEP-BY-STEP USER GUIDE (HOW TO USE EVERY FEATURE)
+          ============================================================================ */}
+      <section
+        aria-labelledby="parquet-viewer-complete-user-guide"
+        className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-6"
+      >
+        <div>
+          <h2
+            id="parquet-viewer-complete-user-guide"
+            className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+          >
+            Complete Step-by-Step User Guide: How to Open, Filter, Profile &amp; Convert Files
+          </h2>
+          <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
+            Follow this walkthrough to use every tab, filter operator, grid mode, schema generator, and export option—even if you are opening a binary columnar file for the first time:
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Step 1: Load Your File or Try a 1-Click Sample Dataset
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Drag and drop a local <code>.parquet</code>, <code>.avro</code>, <code>.feather</code> (Feather V1{' '}
+              <code>FEA1</code> or Feather V2 <code>ARROW1</code>), <code>.arrow</code>, <code>.ipc</code>,{' '}
+              <code>.jsonl</code>, or <code>.csv</code> file (up to <code>250 MB</code>) into the top upload box—or
+              click one of the three built-in presets (<strong>E-Commerce Orders .parquet</strong>,{' '}
+              <strong>IoT Telemetry .avro</strong>, or <strong>LLM Embedding Store .feather</strong>). The 6-card
+              Telemetry Bar immediately shows the detected format version, magic signature bytes, row and column counts,
+              compression codec, binary footprint, and parse latency.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Step 2: Search, Filter (11 Operators + AND/OR) &amp; Sort in the Data Grid
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              In the <strong>Data Explorer Grid</strong> tab, type into the search bar to match text across all columns
+              and nested objects. To build structured queries, choose a column, select one of the <strong>11 operators</strong>{' '}
+              (<code>Contains</code>, <code>=</code>, <code>≠</code>, <code>&gt;</code>, <code>≥</code>,{' '}
+              <code>&lt;</code>, <code>≤</code>, <code>Starts With</code>, <code>Ends With</code>, <code>Is NULL</code>,{' '}
+              <code>Is Not NULL</code>), enter a value, and click <strong>Add</strong>. Toggle between{' '}
+              <code>AND</code> and <code>OR</code> combinators (evaluated sequentially left-to-right). All numeric
+              comparisons use <code>compareExactNumericValues()</code> so 19-digit 64-bit <code>BigInt</code> IDs filter
+              and sort without floating-point rounding.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Step 3: Toggle Paginated vs. Virtualized Scroll, Project Columns &amp; Inspect Rows
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Use the footer toggle to switch between <strong>Paginated Mode</strong> (<code>10</code>, <code>25</code>,{' '}
+              <code>50</code>, <code>100</code>, or <code>250</code> rows per page) and{' '}
+              <strong>Virtualized Scroll Mode</strong> (which renders a windowed viewport slice for continuous scrolling
+              across large datasets). Click <strong>Columns (N/M)</strong> to hide sensitive PII columns before
+              exporting, and click any row in the table to open the <strong>Row Deep Inspector Drawer</strong> showing
+              pretty-printed nested <code>STRUCT</code>, <code>LIST</code>, and <code>MAP</code> JSON with a 1-click
+              copy button.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              Step 4: Generate 10-Dialect SQL DDL, Profile Quantiles &amp; Inspect Binary Footers
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Open <strong>Schema &amp; DDL Generator</strong> to translate the binary schema into{' '}
+              <code>PostgreSQL</code>, <code>Snowflake</code>, <code>BigQuery</code>, <code>DuckDB</code>,{' '}
+              <code>ClickHouse</code>, <code>TypeScript</code>, <code>PyArrow</code>, <code>Polars</code>,{' '}
+              <code>Avro (.avsc)</code>, or <code>JSON Schema</code>. Open <strong>Column Profiler &amp; Stats</strong>{' '}
+              to check null percentages, distinct ratios, <code>P25 / P50 / P75</code> quantiles, and top frequent
+              values, or open <strong>Binary X-Ray Inspector</strong> to audit header/footer hex bytes, Row Group zone
+              maps, and 16-byte Avro sync markers.
+            </p>
+          </div>
+        </div>
+
+        {/* Supported vs Unsupported Format & Codec Matrix */}
+        <div className="pt-2">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">
+            Verified Format, Encoding &amp; Codec Compatibility Matrix
+          </h3>
+          <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
+            <table className="min-w-[680px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white">
+                <tr>
+                  <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Container Format</th>
+                  <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Supported Codecs &amp; Encodings (In-Browser)</th>
+                  <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Supported Data Types</th>
+                  <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Disclosed Unsupported Features (Explicit Error Shown)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                    Apache Parquet (<code>PAR1</code>)
+                  </th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>UNCOMPRESSED</code>, <code>SNAPPY</code>, <code>GZIP</code>, <code>LZ4_RAW</code> •{' '}
+                    <code>PLAIN</code>, <code>RLE_DICTIONARY</code>, <code>PLAIN_DICTIONARY</code>, <code>RLE</code>{' '}
+                    (DataPage v1 &amp; v2)
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>BOOLEAN</code>, <code>INT32</code>, <code>INT64</code> (BigInt), <code>UINT8..64</code>,{' '}
+                    <code>INT96</code>, <code>FLOAT</code>, <code>DOUBLE</code>, <code>DECIMAL</code>,{' '}
+                    <code>UTF8</code>, <code>DATE</code>, <code>TIMESTAMP</code>, <code>UUID</code>, 1-level{' '}
+                    <code>LIST</code>
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>ZSTD</code>, <code>BROTLI</code>, <code>LZO</code>, <code>DELTA_BINARY_PACKED</code>,{' '}
+                    <code>BYTE_STREAM_SPLIT</code>, multi-level Dremel repetition (<code>maxRepLevel &gt; 1</code>), KMS{' '}
+                    <code>PARE</code> encryption
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                    Apache Avro OCF (<code>Obj</code>)
+                  </th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>null</code> (uncompressed), <code>deflate</code> (RFC 1951), <code>snappy</code> (with 4-byte
+                    CRC32 verification)
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>null</code>, <code>boolean</code>, <code>int</code>, <code>long</code> (BigInt),{' '}
+                    <code>float</code>, <code>double</code>, <code>bytes</code>, <code>string</code>,{' '}
+                    <code>record</code>, <code>enum</code>, <code>array</code>, <code>map</code>, <code>union</code>,{' '}
+                    <code>fixed</code>, <code>decimal</code>
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>bzip2</code>, <code>xz</code>, <code>zstandard</code> codecs; external Confluent Wire Format
+                    messages (<code>0x00</code> magic without embedded <code>avro.schema</code>)
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                    Feather V1 (<code>FEA1</code>)
+                  </th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    Dedicated V1 <code>CTable</code> / <code>PrimitiveArray</code> FlatBuffers reader (
+                    <code>UNCOMPRESSED</code>, <code>PLAIN</code>)
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>BOOL</code>, <code>INT8..64</code> (BigInt), <code>UINT8..64</code>, <code>FLOAT</code>,{' '}
+                    <code>DOUBLE</code>, <code>UTF8</code>, <code>BINARY</code>, <code>DATE</code>,{' '}
+                    <code>TIMESTAMP</code> (with 8B-padded null bitmaps)
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    Dictionary-encoded V1 categorical arrays (<code>encoding != PLAIN</code>)
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                    Feather V2 / Arrow IPC (<code>ARROW1</code> / <code>0xFFFFFFFF</code>)
+                  </th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    Encapsulated Arrow IPC <code>Schema</code> + <code>RecordBatch</code> FlatBuffers reader (
+                    <code>UNCOMPRESSED</code>, <code>LZ4_FRAME</code>, Snappy container)
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>Bool</code>, <code>Int8..64</code> (BigInt), <code>UInt8..64</code>, <code>Float32/64</code>,{' '}
+                    <code>Utf8/LargeUtf8</code>, <code>Binary/LargeBinary</code>, <code>Date32/64</code>,{' '}
+                    <code>Timestamp</code>
+                  </td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">
+                    <code>ZSTD</code> RecordBatch compression, <code>Float16</code>, nested IPC Union/Map/Tensor buffers
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -628,7 +804,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   0x4F 0x62 0x6A 0x01 (&quot;Obj\x01&quot; head)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">
-                  0x41 0x52 0x52 0x4F 0x57 0x31 (&quot;ARROW1&quot; / &quot;FEA1&quot;)
+                  V1: 0x46454131 (&quot;FEA1&quot; CTable) • V2: 0x4152524F5731 (&quot;ARROW1&quot; IPC)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 font-mono">None (Optional \uFEFF BOM)</td>
               </tr>
@@ -643,7 +819,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   Leading JSON Header Map (<code>avro.schema</code>)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  FlatBuffers Message Header &amp; Footer
+                  V1: Trailing CTable FlatBuffer • V2: Encapsulated Arrow IPC Schema &amp; Footer
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Untyped (Header row names only)
@@ -674,7 +850,7 @@ ecommerce_orders_v2_schema = pa.schema([
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   null, deflate, snappy (with CRC32), zstandard
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Uncompressed, LZ4_FRAME, ZSTD</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">V1: Uncompressed • V2: Uncompressed, LZ4_FRAME (ZSTD in native Arrow)</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">External (.csv.gz / .zip)</td>
               </tr>
               <tr>
