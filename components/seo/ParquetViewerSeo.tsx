@@ -13,7 +13,7 @@ import {
   FileSpreadsheet,
   Cpu,
   Search,
-} from 'lucide-react';;
+} from 'lucide-react';
 
 export interface FaqItem {
   question: string;
@@ -39,7 +39,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'Can I convert Parquet, Avro, and Feather files to CSV and Microsoft Excel (.xlsx) for free without row caps?',
     answer:
-      'Yes. Unlike freemium viewers that cap free CSV exports at 1,000 rows, KivaroTools lets you export either your filtered/projected view or the entire loaded dataset to RFC 4180 CSV (with custom comma, semicolon, tab, or pipe delimiters), native Microsoft Excel (.xlsx) workbooks, JSON arrays, JSON Lines (.jsonl / NDJSON), SQL INSERT statements, Markdown tables, or standalone HTML tables completely free.',
+      'Yes. Unlike freemium viewers that cap free CSV exports at 1,000 rows, KivaroTools lets you export either your filtered/projected view or the entire loaded dataset to RFC 4180 CSV (with custom comma, semicolon, tab, or pipe delimiters and UTF-8 BOM), native binary Microsoft Excel (.xlsx) PKZIP Office Open XML workbooks with frozen headers and auto-filters, JSON arrays, JSON Lines (.jsonl / NDJSON), SQL INSERT statements, Markdown tables, or standalone HTML tables completely free, plus cross-format binary transcoding (.parquet <-> .avro <-> .feather).',
   },
   {
     question: 'How does the tool read a Parquet file schema and Thrift footer metadata?',
@@ -49,7 +49,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'Can I generate SQL CREATE TABLE DDL for Snowflake, BigQuery, PostgreSQL, DuckDB, and ClickHouse?',
     answer:
-      'Yes. Open the Schema & DDL Generator tab to automatically translate your binary file schema into ready-to-run SQL DDL and typed SDK definitions across 10 targets: PostgreSQL, Snowflake Data Cloud, Google BigQuery, DuckDB, ClickHouse MergeTree, TypeScript Interfaces, Python PyArrow (pa.schema), Python Polars (pl.Schema), Apache Avro (.avsc), and JSON Schema (Draft 2020-12).',
+      'Yes. Open the Schema & DDL Generator tab to automatically translate your binary file schema into ready-to-run SQL DDL and typed SDK definitions across 10 targets: PostgreSQL, Snowflake Data Cloud, Google BigQuery, DuckDB (with CREATE TABLE and direct read_parquet() queries), ClickHouse MergeTree, TypeScript Interfaces, Python PyArrow (pa.schema), Python Polars (pl.Schema), Apache Avro (.avsc), and JSON Schema (Draft 2020-12).',
   },
   {
     question: 'What compression codecs and encodings are supported for Parquet, Avro, and Feather files?',
@@ -59,7 +59,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'What is CWE-1236 CSV Formula Injection protection and why does it matter when exporting data?',
     answer:
-      'When exporting untrusted string columns from a data lake or Kafka topic into CSV or Excel (.xlsx), cell values beginning with =, +, -, or @ can be interpreted by Microsoft Excel, Google Sheets, or LibreOffice Calc as executable formulas or DDE system commands (CWE-1236). KivaroTools includes a CWE-1236 Formula Guard toggle that safely prefixes dangerous formula strings with a leading single quote (\') while leaving legitimate negative numbers (such as -42.5 or -1.5e-4) untouched.',
+      'When exporting untrusted string columns from a data lake or Kafka topic into CSV or Excel (.xlsx), cell values beginning with =, +, -, or @ can be interpreted by Microsoft Excel, Google Sheets, or LibreOffice Calc as executable formulas or DDE system commands (CWE-1236). KivaroTools includes a comprehensive 15-vector CWE-1236 Formula Guard that strips leading whitespace/tabs/CR/LF and neutralizes triggers including full-width Unicode equivalents (\\uFF1D, \\uFF0B, \\uFF20, \\uFF0D) and en/em-dashes by prepending a single quote (\'), while preserving legitimate negative numbers (such as -42.5 or -1.5e-4) untouched.',
   },
   {
     question: 'Why do international characters and emojis look garbled when opening exported CSVs in Windows Excel?',
@@ -74,7 +74,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'Can I filter rows, sort columns, and hide sensitive PII columns before exporting to CSV or JSON?',
     answer:
-      'Yes. You can combine global full-text search with multi-condition predicate filters across 11 operators (equals, not equals, greater than, greater or equal, less than, less or equal, contains, starts with, ends with, is NULL, is not NULL), sort any column ascending or descending with NULL-last ordering, and uncheck sensitive PII columns (such as email or ip_address) in the Column Projection picker. In the Export Studio, choose "Filtered & Projected" to export only the exact subset you curated.',
+      'Yes. You can combine global full-text search with multi-condition predicate filters across 11 operators (equals, not equals, greater than, greater or equal, less than, less or equal, contains, starts with, ends with, is NULL, is not NULL) supporting both AND and OR boolean combinator logic, sort any column ascending or descending with NULL-last ordering, and uncheck sensitive PII columns (such as email or ip_address) in the Column Projection picker. In the Export Studio, choose "Filtered & Projected" to export only the exact subset you curated.',
   },
   {
     question: 'What statistics does the Column Profiler & Data Quality tab calculate?',
@@ -354,8 +354,8 @@ export default function ParquetViewerSeo() {
               Query, DDL &amp; Safe Serialization
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Executes multi-predicate filtering (11 operators), NULL-last sorting, and column projection in memory,
-              then serializes into 10 SQL/SDK schema targets or 8 export formats with CWE-1236 formula neutralization.
+              Executes multi-predicate filtering (11 operators supporting both AND and OR combinators), NULL-last sorting, and column projection in memory,
+              then serializes into 10 SQL/SDK schema targets or 8 export formats (including native binary .xlsx workbooks) with CWE-1236 formula neutralization.
             </p>
           </div>
         </div>
@@ -888,6 +888,20 @@ ecommerce_orders_v2_schema = pa.schema([
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                  Native Microsoft Excel Workbook
+                </th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 font-mono text-emerald-600 dark:text-emerald-400">
+                  .xlsx (application/vnd.openxmlformats)
+                </td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">
+                  Real PKZIP Office Open XML binary workbook with frozen top header row, native auto-filter, XML-escaped cell content, 64-bit integer safety &amp; CWE-1236 guard
+                </td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">
+                  Direct opening in Microsoft Excel 2013–365, Apple Numbers, Google Sheets &amp; LibreOffice Calc without text wizards
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
                   Tab-Separated Values
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 font-mono text-blue-600 dark:text-blue-400">
@@ -950,10 +964,24 @@ ecommerce_orders_v2_schema = pa.schema([
                   SQL / .ts / .py / .avsc / .json
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  PostgreSQL, Snowflake, BigQuery, DuckDB, ClickHouse, TS, PyArrow, Polars, Avro, JSON Schema
+                  PostgreSQL, Snowflake, BigQuery, DuckDB (with CREATE TABLE + read_parquet), ClickHouse, TS, PyArrow, Polars, Avro, JSON Schema
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Automated warehouse table creation &amp; SDK typing
+                </td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
+                  Cross-Format Binary Transcoding
+                </th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 font-mono text-indigo-600 dark:text-indigo-400">
+                  .parquet / .avro / .feather
+                </td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">
+                  Lossless in-memory binary transcoding between columnar Parquet (PAR1), streaming Avro (Obj\x01), and memory-mapped Arrow Feather (ARROW1)
+                </td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">
+                  Kafka Avro stream ingestion into Parquet lakehouses or Arrow dataframe pipelines without Python dependencies
                 </td>
               </tr>
             </tbody>

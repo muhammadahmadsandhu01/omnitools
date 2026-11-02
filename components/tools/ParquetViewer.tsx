@@ -1,236 +1,373 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
     Database,
     Upload,
-    FileSpreadsheet,
     Code2,
     BarChart3,
-    Binary,
     Download,
-    Copy,
-    Check,
     Search,
     Filter,
     ArrowUpDown,
     ArrowUp,
     ArrowDown,
-    X,
+    Copy,
+    Check,
+    Eye,
     ShieldCheck,
-    AlertCircle,
+    Sparkles,
+    Layers,
+    Table as TableIcon,
+    CheckSquare,
+    Square,
     ChevronLeft,
     ChevronRight,
+    AlertTriangle,
+    X,
+    Plus,
+    Binary,
+    HardDrive,
 } from 'lucide-react';
+
 import {
     parseColumnarFile,
     generateSampleBinaryFile,
     queryDataset,
     generateSchemaCode,
     exportDatasetToText,
+    encodeXlsxWorkbookBinary,
     encodeParquetBinary,
     encodeAvroBinary,
     encodeFeatherBinary,
     type ColumnarParseResult,
     type FilterCondition,
     type FilterOperator,
+    type FilterLogicMode,
     type SortConfig,
     type SchemaTargetLanguage,
     type ExportFormat,
 } from '@/lib/columnarViewerEngine';
 
-type ActiveTab = 'explorer' | 'schema' | 'profiler' | 'xray' | 'export';
+type StudioTab = 'grid' | 'schema' | 'profiler' | 'xray' | 'export';
+
+const SAMPLE_PRESETS = [
+    {
+        id: 'ecommerce_parquet' as const,
+        label: 'E-Commerce Orders (.parquet)',
+        badge: 'Parquet v2 • Snappy • INT64',
+        description: '25 enterprise order records with INT64 IDs, timestamps, nested customer structs, and payment arrays.',
+    },
+    {
+        id: 'iot_avro' as const,
+        label: 'IoT Telemetry Stream (.avro)',
+        badge: 'Avro Obj1 • ZigZag • Union Nulls',
+        description: '20 industrial sensor payloads with nullable union fields, firmware metadata, and alert flags.',
+    },
+    {
+        id: 'ml_feather' as const,
+        label: 'LLM Embedding Store (.feather)',
+        badge: 'Arrow IPC v2 • Float64 • Fast',
+        description: '18 vector store rows with cosine similarity scores, token counts, latency metrics, and model tags.',
+    },
+];
+
+const SCHEMA_TARGETS: { id: SchemaTargetLanguage; label: string; ext: string }[] = [
+    { id: 'postgresql', label: 'PostgreSQL DDL', ext: 'sql' },
+    { id: 'snowflake', label: 'Snowflake DDL', ext: 'sql' },
+    { id: 'bigquery', label: 'Google BigQuery DDL', ext: 'sql' },
+    { id: 'duckdb', label: 'DuckDB Analytics SQL', ext: 'sql' },
+    { id: 'clickhouse', label: 'ClickHouse MergeTree', ext: 'sql' },
+    { id: 'typescript', label: 'TypeScript Interface', ext: 'ts' },
+    { id: 'pyarrow', label: 'Python PyArrow Schema', ext: 'py' },
+    { id: 'polars', label: 'Python Polars Schema', ext: 'py' },
+    { id: 'avro_schema', label: 'Apache Avro (.avsc)', ext: 'avsc' },
+    { id: 'json_schema', label: 'JSON Schema (2020-12)', ext: 'json' },
+];
+
+const FILTER_OPERATORS: { id: FilterOperator; label: string }[] = [
+    { id: 'contains', label: 'Contains' },
+    { id: 'eq', label: 'Equals (=)' },
+    { id: 'neq', label: 'Not Equals (≠)' },
+    { id: 'gt', label: 'Greater Than (>)' },
+    { id: 'gte', label: 'Greater or Equal (≥)' },
+    { id: 'lt', label: 'Less Than (<)' },
+    { id: 'lte', label: 'Less or Equal (≤)' },
+    { id: 'starts_with', label: 'Starts With' },
+    { id: 'ends_with', label: 'Ends With' },
+    { id: 'is_null', label: 'Is NULL' },
+    { id: 'is_not_null', label: 'Is Not NULL' },
+];
+
+function formatBytes(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const val = bytes / Math.pow(1024, idx);
+    return `${val.toFixed(idx === 0 ? 0 : 2)} ${units[idx]}`;
+}
+
+function formatCellPreview(val: unknown): string {
+    if (val === null || val === undefined) return 'NULL';
+    if (typeof val === 'boolean') return val ? 'true' : 'false';
+    if (typeof val === 'bigint') return val.toString();
+    if (typeof val === 'object') {
+        try {
+            return JSON.stringify(val);
+        } catch {
+            return String(val);
+        }
+    }
+    return String(val);
+}
 
 export default function ParquetViewer() {
-    const [fileData, setFileData] = useState<{ name: string; size: number } | null>(null);
-    const [parseResult, setParseResult] = useState<ColumnarParseResult | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+    // Core dataset state
+    const [dataset, setDataset] = useState<ColumnarParseResult | null>(null);
+    const [activeTab, setActiveTab] = useState<StudioTab>('grid');
+    const [isDragging, setIsDragging] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<ActiveTab>('explorer');
 
-    // Tab 1: Data Explorer state
+    // Explorer state (Search, Filter with AND/OR logic, Sort, Projection, Pagination, Row Drawer)
     const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState<FilterCondition[]>([]);
-    const [sort, setSort] = useState<SortConfig | null>(null);
-    const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+    const [filterLogic, setFilterLogic] = useState<FilterLogicMode>('AND');
+    const [newFilterCol, setNewFilterCol] = useState('');
+    const [newFilterOp, setNewFilterOp] = useState<FilterOperator>('contains');
+    const [newFilterVal, setNewFilterVal] = useState('');
+    const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+    const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+    const [showColumnPicker, setShowColumnPicker] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
-    const [inspectedCell, setInspectedCell] = useState<{ col: string; val: unknown } | null>(null);
+    const [inspectedRowIndex, setInspectedRowIndex] = useState<number | null>(null);
 
-    // Tab 2: Schema & DDL Generator state
-    const [selectedTargetLang, setSelectedTargetLang] = useState<SchemaTargetLanguage>('postgresql');
-    const [ddlTableName, setDdlTableName] = useState('analytics_table');
-    const [ddlCopied, setDdlCopied] = useState(false);
+    // Schema & Code Generator state
+    const [schemaTarget, setSchemaTarget] = useState<SchemaTargetLanguage>('postgresql');
+    const [tableName, setTableName] = useState('analytics_dataset');
 
-    // Tab 5: Export Studio state
+    // Export Studio state
     const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
-    const [exportDelimiter, setExportDelimiter] = useState<',' | ';' | '\t' | '|'>(',');
-    const [includeBom, setIncludeBom] = useState(true);
+    const [csvDelimiter, setCsvDelimiter] = useState<',' | ';' | '\t' | '|'>(',');
+    const [includeUtf8Bom, setIncludeUtf8Bom] = useState(true);
     const [sanitizeFormulas, setSanitizeFormulas] = useState(true);
     const [prettyJson, setPrettyJson] = useState(true);
-    const [exportTableName, setExportTableName] = useState('exported_data');
-    const [exportScope, setExportScope] = useState<'all' | 'filtered'>('filtered');
-    const [exportCopied, setExportCopied] = useState(false);
+    const [exportScope, setExportScope] = useState<'filtered' | 'all'>('filtered');
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Copy feedback
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // Process uploaded or generated Uint8Array
-    const processBinaryBuffer = useCallback((bytes: Uint8Array, fileName: string) => {
-        setIsLoading(true);
+    const triggerCopy = useCallback((text: string, id: string) => {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+            navigator.clipboard.writeText(text).catch(() => { });
+        }
+        setCopiedId(id);
+        setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
+    }, []);
+
+    // Load binary buffer into engine
+    const handleLoadBuffer = useCallback((bytes: Uint8Array, fileName: string) => {
         setErrorMsg(null);
         try {
-            const result = parseColumnarFile(bytes, fileName);
-            setParseResult(result);
-            setFileData({ name: fileName, size: bytes.length });
-            setDdlTableName(fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_') || 'dataset');
-            setExportTableName(fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_]/g, '_') || 'exported_table');
+            const parsed = parseColumnarFile(bytes, fileName);
+            setDataset(parsed);
+            const colNames = parsed.schema.map((c) => c.name);
+            setSelectedColumns(colNames);
+            setNewFilterCol(colNames[0] || '');
             setFilters([]);
-            setSort(null);
             setSearchQuery('');
-            setHiddenColumns(new Set());
+            setSortConfig(null);
             setCurrentPage(1);
+            setInspectedRowIndex(null);
+            const cleanName = fileName
+                .replace(/\.[a-z0-9]+$/i, '')
+                .replace(/[^a-zA-Z0-9_]/g, '_')
+                .toLowerCase();
+            if (cleanName) setTableName(cleanName);
         } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            setErrorMsg(`Failed to parse binary file: ${msg}`);
-        } finally {
-            setIsLoading(false);
+            setErrorMsg(err instanceof Error ? err.message : 'Unable to parse binary file.');
         }
     }, []);
 
-    // File input handler
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    // Load default sample on initial mount
+    useEffect(() => {
+        const sample = generateSampleBinaryFile('ecommerce_parquet');
+        handleLoadBuffer(sample.bytes, sample.fileName);
+    }, [handleLoadBuffer]);
 
-        setIsLoading(true);
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const buffer = event.target?.result as ArrayBuffer;
-            if (buffer) {
-                processBinaryBuffer(new Uint8Array(buffer), file.name);
+    const handleSelectSample = useCallback(
+        (presetId: 'ecommerce_parquet' | 'iot_avro' | 'ml_feather') => {
+            const sample = generateSampleBinaryFile(presetId);
+            handleLoadBuffer(sample.bytes, sample.fileName);
+        },
+        [handleLoadBuffer]
+    );
+
+    const handleFileUpload = useCallback(
+        async (file: File) => {
+            if (!file) return;
+            setErrorMsg(null);
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                handleLoadBuffer(new Uint8Array(arrayBuffer), file.name);
+            } catch (err: unknown) {
+                setErrorMsg(err instanceof Error ? err.message : 'Failed to read uploaded file.');
             }
-        };
-        reader.onerror = () => {
-            setErrorMsg('Browser failed to read local file.');
-            setIsLoading(false);
-        };
-        reader.readAsArrayBuffer(file);
-    };
+        },
+        [handleLoadBuffer]
+    );
 
-    // Load sample datasets
-    const handleLoadSample = (preset: 'ecommerce_parquet' | 'iot_avro' | 'ml_feather') => {
-        const sample = generateSampleBinaryFile(preset);
-        processBinaryBuffer(sample.bytes, sample.fileName);
-    };
+    const handleDrop = useCallback(
+        (e: React.DragEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) {
+                void handleFileUpload(file);
+            }
+        },
+        [handleFileUpload]
+    );
 
-    // Columns present in dataset
-    const allColumnNames = useMemo(() => {
-        if (!parseResult) return [];
-        return parseResult.schema.map((c) => c.name);
-    }, [parseResult]);
-
-    const visibleColumnNames = useMemo(() => {
-        return allColumnNames.filter((c) => !hiddenColumns.has(c));
-    }, [allColumnNames, hiddenColumns]);
-
-    // Queried & filtered rows
-    const queryResult = useMemo(() => {
-        if (!parseResult) return { rows: [], matchedCount: 0 };
-        return queryDataset(parseResult.rows, {
+    // Filtered, sorted, and projected dataset (supports both AND and OR filterLogic)
+    const queriedResult = useMemo(() => {
+        if (!dataset) return { rows: [], matchedCount: 0 };
+        return queryDataset(dataset.rows, {
             searchQuery,
             filters,
-            sort,
-            selectedColumns: visibleColumnNames,
+            filterLogic,
+            sort: sortConfig,
+            selectedColumns: selectedColumns.length > 0 ? selectedColumns : undefined,
         });
-    }, [parseResult, searchQuery, filters, sort, visibleColumnNames]);
+    }, [dataset, searchQuery, filters, filterLogic, sortConfig, selectedColumns]);
 
-    // Paginated rows for grid display
+    // Pagination slice
+    const totalPages = Math.max(1, Math.ceil(queriedResult.matchedCount / pageSize));
+    const safePage = Math.min(currentPage, totalPages);
     const paginatedRows = useMemo(() => {
-        const start = (currentPage - 1) * pageSize;
-        return queryResult.rows.slice(start, start + pageSize);
-    }, [queryResult.rows, currentPage, pageSize]);
+        const start = (safePage - 1) * pageSize;
+        return queriedResult.rows.slice(start, start + pageSize);
+    }, [queriedResult.rows, safePage, pageSize]);
 
-    const totalPages = Math.max(1, Math.ceil(queryResult.matchedCount / pageSize));
+    // Visible columns in grid
+    const visibleSchema = useMemo(() => {
+        if (!dataset) return [];
+        const set = new Set(selectedColumns);
+        return dataset.schema.filter((c) => set.has(c.name));
+    }, [dataset, selectedColumns]);
 
-    // Handle column sort toggle
-    const handleSortToggle = (col: string) => {
-        if (!sort || sort.column !== col) {
-            setSort({ column: col, direction: 'asc' });
-        } else if (sort.direction === 'asc') {
-            setSort({ column: col, direction: 'desc' });
-        } else {
-            setSort(null);
-        }
-    };
+    // Generated Schema / DDL Code
+    const generatedCode = useMemo(() => {
+        if (!dataset) return '';
+        return generateSchemaCode(dataset.schema, schemaTarget, tableName || 'dataset_table');
+    }, [dataset, schemaTarget, tableName]);
 
-    // Filter builder handlers
-    const addFilter = () => {
-        if (allColumnNames.length === 0) return;
-        setFilters((prev) => [
-            ...prev,
-            { column: allColumnNames[0], operator: 'eq', value: '' },
-        ]);
-    };
-
-    const updateFilter = (index: number, patch: Partial<FilterCondition>) => {
-        setFilters((prev) =>
-            prev.map((f, i) => (i === index ? { ...f, ...patch } : f))
-        );
-    };
-
-    const removeFilter = (index: number) => {
-        setFilters((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    // Schema DDL Code
-    const generatedDdl = useMemo(() => {
-        if (!parseResult) return '';
-        return generateSchemaCode(parseResult.schema, selectedTargetLang, ddlTableName);
-    }, [parseResult, selectedTargetLang, ddlTableName]);
-
-    const handleCopyDdl = () => {
-        navigator.clipboard.writeText(generatedDdl);
-        setDdlCopied(true);
-        setTimeout(() => setDdlCopied(false), 2000);
-    };
-
-    // Export output text
-    const exportedText = useMemo(() => {
-        if (!parseResult) return '';
-        const rowsToExport = exportScope === 'all' ? parseResult.rows : queryResult.rows;
-        return exportDatasetToText(rowsToExport, visibleColumnNames, {
+    // Generated Export Text Preview
+    const exportPreviewText = useMemo(() => {
+        if (!dataset) return '';
+        const targetRows = exportScope === 'filtered' ? queriedResult.rows : dataset.rows;
+        const previewRows = targetRows.slice(0, 100);
+        const cols = exportScope === 'filtered' ? selectedColumns : dataset.schema.map((s) => s.name);
+        return exportDatasetToText(previewRows, cols, {
             format: exportFormat,
-            csvDelimiter: exportDelimiter,
-            includeUtf8Bom: includeBom,
+            csvDelimiter,
+            includeUtf8Bom: false,
             sanitizeFormulas,
-            tableName: exportTableName,
+            tableName: tableName || 'dataset_table',
             prettyJson,
+            selectedColumns: cols,
         });
     }, [
-        parseResult,
+        dataset,
         exportScope,
-        queryResult.rows,
-        visibleColumnNames,
+        queriedResult.rows,
+        selectedColumns,
         exportFormat,
-        exportDelimiter,
-        includeBom,
+        csvDelimiter,
         sanitizeFormulas,
-        exportTableName,
+        tableName,
         prettyJson,
     ]);
 
-    const handleDownloadExport = () => {
-        if (!exportedText) return;
-        const extMap: Record<ExportFormat, string> = {
-            csv: 'csv',
-            tsv: 'tsv',
-            json: 'json',
-            jsonl: 'jsonl',
-            sql: 'sql',
-            markdown: 'md',
-            html: 'html',
-            xlsx: 'csv',
-        };
+    // Add filter handler
+    const handleAddFilter = useCallback(() => {
+        if (!newFilterCol) return;
+        if (newFilterOp !== 'is_null' && newFilterOp !== 'is_not_null' && newFilterVal.trim() === '') {
+            return;
+        }
+        setFilters((prev) => [
+            ...prev,
+            {
+                column: newFilterCol,
+                operator: newFilterOp,
+                value: newFilterVal,
+                join: filterLogic,
+            },
+        ]);
+        setNewFilterVal('');
+        setCurrentPage(1);
+    }, [newFilterCol, newFilterOp, newFilterVal, filterLogic]);
+
+    const handleRemoveFilter = useCallback((idx: number) => {
+        setFilters((prev) => prev.filter((_, i) => i !== idx));
+        setCurrentPage(1);
+    }, []);
+
+    const handleToggleSort = useCallback((colName: string) => {
+        setSortConfig((prev) => {
+            if (!prev || prev.column !== colName) {
+                return { column: colName, direction: 'asc' };
+            }
+            if (prev.direction === 'asc') {
+                return { column: colName, direction: 'desc' };
+            }
+            return null;
+        });
+    }, []);
+
+    const handleToggleColumn = useCallback((colName: string) => {
+        setSelectedColumns((prev) =>
+            prev.includes(colName) ? prev.filter((c) => c !== colName) : [...prev, colName]
+        );
+    }, []);
+
+    // Download Text/Tabular Export or Native Binary PKZIP .XLSX Workbook
+    const handleDownloadExport = useCallback(() => {
+        if (!dataset) return;
+        const targetRows = exportScope === 'filtered' ? queriedResult.rows : dataset.rows;
+        const cols = exportScope === 'filtered' ? selectedColumns : dataset.schema.map((s) => s.name);
+        const baseName = (dataset.metadata.fileName || 'dataset').replace(/\.[a-z0-9]+$/i, '');
+
+        if (exportFormat === 'xlsx') {
+            const xlsxBytes = encodeXlsxWorkbookBinary(targetRows, cols, {
+                sheetName: (tableName || 'Dataset').slice(0, 31),
+                sanitizeFormulas,
+            });
+            const blob = new Blob([xlsxBytes as unknown as BlobPart], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return;
+        }
+
+        const fullText = exportDatasetToText(targetRows, cols, {
+            format: exportFormat,
+            csvDelimiter,
+            includeUtf8Bom,
+            sanitizeFormulas,
+            tableName: tableName || 'dataset_table',
+            prettyJson,
+            selectedColumns: cols,
+        });
+
         const mimeMap: Record<ExportFormat, string> = {
             csv: 'text/csv;charset=utf-8',
             tsv: 'text/tab-separated-values;charset=utf-8',
@@ -239,878 +376,1426 @@ export default function ParquetViewer() {
             sql: 'application/sql;charset=utf-8',
             markdown: 'text/markdown;charset=utf-8',
             html: 'text/html;charset=utf-8',
-            xlsx: 'text/csv;charset=utf-8',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         };
-        const ext = extMap[exportFormat] || 'txt';
-        const mime = mimeMap[exportFormat] || 'text/plain';
-        const blob = new Blob([exportedText], { type: mime });
+        const extMap: Record<ExportFormat, string> = {
+            csv: 'csv',
+            tsv: 'tsv',
+            json: 'json',
+            jsonl: 'jsonl',
+            sql: 'sql',
+            markdown: 'md',
+            html: 'html',
+            xlsx: 'xlsx',
+        };
+
+        const blob = new Blob([fullText], { type: mimeMap[exportFormat] });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${exportTableName}.${ext}`;
+        a.download = `${baseName}.${extMap[exportFormat]}`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    }, [
+        dataset,
+        exportScope,
+        queriedResult.rows,
+        selectedColumns,
+        exportFormat,
+        csvDelimiter,
+        includeUtf8Bom,
+        sanitizeFormulas,
+        tableName,
+        prettyJson,
+    ]);
 
-    const handleCopyExport = () => {
-        navigator.clipboard.writeText(exportedText);
-        setExportCopied(true);
-        setTimeout(() => setExportCopied(false), 2000);
-    };
+    // Cross-Format Binary Transcoding Download (.parquet, .avro, .feather)
+    const handleDownloadBinaryTranscode = useCallback(
+        (targetBinary: 'parquet' | 'avro' | 'feather') => {
+            if (!dataset) return;
+            const targetRows = exportScope === 'filtered' ? queriedResult.rows : dataset.rows;
+            const baseName = (dataset.metadata.fileName || 'dataset').replace(/\.[a-z0-9]+$/i, '');
+            let bytes: Uint8Array;
+            let ext: string;
+            if (targetBinary === 'parquet') {
+                bytes = encodeParquetBinary(targetRows);
+                ext = 'parquet';
+            } else if (targetBinary === 'avro') {
+                bytes = encodeAvroBinary(targetRows);
+                ext = 'avro';
+            } else {
+                bytes = encodeFeatherBinary(targetRows);
+                ext = 'feather';
+            }
+            const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${baseName}_converted.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        },
+        [dataset, exportScope, queriedResult.rows]
+    );
 
-    // Binary Transcoder Download
-    const handleDownloadBinary = (target: 'parquet' | 'avro' | 'feather') => {
-        if (!parseResult) return;
-        const rowsToExport = exportScope === 'all' ? parseResult.rows : queryResult.rows;
-        let bytes: Uint8Array;
-        let ext = 'bin';
-
-        if (target === 'parquet') {
-            bytes = encodeParquetBinary(rowsToExport, parseResult.metadata.keyValueMetadata);
-            ext = 'parquet';
-        } else if (target === 'avro') {
-            bytes = encodeAvroBinary(rowsToExport, exportTableName);
-            ext = 'avro';
-        } else {
-            bytes = encodeFeatherBinary(rowsToExport, parseResult.metadata.keyValueMetadata);
-            ext = 'feather';
-        }
-
-        const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/octet-stream' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${exportTableName}.${ext}`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
+    const inspectedRow =
+        inspectedRowIndex !== null && queriedResult.rows[inspectedRowIndex]
+            ? queriedResult.rows[inspectedRowIndex]
+            : null;
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-6">
-            {/* Header & Hero Card */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xs">
-                <div className="flex flex-col gap-2">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                            <div className="p-2.5 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl text-indigo-600 dark:text-indigo-400 shrink-0">
-                                <Database className="w-5 h-5 sm:w-6 sm:h-6" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-                                    Parquet, Avro &amp; Feather Studio
-                                </h2>
-                            </div>
-                        </div>
-                        <span className="inline-flex items-center gap-1.5 self-start sm:self-center px-3 py-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full shrink-0">
-                            <ShieldCheck className="w-3.5 h-3.5" /> 100% Client-Side Sandbox
-                        </span>
-                    </div>
-                    <p className="w-full text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-                        Zero server uploads. Inspect Apache Parquet (<code>PAR1</code>), Avro (<code>Obj</code>), and Arrow Feather (<code>ARROW1</code>) directly in memory with lossless 64-bit <code>BigInt</code> safety.
-                    </p>
-                </div>
-
-                {/* 12-Column Responsive Grid: Dropzone (lg:col-span-7) & Sample Presets (lg:col-span-5) */}
-                <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4">
-                    {/* Upload Drag & Drop Area */}
-                    <div className="lg:col-span-7 min-w-0">
+        <div className="space-y-6">
+            {/* Top Dropzone & Sample Studio Bar */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    {/* Drag and drop zone */}
+                    <div
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            setIsDragging(true);
+                        }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Upload Parquet, Avro, Feather, Arrow, CSV, or JSON file"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                fileInputRef.current?.click();
+                            }
+                        }}
+                        className={`min-w-0 lg:col-span-7 flex flex-col justify-center items-center text-center rounded-xl border-2 border-dashed p-5 sm:p-6 transition-all cursor-pointer ${isDragging
+                                ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/30'
+                                : 'border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 bg-slate-50/60 dark:bg-slate-800/40'
+                            }`}
+                    >
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept=".parquet,.pq,.avro,.feather,.arrow,.ipc,.csv,.tsv,.jsonl,.json"
-                            onChange={handleFileChange}
+                            accept=".parquet,.avro,.feather,.arrow,.ipc,.json,.jsonl,.ndjson,.csv,.tsv"
                             className="hidden"
-                        />
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                const dropped = e.dataTransfer.files?.[0];
-                                if (dropped) {
-                                    const reader = new FileReader();
-                                    reader.onload = (event) => {
-                                        const buf = event.target?.result as ArrayBuffer;
-                                        if (buf) processBinaryBuffer(new Uint8Array(buf), dropped.name);
-                                    };
-                                    reader.readAsArrayBuffer(dropped);
-                                }
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) void handleFileUpload(file);
+                                e.target.value = '';
                             }}
-                            className="h-full min-h-[170px] border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 rounded-xl p-4 sm:p-5 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-900/50 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 group flex flex-col items-center justify-center gap-2"
-                        >
-                            <div className="p-3 bg-white dark:bg-slate-800 rounded-full shadow-xs group-hover:scale-105 transition">
-                                <Upload className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                            </div>
-                            <div className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
-                                Click to select or drop a <span className="font-semibold text-indigo-600 dark:text-indigo-400">.parquet</span>, <span className="font-semibold text-indigo-600 dark:text-indigo-400">.avro</span>, or <span className="font-semibold text-indigo-600 dark:text-indigo-400">.feather</span> file
-                            </div>
-                            <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 max-w-md">
-                                {isLoading ? 'Parsing binary columnar payload in local memory...' : 'Also accepts JSON Lines (.jsonl) and CSV files for instant binary conversion.'}
-                            </p>
+                        />
+                        <div className="w-12 h-12 rounded-2xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-3">
+                            <Upload className="w-6 h-6" />
+                        </div>
+                        <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                            Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
+                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift TCompactProtocol, Snappy/RLE),{' '}
+                            <span className="font-mono font-semibold">.avro</span> (Obj1 Binary),{' '}
+                            <span className="font-mono font-semibold">.feather / .arrow</span> (Arrow IPC FlatBuffers), plus{' '}
+                            <span className="font-mono font-semibold">.jsonl / .csv</span>. 100% client-side in browser memory.
+                        </p>
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+                            <span>Zero Server Upload • Native .XLSX &amp; CSV • CWE-1236 Safe</span>
                         </div>
                     </div>
 
-                    {/* 3 Sample Presets Card */}
-                    <div className="lg:col-span-5 min-w-0 flex flex-col justify-between gap-2 p-3.5 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                            Or Load Built-In Binary Test Presets:
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={() => handleLoadSample('ecommerce_parquet')}
-                            className="w-full text-left p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/30 transition flex flex-wrap items-center justify-between gap-1.5 min-h-[40px]"
-                        >
-                            <span className="font-semibold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>📦 E-Commerce Lakehouse</span>
-                            </span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/40 shrink-0">
-                                Parquet v1 • Snappy • INT64
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleLoadSample('iot_avro')}
-                            className="w-full text-left p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 transition flex flex-wrap items-center justify-between gap-1.5 min-h-[40px]"
-                        >
-                            <span className="font-semibold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>⚡ IoT Sensor Stream</span>
-                            </span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/40 shrink-0">
-                                Avro Container • ZigZag • Sync
-                            </span>
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={() => handleLoadSample('ml_feather')}
-                            className="w-full text-left p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50/30 dark:hover:bg-purple-950/30 transition flex flex-wrap items-center justify-between gap-1.5 min-h-[40px]"
-                        >
-                            <span className="font-semibold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <span>🧠 ML Embeddings Matrix</span>
-                            </span>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900/40 shrink-0">
-                                Arrow Feather • IPC • Float32
-                            </span>
-                        </button>
+                    {/* 3 Built-In Sample Binary Presets */}
+                    <div className="min-w-0 lg:col-span-5 flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/30 p-4">
+                        <div>
+                            <div className="flex items-center justify-between mb-2.5">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                    Instant Binary Sample Datasets
+                                </span>
+                                <span className="text-[11px] font-medium text-slate-400">1-Click Load</span>
+                            </div>
+                            <div className="space-y-2">
+                                {SAMPLE_PRESETS.map((sample) => {
+                                    const isCurrent = dataset?.metadata.fileName.includes(
+                                        sample.id === 'ecommerce_parquet'
+                                            ? 'ecommerce_orders'
+                                            : sample.id === 'iot_avro'
+                                                ? 'iot_sensor'
+                                                : 'ml_feature'
+                                    );
+                                    return (
+                                        <button
+                                            key={sample.id}
+                                            type="button"
+                                            onClick={() => handleSelectSample(sample.id)}
+                                            className={`w-full text-left p-2.5 rounded-lg border transition-all ${isCurrent
+                                                    ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs'
+                                                    : 'border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 hover:border-blue-400'
+                                                }`}
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-1.5">
+                                                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                                    {sample.label}
+                                                </span>
+                                                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-semibold">
+                                                    {sample.badge}
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                                                {sample.description}
+                                            </p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Active File Telemetry Bar (6 Stat Cards) */}
-                {fileData && parseResult && (
-                    <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
-                            {/* Card 1: Filename */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Loaded File</span>
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block mt-0.5" title={fileData.name}>
-                                    {fileData.name}
-                                </span>
-                            </div>
-
-                            {/* Card 2: Format & Magic */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Format &amp; Magic</span>
-                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase truncate block mt-0.5">
-                                    {parseResult.format} ({parseResult.metadata.magicBytes})
-                                </span>
-                            </div>
-
-                            {/* Card 3: Size */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Container Size</span>
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block mt-0.5">
-                                    {(fileData.size / 1024).toFixed(1)} KB
-                                </span>
-                            </div>
-
-                            {/* Card 4: Total Rows */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Total Rows</span>
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block mt-0.5">
-                                    {parseResult.metadata.totalRows.toLocaleString()}
-                                </span>
-                            </div>
-
-                            {/* Card 5: Columns */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Schema Columns</span>
-                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate block mt-0.5">
-                                    {parseResult.schema.length} cols
-                                </span>
-                            </div>
-
-                            {/* Card 6: Codec & Speed */}
-                            <div className="min-w-0 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-                                <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">Codec • Speed</span>
-                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase truncate block mt-0.5" title={`${parseResult.metadata.compressionCodec} (${parseResult.metadata.parseTimeMs.toFixed(1)}ms)`}>
-                                    {parseResult.metadata.compressionCodec} ({parseResult.metadata.parseTimeMs.toFixed(1)}ms)
-                                </span>
-                            </div>
+                {/* Error Banner */}
+                {errorMsg && (
+                    <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3.5 text-sm text-red-700 dark:text-red-300">
+                        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                            <p className="font-bold">Binary Container Parse Alert</p>
+                            <p className="text-xs mt-0.5 break-words">{errorMsg}</p>
                         </div>
+                        <button
+                            type="button"
+                            onClick={() => setErrorMsg(null)}
+                            className="text-xs font-semibold underline shrink-0"
+                        >
+                            Dismiss
+                        </button>
                     </div>
                 )}
 
-                {errorMsg && (
-                    <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0" />
-                        <span className="break-words">{errorMsg}</span>
+                {/* Active File Telemetry Bar */}
+                {dataset && (
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Detected Format
+                            </span>
+                            <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                                <Database className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span className="text-sm font-bold text-slate-900 dark:text-white uppercase truncate">
+                                    {dataset.format}
+                                </span>
+                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                                    {dataset.metadata.magicBytes}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Rows × Columns
+                            </span>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
+                                {dataset.metadata.totalRows.toLocaleString()} × {dataset.metadata.totalColumns} cols
+                            </p>
+                        </div>
+
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Codec &amp; Ratio
+                            </span>
+                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1 font-mono truncate">
+                                {dataset.metadata.compressionCodec} ({dataset.metadata.compressionRatio}x)
+                            </p>
+                        </div>
+
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Binary Footprint
+                            </span>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
+                                {formatBytes(dataset.metadata.fileSizeBytes)}{' '}
+                                <span className="text-xs font-normal text-slate-500">
+                                    ({dataset.metadata.rowGroupCount} RG)
+                                </span>
+                            </p>
+                        </div>
+
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Parse Latency
+                            </span>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-mono truncate">
+                                {dataset.metadata.parseTimeMs.toFixed(2)} ms
+                            </p>
+                        </div>
+
+                        <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
+                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                Active File
+                            </span>
+                            <p
+                                className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate font-mono"
+                                title={dataset.metadata.fileName}
+                            >
+                                {dataset.metadata.fileName}
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>
 
-            {/* 5-Tab Workbench Navigation Bar */}
-            {parseResult && (
-                <div className="w-full overflow-x-auto overscroll-x-contain pb-1 border-b border-slate-200 dark:border-slate-800">
-                    <div className="flex items-center gap-1.5 sm:gap-2 min-w-max sm:min-w-0 sm:flex-wrap">
-                        {[
-                            { id: 'explorer', label: 'Data Explorer Grid', icon: FileSpreadsheet },
-                            { id: 'schema', label: 'Schema & DDL Generator', icon: Code2 },
-                            { id: 'profiler', label: 'Column Profiler & Stats', icon: BarChart3 },
-                            { id: 'xray', label: 'Binary X-Ray Inspector', icon: Binary },
-                            { id: 'export', label: 'Export & Converter Studio', icon: Download },
-                        ].map((tab) => {
-                            const Icon = tab.icon;
-                            const active = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    type="button"
-                                    onClick={() => setActiveTab(tab.id as ActiveTab)}
-                                    className={`px-3.5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 transition whitespace-nowrap min-h-[40px] shrink-0 ${
-                                        active
-                                            ? 'bg-indigo-600 text-white shadow-xs'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                    }`}
+            {/* 5-Tab Workbench Navigation */}
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                {[
+                    {
+                        id: 'grid' as const,
+                        label: 'Data Explorer Grid',
+                        icon: TableIcon,
+                        badge: dataset ? `${queriedResult.matchedCount}` : undefined,
+                    },
+                    {
+                        id: 'schema' as const,
+                        label: 'Schema & DDL Generator',
+                        icon: Code2,
+                        badge: dataset ? `${dataset.schema.length} cols` : undefined,
+                    },
+                    {
+                        id: 'profiler' as const,
+                        label: 'Column Profiler & Stats',
+                        icon: BarChart3,
+                    },
+                    {
+                        id: 'xray' as const,
+                        label: 'Binary X-Ray Inspector',
+                        icon: Binary,
+                        badge: dataset?.metadata.magicBytes,
+                    },
+                    {
+                        id: 'export' as const,
+                        label: 'Export & Converter Studio',
+                        icon: Download,
+                        badge: '11 Formats',
+                    },
+                ].map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`inline-flex items-center justify-between sm:justify-start gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${isActive
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-blue-400'
+                                }`}
+                        >
+                            <span className="inline-flex items-center gap-2">
+                                <Icon className="w-4 h-4 shrink-0" />
+                                <span>{tab.label}</span>
+                            </span>
+                            {tab.badge && (
+                                <span
+                                    className={`text-[11px] font-mono px-2 py-0.5 rounded-full ${isActive
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                        }`}
                                 >
-                                    <Icon className="w-4 h-4 shrink-0" />
-                                    <span>{tab.label}</span>
+                                    {tab.badge}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* ============================================================
+          TAB 1: DATA EXPLORER GRID
+          ============================================================ */}
+            {activeTab === 'grid' && dataset && (
+                <div className="space-y-4">
+                    {/* Search, Filter Builder (AND/OR) & Column Projection Bar */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            {/* Global Full-Text Search */}
+                            <div className="relative flex-1 min-w-0">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setCurrentPage(1);
+                                    }}
+                                    placeholder="Search across all rows, nested structs, and string columns..."
+                                    aria-label="Global full-text search across dataset"
+                                    className="w-full pl-10 pr-9 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/70 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setCurrentPage(1);
+                                        }}
+                                        aria-label="Clear search query"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Column Projection Picker Toggle */}
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowColumnPicker((prev) => !prev)}
+                                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-blue-500"
+                                >
+                                    <Layers className="w-4 h-4 text-blue-500" />
+                                    Columns ({selectedColumns.length}/{dataset.schema.length})
                                 </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
-            {/* Tab 1: Data Explorer Grid */}
-            {parseResult && activeTab === 'explorer' && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                    {/* Controls Row */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        <div className="relative w-full sm:max-w-md">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Global search across all columns..."
-                                value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[38px]"
-                            />
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                            <button
-                                type="button"
-                                onClick={addFilter}
-                                className="w-full sm:w-auto px-3.5 py-2 text-xs font-medium rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center gap-1.5 min-h-[38px]"
-                            >
-                                <Filter className="w-3.5 h-3.5 text-indigo-500" /> Add Filter ({filters.length})
-                            </button>
-
-                            {/* Page size selector */}
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 min-h-[38px]"
-                            >
-                                <option value={10}>10 rows per page</option>
-                                <option value={25}>25 rows per page</option>
-                                <option value={50}>50 rows per page</option>
-                                <option value={100}>100 rows per page</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Filter Builder List */}
-                    {filters.length > 0 && (
-                        <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5">
-                            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                <span>Active Predicate Filters (AND):</span>
                                 <button
                                     type="button"
-                                    onClick={() => setFilters([])}
-                                    className="text-indigo-600 dark:text-indigo-400 hover:underline min-h-[32px] flex items-center"
+                                    onClick={() => setActiveTab('export')}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs"
                                 >
-                                    Clear All Filters
+                                    <Download className="w-3.5 h-3.5" />
+                                    Export CSV / .XLSX
                                 </button>
                             </div>
-                            {filters.map((f, idx) => (
-                                <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 min-w-0">
+                        </div>
+
+                        {/* Column Projection Drawer */}
+                        {showColumnPicker && (
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        Column Projection &amp; PII Masking (Select columns to display &amp; export)
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedColumns(dataset.schema.map((c) => c.name))}
+                                            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            Select All
+                                        </button>
+                                        <span className="text-slate-300 dark:text-slate-600">|</span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedColumns(dataset.schema.slice(0, 1).map((c) => c.name))
+                                            }
+                                            className="text-xs font-semibold text-slate-500 hover:underline"
+                                        >
+                                            First Column Only
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {dataset.schema.map((col) => {
+                                        const checked = selectedColumns.includes(col.name);
+                                        return (
+                                            <button
+                                                key={col.name}
+                                                type="button"
+                                                onClick={() => handleToggleColumn(col.name)}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${checked
+                                                        ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold'
+                                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500'
+                                                    }`}
+                                            >
+                                                {checked ? (
+                                                    <CheckSquare className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                                ) : (
+                                                    <Square className="w-3.5 h-3.5 shrink-0" />
+                                                )}
+                                                <span>{col.name}</span>
+                                                <span className="text-[10px] opacity-75">({col.logicalType})</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Predicates / Filter Builder with AND / OR Logic Toggle */}
+                        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 pt-1">
+                            <div className="inline-flex items-center justify-between sm:justify-start gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 mr-1">
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Filter className="w-3.5 h-3.5 text-blue-500" />
+                                    Predicate Filter:
+                                </span>
+                                {/* AND / OR Combinator Switch */}
+                                <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
+                                    {(['AND', 'OR'] as const).map((mode) => (
+                                        <button
+                                            key={mode}
+                                            type="button"
+                                            onClick={() => setFilterLogic(mode)}
+                                            className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold transition-all ${filterLogic === mode
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+                                                }`}
+                                        >
+                                            {mode}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <select
+                                value={newFilterCol}
+                                onChange={(e) => setNewFilterCol(e.target.value)}
+                                aria-label="Filter column"
+                                className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200"
+                            >
+                                {dataset.schema.map((col) => (
+                                    <option key={col.name} value={col.name}>
+                                        {col.name} ({col.logicalType})
+                                    </option>
+                                ))}
+                            </select>
+
+                            <select
+                                value={newFilterOp}
+                                onChange={(e) => setNewFilterOp(e.target.value as FilterOperator)}
+                                aria-label="Filter operator"
+                                className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-800 dark:text-slate-200"
+                            >
+                                {FILTER_OPERATORS.map((op) => (
+                                    <option key={op.id} value={op.id}>
+                                        {op.label}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {newFilterOp !== 'is_null' && newFilterOp !== 'is_not_null' && (
+                                <input
+                                    type="text"
+                                    value={newFilterVal}
+                                    onChange={(e) => setNewFilterVal(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddFilter();
+                                        }
+                                    }}
+                                    placeholder="Filter value..."
+                                    aria-label="Filter value"
+                                    className="w-full sm:w-44 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                                />
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={handleAddFilter}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                Add ({filterLogic})
+                            </button>
+
+                            {filters.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setFilters([]);
+                                        setCurrentPage(1);
+                                    }}
+                                    className="text-xs text-red-600 dark:text-red-400 font-semibold hover:underline ml-1"
+                                >
+                                    Clear All ({filters.length})
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Active Filter Pills */}
+                        {filters.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                                {filters.map((f, idx) => (
+                                    <React.Fragment key={`${f.column}-${idx}`}>
+                                        {idx > 0 && (
+                                            <span className="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                                {f.join ?? filterLogic}
+                                            </span>
+                                        )}
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-xs font-mono text-blue-700 dark:text-blue-300">
+                                            <strong>{f.column}</strong> {f.operator}{' '}
+                                            {f.operator !== 'is_null' && f.operator !== 'is_not_null' && (
+                                                <span>&quot;{f.value}&quot;</span>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveFilter(idx)}
+                                                aria-label={`Remove filter on ${f.column}`}
+                                                className="hover:text-red-500"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </span>
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Interactive Data Table + Optional Row Drawer */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                        <div
+                            className={`min-w-0 ${inspectedRow ? 'lg:col-span-8' : 'lg:col-span-12'
+                                } rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm`}
+                        >
+                            <div className="w-full overflow-x-auto overscroll-x-contain max-h-[540px]">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700">
+                                        <tr>
+                                            <th className="py-2.5 px-3 text-[11px] font-mono uppercase text-slate-400 w-12 text-center">
+                                                #
+                                            </th>
+                                            {visibleSchema.map((col) => {
+                                                const isSorted = sortConfig?.column === col.name;
+                                                return (
+                                                    <th
+                                                        key={col.name}
+                                                        onClick={() => handleToggleSort(col.name)}
+                                                        className="py-2.5 px-3.5 text-xs font-bold text-slate-800 dark:text-slate-100 cursor-pointer hover:bg-slate-200/60 dark:hover:bg-slate-700/60 select-none whitespace-nowrap"
+                                                    >
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="font-mono">{col.name}</span>
+                                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-normal">
+                                                                {col.logicalType}
+                                                            </span>
+                                                            {isSorted ? (
+                                                                sortConfig.direction === 'asc' ? (
+                                                                    <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                                                ) : (
+                                                                    <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                                                )
+                                                            ) : (
+                                                                <ArrowUpDown className="w-3 h-3 text-slate-400 opacity-60" />
+                                                            )}
+                                                        </div>
+                                                    </th>
+                                                );
+                                            })}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800 text-xs font-mono">
+                                        {paginatedRows.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={visibleSchema.length + 1}
+                                                    className="py-12 text-center text-slate-500 dark:text-slate-400 font-sans"
+                                                >
+                                                    No rows match your current search or filter predicates.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            paginatedRows.map((row, idx) => {
+                                                const absoluteRowIdx = (safePage - 1) * pageSize + idx;
+                                                const isSelected = inspectedRowIndex === absoluteRowIdx;
+                                                return (
+                                                    <tr
+                                                        key={absoluteRowIdx}
+                                                        onClick={() =>
+                                                            setInspectedRowIndex(isSelected ? null : absoluteRowIdx)
+                                                        }
+                                                        className={`cursor-pointer transition-colors ${isSelected
+                                                                ? 'bg-blue-50/90 dark:bg-blue-950/50'
+                                                                : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                                            }`}
+                                                    >
+                                                        <td className="py-2 px-3 text-center text-[11px] text-slate-400 font-semibold">
+                                                            {absoluteRowIdx + 1}
+                                                        </td>
+                                                        {visibleSchema.map((col) => {
+                                                            const val = row[col.name];
+                                                            const isNull = val === null || val === undefined;
+                                                            const isBool = typeof val === 'boolean';
+                                                            const isObj = typeof val === 'object' && val !== null;
+                                                            return (
+                                                                <td
+                                                                    key={col.name}
+                                                                    className="py-2 px-3.5 max-w-[260px] truncate text-slate-800 dark:text-slate-200"
+                                                                    title={formatCellPreview(val)}
+                                                                >
+                                                                    {isNull ? (
+                                                                        <span className="px-1.5 py-0.5 rounded bg-slate-200/70 dark:bg-slate-800 text-slate-400 text-[10px] italic">
+                                                                            NULL
+                                                                        </span>
+                                                                    ) : isBool ? (
+                                                                        <span
+                                                                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${val
+                                                                                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                                                    : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                                                                }`}
+                                                                        >
+                                                                            {String(val)}
+                                                                        </span>
+                                                                    ) : isObj ? (
+                                                                        <span className="text-indigo-600 dark:text-indigo-400">
+                                                                            {formatCellPreview(val)}
+                                                                        </span>
+                                                                    ) : (
+                                                                        formatCellPreview(val)
+                                                                    )}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Pagination Footer */}
+                            <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span>
+                                        Showing{' '}
+                                        <strong className="text-slate-900 dark:text-white">
+                                            {queriedResult.matchedCount === 0
+                                                ? 0
+                                                : (safePage - 1) * pageSize + 1}
+                                        </strong>{' '}
+                                        to{' '}
+                                        <strong className="text-slate-900 dark:text-white">
+                                            {Math.min(safePage * pageSize, queriedResult.matchedCount)}
+                                        </strong>{' '}
+                                        of{' '}
+                                        <strong className="text-slate-900 dark:text-white">
+                                            {queriedResult.matchedCount.toLocaleString()}
+                                        </strong>{' '}
+                                        rows
+                                    </span>
+                                    <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
+                                    <span className="text-[11px] text-blue-600 dark:text-blue-400">
+                                        Click any row to inspect nested JSON &amp; types
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center justify-between sm:justify-end gap-3">
                                     <select
-                                        value={f.column}
-                                        onChange={(e) => updateFilter(idx, { column: e.target.value })}
-                                        className="w-full sm:w-44 px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 min-h-[36px]"
+                                        value={pageSize}
+                                        onChange={(e) => {
+                                            setPageSize(Number(e.target.value));
+                                            setCurrentPage(1);
+                                        }}
+                                        aria-label="Rows per page"
+                                        className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs"
                                     >
-                                        {allColumnNames.map((c) => (
-                                            <option key={c} value={c}>
-                                                {c}
+                                        {[10, 25, 50, 100, 250].map((size) => (
+                                            <option key={size} value={size}>
+                                                {size} / page
                                             </option>
                                         ))}
                                     </select>
 
-                                    <select
-                                        value={f.operator}
-                                        onChange={(e) => updateFilter(idx, { operator: e.target.value as FilterOperator })}
-                                        className="w-full sm:w-40 px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 min-h-[36px]"
-                                    >
-                                        <option value="eq">= (equals)</option>
-                                        <option value="neq">!= (not equals)</option>
-                                        <option value="gt">&gt; (greater)</option>
-                                        <option value="gte">&gt;= (greater or equal)</option>
-                                        <option value="lt">&lt; (less)</option>
-                                        <option value="lte">&lt;= (less or equal)</option>
-                                        <option value="contains">contains</option>
-                                        <option value="starts_with">starts with</option>
-                                        <option value="ends_with">ends with</option>
-                                        <option value="is_null">is null</option>
-                                        <option value="is_not_null">is not null</option>
-                                    </select>
-
-                                    {f.operator !== 'is_null' && f.operator !== 'is_not_null' && (
-                                        <input
-                                            type="text"
-                                            placeholder="Filter value..."
-                                            value={f.value}
-                                            onChange={(e) => updateFilter(idx, { value: e.target.value })}
-                                            className="w-full sm:flex-1 px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 min-h-[36px]"
-                                        />
-                                    )}
-
-                                    <button
-                                        type="button"
-                                        onClick={() => removeFilter(idx)}
-                                        className="self-end sm:self-center p-2 text-slate-400 hover:text-red-500 rounded hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0"
-                                        title="Remove filter"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            type="button"
+                                            disabled={safePage <= 1}
+                                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                            aria-label="Previous page"
+                                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-900"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <span className="px-2 font-mono font-bold text-slate-800 dark:text-slate-200">
+                                            {safePage} / {totalPages}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            disabled={safePage >= totalPages}
+                                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                            aria-label="Next page"
+                                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-white dark:hover:bg-slate-900"
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
-                            ))}
+                            </div>
                         </div>
-                    )}
 
-                    {/* Table Grid */}
-                    <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
-                            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold select-none">
-                                <tr>
-                                    <th className="py-2.5 px-3 w-12 text-center">#</th>
-                                    {visibleColumnNames.map((col) => {
-                                        const isSorted = sort?.column === col;
+                        {/* Row JSON & Type Inspector Drawer */}
+                        {inspectedRow && inspectedRowIndex !== null && (
+                            <div className="min-w-0 lg:col-span-4 rounded-2xl border border-blue-500/40 bg-white dark:bg-slate-900 p-4 shadow-md space-y-3">
+                                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                            <Eye className="w-4 h-4 text-blue-500" />
+                                            Row #{inspectedRowIndex + 1} Deep Inspector
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500">
+                                            Nested Struct, Array &amp; INT64 Tree View
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                triggerCopy(JSON.stringify(inspectedRow, null, 2), 'row-json')
+                                            }
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold"
+                                        >
+                                            {copiedId === 'row-json' ? (
+                                                <>
+                                                    <Check className="w-3.5 h-3.5" />
+                                                    Copied
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy className="w-3.5 h-3.5" />
+                                                    Copy JSON
+                                                </>
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setInspectedRowIndex(null)}
+                                            aria-label="Close row inspector"
+                                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                                    {dataset.schema.map((col) => {
+                                        const val = inspectedRow[col.name];
                                         return (
-                                            <th
-                                                key={col}
-                                                onClick={() => handleSortToggle(col)}
-                                                className="py-2.5 px-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition whitespace-nowrap"
+                                            <div
+                                                key={col.name}
+                                                className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60"
                                             >
-                                                <div className="flex items-center gap-1.5">
-                                                    <span>{col}</span>
-                                                    {isSorted ? (
-                                                        sort?.direction === 'asc' ? (
-                                                            <ArrowUp className="w-3.5 h-3.5 text-indigo-600" />
-                                                        ) : (
-                                                            <ArrowDown className="w-3.5 h-3.5 text-indigo-600" />
-                                                        )
-                                                    ) : (
-                                                        <ArrowUpDown className="w-3 h-3 text-slate-300 dark:text-slate-600 opacity-60" />
-                                                    )}
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                                                        {col.name}
+                                                    </span>
+                                                    <span className="font-mono text-blue-600 dark:text-blue-400">
+                                                        {col.physicalType} → {col.logicalType}
+                                                    </span>
                                                 </div>
-                                            </th>
+                                                <pre className="mt-1 text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap break-all">
+                                                    {typeof val === 'object' && val !== null
+                                                        ? JSON.stringify(val, null, 2)
+                                                        : formatCellPreview(val)}
+                                                </pre>
+                                            </div>
                                         );
                                     })}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-                                {paginatedRows.length === 0 ? (
-                                    <tr>
-                                        <td
-                                            colSpan={visibleColumnNames.length + 1}
-                                            className="py-8 text-center text-slate-400 font-sans"
-                                        >
-                                            No rows match the active search and filter conditions.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    paginatedRows.map((row, rIdx) => {
-                                        const globalRowIndex = (currentPage - 1) * pageSize + rIdx + 1;
-                                        return (
-                                            <tr
-                                                key={rIdx}
-                                                className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition"
-                                            >
-                                                <td className="py-2 px-3 text-center text-slate-400 font-sans text-[11px]">
-                                                    {globalRowIndex}
-                                                </td>
-                                                {visibleColumnNames.map((col) => {
-                                                    const cellVal = row[col];
-                                                    const isNull = cellVal === null || cellVal === undefined;
-                                                    const isObject = typeof cellVal === 'object' && cellVal !== null;
-                                                    const cellString = isNull
-                                                        ? 'NULL'
-                                                        : isObject
-                                                        ? JSON.stringify(cellVal)
-                                                        : String(cellVal);
-
-                                                    return (
-                                                        <td
-                                                            key={col}
-                                                            onClick={() => isObject && setInspectedCell({ col, val: cellVal })}
-                                                            className={`py-2 px-3 truncate max-w-xs ${
-                                                                isNull
-                                                                    ? 'text-slate-300 dark:text-slate-600 italic'
-                                                                    : isObject
-                                                                    ? 'cursor-pointer text-indigo-600 dark:text-indigo-400 hover:underline'
-                                                                    : 'text-slate-800 dark:text-slate-200'
-                                                            }`}
-                                                            title={cellString}
-                                                        >
-                                                            {cellString}
-                                                        </td>
-                                                    );
-                                                })}
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination Bar */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-3 pt-2">
-                        <div className="text-center sm:text-left">
-                            Showing{' '}
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                {queryResult.matchedCount === 0 ? 0 : (currentPage - 1) * pageSize + 1}
-                            </span>{' '}
-                            to{' '}
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                {Math.min(currentPage * pageSize, queryResult.matchedCount)}
-                            </span>{' '}
-                            of{' '}
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                {queryResult.matchedCount.toLocaleString()}
-                            </span>{' '}
-                            filtered rows ({parseResult.metadata.totalRows.toLocaleString()} total)
-                        </div>
-
-                        <div className="flex items-center justify-center gap-1.5">
-                            <button
-                                type="button"
-                                disabled={currentPage <= 1}
-                                onClick={() => setCurrentPage((p) => p - 1)}
-                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[36px] min-w-[36px] flex items-center justify-center transition"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <span className="px-3 font-medium">
-                                {currentPage} / {totalPages}
-                            </span>
-                            <button
-                                type="button"
-                                disabled={currentPage >= totalPages}
-                                onClick={() => setCurrentPage((p) => p + 1)}
-                                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[36px] min-w-[36px] flex items-center justify-center transition"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* Tab 2: Schema & DDL Generator */}
-            {parseResult && activeTab === 'schema' && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 mr-1">Target:</span>
-                            {(
-                                [
-                                    ['postgresql', 'PostgreSQL'],
-                                    ['snowflake', 'Snowflake'],
-                                    ['bigquery', 'BigQuery'],
-                                    ['duckdb', 'DuckDB'],
-                                    ['clickhouse', 'ClickHouse'],
-                                    ['typescript', 'TypeScript'],
-                                    ['pyarrow', 'PyArrow'],
-                                    ['polars', 'Polars'],
-                                    ['avro_schema', 'Avro Schema'],
-                                    ['json_schema', 'JSON Schema'],
-                                ] as [SchemaTargetLanguage, string][]
-                            ).map(([key, label]) => (
+            {/* ============================================================
+          TAB 2: SCHEMA & POLYGLOT DDL GENERATOR
+          ============================================================ */}
+            {activeTab === 'schema' && dataset && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Column Schema Metadata Table */}
+                    <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                                    Physical &amp; Logical Schema Tree
+                                </h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Decoded directly from the {dataset.format.toUpperCase()} binary descriptor
+                                </p>
+                            </div>
+                            <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                                {dataset.schema.length} Columns
+                            </span>
+                        </div>
+
+                        <div className="w-full overflow-x-auto overscroll-x-contain">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[11px]">
+                                        <th className="py-2 px-2.5">#</th>
+                                        <th className="py-2 px-2.5">Column</th>
+                                        <th className="py-2 px-2.5">Physical</th>
+                                        <th className="py-2 px-2.5">Logical</th>
+                                        <th className="py-2 px-2.5">Repetition</th>
+                                        <th className="py-2 px-2.5">Codec</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800 font-mono">
+                                    {dataset.schema.map((col) => (
+                                        <tr key={col.name} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                            <td className="py-2.5 px-2.5 text-slate-400">{col.index + 1}</td>
+                                            <td className="py-2.5 px-2.5 font-bold text-slate-900 dark:text-white">
+                                                {col.name}
+                                            </td>
+                                            <td className="py-2.5 px-2.5 text-indigo-600 dark:text-indigo-400">
+                                                {col.physicalType}
+                                            </td>
+                                            <td className="py-2.5 px-2.5 text-blue-600 dark:text-blue-400">
+                                                {col.logicalType}
+                                            </td>
+                                            <td className="py-2.5 px-2.5">
+                                                <span
+                                                    className={`px-1.5 py-0.5 rounded text-[10px] ${col.nullable
+                                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                        }`}
+                                                >
+                                                    {col.repetitionType}
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-2.5 text-slate-500">{col.compressionCodec}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* 10-Target Code & DDL Generator */}
+                    <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                                    Polyglot Schema &amp; SQL DDL Generator (10 Targets)
+                                </h2>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Compile ready-to-run data warehouse DDL and typed SDK definitions
+                                </p>
+                            </div>
+
+                            <input
+                                type="text"
+                                value={tableName}
+                                onChange={(e) => setTableName(e.target.value)}
+                                placeholder="Table / Type name"
+                                aria-label="Target table or interface name"
+                                className="w-full sm:w-44 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-mono text-slate-900 dark:text-white"
+                            />
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5">
+                            {SCHEMA_TARGETS.map((t) => (
                                 <button
-                                    key={key}
+                                    key={t.id}
                                     type="button"
-                                    onClick={() => setSelectedTargetLang(key)}
-                                    className={`px-2.5 py-1.5 text-xs rounded-lg font-medium transition min-h-[36px] ${
-                                        selectedTargetLang === key
-                                            ? 'bg-indigo-600 text-white shadow-xs'
-                                            : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                    }`}
+                                    onClick={() => setSchemaTarget(t.id)}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${schemaTarget === t.id
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                                        }`}
                                 >
-                                    {label}
+                                    {t.label}
                                 </button>
                             ))}
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                            <input
-                                type="text"
-                                placeholder="Table name"
-                                value={ddlTableName}
-                                onChange={(e) => setDdlTableName(e.target.value)}
-                                className="w-full sm:w-48 px-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 min-h-[36px]"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleCopyDdl}
-                                className="w-full sm:w-auto px-3.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center gap-1.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition min-h-[36px]"
-                            >
-                                {ddlCopied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                                {ddlCopied ? 'Copied!' : 'Copy Code'}
-                            </button>
+                        <div className="relative min-w-0">
+                            <div className="absolute right-3 top-3 flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => triggerCopy(generatedCode, 'schema-code')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs"
+                                >
+                                    {copiedId === 'schema-code' ? (
+                                        <>
+                                            <Check className="w-3.5 h-3.5" />
+                                            Copied
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Copy className="w-3.5 h-3.5" />
+                                            Copy Code
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                            <pre className="p-4 pt-12 rounded-xl bg-slate-950 text-slate-100 text-xs font-mono overflow-x-auto max-w-full max-h-[420px] leading-relaxed">
+                                {generatedCode}
+                            </pre>
                         </div>
-                    </div>
-
-                    <div className="w-full min-w-0">
-                        <pre className="p-4 bg-slate-900 text-slate-100 rounded-xl text-xs font-mono overflow-x-auto max-w-full max-h-[500px] border border-slate-800 leading-relaxed">
-                            <code>{generatedDdl}</code>
-                        </pre>
                     </div>
                 </div>
             )}
 
-            {/* Tab 3: Column Profiler & Stats */}
-            {parseResult && activeTab === 'profiler' && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        Column Distribution &amp; Mathematical Profiling ({parseResult.columnProfiles.length} columns)
-                    </h3>
+            {/* ============================================================
+          TAB 3: COLUMN PROFILER & STATISTICS
+          ============================================================ */}
+            {activeTab === 'profiler' && dataset && (
+                <div className="space-y-4">
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm">
+                        <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                            Column-Level Data Quality, Cardinality &amp; Quantile Profiler
+                        </h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            Inspect null ratios, distinct cardinality, numeric quantiles (P25 / P50 Median / P75), and top frequent values for every column.
+                        </p>
 
-                    <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
-                        <table className="min-w-[700px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
-                            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800 font-semibold">
-                                <tr>
-                                    <th className="py-2.5 px-3">Column</th>
-                                    <th className="py-2.5 px-3">Type</th>
-                                    <th className="py-2.5 px-3">Nulls (%)</th>
-                                    <th className="py-2.5 px-3">Distinct</th>
-                                    <th className="py-2.5 px-3">Min</th>
-                                    <th className="py-2.5 px-3">Max</th>
-                                    <th className="py-2.5 px-3">Mean / Avg</th>
-                                    <th className="py-2.5 px-3">Median (p50)</th>
-                                    <th className="py-2.5 px-3">Top Frequencies</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
-                                {parseResult.columnProfiles.map((cp) => (
-                                    <tr key={cp.name} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                        <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
-                                            {cp.name}
-                                        </td>
-                                        <td className="py-2.5 px-3">
-                                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                                {cp.logicalType}
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 px-3">
-                                            <span className={cp.nullCount > 0 ? 'text-amber-600 font-medium' : ''}>
-                                                {cp.nullCount} ({cp.nullPercentage}%)
-                                            </span>
-                                        </td>
-                                        <td className="py-2.5 px-3">
-                                            {cp.distinctCount} ({cp.uniquenessRatio}%)
-                                        </td>
-                                        <td className="py-2.5 px-3 truncate max-w-[120px]">{cp.min ?? '—'}</td>
-                                        <td className="py-2.5 px-3 truncate max-w-[120px]">{cp.max ?? '—'}</td>
-                                        <td className="py-2.5 px-3">{cp.mean !== null ? cp.mean : cp.avgStringLength !== null ? `${cp.avgStringLength} ch` : '—'}</td>
-                                        <td className="py-2.5 px-3">{cp.median !== null ? cp.median : '—'}</td>
-                                        <td className="py-2.5 px-3">
-                                            <div className="flex flex-wrap gap-1 max-w-xs font-sans text-[11px]">
-                                                {cp.topValues.slice(0, 3).map((tv, idx) => (
-                                                    <span
-                                                        key={idx}
-                                                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 truncate max-w-[100px]"
-                                                        title={`${tv.value}: ${tv.count} (${tv.percentage}%)`}
-                                                    >
-                                                        {tv.value}: {tv.count}
-                                                    </span>
-                                                ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            {dataset.columnProfiles.map((prof) => {
+                                const nonNullPct = (100 - prof.nullPercentage).toFixed(1);
+                                return (
+                                    <div
+                                        key={prof.name}
+                                        className="min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 p-4 space-y-3"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <h3 className="text-sm font-bold font-mono text-slate-900 dark:text-white truncate">
+                                                    {prof.name}
+                                                </h3>
+                                                <span className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
+                                                    {prof.physicalType} ({prof.logicalType})
+                                                </span>
                                             </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                            <div className="text-right shrink-0">
+                                                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                                    {nonNullPct}% Complete
+                                                </span>
+                                                <span className="block text-[11px] text-slate-400">
+                                                    {prof.nullCount} nulls / {prof.distinctCount} distinct
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Completeness & Cardinality Bars */}
+                                        <div className="space-y-1.5">
+                                            <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                                <div
+                                                    className="h-full bg-emerald-500"
+                                                    style={{
+                                                        width: `${Math.min(100, Math.max(0, 100 - prof.nullPercentage))}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between text-[11px] text-slate-500 font-mono">
+                                                <span>Distinct Ratio: {prof.uniquenessRatio}%</span>
+                                                <span>Non-Null: {prof.nonNullCount.toLocaleString()}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Numeric / String Summary */}
+                                        {prof.min !== null && (
+                                            <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] font-mono">
+                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                    <span className="text-slate-400 block">Min</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                                                        {String(prof.min)}
+                                                    </span>
+                                                </div>
+                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                    <span className="text-slate-400 block">
+                                                        {prof.median !== null ? 'Median (P50)' : 'Mean'}
+                                                    </span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                                                        {prof.median !== null
+                                                            ? prof.median
+                                                            : prof.mean !== null
+                                                                ? prof.mean
+                                                                : '—'}
+                                                    </span>
+                                                </div>
+                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                    <span className="text-slate-400 block">Max</span>
+                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                                                        {String(prof.max)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Top Values */}
+                                        {prof.topValues.length > 0 && (
+                                            <div className="pt-1">
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
+                                                    Top Frequent Values
+                                                </span>
+                                                <div className="space-y-1">
+                                                    {prof.topValues.slice(0, 3).map((tv, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="flex items-center justify-between text-xs font-mono bg-white dark:bg-slate-900 px-2.5 py-1 rounded border border-slate-200/60 dark:border-slate-800"
+                                                        >
+                                                            <span className="truncate max-w-[200px] text-slate-700 dark:text-slate-300">
+                                                                {tv.value}
+                                                            </span>
+                                                            <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                                                                {tv.count} ({tv.percentage}%)
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Tab 4: Binary X-Ray Inspector */}
-            {parseResult && activeTab === 'xray' && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-6">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        Binary Container Low-Level Metadata &amp; Layout
-                    </h3>
+            {/* ============================================================
+          TAB 4: BINARY X-RAY METADATA INSPECTOR
+          ============================================================ */}
+            {activeTab === 'xray' && dataset && (
+                <div className="space-y-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                        {/* Binary Header & Footer Forensics */}
+                        <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
+                            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <Binary className="w-4 h-4 text-blue-500 shrink-0" />
+                                Container Binary Header &amp; Footer X-Ray
+                            </h2>
+                            <div className="space-y-2 text-xs font-mono">
+                                <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
+                                    <span className="text-slate-500">Format Version:</span>
+                                    <span className="font-bold text-slate-900 dark:text-white text-right">
+                                        {dataset.metadata.formatVersion}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
+                                    <span className="text-slate-500">Magic Signature:</span>
+                                    <span className="font-bold text-blue-600 dark:text-blue-400 text-right">
+                                        {dataset.metadata.magicBytes} ({dataset.metadata.headerHex})
+                                    </span>
+                                </div>
+                                <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
+                                    <span className="text-slate-500">Created By / Producer:</span>
+                                    <span className="font-bold text-slate-900 dark:text-white text-right">
+                                        {dataset.metadata.createdBy}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
+                                    <span className="text-slate-500">Endianness:</span>
+                                    <span className="font-bold text-slate-900 dark:text-white">
+                                        {dataset.metadata.byteOrder}
+                                    </span>
+                                </div>
+                                {dataset.metadata.syncMarkerHex && (
+                                    <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
+                                        <span className="text-slate-500">Avro 16-Byte Sync Marker:</span>
+                                        <span className="font-bold text-indigo-600 dark:text-indigo-400 text-right">
+                                            {dataset.metadata.syncMarkerHex}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="pt-2">
+                                    <span className="text-slate-500 block mb-1">Footer Trailing Hex Bytes:</span>
+                                    <code className="block p-2.5 rounded-xl bg-slate-950 text-emerald-400 text-[11px] break-all">
+                                        {dataset.metadata.footerHex}
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                        <div className="min-w-0 p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Container Format</span>
-                            <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white uppercase truncate mt-0.5">
-                                {parseResult.format}
-                            </div>
-                        </div>
-                        <div className="min-w-0 p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Magic Bytes</span>
-                            <div className="text-sm sm:text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 truncate mt-0.5">
-                                {parseResult.metadata.magicBytes}
-                            </div>
-                        </div>
-                        <div className="min-w-0 p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Compression Codec</span>
-                            <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white uppercase truncate mt-0.5">
-                                {parseResult.metadata.compressionCodec}
-                            </div>
-                        </div>
-                        <div className="min-w-0 p-3 sm:p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Compression Ratio</span>
-                            <div className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
-                                {parseResult.metadata.compressionRatio}x
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Key-Value Footer Metadata */}
-                    {Object.keys(parseResult.metadata.keyValueMetadata).length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                Container Key-Value Metadata
-                            </h4>
-                            <div className="border border-slate-200 dark:border-slate-800 rounded-xl divide-y divide-slate-100 dark:divide-slate-800 text-xs font-mono overflow-hidden">
-                                {Object.entries(parseResult.metadata.keyValueMetadata).map(([k, v]) => (
-                                    <div key={k} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1 min-w-0">
-                                        <span className="font-semibold text-indigo-600 dark:text-indigo-400 shrink-0">{k}</span>
-                                        <span className="text-slate-700 dark:text-slate-300 break-all sm:break-words">{v}</span>
+                        {/* Key-Value File Metadata */}
+                        <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
+                            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <HardDrive className="w-4 h-4 text-blue-500 shrink-0" />
+                                Embedded Key-Value Metadata Dictionary
+                            </h2>
+                            <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                                {Object.entries(dataset.metadata.keyValueMetadata).map(([k, v]) => (
+                                    <div
+                                        key={k}
+                                        className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 font-mono text-xs"
+                                    >
+                                        <span className="font-bold text-blue-600 dark:text-blue-400 block">{k}</span>
+                                        <span className="text-slate-700 dark:text-slate-300 break-all mt-0.5 block">
+                                            {v}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    </div>
+
+                    {/* Row Groups & Column Chunks Breakdown */}
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
+                        <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                            Row Group &amp; Column Chunk Physical Layout ({dataset.metadata.rowGroups.length} Row Group)
+                        </h2>
+                        {dataset.metadata.rowGroups.map((rg) => (
+                            <div key={rg.index} className="space-y-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3.5 py-2 rounded-xl">
+                                    <span className="font-bold text-slate-900 dark:text-white">
+                                        Row Group #{rg.index} • {rg.rowCount.toLocaleString()} Rows
+                                    </span>
+                                    <span className="text-slate-600 dark:text-slate-300">
+                                        Compressed: {formatBytes(rg.compressedBytes)} → Uncompressed:{' '}
+                                        {formatBytes(rg.totalByteSize)} ({rg.compressionRatio}x ratio)
+                                    </span>
+                                </div>
+                                <div className="w-full overflow-x-auto overscroll-x-contain">
+                                    <table className="w-full text-left border-collapse text-xs font-mono">
+                                        <thead>
+                                            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[11px] uppercase">
+                                                <th className="py-2 px-3">Column Chunk</th>
+                                                <th className="py-2 px-3">Codec</th>
+                                                <th className="py-2 px-3">Encodings</th>
+                                                <th className="py-2 px-3">Compressed</th>
+                                                <th className="py-2 px-3">Uncompressed</th>
+                                                <th className="py-2 px-3">Nulls / Distinct</th>
+                                                <th className="py-2 px-3">Zone Map (Min → Max)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800">
+                                            {rg.columns.map((c) => (
+                                                <tr key={c.name}>
+                                                    <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
+                                                        {c.name}
+                                                    </td>
+                                                    <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400">
+                                                        {c.codec} ({c.compressionRatio}x)
+                                                    </td>
+                                                    <td className="py-2 px-3 text-slate-500">{c.encodings.join(', ')}</td>
+                                                    <td className="py-2 px-3">{formatBytes(c.compressedSize)}</td>
+                                                    <td className="py-2 px-3">{formatBytes(c.uncompressedSize)}</td>
+                                                    <td className="py-2 px-3">
+                                                        {c.nullCount} nulls / {c.distinctCount} dist
+                                                    </td>
+                                                    <td className="py-2 px-3 text-blue-600 dark:text-blue-400 truncate max-w-[240px]">
+                                                        {c.minValue ?? '—'} → {c.maxValue ?? '—'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {/* Tab 5: Export & Converter Studio */}
-            {parseResult && activeTab === 'export' && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        Cross-Format Export &amp; Enterprise Conversion Studio
-                    </h3>
+            {/* ============================================================
+          TAB 5: EXPORT & CONVERTER STUDIO
+          ============================================================ */}
+            {activeTab === 'export' && dataset && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Export Configuration Controls */}
+                    <div className="min-w-0 lg:col-span-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-4">
+                        <div>
+                            <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                                Tabular &amp; Binary Converter Studio
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Convert {dataset.format.toUpperCase()} to RFC 4180 CSV, native binary Excel (.xlsx), JSON, SQL, or transcode across binary formats.
+                            </p>
+                        </div>
 
-                    {/* Format Selector */}
-                    <div className="space-y-2">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">Spreadsheet &amp; Text Formats:</span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {(['csv', 'tsv', 'json', 'jsonl', 'sql', 'markdown', 'html'] as ExportFormat[]).map((fmt) => (
+                        {/* Scope Selector */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                                1. Export Row &amp; Column Scope
+                            </label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <button
-                                    key={fmt}
                                     type="button"
-                                    onClick={() => setExportFormat(fmt)}
-                                    className={`px-3.5 py-2 text-xs rounded-lg font-medium uppercase transition min-h-[40px] ${
-                                        exportFormat === fmt
-                                            ? 'bg-indigo-600 text-white shadow-xs'
-                                            : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                    }`}
+                                    onClick={() => setExportScope('filtered')}
+                                    className={`p-2.5 rounded-xl border text-left text-xs font-bold ${exportScope === 'filtered'
+                                            ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                            : 'border-slate-200 dark:border-slate-800 text-slate-600'
+                                        }`}
                                 >
-                                    {fmt}
+                                    Filtered &amp; Projected ({queriedResult.matchedCount} rows, {selectedColumns.length}{' '}
+                                    cols)
                                 </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Options Row */}
-                    <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 min-h-[32px]">
-                                <input
-                                    type="radio"
-                                    name="scope"
-                                    checked={exportScope === 'filtered'}
-                                    onChange={() => setExportScope('filtered')}
-                                    className="text-indigo-600"
-                                />
-                                Filtered Query Subset ({queryResult.matchedCount} rows)
-                            </label>
-                            <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 min-h-[32px]">
-                                <input
-                                    type="radio"
-                                    name="scope"
-                                    checked={exportScope === 'all'}
-                                    onChange={() => setExportScope('all')}
-                                    className="text-indigo-600"
-                                />
-                                Full Dataset ({parseResult.metadata.totalRows} rows)
-                            </label>
+                                <button
+                                    type="button"
+                                    onClick={() => setExportScope('all')}
+                                    className={`p-2.5 rounded-xl border text-left text-xs font-bold ${exportScope === 'all'
+                                            ? 'border-blue-500 bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                            : 'border-slate-200 dark:border-slate-800 text-slate-600'
+                                        }`}
+                                >
+                                    Full Dataset ({dataset.rows.length} rows, {dataset.schema.length} cols)
+                                </button>
+                            </div>
                         </div>
 
-                        {exportFormat === 'json' && (
-                            <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 min-h-[32px]">
-                                <input
-                                    type="checkbox"
-                                    checked={prettyJson}
-                                    onChange={(e) => setPrettyJson(e.target.checked)}
-                                    className="text-indigo-600"
-                                />
-                                Pretty Print (2-space indent)
+                        {/* Format Selector */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                                2. Target Export Format
                             </label>
-                        )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {[
+                                    { id: 'csv' as const, label: 'CSV Spreadsheet (.csv)' },
+                                    { id: 'xlsx' as const, label: 'Excel Workbook (.xlsx)' },
+                                    { id: 'json' as const, label: 'JSON Array (.json)' },
+                                    { id: 'jsonl' as const, label: 'JSON Lines (.jsonl)' },
+                                    { id: 'tsv' as const, label: 'Tab-Separated (.tsv)' },
+                                    { id: 'sql' as const, label: 'SQL INSERT Batch (.sql)' },
+                                    { id: 'markdown' as const, label: 'Markdown Table (.md)' },
+                                    { id: 'html' as const, label: 'HTML5 Table (.html)' },
+                                ].map((fmt) => (
+                                    <button
+                                        key={fmt.id}
+                                        type="button"
+                                        onClick={() => setExportFormat(fmt.id)}
+                                        className={`px-3 py-2 rounded-xl border text-xs font-bold text-left transition-all ${exportFormat === fmt.id
+                                                ? 'border-blue-600 bg-blue-600 text-white'
+                                                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300'
+                                            }`}
+                                    >
+                                        {fmt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                        {exportFormat === 'csv' && (
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 min-h-[32px]">
-                                    <input
-                                        type="checkbox"
-                                        checked={includeBom}
-                                        onChange={(e) => setIncludeBom(e.target.checked)}
-                                        className="text-indigo-600"
-                                    />
-                                    Include UTF-8 BOM (Excel compatibility)
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 min-h-[32px]">
+                        {/* CSV & Security Options */}
+                        {(exportFormat === 'csv' || exportFormat === 'xlsx' || exportFormat === 'tsv') && (
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs">
+                                {exportFormat === 'csv' && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                            CSV Field Delimiter:
+                                        </span>
+                                        <select
+                                            value={csvDelimiter}
+                                            onChange={(e) =>
+                                                setCsvDelimiter(e.target.value as ',' | ';' | '\t' | '|')
+                                            }
+                                            aria-label="CSV delimiter"
+                                            className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
+                                        >
+                                            <option value=",">Comma (,)</option>
+                                            <option value=";">Semicolon (;)</option>
+                                            <option value="&#9;">Tab (\t)</option>
+                                            <option value="|">Pipe (|)</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={sanitizeFormulas}
                                         onChange={(e) => setSanitizeFormulas(e.target.checked)}
-                                        className="text-indigo-600"
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                     />
-                                    CWE-1236 Formula Sanitization
+                                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                        CWE-1236 CSV/Excel Formula Injection Guard (neutralize leading =, +, -, @)
+                                    </span>
                                 </label>
-                                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 min-h-[32px]">
-                                    <span>Delimiter:</span>
-                                    <select
-                                        value={exportDelimiter}
-                                        onChange={(e) => setExportDelimiter(e.target.value as ',' | ';' | '\t' | '|')}
-                                        className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 min-h-[32px]"
-                                    >
-                                        <option value=",">, (Comma)</option>
-                                        <option value=";">; (Semicolon)</option>
-                                        <option value={'\t'}>Tab (\t)</option>
-                                        <option value="|">| (Pipe)</option>
-                                    </select>
-                                </div>
+
+                                {exportFormat === 'csv' && (
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={includeUtf8Bom}
+                                            onChange={(e) => setIncludeUtf8Bom(e.target.checked)}
+                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                            Prepend UTF-8 BOM (\uFEFF) for Microsoft Excel Unicode safety
+                                        </span>
+                                    </label>
+                                )}
                             </div>
                         )}
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
+                        {/* JSON Format Options */}
+                        {exportFormat === 'json' && (
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2.5 text-xs">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={prettyJson}
+                                        onChange={(e) => setPrettyJson(e.target.checked)}
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                        Pretty Print JSON (2-space indent formatting)
+                                    </span>
+                                </label>
+                            </div>
+                        )}
+
                         <button
                             type="button"
                             onClick={handleDownloadExport}
-                            className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-xs min-h-[40px]"
+                            className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm"
                         >
-                            <Download className="w-4 h-4" /> Download {exportFormat.toUpperCase()} File
+                            <Download className="w-4 h-4" />
+                            Download Converted .{exportFormat.toUpperCase()} File
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleCopyExport}
-                            className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-center gap-2 min-h-[40px]"
-                        >
-                            {exportCopied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                            {exportCopied ? 'Copied!' : 'Copy to Clipboard'}
-                        </button>
-                    </div>
 
-                    {/* Binary Transcoder Section */}
-                    <div className="space-y-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-2">
-                            <Binary className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                            <span className="text-xs font-semibold text-slate-900 dark:text-white">
-                                Binary Transcoder (Convert &amp; Download Lakehouse Formats):
+                        {/* Cross-Format Binary Transcoder */}
+                        <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
+                                3. Cross-Format Binary Container Transcoder
                             </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => handleDownloadBinary('parquet')}
-                                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-950/30 transition flex items-center justify-between gap-1.5 min-h-[40px] text-xs font-medium text-slate-800 dark:text-slate-200"
-                            >
-                                <span>📦 Convert to <strong>.parquet</strong></span>
-                                <Download className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleDownloadBinary('avro')}
-                                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/30 transition flex items-center justify-between gap-1.5 min-h-[40px] text-xs font-medium text-slate-800 dark:text-slate-200"
-                            >
-                                <span>⚡ Convert to <strong>.avro</strong></span>
-                                <Download className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleDownloadBinary('feather')}
-                                className="w-full px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-500 hover:bg-purple-50/30 dark:hover:bg-purple-950/30 transition flex items-center justify-between gap-1.5 min-h-[40px] text-xs font-medium text-slate-800 dark:text-slate-200"
-                            >
-                                <span>🧠 Convert to <strong>.feather</strong></span>
-                                <Download className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                            </button>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleDownloadBinaryTranscode('parquet')}
+                                    className="py-2 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50"
+                                >
+                                    → .parquet
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDownloadBinaryTranscode('avro')}
+                                    className="py-2 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50"
+                                >
+                                    → .avro
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleDownloadBinaryTranscode('feather')}
+                                    className="py-2 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50"
+                                >
+                                    → .feather
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Text Preview */}
-                    <div className="w-full min-w-0 pt-2">
-                        <pre className="p-4 bg-slate-900 text-slate-100 rounded-xl text-xs font-mono overflow-x-auto max-w-full max-h-[350px] border border-slate-800 leading-relaxed">
-                            <code>{exportedText.slice(0, 5000)}</code>
-                        </pre>
-                    </div>
-                </div>
-            )}
+                    {/* Live Output Preview Pane */}
+                    <div className="min-w-0 lg:col-span-7 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm flex flex-col justify-between space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Live {exportFormat.toUpperCase()} Output Preview (First 100 Rows)
+                                </h3>
+                                <p className="text-xs text-slate-500">
+                                    BigInt INT64 values and nested structs are serialized without precision loss
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => triggerCopy(exportPreviewText, 'export-preview')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold shrink-0"
+                            >
+                                {copiedId === 'export-preview' ? (
+                                    <>
+                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                        Copied
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="w-3.5 h-3.5" />
+                                        Copy Preview
+                                    </>
+                                )}
+                            </button>
+                        </div>
 
-            {/* Cell Inspection Popover / Modal */}
-            {inspectedCell && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl space-y-3 overflow-hidden">
-                        <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                Cell Value Inspector: <span className="font-mono text-indigo-600 dark:text-indigo-400">{inspectedCell.col}</span>
-                            </h4>
-                            <button
-                                type="button"
-                                onClick={() => setInspectedCell(null)}
-                                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded min-h-[36px] min-w-[36px] flex items-center justify-center shrink-0"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <pre className="p-3.5 bg-slate-950 text-slate-100 rounded-xl text-xs font-mono overflow-auto flex-1 max-h-[60vh] border border-slate-800 leading-relaxed">
-                            {JSON.stringify(inspectedCell.val, null, 2)}
+                        <pre className="p-4 rounded-xl bg-slate-950 text-slate-100 text-xs font-mono overflow-auto max-w-full max-h-[430px] leading-relaxed">
+                            {exportPreviewText}
                         </pre>
-                        <div className="flex justify-end pt-1">
-                            <button
-                                type="button"
-                                onClick={() => setInspectedCell(null)}
-                                className="w-full sm:w-auto px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[38px] transition"
-                            >
-                                Close
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
