@@ -217,6 +217,41 @@ const nextConfig: NextConfig = {
         destination: '/developer/regex-tester',
         permanent: true,
       },
+      {
+        source: '/developer/parquet-to-csv',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/avro-viewer',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/avro-to-json',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/avro-to-csv',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/feather-viewer',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/arrow-viewer',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
+      {
+        source: '/developer/feather-to-csv',
+        destination: '/developer/parquet-viewer',
+        permanent: true,
+      },
     ];
   },
 };

@@ -42,49 +42,59 @@ export function resolveCanonicalRoute(category: string, slug: string): {
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'
       : slug === 'case-converter'
-      ? 'text-case-converter'
-      : slug === 'currency-converter'
-      ? 'crypto-converter'
-      : slug === 'meta-tags-generator' || slug === 'open-graph-generator'
-      ? 'meta-generator'
-      : slug === 'pdf-to-docx'
-      ? 'pdf-to-word'
-      : slug === 'docx-to-pdf'
-      ? 'word-to-pdf'
-      : slug === 'pdf-to-xlsx'
-      ? 'pdf-to-excel'
-      : slug === 'xlsx-to-pdf'
-      ? 'excel-to-pdf'
-      : slug === 'pdf-to-pptx' || slug === 'pdf-to-powerpoint'
-      ? 'pdf-to-ppt'
-      : slug === 'pdf-to-png' || slug === 'pdf-to-image'
-      ? 'pdf-to-jpg'
-      : slug === 'pdf-compressor' ||
-        slug === 'reduce-pdf-size' ||
-        slug === 'shrink-pdf' ||
-        slug === 'compress-pdf-to-100kb' ||
-        slug === 'compress-pdf-to-200kb'
-      ? 'compress-pdf'
-      : slug;
+        ? 'text-case-converter'
+        : slug === 'currency-converter'
+          ? 'crypto-converter'
+          : slug === 'meta-tags-generator' || slug === 'open-graph-generator'
+            ? 'meta-generator'
+            : slug === 'pdf-to-docx'
+              ? 'pdf-to-word'
+              : slug === 'docx-to-pdf'
+                ? 'word-to-pdf'
+                : slug === 'pdf-to-xlsx'
+                  ? 'pdf-to-excel'
+                  : slug === 'xlsx-to-pdf'
+                    ? 'excel-to-pdf'
+                    : slug === 'pdf-to-pptx' || slug === 'pdf-to-powerpoint'
+                      ? 'pdf-to-ppt'
+                      : slug === 'pdf-to-png' || slug === 'pdf-to-image'
+                        ? 'pdf-to-jpg'
+                        : slug === 'pdf-compressor' ||
+                          slug === 'reduce-pdf-size' ||
+                          slug === 'shrink-pdf' ||
+                          slug === 'compress-pdf-to-100kb' ||
+                          slug === 'compress-pdf-to-200kb'
+                          ? 'compress-pdf'
+                          : slug === 'parquet-to-csv' ||
+                            slug === 'avro-viewer' ||
+                            slug === 'avro-to-json' ||
+                            slug === 'avro-to-csv' ||
+                            slug === 'feather-viewer' ||
+                            slug === 'arrow-viewer' ||
+                            slug === 'feather-to-csv'
+                            ? 'parquet-viewer'
+                            : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
-    resolvedSlug === 'pdf-merge-split' ||
-    resolvedSlug === 'pdf-to-word' ||
-    resolvedSlug === 'word-to-pdf' ||
-    resolvedSlug === 'pdf-to-excel' ||
-    resolvedSlug === 'excel-to-pdf' ||
-    resolvedSlug === 'pdf-to-ppt' ||
-    resolvedSlug === 'pdf-to-jpg' ||
-    resolvedSlug === 'compress-pdf'
+      resolvedSlug === 'pdf-merge-split' ||
+      resolvedSlug === 'pdf-to-word' ||
+      resolvedSlug === 'word-to-pdf' ||
+      resolvedSlug === 'pdf-to-excel' ||
+      resolvedSlug === 'excel-to-pdf' ||
+      resolvedSlug === 'pdf-to-ppt' ||
+      resolvedSlug === 'pdf-to-jpg' ||
+      resolvedSlug === 'compress-pdf'
       ? 'document'
       : category === 'pdf'
-      ? 'document'
-      : category === 'image'
-      ? 'media'
-      : category === 'seo' && resolvedSlug === 'regex-tester'
-      ? 'developer'
-      : category;
+        ? 'document'
+        : category === 'image'
+          ? 'media'
+          : category === 'seo' && resolvedSlug === 'regex-tester'
+            ? 'developer'
+            : resolvedSlug === 'parquet-viewer'
+              ? 'developer'
+              : category;
 
   return { resolvedCategory, resolvedSlug };
 }
@@ -132,13 +142,13 @@ export async function generateMetadata({
     },
     robots: isPublicAndPublished
       ? {
-          index: true,
-          follow: true,
-        }
+        index: true,
+        follow: true,
+      }
       : {
-          index: false,
-          follow: true,
-        },
+        index: false,
+        follow: true,
+      },
     openGraph: {
       title: `${metaTitle} — KivaroTools`,
       description: metaDescription,

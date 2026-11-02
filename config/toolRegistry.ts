@@ -18,6 +18,7 @@ import JsonConverter from '@/components/tools/JsonConverter';
 import Base64Encoder from '@/components/tools/Base64Encoder';
 import SqlFormatter from '@/components/tools/SqlFormatter';
 import RegexTester from '@/components/tools/RegexTester';
+import ParquetViewer from '@/components/tools/ParquetViewer';
 import PdfMergeSplit from '@/components/tools/PdfMergeSplit';
 import ImageToPdf from '@/components/tools/ImageToPdf';
 import PdfToWord from '@/components/tools/PdfToWord';
@@ -52,6 +53,7 @@ import JsonConverterSeo from '@/components/seo/JsonConverterSeo';
 import Base64EncoderSeo from '@/components/seo/Base64EncoderSeo';
 import SqlFormatterSeo from '@/components/seo/SqlFormatterSeo';
 import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
+import ParquetViewerSeo from '@/components/seo/ParquetViewerSeo';
 import PdfMergeSplitSeo from '@/components/seo/PdfMergeSplitSeo';
 import ImageToPdfSeo from '@/components/seo/ImageToPdfSeo';
 import PdfToWordSeo from '@/components/seo/PdfToWordSeo';
@@ -92,6 +94,14 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'base64-encoder': Base64Encoder,
   'sql-formatter': SqlFormatter,
   'regex-tester': RegexTester,
+  'parquet-viewer': ParquetViewer,
+  'parquet-to-csv': ParquetViewer,
+  'avro-viewer': ParquetViewer,
+  'avro-to-json': ParquetViewer,
+  'avro-to-csv': ParquetViewer,
+  'feather-viewer': ParquetViewer,
+  'arrow-viewer': ParquetViewer,
+  'feather-to-csv': ParquetViewer,
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -156,6 +166,14 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'base64-encoder': Base64EncoderSeo,
   'sql-formatter': SqlFormatterSeo,
   'regex-tester': RegexTesterSeo,
+  'parquet-viewer': ParquetViewerSeo,
+  'parquet-to-csv': ParquetViewerSeo,
+  'avro-viewer': ParquetViewerSeo,
+  'avro-to-json': ParquetViewerSeo,
+  'avro-to-csv': ParquetViewerSeo,
+  'feather-viewer': ParquetViewerSeo,
+  'arrow-viewer': ParquetViewerSeo,
+  'feather-to-csv': ParquetViewerSeo,
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,

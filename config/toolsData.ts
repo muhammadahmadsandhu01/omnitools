@@ -1085,6 +1085,39 @@ export const tools: Tool[] = [
     relatedToolSlugs: ['text-analyzer', 'text-case-converter', 'json-formatter', 'sql-formatter', 'base64-encoder'],
   },
 
+  {
+    id: 'parquet-viewer',
+    name: 'Parquet, Avro & Feather Viewer, Inspector & CSV/Excel Converter',
+    slug: 'parquet-viewer',
+    categoryId: 'developer',
+    description:
+      'Open and inspect Apache Parquet (.parquet), Apache Avro (.avro), and Arrow Feather (.feather / .arrow) files locally in your browser. View schemas, Row Group metadata, and column statistics, generate SQL DDL, and convert to CSV, Excel (.xlsx), or JSON.',
+    isPopular: true,
+    status: 'published',
+    seoTitle: 'Parquet, Avro & Feather Viewer + CSV/XLSX',
+    seoDescription:
+      'Open and inspect Parquet, Avro, and Feather (.arrow) files in your browser. View schemas, row groups, and stats, and convert to CSV, Excel (.xlsx), or JSON.',
+    keywords: [
+      'parquet viewer online',
+      'avro file viewer online',
+      'feather arrow file viewer online',
+      'parquet to csv excel xlsx converter',
+      'avro to json csv converter online',
+      'parquet schema row group metadata inspector',
+      'generate sql ddl from parquet avro file',
+      'client side parquet reader browser no upload',
+      '64 bit int64 safe parquet to json converter',
+      'apache arrow ipc feather to csv converter',
+    ],
+    featureList: [
+      'Unified client-side binary decoder for Apache Parquet (PAR1 v1/v2, Snappy/GZIP/ZSTD/RLE), Apache Avro (Obj1 + ZigZag), and Apache Arrow Feather (.feather / .arrow)',
+      'BigInt-safe 64-bit integer (INT64 / UINT64) handling that prevents silent JavaScript IEEE-754 precision loss on snowflake IDs and nanosecond timestamps',
+      '5-tab studio: Virtualized Data Explorer Grid with multi-predicate filtering, Column Profiler (quantiles & cardinality), Binary X-Ray Inspector, and 10-target Polyglot SQL DDL Generator',
+      '10-format Export & Transcoder Studio: RFC 4180 CSV (with UTF-8 BOM & CWE-1236 Formula Guard), native Excel (.xlsx), JSON, NDJSON (.jsonl), SQL INSERT, Markdown, HTML, plus binary .parquet/.avro/.feather transcoding',
+    ],
+    relatedToolSlugs: ['json-converter', 'sql-formatter', 'json-formatter', 'base64-encoder', 'regex-tester'],
+  },
+
   // ============================================================
   // DOCUMENT UTILITIES
   // ============================================================
