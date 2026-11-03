@@ -34,7 +34,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'How does KivaroTools prevent 64-bit integer (INT64 / UINT64) precision loss in the browser?',
     answer:
-      'Standard JavaScript numbers use IEEE-754 double-precision floating-point values, which only guarantee exact integer precision up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991). In ordinary online Parquet or JSON viewers, 64-bit Snowflake IDs, Stripe/Twitter transaction IDs, and nanosecond timestamps silently round to trailing zeros. KivaroTools decodes 64-bit physical integers using native JavaScript BigInt, executes exact BigInt-aware numeric predicate filtering (=, !=, >, >=, <, <= via compareExactNumericValues) and sorting without float conversion, and serializes values exceeding safe bounds as exact decimal strings across the Data Grid, JSON/JSONL exports, SQL INSERT batches, and CSV/Excel downloads.',
+      'Standard JavaScript numbers use IEEE-754 double-precision floating-point values, which only guarantee exact integer precision up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991). In ordinary online Parquet or JSON viewers, 64-bit Snowflake IDs, Stripe/Twitter transaction IDs, and nanosecond timestamps silently round to trailing zeros. KivaroTools decodes 64-bit physical integers using native JavaScript BigInt, executes exact in-memory BigInt-aware numeric filtering (=, !=, >, >=, <, <= via compareExactNumericValues) and sorting without float conversion, and serializes values exceeding safe bounds as exact decimal strings across the Data Grid, JSON/JSONL exports, SQL INSERT batches, and CSV/Excel downloads.',
   },
   {
     question: 'Can I convert Parquet, Avro, and Feather files to CSV and Microsoft Excel (.xlsx) in the browser?',
@@ -74,12 +74,12 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'Can I filter rows, sort columns, and hide sensitive PII columns before exporting to CSV or JSON?',
     answer:
-      'Yes. You can combine global full-text search with multi-condition predicate filters across 11 operators (equals, not equals, greater than, greater or equal, less than, less or equal, contains, starts with, ends with, is NULL, is not NULL) supporting both AND and OR boolean combinator logic, sort any column ascending or descending with NULL-last ordering, and uncheck sensitive PII columns (such as email or ip_address) in the Column Projection picker. In the Export Studio, choose "Filtered & Projected" to export only the exact subset you curated.',
+      'Yes. You can combine global full-text search with multi-condition in-memory filters across 11 operators (equals, not equals, greater than, greater or equal, less than, less or equal, contains, starts with, ends with, is NULL, is not NULL) supporting both AND and OR boolean combinator logic, sort any column ascending or descending with NULL-last ordering, and uncheck sensitive PII columns (such as email or ip_address) in the Column Projection picker. In the Export Studio, choose "Filtered & Projected" to export only the exact subset you curated.',
   },
   {
     question: 'What statistics does the Column Profiler & Data Quality tab calculate?',
     answer:
-      'For every column in your dataset, the Column Profiler calculates total row count, non-null count, null count, null percentage, distinct cardinality count, uniqueness ratio (%), minimum and maximum values, arithmetic mean, standard deviation (StdDev), exact numeric quantiles (P25, P50 Median, and P75), string length distribution (min, max, average length), and the top frequent values with occurrence percentages.',
+      'For every column in your dataset, the Column Profiler calculates total row count, non-null count, null count, null percentage, distinct cardinality count, uniqueness ratio (%), minimum and maximum values (preserving exact BigInt string min/max for 64-bit integers outside Number.MAX_SAFE_INTEGER), arithmetic mean, standard deviation (StdDev), sample numeric quantiles (P25, P50 Median, and P75 calculated from safe JavaScript numeric values), string length distribution (min, max, average length), and the top frequent values with occurrence percentages.',
   },
   {
     question: 'Can I transcode files between binary formats (e.g., Parquet to Avro or Avro to Feather) in the browser?',
@@ -134,7 +134,7 @@ export default function ParquetViewerSeo() {
         '@type': 'HowToStep',
         position: 2,
         name: 'Search, Filter, Sort, and Inspect Nested Rows',
-        text: 'Use the Data Explorer Grid to search across all columns, build multi-condition predicate filters across 11 operators, toggle column visibility for PII scrubbing, and click any cell or row to inspect nested STRUCT, LIST, and MAP values.',
+        text: 'Use the Data Explorer Grid to search across all columns, build multi-condition in-memory filters across 11 operators, toggle column visibility for PII scrubbing, and click any cell or row to inspect nested STRUCT, LIST, and MAP values.',
       },
       {
         '@type': 'HowToStep',
@@ -340,7 +340,7 @@ export default function ParquetViewerSeo() {
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Preserves 64-bit integers outside <code>±9,007,199,254,740,991</code> as exact strings across display,
               sorting, and BigInt-aware numeric filters (<code>compareExactNumericValues</code>), while computing
-              null ratios, distinct cardinality, mean, StdDev, and <code>P25 / P50 / P75</code> quantiles.
+              null ratios, distinct cardinality, exact BigInt min/max bounds, and sample numeric mean, StdDev, and <code>P25 / P50 / P75</code> quantiles (for safe IEEE-754 numbers).
             </p>
           </div>
 
@@ -352,7 +352,7 @@ export default function ParquetViewerSeo() {
               Query, DDL &amp; Safe Serialization
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Executes multi-predicate filtering (11 operators supporting both AND and OR combinators), NULL-last sorting, and column projection in memory,
+              Executes multi-condition filtering (11 operators supporting both AND and OR combinators), NULL-last sorting, and column projection in memory over decoded rows,
               then serializes into 10 SQL/SDK schema targets or 8 export formats (including native binary .xlsx workbooks) with CWE-1236 formula neutralization.
             </p>
           </div>
@@ -465,7 +465,7 @@ export default function ParquetViewerSeo() {
               <code>PostgreSQL</code>, <code>Snowflake</code>, <code>BigQuery</code>, <code>DuckDB</code>,{' '}
               <code>ClickHouse</code>, <code>TypeScript</code>, <code>PyArrow</code>, <code>Polars</code>,{' '}
               <code>Avro (.avsc)</code>, or <code>JSON Schema</code>. Open <strong>Column Profiler &amp; Stats</strong>{' '}
-              to check null percentages, distinct ratios, <code>P25 / P50 / P75</code> quantiles, and top frequent
+              to check null percentages, distinct ratios, exact BigInt min/max bounds, sample numeric <code>P25 / P50 / P75</code> quantiles, and top frequent
               values, or open <strong>Binary X-Ray Inspector</strong> to audit header/footer hex bytes, Row Group zone
               maps, and 16-byte Avro sync markers.
             </p>
@@ -856,15 +856,15 @@ ecommerce_orders_v2_schema = pa.schema([
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
-                  Predicate Pushdown / Stats
+                  Embedded Statistics &amp; In-Browser Querying
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  Yes (Row Group Min/Max Zone Maps &amp; Null Counts)
+                  Row Group Min/Max Zone Maps &amp; Null Counts displayed in X-Ray (Grid filters run in-memory on loaded rows; no Row Group skipping)
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Block-level sync markers only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">RecordBatch slicing</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Block sync markers inspected; in-memory row filtering</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">RecordBatch descriptors inspected; in-memory row filtering</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400">
-                  No (Full sequential scan required)
+                  No embedded stats (Full text parse + in-memory filtering)
                 </td>
               </tr>
               <tr>
@@ -981,7 +981,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   Statistical Column Profiler
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">
-                  Null %, Distinct %, P25/P50/P75 Quantiles, Mean, StdDev &amp; Top Values
+                  Null %, Distinct %, Exact BigInt Min/Max, Sample Numeric P25/P50/P75 Quantiles, Mean, StdDev &amp; Top Values
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">Min/Max &amp; Null count</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-slate-400">None</td>

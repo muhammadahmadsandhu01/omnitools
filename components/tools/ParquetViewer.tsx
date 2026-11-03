@@ -1556,7 +1556,7 @@ export default function ParquetViewer() {
                             Column-Level Data Quality, Cardinality &amp; Quantile Profiler
                         </h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Inspect null ratios, distinct cardinality, numeric quantiles (P25 / P50 Median / P75), and top frequent values for every column.
+                            Inspect null ratios, distinct cardinality, exact BigInt min/max bounds, sample numeric quantiles (P25 / P50 Median / P75 for standard IEEE-754 numbers), and top frequent values for every column.
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
