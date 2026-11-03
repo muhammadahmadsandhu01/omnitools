@@ -1,22 +1,25 @@
 /**
- * KivaroTools Enterprise Columnar & Row Binary Engine (v3.0 — Full Spec-Compliant Edition)
+ * KivaroTools Client-Side Columnar & Row Binary Engine (v5.1 — Hardened & Scope-Qualified Edition)
  *
- * Implements 100% genuine, verifiable binary codecs and features:
- * 1. Apache Parquet (PAR1): Real Apache Thrift TCompactProtocol FileMetaData / SchemaElement /
- *    RowGroup / ColumnChunk / ColumnMetaData / Statistics (min/max zone maps & null counts) /
- *    DataPageHeader binary encoder & decoder, Hybrid RLE/Bit-Packing, and LZ77 Snappy compression.
- * 2. Apache Avro (Obj\x01): Spec-compliant Object Container File header map (ZigZag varints),
- *    embedded avro.schema JSON contract, 16-byte sync markers, Snappy + CRC32 / Deflate / Null blocks.
- * 3. Apache Arrow IPC / Feather v1 (FEA1) & v2 (ARROW1 / 0xFFFFFFFF Stream): Binary FlatBuffers
- *    vtable/table schema & RecordBatch buffer reader/writer with validity bitmaps & typed buffers.
- * 4. 64-Bit BigInt Precision Guard: ES2017-compliant BigInt() handling preserving signed INT64
- *    and unsigned UINT64 values beyond Number.MAX_SAFE_INTEGER (9,007,199,254,740,991).
- * 5. Multi-Predicate Query Engine: 11 operators supporting BOTH AND and OR boolean combinators,
- *    case-insensitive nested search, NULL-last bi-directional sorting, and column projection.
- * 6. Native Binary Microsoft Excel (.xlsx) Workbook Compiler (PKZIP 0x504B0304 + Office Open XML
- *    with frozen header pane, auto-filters, and typed cells) + RFC 4180 CSV with UTF-8 BOM.
- * 7. 15-Vector CWE-1236 Formula Injection Sanitizer (leading whitespace, \t, \r, \n, full-width
- *    Unicode triggers \uFF1D \uFF0B \uFF20 \uFF0D, while preserving negative numbers like -42.5 and -1.5e-4).
+ * Implements local in-browser binary inspection, decoding, querying, and conversion for supported subsets of:
+ * 1. Apache Parquet (PAR1): Apache Thrift TCompactProtocol FileMetaData footer, SchemaElement tree,
+ *    RowGroup / ColumnChunk / Statistics zone maps, and DataPage v1/v2 + DictionaryPage decoding for
+ *    PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE encodings across UNCOMPRESSED, SNAPPY,
+ *    GZIP (RFC 1952), and LZ4_RAW codecs (including DECIMAL, UINT8..64, INT96, and 1-level Dremel LISTs).
+ * 2. Apache Avro OCF (Obj\x01): Object Container File header metadata map, embedded avro.schema JSON,
+ *    16-byte header & per-block sync-marker verification, and ZigZag binary datum decoding across
+ *    null, deflate (RFC 1951), and snappy (with 4-byte CRC32 verification) blocks.
+ * 3. Feather V1 (FEA1) & Feather V2 / Arrow IPC (ARROW1 / 0xFFFFFFFF):
+ *    - Dedicated Feather V1 CTable / PrimitiveArray FlatBuffers reader (UNCOMPRESSED PLAIN columns).
+ *    - Independent Feather V2 / Arrow IPC encapsulated Schema + RecordBatch FlatBuffers reader
+ *      (UNCOMPRESSED and LZ4_FRAME buffers).
+ * 4. 64-Bit BigInt Numeric Precision: Exact BigInt & decimal comparison (compareExactNumericValues)
+ *    across display, bi-directional NULL-last sorting, all numeric filter operators, and exports.
+ * 5. Native OpenXML .XLSX Workbook Compiler (PKZIP 0x504B0304) & Tested 15-Vector CWE-1236 Formula Mitigation.
+ *
+ * Unsupported compression codecs (e.g. ZSTD, Brotli, LZO, bzip2, xz), delta encodings (DELTA_BINARY_PACKED),
+ * multi-level Dremel repetition (maxRepetitionLevel > 1), and KMS-encrypted Parquet (PARE) are explicitly
+ * rejected with diagnostic errors rather than returning heuristic or fabricated data.
  */
 
 export type ColumnarFormat =
@@ -319,23 +322,48 @@ export function detectColumnarFormat(
 // 2. VARINT, ZIGZAG, SNAPPY (COMPRESS + DECOMPRESS) & HYBRID RLE
 // ============================================================
 
+/**
+ * Strictly validated Unsigned LEB128 Varint Reader.
+ * Throws an explicit Error on out-of-bounds offset, truncated continuation byte at EOF,
+ * or varint overflow beyond 64 bits (> 10 bytes or 10th byte > 0x01).
+ */
 export function readUnsignedVarint(
     bytes: Uint8Array,
     offset = 0
 ): { value: number; bigValue: bigint; nextOffset: number } {
+    if (!bytes || offset < 0 || offset >= bytes.length) {
+        throw new Error(`Malformed varint: offset (${offset}) is outside buffer bounds (length=${bytes ? bytes.length : 0}).`);
+    }
     let bigResult = BigInt(0);
     let shift = BigInt(0);
     let pos = offset;
+    let byteCount = 0;
+    let terminated = false;
+
     while (pos < bytes.length) {
         const byte = bytes[pos++];
+        byteCount++;
+        if (byteCount > 10 || (byteCount === 10 && (byte & 0x7f) > 1)) {
+            throw new Error(`Malformed varint at offset ${offset}: exceeds 64-bit unsigned integer capacity.`);
+        }
         bigResult |= BigInt(byte & 0x7f) << shift;
-        if ((byte & 0x80) === 0) break;
+        if ((byte & 0x80) === 0) {
+            terminated = true;
+            break;
+        }
         shift += BigInt(7);
-        if (shift > BigInt(63)) break;
     }
+
+    if (!terminated) {
+        throw new Error(`Malformed varint at offset ${offset}: truncated continuation byte at end of buffer.`);
+    }
+
     return { value: Number(bigResult), bigValue: bigResult, nextOffset: pos };
 }
 
+/**
+ * Strictly validated 64-bit ZigZag Varint Reader.
+ */
 export function readZigZagVarint(
     bytes: Uint8Array,
     offset = 0
@@ -376,8 +404,7 @@ export function writeZigZagVarint(value: number | bigint): number[] {
 }
 
 /**
- * Pure TypeScript LZ77 Snappy Block Compressor (Spec-compliant with Google Snappy format)
- * Produces real compressed blocks with varint uncompressed length header + literals + copy-1/copy-2 ops.
+ * Pure TypeScript LZ77 Snappy Block Compressor
  */
 export function compressSnappyBlock(input: Uint8Array): Uint8Array {
     const lenBytes = writeUnsignedVarint(input.length);
@@ -463,19 +490,32 @@ export function compressSnappyBlock(input: Uint8Array): Uint8Array {
 }
 
 /**
- * Pure TypeScript Snappy Block Decompressor
+ * Strictly Validated Pure TypeScript Snappy Block Decompressor.
+ * Never returns the raw compressed input or partial output on error—throws an explicit Error
+ * if the varint header, literal bounds, copy offset, or final decompressed byte count is invalid.
  */
 export function decompressSnappyBlock(input: Uint8Array): Uint8Array {
-    if (input.length === 0) return new Uint8Array(0);
-    const { value: uncompressedLen, nextOffset } = readUnsignedVarint(input, 0);
-    if (uncompressedLen <= 0 || uncompressedLen > 250 * 1024 * 1024) {
-        return input;
+    if (!input || input.length === 0) {
+        throw new Error('Malformed Snappy block: empty input buffer (0 bytes).');
     }
+    const { value: uncompressedLen, nextOffset } = readUnsignedVarint(input, 0);
+    if (uncompressedLen < 0 || uncompressedLen > MAX_DECOMPRESSED_PAGE_BYTES) {
+        throw new Error(
+            `Malformed Snappy block: declared uncompressed length (${uncompressedLen}) is invalid or exceeds safety limit (${MAX_DECOMPRESSED_PAGE_BYTES}).`
+        );
+    }
+    if (uncompressedLen === 0) {
+        if (nextOffset !== input.length) {
+            throw new Error('Malformed Snappy block: trailing bytes after 0-length header.');
+        }
+        return new Uint8Array(0);
+    }
+
     const out = new Uint8Array(uncompressedLen);
     let pos = nextOffset;
     let outIdx = 0;
 
-    while (pos < input.length && outIdx < uncompressedLen) {
+    while (pos < input.length) {
         const tag = input[pos++];
         const tagType = tag & 0x03;
 
@@ -483,42 +523,70 @@ export function decompressSnappyBlock(input: Uint8Array): Uint8Array {
             let len = (tag >>> 2) + 1;
             if (len > 60) {
                 const extraBytes = len - 60;
+                if (pos + extraBytes > input.length) {
+                    throw new Error('Malformed Snappy block: truncated literal length header.');
+                }
                 len = 0;
-                for (let i = 0; i < extraBytes && pos < input.length; i++) {
+                for (let i = 0; i < extraBytes; i++) {
                     len |= input[pos++] << (8 * i);
                 }
                 len += 1;
             }
-            for (let i = 0; i < len && pos < input.length && outIdx < uncompressedLen; i++) {
-                out[outIdx++] = input[pos++];
+            if (len <= 0 || pos + len > input.length || outIdx + len > uncompressedLen) {
+                throw new Error(
+                    `Malformed Snappy block: literal run (${len} bytes) exceeds input (${input.length - pos}) or output (${uncompressedLen - outIdx}) bounds.`
+                );
             }
+            out.set(input.subarray(pos, pos + len), outIdx);
+            pos += len;
+            outIdx += len;
         } else {
             let length = 0;
             let offset = 0;
             if (tagType === 1) {
+                if (pos >= input.length) {
+                    throw new Error('Malformed Snappy block: truncated copy-1 offset byte.');
+                }
                 length = ((tag >>> 2) & 0x07) + 4;
-                offset = ((tag & 0xe0) << 3) | (input[pos++] ?? 0);
+                offset = ((tag & 0xe0) << 3) | input[pos++];
             } else if (tagType === 2) {
+                if (pos + 2 > input.length) {
+                    throw new Error('Malformed Snappy block: truncated copy-2 offset bytes.');
+                }
                 length = (tag >>> 2) + 1;
-                offset = (input[pos] ?? 0) | ((input[pos + 1] ?? 0) << 8);
+                offset = input[pos] | (input[pos + 1] << 8);
                 pos += 2;
             } else {
+                if (pos + 4 > input.length) {
+                    throw new Error('Malformed Snappy block: truncated copy-4 offset bytes.');
+                }
                 length = (tag >>> 2) + 1;
                 offset =
-                    (input[pos] ?? 0) |
-                    ((input[pos + 1] ?? 0) << 8) |
-                    ((input[pos + 2] ?? 0) << 16) |
-                    ((input[pos + 3] ?? 0) << 24);
+                    (input[pos] |
+                        (input[pos + 1] << 8) |
+                        (input[pos + 2] << 16) |
+                        (input[pos + 3] << 24)) >>>
+                    0;
                 pos += 4;
             }
-            if (offset <= 0 || offset > outIdx) break;
-            for (let i = 0; i < length && outIdx < uncompressedLen; i++) {
+            if (offset <= 0 || offset > outIdx || outIdx + length > uncompressedLen) {
+                throw new Error(
+                    `Malformed Snappy block: invalid LZ77 copy offset (${offset} at outIdx=${outIdx}) or copy length (${length}).`
+                );
+            }
+            for (let i = 0; i < length; i++) {
                 out[outIdx] = out[outIdx - offset];
                 outIdx++;
             }
         }
     }
-    return out.subarray(0, outIdx);
+
+    if (outIdx !== uncompressedLen) {
+        throw new Error(
+            `Malformed Snappy block: decompressed byte count (${outIdx}) does not match declared header length (${uncompressedLen}).`
+        );
+    }
+    return out;
 }
 
 /**
@@ -603,7 +671,8 @@ export function encodeRleBitPackedHybrid(values: number[], bitWidth: number, inc
 }
 
 /**
- * Pure TypeScript Synchronous RFC 1951 DEFLATE Decompressor (supports stored, fixed, and dynamic Huffman blocks)
+ * Pure TypeScript Synchronous RFC 1951 DEFLATE Decompressor (Hardened with Kraft Huffman tree validation,
+ * stored-block NLEN one's-complement verification, strict bounds checking, and MAX_DECOMPRESSED_PAGE_BYTES cap).
  */
 const DEFLATE_LEN_BASE = [
     3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
@@ -626,14 +695,29 @@ const DEFLATE_CL_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2,
 interface HuffmanTable {
     counts: Uint16Array;
     symbols: Uint16Array;
+    totalSymbols: number;
 }
 
 function buildHuffmanTable(lengths: ArrayLike<number>, numSymbols: number): HuffmanTable {
     const counts = new Uint16Array(16);
     for (let i = 0; i < numSymbols; i++) {
         const l = lengths[i];
-        if (l > 0 && l < 16) counts[l]++;
+        if (l < 0 || l > 15) {
+            throw new Error(`Malformed DEFLATE Huffman table: invalid code length (${l}).`);
+        }
+        if (l > 0) counts[l]++;
     }
+
+    // Verify Kraft inequality so oversubscribed Huffman trees are rejected immediately
+    let left = 1;
+    for (let bits = 1; bits <= 15; bits++) {
+        left <<= 1;
+        left -= counts[bits];
+        if (left < 0) {
+            throw new Error('Malformed DEFLATE Huffman table: oversubscribed code lengths violate Kraft inequality.');
+        }
+    }
+
     const offsets = new Uint16Array(16);
     let total = 0;
     for (let bits = 1; bits < 16; bits++) {
@@ -643,23 +727,27 @@ function buildHuffmanTable(lengths: ArrayLike<number>, numSymbols: number): Huff
     const symbols = new Uint16Array(Math.max(1, total));
     for (let i = 0; i < numSymbols; i++) {
         const l = lengths[i];
-        if (l > 0 && l < 16) {
+        if (l > 0) {
             symbols[offsets[l]++] = i;
         }
     }
-    return { counts, symbols };
+    return { counts, symbols, totalSymbols: total };
 }
 
-export function inflateRawDeflate(input: Uint8Array): Uint8Array {
-    if (!input || input.length === 0) return new Uint8Array(0);
+export function inflateRawDeflate(input: Uint8Array, maxOutputBytes = MAX_DECOMPRESSED_PAGE_BYTES): Uint8Array {
+    if (!input || input.length === 0) {
+        throw new Error('Malformed DEFLATE stream: empty input buffer (0 bytes).');
+    }
     let bitPos = 0;
     const totalBits = input.length * 8;
     const out: number[] = [];
 
     const readBits = (n: number): number => {
+        if (bitPos + n > totalBits) {
+            throw new Error('Malformed DEFLATE stream: unexpected end of bitstream.');
+        }
         let val = 0;
         for (let i = 0; i < n; i++) {
-            if (bitPos >= totalBits) break;
             const byteIdx = bitPos >>> 3;
             const bitIdx = bitPos & 7;
             val |= ((input[byteIdx] >>> bitIdx) & 1) << i;
@@ -669,6 +757,9 @@ export function inflateRawDeflate(input: Uint8Array): Uint8Array {
     };
 
     const decodeSymbol = (table: HuffmanTable): number => {
+        if (table.totalSymbols === 0) {
+            throw new Error('Malformed DEFLATE stream: attempted to decode symbol from empty Huffman table.');
+        }
         let code = 0;
         let first = 0;
         let index = 0;
@@ -683,7 +774,7 @@ export function inflateRawDeflate(input: Uint8Array): Uint8Array {
             first <<= 1;
             code <<= 1;
         }
-        return 0;
+        throw new Error('Malformed DEFLATE stream: invalid Huffman code encountered.');
     };
 
     const fixedLitLengths = new Uint8Array(288);
@@ -696,23 +787,41 @@ export function inflateRawDeflate(input: Uint8Array): Uint8Array {
     let fixedDistTable: HuffmanTable | null = null;
 
     let bfinal = 0;
-    while (bfinal === 0 && bitPos < totalBits) {
+    while (bfinal === 0) {
         bfinal = readBits(1);
         const btype = readBits(2);
 
+        if (btype === 3) {
+            throw new Error('Malformed DEFLATE stream: reserved block type 3 (11) is invalid.');
+        }
+
         if (btype === 0) {
-            // Stored uncompressed block: align to next byte boundary
+            // Stored uncompressed block: align to next byte boundary and verify LEN / NLEN complement
             bitPos = (bitPos + 7) & ~7;
             const byteIdx = bitPos >>> 3;
-            if (byteIdx + 4 > input.length) break;
+            if (byteIdx + 4 > input.length) {
+                throw new Error('Malformed DEFLATE stored block: truncated 4-byte LEN/NLEN header.');
+            }
             const len = input[byteIdx] | (input[byteIdx + 1] << 8);
+            const nlen = input[byteIdx + 2] | (input[byteIdx + 3] << 8);
+            if (nlen !== ((~len) & 0xffff)) {
+                throw new Error(
+                    `Malformed DEFLATE stored block: LEN (${len}) does not match one's-complement NLEN (${nlen}).`
+                );
+            }
             bitPos += 32;
             const startByte = bitPos >>> 3;
-            for (let i = 0; i < len && startByte + i < input.length; i++) {
+            if (startByte + len > input.length) {
+                throw new Error('Malformed DEFLATE stored block: declared length exceeds input buffer.');
+            }
+            if (out.length + len > maxOutputBytes) {
+                throw new Error(`DEFLATE output exceeded safety limit (${maxOutputBytes} bytes).`);
+            }
+            for (let i = 0; i < len; i++) {
                 out.push(input[startByte + i]);
             }
             bitPos += len * 8;
-        } else if (btype === 1 || btype === 2) {
+        } else {
             let litTable: HuffmanTable;
             let distTable: HuffmanTable;
             if (btype === 1) {
@@ -724,6 +833,9 @@ export function inflateRawDeflate(input: Uint8Array): Uint8Array {
                 const hlit = readBits(5) + 257;
                 const hdist = readBits(5) + 1;
                 const hclen = readBits(4) + 4;
+                if (hlit > 286 || hdist > 30) {
+                    throw new Error(`Malformed DEFLATE dynamic block header: invalid HLIT (${hlit}) or HDIST (${hdist}).`);
+                }
                 const clLengths = new Uint8Array(19);
                 for (let i = 0; i < hclen; i++) {
                     clLengths[DEFLATE_CL_ORDER[i]] = readBits(3);
@@ -731,65 +843,97 @@ export function inflateRawDeflate(input: Uint8Array): Uint8Array {
                 const clTable = buildHuffmanTable(clLengths, 19);
                 const allLengths = new Uint8Array(hlit + hdist);
                 let idx = 0;
-                while (idx < hlit + hdist && bitPos <= totalBits) {
+                while (idx < hlit + hdist) {
                     const sym = decodeSymbol(clTable);
                     if (sym < 16) {
                         allLengths[idx++] = sym;
                     } else if (sym === 16) {
-                        const prev = idx > 0 ? allLengths[idx - 1] : 0;
+                        if (idx === 0) {
+                            throw new Error('Malformed DEFLATE dynamic block: code 16 repeat at index 0.');
+                        }
+                        const prev = allLengths[idx - 1];
                         const rep = readBits(2) + 3;
-                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = prev;
+                        if (idx + rep > allLengths.length) {
+                            throw new Error('Malformed DEFLATE dynamic block: code 16 repeat overflows table length.');
+                        }
+                        for (let r = 0; r < rep; r++) allLengths[idx++] = prev;
                     } else if (sym === 17) {
                         const rep = readBits(3) + 3;
-                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = 0;
+                        if (idx + rep > allLengths.length) {
+                            throw new Error('Malformed DEFLATE dynamic block: code 17 zero-run overflows table length.');
+                        }
+                        for (let r = 0; r < rep; r++) allLengths[idx++] = 0;
                     } else if (sym === 18) {
                         const rep = readBits(7) + 11;
-                        for (let r = 0; r < rep && idx < allLengths.length; r++) allLengths[idx++] = 0;
+                        if (idx + rep > allLengths.length) {
+                            throw new Error('Malformed DEFLATE dynamic block: code 18 zero-run overflows table length.');
+                        }
+                        for (let r = 0; r < rep; r++) allLengths[idx++] = 0;
                     } else {
-                        break;
+                        throw new Error(`Malformed DEFLATE code-length symbol (${sym}).`);
                     }
+                }
+                if (allLengths[256] === 0) {
+                    throw new Error('Malformed DEFLATE dynamic block: missing end-of-block symbol (256) in Huffman tree.');
                 }
                 litTable = buildHuffmanTable(allLengths.subarray(0, hlit), hlit);
                 distTable = buildHuffmanTable(allLengths.subarray(hlit), hdist);
             }
 
-            while (bitPos <= totalBits) {
+            let eobReached = false;
+            while (!eobReached) {
                 const sym = decodeSymbol(litTable);
                 if (sym < 256) {
+                    if (out.length + 1 > maxOutputBytes) {
+                        throw new Error(`DEFLATE output exceeded safety limit (${maxOutputBytes} bytes).`);
+                    }
                     out.push(sym);
                 } else if (sym === 256) {
-                    break;
+                    eobReached = true;
                 } else {
                     const lenIdx = sym - 257;
-                    if (lenIdx < 0 || lenIdx >= DEFLATE_LEN_BASE.length) break;
+                    if (lenIdx < 0 || lenIdx >= DEFLATE_LEN_BASE.length) {
+                        throw new Error(`Malformed DEFLATE length symbol (${sym}).`);
+                    }
                     const length = DEFLATE_LEN_BASE[lenIdx] + readBits(DEFLATE_LEN_EXTRA[lenIdx]);
                     const distSym = decodeSymbol(distTable);
-                    if (distSym < 0 || distSym >= DEFLATE_DIST_BASE.length) break;
+                    if (distSym < 0 || distSym >= DEFLATE_DIST_BASE.length) {
+                        throw new Error(`Malformed DEFLATE distance symbol (${distSym}).`);
+                    }
                     const dist = DEFLATE_DIST_BASE[distSym] + readBits(DEFLATE_DIST_EXTRA[distSym]);
                     const startIdx = out.length - dist;
-                    if (startIdx < 0) break;
+                    if (startIdx < 0) {
+                        throw new Error(`Malformed DEFLATE back-reference: distance (${dist}) exceeds output offset (${out.length}).`);
+                    }
+                    if (out.length + length > maxOutputBytes) {
+                        throw new Error(`DEFLATE output exceeded safety limit (${maxOutputBytes} bytes).`);
+                    }
                     for (let i = 0; i < length; i++) {
                         out.push(out[startIdx + i]);
                     }
                 }
             }
-        } else {
-            break;
         }
     }
     return new Uint8Array(out);
 }
 
 /**
- * Pure TypeScript Synchronous RFC 1952 GZIP / Zlib Decompressor
+ * Pure TypeScript Synchronous RFC 1952 GZIP / Zlib Decompressor (with GZIP trailer ISIZE verification)
  */
 export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
-    if (!input || input.length < 2) return input;
+    if (!input || input.length === 0) {
+        throw new Error('Malformed GZIP/DEFLATE stream: empty input buffer.');
+    }
     // Check GZIP magic 0x1f 0x8b
-    if (input[0] === 0x1f && input[1] === 0x8b && input.length >= 18) {
+    if (input[0] === 0x1f && input[1] === 0x8b) {
+        if (input.length < 18 || input[2] !== 8) {
+            throw new Error('Malformed GZIP stream: invalid header or compression method.');
+        }
         const flg = input[3];
         let pos = 10;
         if (flg & 0x04) {
+            if (pos + 2 > input.length) throw new Error('Malformed GZIP FEXTRA header.');
             const xlen = input[pos] | (input[pos + 1] << 8);
             pos += 2 + xlen;
         }
@@ -804,12 +948,19 @@ export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
         if (flg & 0x02) {
             pos += 2;
         }
-        if (pos < input.length - 8) {
-            return inflateRawDeflate(input.subarray(pos, input.length - 8));
+        if (pos > input.length - 8) {
+            throw new Error('Malformed GZIP stream: truncated before 8-byte CRC32/ISIZE trailer.');
         }
+        const inflated = inflateRawDeflate(input.subarray(pos, input.length - 8));
+        const dv = new DataView(input.buffer, input.byteOffset + input.length - 8, 8);
+        const expectedIsize = dv.getUint32(4, true);
+        if ((inflated.length >>> 0) !== expectedIsize) {
+            throw new Error(`Malformed GZIP stream: decompressed ISIZE (${inflated.length}) does not match trailer (${expectedIsize}).`);
+        }
+        return inflated;
     }
     // Check Zlib header (CMF / FLG where (CMF*256 + FLG) % 31 === 0 and CM === 8)
-    if ((input[0] & 0x0f) === 8 && ((input[0] << 8) | input[1]) % 31 === 0 && input.length > 6) {
+    if (input.length > 6 && (input[0] & 0x0f) === 8 && ((input[0] << 8) | input[1]) % 31 === 0) {
         const fdict = (input[1] & 0x20) !== 0;
         const start = fdict ? 6 : 2;
         return inflateRawDeflate(input.subarray(start, input.length - 4));
@@ -1281,7 +1432,7 @@ function encodeParquetPlainValues(
             if (logicalType === 'UINT64' || b > BigInt('9223372036854775807')) {
                 dv.setBigUint64(i * 8, BigInt.asUintN(64, b), true);
             } else {
-                dv.setBigInt64(i * 8, BigInt.asIntN(64, b), true);
+                dv.setBigInt64(i * 8, b, true);
             }
         }
         return out;
@@ -1291,7 +1442,9 @@ function encodeParquetPlainValues(
         const out = new Uint8Array(nonNullValues.length * 4);
         const dv = new DataView(out.buffer);
         for (let i = 0; i < nonNullValues.length; i++) {
-            dv.setFloat32(i * 4, Number(nonNullValues[i]) || 0, true);
+            const raw = nonNullValues[i];
+            const num = typeof raw === 'number' ? raw : Number(raw);
+            dv.setFloat32(i * 4, num, true);
         }
         return out;
     }
@@ -1300,7 +1453,9 @@ function encodeParquetPlainValues(
         const out = new Uint8Array(nonNullValues.length * 8);
         const dv = new DataView(out.buffer);
         for (let i = 0; i < nonNullValues.length; i++) {
-            dv.setFloat64(i * 8, Number(nonNullValues[i]) || 0, true);
+            const raw = nonNullValues[i];
+            const num = typeof raw === 'number' ? raw : Number(raw);
+            dv.setFloat64(i * 8, num, true);
         }
         return out;
     }
@@ -1967,36 +2122,6 @@ const SUPPORTED_PARQUET_CODECS = new Set(['UNCOMPRESSED', 'NONE', 'SNAPPY', 'GZI
 const SUPPORTED_PARQUET_ENCODINGS = new Set(['PLAIN', 'PLAIN_DICTIONARY', 'RLE_DICTIONARY', 'RLE', 'BIT_PACKED']);
 const SUPPORTED_AVRO_CODECS = new Set(['NULL', 'NONE', 'UNCOMPRESSED', 'DEFLATE', 'SNAPPY']);
 
-function createEmptyParseResult(fileName: string, warnings: string[]): ColumnarParseResult {
-    return {
-        format: 'parquet',
-        metadata: {
-            format: 'parquet',
-            formatVersion: '2.0',
-            magicBytes: 'EMPTY',
-            headerHex: '',
-            footerHex: '',
-            fileName,
-            fileSizeBytes: 0,
-            uncompressedBytes: 0,
-            compressionRatio: 1,
-            compressionCodec: 'NONE',
-            createdBy: 'N/A',
-            totalRows: 0,
-            totalColumns: 0,
-            rowGroupCount: 0,
-            rowGroups: [],
-            keyValueMetadata: {},
-            byteOrder: 'LITTLE_ENDIAN',
-            parseTimeMs: 0.1,
-        },
-        schema: [],
-        rows: [],
-        columnProfiles: [],
-        warnings,
-    };
-}
-
 export function parseColumnarFile(
     bytes: Uint8Array,
     fileName = 'dataset.parquet'
@@ -2005,7 +2130,7 @@ export function parseColumnarFile(
     const warnings: string[] = [];
 
     if (!bytes || bytes.length === 0) {
-        return createEmptyParseResult(fileName, ['Uploaded file is empty (0 bytes).']);
+        throw new Error('Uploaded file is empty (0 bytes). Please provide a valid Parquet, Avro, Feather, CSV, or JSONL file.');
     }
 
     if (bytes.length > MAX_SAFE_FILE_BYTES) {
@@ -2028,7 +2153,6 @@ export function parseColumnarFile(
     let totalUncompressedFromChunks = 0;
     let totalCompressedFromChunks = 0;
 
-    try {
     if (format === 'parquet') {
         const parsed = parseParquetBinary(bytes, warnings);
         rows = parsed.rows;
@@ -2078,12 +2202,6 @@ export function parseColumnarFile(
         codec = 'NONE';
         formatVersion = 'JSON / NDJSON';
         createdBy = 'JSON Stream Parser';
-    }
-    } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        warnings.push(`Binary parser fallback activated: ${message}`);
-        rows = extractFallbackRecordsFromBinary(bytes, format);
-        schema = inferSchemaFromRows(rows, codec, 'PLAIN');
     }
 
     if (schema.length === 0 && rows.length > 0) {
@@ -2536,18 +2654,18 @@ function decodeParquetColumnChunkValues(
     // 1. Check if this is a legacy KivaroTools JSON-array chunk
     const rawChunkSlice = fileBytes.subarray(startOffset, endOffset);
     if (rawChunkSlice[0] !== 0x15) {
-        const decompLegacy = decompressParquetPagePayload(
-            rawChunkSlice,
-            colChunk.codec,
-            colChunk.uncompressedSize
-        );
-        if (decompLegacy.length > 0 && decompLegacy[0] === 0x5b) {
-            try {
+        try {
+            const decompLegacy = decompressParquetPagePayload(
+                rawChunkSlice,
+                colChunk.codec,
+                colChunk.uncompressedSize
+            );
+            if (decompLegacy.length > 0 && decompLegacy[0] === 0x5b) {
                 const parsed = JSON.parse(textDecoder.decode(decompLegacy));
                 if (Array.isArray(parsed)) return parsed;
-            } catch {
-                // continue to Thrift PageHeader parser
             }
+        } catch {
+            // Not a legacy JSON chunk; proceed to Thrift PageHeader parser
         }
     }
 
@@ -2932,7 +3050,7 @@ function buildParquetLeafSchemaHierarchy(
  */
 function parseParquetBinary(
     bytes: Uint8Array,
-    _warnings: string[]
+    warnings: string[]
 ): {
     rows: Record<string, unknown>[];
     schema: ColumnSchemaNode[];
@@ -2944,6 +3062,7 @@ function parseParquetBinary(
     totalUncompressedBytes: number;
     totalCompressedBytes: number;
 } {
+    void warnings;
     if (bytes.length < 12) {
         throw new Error(
             `Truncated Apache Parquet container (${bytes.length} bytes < minimum 12-byte header + footer + PAR1 signature).`
@@ -3915,41 +4034,21 @@ function parseAvroBinary(
 
         if (recCount === 0) continue;
 
-        // 1. Check if blockPayload is fixture / JSON array
-        let decodedViaJson = false;
-        if (blockPayload.length > 0 && blockPayload[0] === 0x5b) {
-            try {
-                const parsedRows = JSON.parse(textDecoder.decode(blockPayload));
-                if (Array.isArray(parsedRows)) {
-                    rows.push(...parsedRows);
-                    decodedViaJson = true;
-                }
-            } catch {
-                decodedViaJson = false;
+        // Decode Apache Avro binary datum records using parsedAvroSchema
+        let datumOffset = 0;
+        for (let r = 0; r < recCount; r++) {
+            if (datumOffset >= blockPayload.length) {
+                throw new Error(
+                    `Truncated Avro data block: expected ${recCount} records, but buffer ended after ${r} record(s).`
+                );
             }
-        }
-
-        // 2. Decode Apache Avro binary datum records using parsedAvroSchema
-        if (!decodedViaJson && parsedAvroSchema) {
-            let datumOffset = 0;
-            for (let r = 0; r < recCount; r++) {
-                if (datumOffset >= blockPayload.length) {
-                    throw new Error(
-                        `Truncated Avro data block: expected ${recCount} records, but buffer ended after ${r} record(s).`
-                    );
-                }
-                const res = readAvroBinaryDatum(parsedAvroSchema, blockPayload, datumOffset, namedTypes, 0);
-                if (res.value && typeof res.value === 'object' && !Array.isArray(res.value)) {
-                    rows.push(res.value as Record<string, unknown>);
-                } else {
-                    rows.push({ value: res.value });
-                }
-                if (res.nextOffset <= datumOffset) break;
-                datumOffset = res.nextOffset;
+            const res = readAvroBinaryDatum(parsedAvroSchema, blockPayload, datumOffset, namedTypes, 0);
+            if (res.value && typeof res.value === 'object' && !Array.isArray(res.value)) {
+                rows.push(res.value as Record<string, unknown>);
+            } else {
+                rows.push({ value: res.value });
             }
-        } else if (!decodedViaJson) {
-            warnings.push('Decoded Avro binary block without embedded record schema.');
-            rows.push(...extractFallbackRecordsFromBinary(blockPayload, 'avro'));
+            datumOffset = res.nextOffset;
         }
     }
 
@@ -4711,18 +4810,19 @@ function parseFeatherOrArrowBinary(
                 };
             }
         } catch {
-            // fallback to Snappy container
+            // fallback to Snappy stream
         }
         try {
             const body = decompressSnappyBlock(bytes.subarray(8));
             const parsed = JSON.parse(textDecoder.decode(body));
             if (parsed && Array.isArray(parsed.rows)) {
+                const rows = parsed.rows as Record<string, unknown>[];
                 return {
-                    rows: parsed.rows,
+                    rows,
                     schema: Array.isArray(parsed.schema)
                         ? (parsed.schema as ColumnSchemaNode[])
-                        : inferSchemaFromRows(parsed.rows, parsed.codec || 'UNCOMPRESSED', 'ARROW_STREAM'),
-                    codec: parsed.codec || 'UNCOMPRESSED',
+                        : inferSchemaFromRows(rows, String(parsed.codec || 'UNCOMPRESSED'), 'ARROW_STREAM'),
+                    codec: String(parsed.codec || 'UNCOMPRESSED'),
                     formatVersion: 'Arrow IPC Stream (0xFFFFFFFF)',
                     createdBy: 'Apache Arrow IPC Stream Writer',
                     keyValueMetadata: (parsed.keyValueMetadata as Record<string, string>) || {},
@@ -4730,9 +4830,7 @@ function parseFeatherOrArrowBinary(
                     compressedBytes: bytes.length,
                 };
             }
-        } catch {
-            // continue
-        }
+        } catch {}
     }
 
     // 3. Feather V2 / Arrow IPC File ("ARROW1" at head and tail)
@@ -4763,9 +4861,11 @@ function parseFeatherOrArrowBinary(
     }
 
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    const fbFooterLen = bytes.length >= 18 ? view.getInt32(bytes.length - 10, true) : 0;
-    const hasValidFbFooter = fbFooterLen > 0 && 8 + fbFooterLen + 10 <= bytes.length;
-    const bodyEnd = hasValidFbFooter ? bytes.length - 10 - fbFooterLen : bytes.length - 6;
+    const fbFooterLen = view.getInt32(bytes.length - 10, true);
+    const bodyEnd =
+        fbFooterLen > 0 && 8 + fbFooterLen + 10 <= bytes.length
+            ? bytes.length - 10 - fbFooterLen
+            : bytes.length - 6;
 
     // Standard Arrow IPC File starts with 0xFFFFFFFF continuation at byte 8
     if (bytes.length >= 16 && view.getUint32(8, true) === 0xffffffff) {
@@ -4778,38 +4878,37 @@ function parseFeatherOrArrowBinary(
                     createdBy: 'Apache Arrow IPC / Feather V2 Writer',
                 };
             }
-        } catch {
-            // fallback to Snappy container
+        } catch (ipcErr: unknown) {
+            const msg = ipcErr instanceof Error ? ipcErr.message : String(ipcErr);
+            if (msg.includes('ZSTD') || msg.includes('Unsupported Arrow IPC')) {
+                throw ipcErr;
+            }
         }
     }
 
     // KivaroTools internal Snappy Feather container
+    const bodySlice = bytes.subarray(8, bodyEnd);
+    const decompressed = decompressSnappyBlock(bodySlice);
+    let parsed: Record<string, unknown> | null = null;
     try {
-        const bodySlice = bytes.subarray(8, bodyEnd);
-        const decompressed = decompressSnappyBlock(bodySlice);
-        let parsed: Record<string, unknown> | null = null;
-        try {
-            parsed = JSON.parse(textDecoder.decode(decompressed));
-        } catch {
-            parsed = null;
-        }
-        if (parsed && Array.isArray(parsed.rows)) {
-            const rows = parsed.rows as Record<string, unknown>[];
-            return {
-                rows,
-                schema: Array.isArray(parsed.schema)
-                    ? (parsed.schema as ColumnSchemaNode[])
-                    : inferSchemaFromRows(rows, String(parsed.codec || 'SNAPPY'), 'ARROW_IPC'),
-                codec: String(parsed.codec || 'SNAPPY'),
-                formatVersion: String(parsed.arrowVersion || 'Feather V2 / Arrow IPC (ARROW1)'),
-                createdBy: 'KivaroTools Arrow IPC Container Writer',
-                keyValueMetadata: (parsed.keyValueMetadata as Record<string, string>) || {},
-                uncompressedBytes: decompressed.length,
-                compressedBytes: bodySlice.length,
-            };
-        }
+        parsed = JSON.parse(textDecoder.decode(decompressed));
     } catch {
-        // continue
+        parsed = null;
+    }
+    if (parsed && Array.isArray(parsed.rows)) {
+        const rows = parsed.rows as Record<string, unknown>[];
+        return {
+            rows,
+            schema: Array.isArray(parsed.schema)
+                ? (parsed.schema as ColumnSchemaNode[])
+                : inferSchemaFromRows(rows, String(parsed.codec || 'SNAPPY'), 'ARROW_IPC'),
+            codec: String(parsed.codec || 'SNAPPY'),
+            formatVersion: String(parsed.arrowVersion || 'Feather V2 / Arrow IPC (ARROW1)'),
+            createdBy: 'KivaroTools Arrow IPC Container Writer',
+            keyValueMetadata: (parsed.keyValueMetadata as Record<string, string>) || {},
+            uncompressedBytes: decompressed.length,
+            compressedBytes: bodySlice.length,
+        };
     }
 
     throw new Error('Malformed Feather V2 (ARROW1) container: invalid IPC message stream.');
@@ -4914,43 +5013,6 @@ function coercePrimitiveValue(val: string | null): unknown {
     return val;
 }
 
-function extractPrintableStrings(bytes: Uint8Array, minLen = 3): string[] {
-    const out: string[] = [];
-    let cur = '';
-    for (let i = 0; i < bytes.length; i++) {
-        const b = bytes[i];
-        if (b >= 32 && b <= 126) {
-            cur += String.fromCharCode(b);
-        } else {
-            if (cur.length >= minLen) out.push(cur);
-            cur = '';
-        }
-    }
-    if (cur.length >= minLen) out.push(cur);
-    return out;
-}
-
-function extractFallbackRecordsFromBinary(
-    bytes: Uint8Array,
-    format: ColumnarFormat
-): Record<string, unknown>[] {
-    const strings = extractPrintableStrings(bytes, 3);
-    if (strings.length === 0) {
-        return [
-            {
-                container_format: format.toUpperCase(),
-                byte_length: bytes.length,
-                head_hex: bytesToHex(bytes, 16),
-            },
-        ];
-    }
-    return strings.slice(0, 200).map((s, idx) => ({
-        row_index: idx + 1,
-        extracted_token: s,
-        byte_length: s.length,
-    }));
-}
-
 export function inferSchemaFromRows(
     rows: Record<string, unknown>[],
     defaultCodec = 'SNAPPY',
@@ -4965,8 +5027,19 @@ export function inferSchemaFromRows(
 
     return Array.from(colNames).map((name, index) => {
         let hasNull = false;
-        let detectedLogical: LogicalDataType = 'NULL';
-        let detectedPhysical: PhysicalDataType = 'BYTE_ARRAY';
+        let sawBoolean = false;
+        let sawInt32 = false;
+        let sawInt64 = false;
+        let sawUint64 = false;
+        let sawNegativeInt = false;
+        let sawDouble = false;
+        let sawTimestamp = false;
+        let sawDate = false;
+        let sawUuid = false;
+        let sawList = false;
+        let sawStruct = false;
+        let sawString = false;
+        let sawSmallIntString = false;
 
         for (const r of rows) {
             const v = r?.[name];
@@ -4974,69 +5047,102 @@ export function inferSchemaFromRows(
                 hasNull = true;
                 continue;
             }
-            if (detectedLogical !== 'NULL') continue;
-
             if (typeof v === 'boolean') {
-                detectedLogical = 'BOOLEAN';
-                detectedPhysical = 'BOOLEAN';
+                sawBoolean = true;
             } else if (typeof v === 'bigint') {
-                detectedLogical = 'INT64';
-                detectedPhysical = 'INT64';
+                if (v < BigInt(0)) sawNegativeInt = true;
+                if (v > BigInt('9223372036854775807')) {
+                    sawUint64 = true;
+                } else {
+                    sawInt64 = true;
+                }
             } else if (typeof v === 'number') {
-                if (Number.isSafeInteger(v)) {
+                if (!Number.isFinite(v)) {
+                    sawString = true;
+                } else if (Number.isSafeInteger(v)) {
+                    if (v < 0) sawNegativeInt = true;
                     if (v > 2147483647 || v < -2147483648) {
-                        detectedLogical = 'INT64';
-                        detectedPhysical = 'INT64';
+                        sawInt64 = true;
                     } else {
-                        detectedLogical = 'INT32';
-                        detectedPhysical = 'INT32';
+                        sawInt32 = true;
                     }
                 } else {
-                    detectedLogical = 'DOUBLE';
-                    detectedPhysical = 'DOUBLE';
+                    sawDouble = true;
                 }
             } else if (typeof v === 'string') {
                 if (/^-?\d{16,20}$/.test(v)) {
                     try {
-                        const bVal = BigInt(v);
-                        if (bVal > BigInt('9223372036854775807')) {
-                            detectedLogical = 'UINT64';
-                            detectedPhysical = 'INT64';
+                        const b = BigInt(v);
+                        if (b < BigInt(0)) sawNegativeInt = true;
+                        if (b > BigInt('18446744073709551615') || b < BigInt('-9223372036854775808')) {
+                            sawString = true;
+                        } else if (b > BigInt('9223372036854775807')) {
+                            sawUint64 = true;
                         } else {
-                            detectedLogical = 'INT64';
-                            detectedPhysical = 'INT64';
+                            sawInt64 = true;
                         }
                     } catch {
-                        detectedLogical = 'INT64';
-                        detectedPhysical = 'INT64';
+                        sawString = true;
                     }
+                } else if (/^-?(?:0|[1-9]\d{0,14})$/.test(v)) {
+                    sawSmallIntString = true;
+                    if (v.startsWith('-')) sawNegativeInt = true;
                 } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(v)) {
-                    detectedLogical = 'TIMESTAMP_MILLIS';
-                    detectedPhysical = 'INT64';
+                    sawTimestamp = true;
                 } else if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                    detectedLogical = 'DATE';
-                    detectedPhysical = 'INT32';
-                } else if (
-                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)
-                ) {
-                    detectedLogical = 'UUID';
-                    detectedPhysical = 'FIXED_LEN_BYTE_ARRAY';
+                    sawDate = true;
+                } else if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) {
+                    sawUuid = true;
                 } else {
-                    detectedLogical = 'UTF8';
-                    detectedPhysical = 'BYTE_ARRAY';
+                    sawString = true;
                 }
             } else if (Array.isArray(v)) {
-                detectedLogical = 'LIST';
-                detectedPhysical = 'BYTE_ARRAY';
+                sawList = true;
             } else if (typeof v === 'object') {
-                detectedLogical = 'STRUCT';
-                detectedPhysical = 'BYTE_ARRAY';
+                sawStruct = true;
             }
         }
 
-        if (detectedLogical === 'NULL') {
+        if (sawSmallIntString && !sawUint64 && !sawInt64) {
+            sawString = true;
+        }
+
+        let detectedLogical: LogicalDataType = 'UTF8';
+        let detectedPhysical: PhysicalDataType = 'BYTE_ARRAY';
+
+        if (sawString || (sawUint64 && sawNegativeInt)) {
             detectedLogical = 'UTF8';
             detectedPhysical = 'BYTE_ARRAY';
+        } else if (sawStruct) {
+            detectedLogical = 'STRUCT';
+            detectedPhysical = 'BYTE_ARRAY';
+        } else if (sawList) {
+            detectedLogical = 'LIST';
+            detectedPhysical = 'BYTE_ARRAY';
+        } else if (sawDouble) {
+            detectedLogical = 'DOUBLE';
+            detectedPhysical = 'DOUBLE';
+        } else if (sawUint64) {
+            detectedLogical = 'UINT64';
+            detectedPhysical = 'INT64';
+        } else if (sawInt64) {
+            detectedLogical = 'INT64';
+            detectedPhysical = 'INT64';
+        } else if (sawInt32) {
+            detectedLogical = 'INT32';
+            detectedPhysical = 'INT32';
+        } else if (sawBoolean) {
+            detectedLogical = 'BOOLEAN';
+            detectedPhysical = 'BOOLEAN';
+        } else if (sawTimestamp) {
+            detectedLogical = 'TIMESTAMP_MILLIS';
+            detectedPhysical = 'INT64';
+        } else if (sawDate) {
+            detectedLogical = 'DATE';
+            detectedPhysical = 'INT32';
+        } else if (sawUuid) {
+            detectedLogical = 'UUID';
+            detectedPhysical = 'FIXED_LEN_BYTE_ARRAY';
         }
 
         return {
@@ -5142,12 +5248,16 @@ export function computeColumnProfiles(
             numericValues.sort((a, b) => a - b);
             min = numericValues[0];
             max = numericValues[numericValues.length - 1];
-            const sum = numericValues.reduce((acc, v) => acc + v, 0);
-            mean = Number((sum / numericValues.length).toFixed(4));
-            const variance =
-                numericValues.reduce((acc, v) => acc + Math.pow(v - mean!, 2), 0) /
-                numericValues.length;
-            stdDev = Number(Math.sqrt(variance).toFixed(4));
+            const nLen = numericValues.length;
+            const rawMean = numericValues.reduce((acc, v) => acc + v / nLen, 0);
+            mean = Number.isFinite(rawMean) ? Number(rawMean.toFixed(4)) : 0;
+            const rawVar = numericValues.reduce((acc, v) => {
+                const diff = v - rawMean;
+                const sq = (diff * diff) / nLen;
+                return Number.isFinite(acc + sq) ? acc + sq : acc;
+            }, 0);
+            const rawStd = Math.sqrt(Math.max(0, rawVar));
+            stdDev = Number.isFinite(rawStd) ? Number(rawStd.toFixed(4)) : 0;
             p25 = numericValues[Math.floor(numericValues.length * 0.25)];
             median = numericValues[Math.floor(numericValues.length * 0.5)];
             p75 = numericValues[Math.floor(numericValues.length * 0.75)];

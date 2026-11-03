@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
     Database,
     Upload,
@@ -194,11 +194,7 @@ export default function ParquetViewer() {
         }
     }, []);
 
-    // Load default sample on initial mount
-    useEffect(() => {
-        const sample = generateSampleBinaryFile('ecommerce_parquet');
-        handleLoadBuffer(sample.bytes, sample.fileName);
-    }, [handleLoadBuffer]);
+    // Do NOT auto-load a file on mount: let the user upload their own file or click a 1-Click Sample Preset
 
     const handleSelectSample = useCallback(
         (presetId: 'ecommerce_parquet' | 'iot_avro' | 'ml_feather') => {
@@ -520,7 +516,7 @@ export default function ParquetViewer() {
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
                             Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4),{' '}
-                            <span className="font-mono font-semibold">.avro</span> (Obj OCF, Null/Deflate/Snappy),{' '}
+                            <span className="font-mono font-semibold">.avro</span> ({'Obj\\x01'} OCF, Null/Deflate/Snappy),{' '}
                             <span className="font-mono font-semibold">.feather</span> (V1 <span className="font-mono">FEA1</span> CTable &amp; V2 <span className="font-mono">ARROW1</span> IPC),{' '}
                             <span className="font-mono font-semibold">.arrow / .ipc</span>, plus <span className="font-mono font-semibold">.jsonl / .csv</span>.
                         </p>
@@ -657,9 +653,22 @@ export default function ParquetViewer() {
                         </div>
 
                         <div className="min-w-0 rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 border border-slate-200/70 dark:border-slate-700/60">
-                            <span className="text-[11px] font-semibold uppercase text-slate-400 block">
-                                Active File
-                            </span>
+                            <div className="flex items-center justify-between gap-1">
+                                <span className="text-[11px] font-semibold uppercase text-slate-400 block">
+                                    Active File
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setDataset(null);
+                                        setErrorMsg(null);
+                                        setInspectedRowIndex(null);
+                                    }}
+                                    className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:underline"
+                                >
+                                    Clear
+                                </button>
+                            </div>
                             <p
                                 className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-1 truncate font-mono"
                                 title={dataset.metadata.fileName}
@@ -685,7 +694,7 @@ export default function ParquetViewer() {
                             </span>
                             <p className="leading-relaxed">
                                 <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, 1-level Dremel LIST, DECIMAL, INT96) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
-                                <strong>Avro OCF (Obj):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified).<br />
+                                <strong>Avro OCF ({'Obj\\x01'}):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified).<br />
                                 <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (<span className="font-mono">UNCOMPRESSED</span>) &amp; V2 Arrow IPC FlatBuffers parser (<span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">LZ4_FRAME</span>).
                             </p>
                         </div>
@@ -772,6 +781,40 @@ export default function ParquetViewer() {
                     );
                 })}
             </div>
+
+            {/* Empty State when no file or sample is selected yet */}
+            {!dataset && !errorMsg && (
+                <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 p-8 sm:p-10 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                        <Database className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                        No Dataset Loaded Yet — Drop a File Above or Select a 1-Click Sample Preset
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                        Upload your own <span className="font-mono font-semibold">.parquet</span>,{' '}
+                        <span className="font-mono font-semibold">.avro</span>,{' '}
+                        <span className="font-mono font-semibold">.feather</span> (V1 or V2),{' '}
+                        <span className="font-mono font-semibold">.arrow</span>,{' '}
+                        <span className="font-mono font-semibold">.jsonl</span>, or{' '}
+                        <span className="font-mono font-semibold">.csv</span> file using the dropzone above, or click one of the three{' '}
+                        <strong>Instant Binary Sample Datasets</strong> to test the Data Grid, 10-Dialect SQL DDL Generator, Column Profiler, Binary X-Ray, and Native <span className="font-mono font-semibold">.XLSX</span> Exporter.
+                    </p>
+                    <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                        {SAMPLE_PRESETS.map((sample) => (
+                            <button
+                                key={sample.id}
+                                type="button"
+                                onClick={() => handleSelectSample(sample.id)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-xs transition-all"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Load {sample.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* ============================================================
           TAB 1: DATA EXPLORER GRID

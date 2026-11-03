@@ -193,7 +193,9 @@ export default function ParquetViewerSeo() {
 
         <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
           <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 m-0 leading-relaxed">
-            <strong>Local Browser Processing Guarantee:</strong> Files are processed locally in your browser inside a client-side <code>ArrayBuffer</code> memory sandbox. Your dataset files and their contents are not uploaded to KivaroTools servers. The website may load standard analytics scripts to measure general site traffic.
+            <strong>Local Browser Processing &amp; Privacy Disclosure:</strong> Your selected file contents are processed
+            locally in your browser and are not uploaded to KivaroTools servers. The website may still load general
+            analytics or other third-party website resources.
           </p>
         </blockquote>
 
