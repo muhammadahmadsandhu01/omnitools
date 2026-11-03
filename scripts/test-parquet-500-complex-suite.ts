@@ -1453,12 +1453,16 @@ for (let i = 1; i <= 15; i++) {
 
 // 8.2 Malformed & Corrupted Binary Buffer Resilience (Tests 476–490)
 // 0-byte buffer
-const zeroBuf = new Uint8Array(0);
-const zeroParsed = parseColumnarFile(zeroBuf, 'empty.parquet');
+let zeroThrew = false;
+try {
+    parseColumnarFile(new Uint8Array(0), 'empty.parquet');
+} catch (e: unknown) {
+    zeroThrew = e instanceof Error && e.message.includes('empty');
+}
 assertTest(
-    zeroParsed.rows.length === 0 && zeroParsed.warnings.length > 0,
+    zeroThrew,
     'CAT8-476',
-    'Resilience: 0-byte empty buffer returns 0 rows and warning without throwing'
+    'Resilience: 0-byte empty buffer rejected with descriptive error'
 );
 
 // Truncated 1, 2, 3 byte buffers
@@ -1466,39 +1470,59 @@ for (let b = 1; b <= 3; b++) {
     const tNum = 476 + b;
     const tinyBuf = new Uint8Array(b);
     tinyBuf.fill(0x50); // 'P'
-    const tinyParsed = parseColumnarFile(tinyBuf, `tiny_${b}.parquet`);
+    let tinyThrew = false;
+    try {
+        parseColumnarFile(tinyBuf, `tiny_${b}.parquet`);
+    } catch {
+        tinyThrew = true;
+    }
     assertTest(
-        tinyParsed !== null && typeof tinyParsed === 'object',
+        tinyThrew,
         `CAT8-${String(tNum).padStart(3, '0')}`,
-        `Resilience: ${b}-byte truncated buffer handled gracefully without unhandled throw`
+        `Resilience: ${b}-byte truncated buffer rejected safely with error`
     );
 }
 
 // Corrupted PAR1 header without body
 const truncatedParquet = new Uint8Array([0x50, 0x41, 0x52, 0x31, 0x00, 0x01, 0x02]);
-const tParquetParsed = parseColumnarFile(truncatedParquet, 'corrupted.parquet');
+let tParquetThrew = false;
+try {
+    parseColumnarFile(truncatedParquet, 'corrupted.parquet');
+} catch {
+    tParquetThrew = true;
+}
 assertTest(
-    tParquetParsed.format === 'parquet' && Array.isArray(tParquetParsed.rows),
+    tParquetThrew,
     'CAT8-480',
-    'Resilience: Truncated PAR1 magic buffer parsed with fallback without crashing'
+    'Resilience: Truncated PAR1 magic buffer rejected with error instead of fabricating data'
 );
 
 // Corrupted Avro header without body
 const truncatedAvro = new Uint8Array([0x4f, 0x62, 0x6a, 0x01, 0x00, 0x00]);
-const tAvroParsed = parseColumnarFile(truncatedAvro, 'corrupted.avro');
+let tAvroThrew = false;
+try {
+    parseColumnarFile(truncatedAvro, 'corrupted.avro');
+} catch {
+    tAvroThrew = true;
+}
 assertTest(
-    tAvroParsed.format === 'avro' && Array.isArray(tAvroParsed.rows),
+    tAvroThrew,
     'CAT8-481',
-    'Resilience: Truncated Obj\\x01 Avro buffer parsed with fallback without crashing'
+    'Resilience: Truncated Obj\\x01 Avro buffer rejected with error instead of fabricating data'
 );
 
 // Corrupted Feather header without body
 const truncatedFeather = new Uint8Array([0x41, 0x52, 0x52, 0x4f, 0x57, 0x31, 0x00]);
-const tFeatherParsed = parseColumnarFile(truncatedFeather, 'corrupted.feather');
+let tFeatherThrew = false;
+try {
+    parseColumnarFile(truncatedFeather, 'corrupted.feather');
+} catch {
+    tFeatherThrew = true;
+}
 assertTest(
-    tFeatherParsed.format === 'feather' && Array.isArray(tFeatherParsed.rows),
+    tFeatherThrew,
     'CAT8-482',
-    'Resilience: Truncated ARROW1 Feather buffer parsed with fallback without crashing'
+    'Resilience: Truncated ARROW1 Feather buffer rejected with error instead of fabricating data'
 );
 
 // Random 500-byte noise buffer
@@ -1506,11 +1530,16 @@ for (let n = 1; n <= 8; n++) {
     const tNum = 482 + n;
     const noise = new Uint8Array(500);
     for (let j = 0; j < 500; j++) noise[j] = (j * 17 + n) % 256;
-    const noiseParsed = parseColumnarFile(noise, `random_noise_${n}.bin`);
+    let noiseThrew = false;
+    try {
+        parseColumnarFile(noise, `random_noise_${n}.bin`);
+    } catch {
+        noiseThrew = true;
+    }
     assertTest(
-        noiseParsed !== null && Array.isArray(noiseParsed.rows) && Array.isArray(noiseParsed.warnings),
+        noiseThrew,
         `CAT8-${String(tNum).padStart(3, '0')}`,
-        `Resilience: 500-byte random noise buffer #${n} absorbed without crashing`
+        `Resilience: 500-byte random noise buffer #${n} rejected safely without crashing`
     );
 }
 

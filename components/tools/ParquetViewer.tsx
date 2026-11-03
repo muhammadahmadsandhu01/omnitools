@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
     Database,
     Upload,
@@ -31,8 +31,11 @@ import {
 } from 'lucide-react';
 
 import {
-    parseColumnarFile,
+    MAX_SAFE_FILE_BYTES,
+    createColumnarParseWorkerDispatcher,
+    isColumnarParseCancelledError,
     generateSampleBinaryFile,
+    type ColumnarParseWorkerDispatcher,
     queryDataset,
     generateSchemaCode,
     exportDatasetToText,
@@ -156,9 +159,19 @@ export default function ParquetViewer() {
     const [prettyJson, setPrettyJson] = useState(true);
     const [exportScope, setExportScope] = useState<'filtered' | 'all'>('filtered');
 
-    // Copy feedback
+    // Copy feedback & background Worker parsing state
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [isParsing, setIsParsing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const parseDispatcherRef = useRef<ColumnarParseWorkerDispatcher | null>(null);
+    const uploadSeqRef = useRef(0);
+
+    useEffect(() => {
+        return () => {
+            parseDispatcherRef.current?.dispose();
+            parseDispatcherRef.current = null;
+        };
+    }, []);
 
     const triggerCopy = useCallback((text: string, id: string) => {
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -168,36 +181,55 @@ export default function ParquetViewer() {
         setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 2000);
     }, []);
 
-    // Load binary buffer into engine
-    const handleLoadBuffer = useCallback((bytes: Uint8Array, fileName: string) => {
-        setErrorMsg(null);
-        try {
-            const parsed = parseColumnarFile(bytes, fileName);
-            setDataset(parsed);
-            const colNames = parsed.schema.map((c) => c.name);
-            setSelectedColumns(colNames);
-            setNewFilterCol(colNames[0] || '');
-            setFilters([]);
-            setSearchQuery('');
-            setSortConfig(null);
-            setCurrentPage(1);
-            setInspectedRowIndex(null);
-            const cleanName = fileName
-                .replace(/\.[a-z0-9]+$/i, '')
-                .replace(/[^a-zA-Z0-9_]/g, '_')
-                .toLowerCase();
-            if (cleanName) setTableName(cleanName);
-        } catch (err: unknown) {
-            setDataset(null);
-            setInspectedRowIndex(null);
-            setErrorMsg(err instanceof Error ? err.message : 'Unable to parse binary file.');
-        }
+    const applyParsedDataset = useCallback((parsed: ColumnarParseResult, fileName: string) => {
+        setDataset(parsed);
+        const colNames = parsed.schema.map((c) => c.name);
+        setSelectedColumns(colNames);
+        setNewFilterCol(colNames[0] || '');
+        setFilters([]);
+        setSearchQuery('');
+        setSortConfig(null);
+        setCurrentPage(1);
+        setInspectedRowIndex(null);
+        const cleanName = fileName
+            .replace(/\.[a-z0-9]+$/i, '')
+            .replace(/[^a-zA-Z0-9_]/g, '_')
+            .toLowerCase();
+        if (cleanName) setTableName(cleanName);
     }, []);
+
+    // Load binary buffer into engine via Web Worker with automatic main-thread fallback
+    const handleLoadBuffer = useCallback(
+        (bytes: Uint8Array, fileName: string) => {
+            setErrorMsg(null);
+            if (!parseDispatcherRef.current) {
+                parseDispatcherRef.current = createColumnarParseWorkerDispatcher();
+            }
+            setIsParsing(true);
+            parseDispatcherRef.current
+                .parse(bytes, fileName)
+                .then((outcome) => {
+                    setIsParsing(false);
+                    applyParsedDataset(outcome.result, fileName);
+                })
+                .catch((err: unknown) => {
+                    if (isColumnarParseCancelledError(err)) {
+                        return;
+                    }
+                    setIsParsing(false);
+                    setDataset(null);
+                    setInspectedRowIndex(null);
+                    setErrorMsg(err instanceof Error ? err.message : 'Unable to parse binary file.');
+                });
+        },
+        [applyParsedDataset]
+    );
 
     // Do NOT auto-load a file on mount: let the user upload their own file or click a 1-Click Sample Preset
 
     const handleSelectSample = useCallback(
         (presetId: 'ecommerce_parquet' | 'iot_avro' | 'ml_feather') => {
+            uploadSeqRef.current++;
             const sample = generateSampleBinaryFile(presetId);
             handleLoadBuffer(sample.bytes, sample.fileName);
         },
@@ -207,11 +239,27 @@ export default function ParquetViewer() {
     const handleFileUpload = useCallback(
         async (file: File) => {
             if (!file) return;
+            const seq = ++uploadSeqRef.current;
+            parseDispatcherRef.current?.cancelCurrent('New file upload initiated.');
             setErrorMsg(null);
+            if (file.size > MAX_SAFE_FILE_BYTES) {
+                setIsParsing(false);
+                setDataset(null);
+                setInspectedRowIndex(null);
+                setErrorMsg(
+                    `File size (${(file.size / (1024 * 1024)).toFixed(1)} MB) exceeds the in-browser allocation safeguard of ${MAX_SAFE_FILE_BYTES / (1024 * 1024)
+                    } MB.`
+                );
+                return;
+            }
+            setIsParsing(true);
             try {
                 const arrayBuffer = await file.arrayBuffer();
+                if (seq !== uploadSeqRef.current) return;
                 handleLoadBuffer(new Uint8Array(arrayBuffer), file.name);
             } catch (err: unknown) {
+                if (seq !== uploadSeqRef.current) return;
+                setIsParsing(false);
                 setErrorMsg(err instanceof Error ? err.message : 'Failed to read uploaded file.');
             }
         },
@@ -512,7 +560,9 @@ export default function ParquetViewer() {
                             <Upload className="w-6 h-6" />
                         </div>
                         <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                            Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse
+                            {isParsing
+                                ? 'Parsing binary container in background worker...'
+                                : 'Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse'}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
                             Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4),{' '}
@@ -660,6 +710,9 @@ export default function ParquetViewer() {
                                 <button
                                     type="button"
                                     onClick={() => {
+                                        uploadSeqRef.current++;
+                                        parseDispatcherRef.current?.cancelCurrent('Cleared by user.');
+                                        setIsParsing(false);
                                         setDataset(null);
                                         setErrorMsg(null);
                                         setInspectedRowIndex(null);
@@ -1225,8 +1278,8 @@ export default function ParquetViewer() {
                                             type="button"
                                             onClick={() => setGridMode('paginated')}
                                             className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${gridMode === 'paginated'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-slate-600 dark:text-slate-400'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-slate-600 dark:text-slate-400'
                                                 }`}
                                         >
                                             Paginated
@@ -1238,8 +1291,8 @@ export default function ParquetViewer() {
                                                 setVirtualScrollTop(0);
                                             }}
                                             className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${gridMode === 'virtualized'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'text-slate-600 dark:text-slate-400'
+                                                ? 'bg-blue-600 text-white'
+                                                : 'text-slate-600 dark:text-slate-400'
                                                 }`}
                                         >
                                             Virtualized Scroll

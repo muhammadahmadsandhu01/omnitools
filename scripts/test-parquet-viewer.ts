@@ -145,12 +145,22 @@ console.log('============================================================');
 
 // 6. Corrupted / Empty Binary Resilience
 {
-  const emptyParsed = parseColumnarFile(new Uint8Array(0), 'empty.parquet');
-  assert(emptyParsed.rows.length === 0, 'Empty 0-byte file handled gracefully without throwing');
+  let emptyThrew = false;
+  try {
+    parseColumnarFile(new Uint8Array(0), 'empty.parquet');
+  } catch (e) {
+    emptyThrew = e instanceof Error && e.message.includes('empty');
+  }
+  assert(emptyThrew, 'Empty 0-byte file throws descriptive empty file error');
 
-  const truncatedParquet = new Uint8Array([0x50, 0x41, 0x52, 0x31, 0x00, 0x01, 0x02]);
-  const truncParsed = parseColumnarFile(truncatedParquet, 'truncated.parquet');
-  assert(truncParsed.format === 'parquet' && truncParsed.rows.length >= 1, 'Truncated PAR1 file recovers diagnostic row');
+  let truncThrew = false;
+  try {
+    const truncatedParquet = new Uint8Array([0x50, 0x41, 0x52, 0x31, 0x00, 0x01, 0x02]);
+    parseColumnarFile(truncatedParquet, 'truncated.parquet');
+  } catch {
+    truncThrew = true;
+  }
+  assert(truncThrew, 'Truncated PAR1 file throws error instead of silently fabricating data');
 }
 
 console.log(`✅ Unit & Edge-Case Suite Complete: ${passed} passed, ${failed} failed.`);

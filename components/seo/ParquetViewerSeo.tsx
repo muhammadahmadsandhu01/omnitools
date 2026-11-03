@@ -37,9 +37,9 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
       'Standard JavaScript numbers use IEEE-754 double-precision floating-point values, which only guarantee exact integer precision up to Number.MAX_SAFE_INTEGER (9,007,199,254,740,991). In ordinary online Parquet or JSON viewers, 64-bit Snowflake IDs, Stripe/Twitter transaction IDs, and nanosecond timestamps silently round to trailing zeros. KivaroTools decodes 64-bit physical integers using native JavaScript BigInt, executes exact BigInt-aware numeric predicate filtering (=, !=, >, >=, <, <= via compareExactNumericValues) and sorting without float conversion, and serializes values exceeding safe bounds as exact decimal strings across the Data Grid, JSON/JSONL exports, SQL INSERT batches, and CSV/Excel downloads.',
   },
   {
-    question: 'Can I convert Parquet, Avro, and Feather files to CSV and Microsoft Excel (.xlsx) for free without row caps?',
+    question: 'Can I convert Parquet, Avro, and Feather files to CSV and Microsoft Excel (.xlsx) in the browser?',
     answer:
-      'Yes. Unlike freemium viewers that cap free CSV exports at 1,000 rows, KivaroTools lets you export either your filtered/projected view or the entire loaded dataset to RFC 4180 CSV (with custom comma, semicolon, tab, or pipe delimiters and UTF-8 BOM), native binary Microsoft Excel (.xlsx) PKZIP Office Open XML workbooks with frozen headers and auto-filters, JSON arrays, JSON Lines (.jsonl / NDJSON), SQL INSERT statements, Markdown tables, or standalone HTML tables completely free, plus cross-format binary transcoding (.parquet <-> .avro <-> .feather).',
+      'Yes. Within the 250 MB input file safeguard and 5,000,000-row allocation ceiling, KivaroTools lets you export either your filtered/projected view or the full loaded dataset (including rows outside the current paginated or virtualized viewport) to RFC 4180 CSV (with custom comma, semicolon, tab, or pipe delimiters and UTF-8 BOM), native binary Microsoft Excel (.xlsx) PKZIP Office Open XML workbooks with frozen headers and auto-filters, JSON arrays, JSON Lines (.jsonl / NDJSON), SQL INSERT statements, Markdown tables, or standalone HTML tables, plus cross-format binary transcoding across supported Parquet, Avro, and Feather types.',
   },
   {
     question: 'How does the tool read a Parquet file schema and Thrift footer metadata?',
@@ -179,7 +179,7 @@ export default function ParquetViewerSeo() {
           </h2>
           <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
             <Sparkles className="h-3.5 w-3.5" />
-            100% In-Browser Binary Engine
+            Client-Side In-Browser Binary Engine
           </span>
         </div>
 
@@ -187,8 +187,8 @@ export default function ParquetViewerSeo() {
           Open, query, profile, and convert binary <strong>Apache Parquet (<code>.parquet</code>)</strong>,{' '}
           <strong>Apache Avro (<code>.avro</code>)</strong>, and{' '}
           <strong>Apache Arrow Feather (<code>.feather</code> / <code>.arrow</code> / <code>.ipc</code>)</strong>{' '}
-          datasets directly in your browser—with zero Python setup, zero server uploads, and 64-bit{' '}
-          <code>BigInt</code> precision safety.
+          datasets directly in your browser via a background Web Worker (with automatic main-thread fallback) and 64-bit{' '}
+          <code>BigInt</code> precision safety. Your selected file contents are processed locally in your browser and are not uploaded to KivaroTools servers (the website may still load general analytics or other third-party website resources).
         </p>
 
         <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
@@ -242,7 +242,7 @@ export default function ParquetViewerSeo() {
               <Binary className="h-5 w-5" />
             </div>
             <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
-              Lossless 64-Bit BigInt Precision
+              Exact 64-Bit BigInt Preservation
             </h3>
             <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Decodes 64-bit <code>INT64</code> and <code>UINT64</code> values via native <code>BigInt</code>,
@@ -283,8 +283,7 @@ export default function ParquetViewerSeo() {
           </h2>
         </div>
         <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-          When you drop a binary file into the studio, <code>lib/columnarViewerEngine.ts</code> executes a deterministic
-          5-stage pipeline locally inside browser memory without uploading your dataset to any server:
+          When you drop a binary file into the studio (up to the <code>250 MB</code> input safeguard), a background Web Worker—with automatic main-thread fallback if Worker execution is unavailable—executes <code>lib/columnarViewerEngine.ts</code> through a deterministic 5-stage pipeline locally in browser memory:
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -512,7 +511,7 @@ export default function ParquetViewerSeo() {
                 </tr>
                 <tr>
                   <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
-                    Apache Avro OCF (<code>Obj</code>)
+                    Apache Avro OCF (<code>{'Obj\\x01'}</code>)
                   </th>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">
                     <code>null</code> (uncompressed), <code>deflate</code> (RFC 1951), <code>snappy</code> (with 4-byte
@@ -832,7 +831,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   Binary Value Encodings
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  RLE_DICTIONARY, PLAIN, DELTA_BINARY_PACKED
+                  Supported: PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE (DELTA_BINARY_PACKED unsupported)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Variable-Length ZigZag Varints + Raw Bytes
@@ -847,12 +846,12 @@ ecommerce_orders_v2_schema = pa.schema([
                   Compression Codecs
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  Snappy, ZSTD, GZIP, LZ4_RAW, Brotli
+                  Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  null, deflate, snappy (with CRC32), zstandard
+                  Supported: null, deflate, snappy with CRC32 (zstandard, bzip2 &amp; xz unsupported)
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">V1: Uncompressed • V2: Uncompressed, LZ4_FRAME (ZSTD in native Arrow)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Supported: V1 Uncompressed • V2 Uncompressed &amp; LZ4_FRAME (ZSTD unsupported)</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">External (.csv.gz / .zip)</td>
               </tr>
               <tr>
@@ -901,11 +900,10 @@ ecommerce_orders_v2_schema = pa.schema([
           id="parquet-viewer-competitor-matrix"
           className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
         >
-          Enterprise Capabilities Benchmark: KivaroTools vs. Existing Online Viewers
+          Architectural Scope &amp; Feature Matrix: KivaroTools In-Browser Studio
         </h2>
         <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-          See how the KivaroTools Parquet, Avro &amp; Feather Studio compares against standalone single-format viewers
-          and freemium conversion portals:
+          Summary of verified client-side capabilities, safety limits, and architectural scope compared across common data inspection workflows:
         </p>
 
         <div className="w-full mt-6 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
@@ -914,16 +912,16 @@ ecommerce_orders_v2_schema = pa.schema([
               <tr>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold">Capability / Feature</th>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-bold text-blue-600 dark:text-blue-400">
-                  KivaroTools (100% Free)
+                  KivaroTools (In-Browser Studio)
                 </th>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">
-                  Parquet-Viewer.com / ParquetReader
+                  Single-Format Previewers
                 </th>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">
-                  DevToolLab / ExtendsClass (Avro)
+                  Raw JSON Schema Dumpers
                 </th>
                 <th className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">
-                  DataConverter.io / ConversionTools
+                  Server-Upload Converters
                 </th>
               </tr>
             </thead>
@@ -933,25 +931,25 @@ ecommerce_orders_v2_schema = pa.schema([
                   Supported Binary Formats
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">
-                  Parquet + Avro + Feather/Arrow + JSONL/CSV
+                  Parquet (PAR1) + Avro (Obj\x01) + Feather V1 (FEA1) &amp; V2 (ARROW1) + JSONL/CSV
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Parquet Only (or separate pages)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Avro Only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Single format per tool URL</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Single format only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Header/JSON dump only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Requires remote file upload</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700">
-                  Free Export Row Limit
+                  Input &amp; Export Safeguards
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">
-                  Unlimited (Full In-Browser Dataset)
+                  Up to 250 MB input / 5,000,000 rows in browser memory (Web Worker + main-thread fallback)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">
-                  Often capped at 1,000 rows on free tier
+                  Often limited to visible preview page
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Raw JSON dump only</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Unpaginated text output</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">
-                  Daily file size &amp; credit limits
+                  Network upload &amp; quota limits
                 </td>
               </tr>
               <tr>
@@ -1155,7 +1153,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   .parquet / .avro / .feather
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  Lossless in-memory binary transcoding between columnar Parquet (PAR1), streaming Avro (Obj\x01), and memory-mapped Arrow Feather (ARROW1)
+                  In-memory binary transcoding across supported Parquet (PAR1), Avro (Obj\x01), and Arrow Feather (ARROW1) schemas (preserving 64-bit BigInt strings, IEEE-754 Float32/Float64, booleans, nulls, and UTF-8)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Kafka Avro stream ingestion into Parquet lakehouses or Arrow dataframe pipelines without Python dependencies
@@ -1196,7 +1194,7 @@ ecommerce_orders_v2_schema = pa.schema([
               without its trailing <code>PAR1</code> bytes.
               <br />
               <strong>Fix:</strong> Verify the file byte size against your object storage bucket and re-download the
-              complete object, or inspect the recovered tokens in the Binary X-Ray tab.
+              complete object, or verify the file&apos;s leading and trailing bytes in the Binary X-Ray tab.
             </p>
           </div>
 
@@ -1312,7 +1310,7 @@ ecommerce_orders_v2_schema = pa.schema([
               <li>Parquet to JSON &amp; JSONL (NDJSON) converter</li>
               <li>Parquet schema viewer &amp; Thrift footer inspector</li>
               <li>Parquet Row Group &amp; Column Chunk zone map viewer</li>
-              <li>Snappy, GZIP, ZSTD &amp; RLE Parquet reader online</li>
+              <li>Snappy, GZIP, LZ4_RAW &amp; RLE Parquet reader online (ZSTD/Brotli explicitly flagged as unsupported)</li>
               <li>64-bit INT64 BigInt safe Parquet to JSON converter</li>
             </ul>
           </div>

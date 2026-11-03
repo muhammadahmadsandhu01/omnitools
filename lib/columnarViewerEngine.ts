@@ -218,6 +218,7 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder('utf-8', { fatal: false });
 
 // Memory & Allocation Safety Limits (guards against malformed/hostile binary lengths)
+export const COLUMNAR_ENGINE_VERSION = '5.1';
 export const MAX_SAFE_FILE_BYTES = 250 * 1024 * 1024; // 250 MB input buffer ceiling
 export const MAX_DECOMPRESSED_PAGE_BYTES = 250 * 1024 * 1024; // 250 MB decompressed block ceiling
 export const MAX_DECLARED_ROW_COUNT = 5_000_000; // 5M row allocation guard
@@ -1722,7 +1723,7 @@ export function encodeParquetBinary(
     // Field 5: key_value_metadata (list<KeyValue>)
     const kvEntries: [string, string][] = Object.entries({
         'parquet.writer.name': 'kivarotools-columnar-engine',
-        'parquet.writer.version': '4.0.0 (Thrift TCompactProtocol + Spec DataPage)',
+        'parquet.writer.version': '5.1 (Thrift TCompactProtocol + Spec DataPage)',
         'kivarotools.schema.json': JSON.stringify(schema),
         ...customMeta,
     });
@@ -1797,13 +1798,15 @@ function encodeAvroBinaryValue(val: unknown, avroType: string, out: number[]): v
         }
         case 'float': {
             const buf = new Uint8Array(4);
-            new DataView(buf.buffer).setFloat32(0, Number(val) || 0, true);
+            const num = typeof val === 'number' ? val : Number(val);
+            new DataView(buf.buffer).setFloat32(0, num, true);
             out.push(buf[0], buf[1], buf[2], buf[3]);
             break;
         }
         case 'double': {
             const buf = new Uint8Array(8);
-            new DataView(buf.buffer).setFloat64(0, Number(val) || 0, true);
+            const num = typeof val === 'number' ? val : Number(val);
+            new DataView(buf.buffer).setFloat64(0, num, true);
             for (let i = 0; i < 8; i++) out.push(buf[i]);
             break;
         }
@@ -1947,9 +1950,22 @@ export function encodeFeatherBinary(
             schema,
             rows: rows.map((r) => {
                 const o: Record<string, unknown> = {};
-                for (const k of Object.keys(r)) {
+                for (const col of schema) {
+                    const k = col.name;
                     const val = r[k];
-                    o[k] = typeof val === 'bigint' ? val.toString() : val;
+                    if (val === undefined || val === null) {
+                        o[k] = null;
+                    } else if (typeof val === 'bigint') {
+                        o[k] = val.toString();
+                    } else if (typeof val === 'number' && !Number.isFinite(val)) {
+                        o[k] = Number.isNaN(val)
+                            ? '__KIVARO_IEEE754_NAN__'
+                            : val > 0
+                                ? '__KIVARO_IEEE754_POS_INF__'
+                                : '__KIVARO_IEEE754_NEG_INF__';
+                    } else {
+                        o[k] = val;
+                    }
                 }
                 return o;
             }),
@@ -2020,10 +2036,11 @@ function mapLogicalToAvroPrimitive(logical: LogicalDataType): string {
         case 'INT32':
             return 'int';
         case 'INT64':
-        case 'UINT64':
         case 'TIMESTAMP_MILLIS':
         case 'TIMESTAMP_MICROS':
             return 'long';
+        case 'UINT64':
+            return 'string';
         case 'FLOAT':
             return 'float';
         case 'DOUBLE':
@@ -2355,11 +2372,11 @@ function decodeParquetStatBytes(
     }
     if (physicalType === 'FLOAT' && raw.length === 4 && !isAsciiNumeric) {
         const f = new DataView(raw.buffer, raw.byteOffset, 4).getFloat32(0, true);
-        return Number.isFinite(f) ? Number(f.toFixed(6)) : null;
+        return Number.isFinite(f) ? f : null;
     }
     if (physicalType === 'DOUBLE' && raw.length === 8 && !isAsciiNumeric) {
         const d = new DataView(raw.buffer, raw.byteOffset, 8).getFloat64(0, true);
-        return Number.isFinite(d) ? Number(d.toFixed(6)) : null;
+        return Number.isFinite(d) ? d : null;
     }
     if (physicalType === 'BOOLEAN' && raw.length === 1 && raw[0] <= 1) {
         return raw[0] !== 0 ? 'true' : 'false';
@@ -2463,7 +2480,7 @@ function decodeParquetPlainValues(
         for (let i = 0; i < count; i++) {
             const f = view.getFloat32(pos, true);
             pos += 4;
-            values.push(Number(f.toFixed(6)));
+            values.push(f);
         }
         return { values, nextOffset: pos };
     }
@@ -2544,6 +2561,9 @@ function decompressParquetPagePayload(
     codec: string,
     uncompressedSize: number
 ): Uint8Array {
+    if (compressedSlice.length === 0 && uncompressedSize === 0) {
+        return new Uint8Array(0);
+    }
     if (uncompressedSize > MAX_DECOMPRESSED_PAGE_BYTES) {
         throw new Error(`Declared Parquet page uncompressed size (${uncompressedSize} bytes) exceeds safety limit.`);
     }
@@ -3629,7 +3649,7 @@ function readAvroBinaryDatum(
             case 'float': {
                 if (offset + 4 > bytes.length) throw new Error('Truncated Avro float datum.');
                 const dv = new DataView(bytes.buffer, bytes.byteOffset + offset, 4);
-                return { value: Number(dv.getFloat32(0, true).toFixed(6)), nextOffset: offset + 4 };
+                return { value: dv.getFloat32(0, true), nextOffset: offset + 4 };
             }
             case 'double': {
                 if (offset + 8 > bytes.length) throw new Error('Truncated Avro double datum.');
@@ -3650,13 +3670,6 @@ function readAvroBinaryDatum(
                     return { value: bytesToHex(bytes.subarray(start, end), len), nextOffset: end };
                 }
                 const s = textDecoder.decode(bytes.subarray(start, end));
-                if (s.startsWith('{') || s.startsWith('[')) {
-                    try {
-                        return { value: JSON.parse(s), nextOffset: end };
-                    } catch {
-                        // return plain string
-                    }
-                }
                 return { value: s, nextOffset: end };
             }
             default:
@@ -4044,7 +4057,27 @@ function parseAvroBinary(
             }
             const res = readAvroBinaryDatum(parsedAvroSchema, blockPayload, datumOffset, namedTypes, 0);
             if (res.value && typeof res.value === 'object' && !Array.isArray(res.value)) {
-                rows.push(res.value as Record<string, unknown>);
+                const recObj = res.value as Record<string, unknown>;
+                if (savedSchema.length > 0) {
+                    for (const sc of savedSchema) {
+                        const rv = recObj[sc.name];
+                        if (
+                            typeof rv === 'string' &&
+                            (sc.logicalType === 'STRUCT' ||
+                                sc.logicalType === 'LIST' ||
+                                sc.logicalType === 'MAP' ||
+                                sc.logicalType === 'JSON') &&
+                            (rv.startsWith('{') || rv.startsWith('['))
+                        ) {
+                            try {
+                                recObj[sc.name] = JSON.parse(rv);
+                            } catch {
+                                // keep string
+                            }
+                        }
+                    }
+                }
+                rows.push(recObj);
             } else {
                 rows.push({ value: res.value });
             }
@@ -4330,7 +4363,7 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
                 if (isNullAt(r)) {
                     rows[r][colName] = null;
                 } else if (pType === 9) {
-                    rows[r][colName] = Number(valDv.getFloat32(r * 4, true).toFixed(6));
+                    rows[r][colName] = valDv.getFloat32(r * 4, true);
                 } else {
                     rows[r][colName] = valDv.getFloat64(r * 8, true);
                 }
@@ -4706,7 +4739,7 @@ function decodeGenuineArrowIpcStream(
                             }
                         } else if (f.typeType === 3) {
                             if (f.floatPrecision === 1) {
-                                batchRecords[r][f.name] = Number(vDv.getFloat32(r * 4, true).toFixed(6));
+                                batchRecords[r][f.name] = vDv.getFloat32(r * 4, true);
                             } else {
                                 batchRecords[r][f.name] = vDv.getFloat64(r * 8, true);
                             }
@@ -4830,7 +4863,7 @@ function parseFeatherOrArrowBinary(
                     compressedBytes: bytes.length,
                 };
             }
-        } catch {}
+        } catch { }
     }
 
     // 3. Feather V2 / Arrow IPC File ("ARROW1" at head and tail)
@@ -4896,7 +4929,16 @@ function parseFeatherOrArrowBinary(
         parsed = null;
     }
     if (parsed && Array.isArray(parsed.rows)) {
-        const rows = parsed.rows as Record<string, unknown>[];
+        const rows = (parsed.rows as Record<string, unknown>[]).map((r) => {
+            const restored: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(r)) {
+                if (v === '__KIVARO_IEEE754_NAN__') restored[k] = NaN;
+                else if (v === '__KIVARO_IEEE754_POS_INF__') restored[k] = Infinity;
+                else if (v === '__KIVARO_IEEE754_NEG_INF__') restored[k] = -Infinity;
+                else restored[k] = v;
+            }
+            return restored;
+        });
         return {
             rows,
             schema: Array.isArray(parsed.schema)
@@ -5031,6 +5073,7 @@ export function inferSchemaFromRows(
         let sawInt32 = false;
         let sawInt64 = false;
         let sawUint64 = false;
+        let sawUnsafeBigInt = false;
         let sawNegativeInt = false;
         let sawDouble = false;
         let sawTimestamp = false;
@@ -5051,6 +5094,9 @@ export function inferSchemaFromRows(
                 sawBoolean = true;
             } else if (typeof v === 'bigint') {
                 if (v < BigInt(0)) sawNegativeInt = true;
+                if (v > BigInt(Number.MAX_SAFE_INTEGER) || v < BigInt(Number.MIN_SAFE_INTEGER)) {
+                    sawUnsafeBigInt = true;
+                }
                 if (v > BigInt('9223372036854775807')) {
                     sawUint64 = true;
                 } else {
@@ -5058,7 +5104,7 @@ export function inferSchemaFromRows(
                 }
             } else if (typeof v === 'number') {
                 if (!Number.isFinite(v)) {
-                    sawString = true;
+                    sawDouble = true;
                 } else if (Number.isSafeInteger(v)) {
                     if (v < 0) sawNegativeInt = true;
                     if (v > 2147483647 || v < -2147483648) {
@@ -5076,10 +5122,15 @@ export function inferSchemaFromRows(
                         if (b < BigInt(0)) sawNegativeInt = true;
                         if (b > BigInt('18446744073709551615') || b < BigInt('-9223372036854775808')) {
                             sawString = true;
-                        } else if (b > BigInt('9223372036854775807')) {
-                            sawUint64 = true;
                         } else {
-                            sawInt64 = true;
+                            if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
+                                sawUnsafeBigInt = true;
+                            }
+                            if (b > BigInt('9223372036854775807')) {
+                                sawUint64 = true;
+                            } else {
+                                sawInt64 = true;
+                            }
                         }
                     } catch {
                         sawString = true;
@@ -5110,7 +5161,7 @@ export function inferSchemaFromRows(
         let detectedLogical: LogicalDataType = 'UTF8';
         let detectedPhysical: PhysicalDataType = 'BYTE_ARRAY';
 
-        if (sawString || (sawUint64 && sawNegativeInt)) {
+        if (sawString || (sawUint64 && sawNegativeInt) || (sawDouble && sawUnsafeBigInt)) {
             detectedLogical = 'UTF8';
             detectedPhysical = 'BYTE_ARRAY';
         } else if (sawStruct) {
@@ -5470,39 +5521,46 @@ export function compareExactNumericValues(a: unknown, b: unknown): number | null
 function evaluateSingleCondition(row: Record<string, unknown>, f: FilterCondition): boolean {
     const rawVal = row[f.column];
     if (f.operator === 'is_null') {
-        return rawVal === null || rawVal === undefined || rawVal === '';
+        return rawVal === null || rawVal === undefined;
     }
     if (f.operator === 'is_not_null') {
-        return rawVal !== null && rawVal !== undefined && rawVal !== '';
+        return rawVal !== null && rawVal !== undefined;
     }
     if (rawVal === null || rawVal === undefined) return false;
 
+    const isNaNVal = typeof rawVal === 'number' && Number.isNaN(rawVal);
     const strVal = typeof rawVal === 'object' ? JSON.stringify(rawVal) : String(rawVal);
     const targetStr = f.value;
     const targetTrimmed = f.value.trim();
 
     // Use exact 64-bit BigInt & arbitrary-precision decimal comparison whenever both operands are numeric
     const exactCmp =
-        typeof rawVal !== 'boolean' && typeof rawVal !== 'object' && targetTrimmed !== ''
+        typeof rawVal !== 'boolean' && typeof rawVal !== 'object' && !isNaNVal && targetTrimmed !== ''
             ? compareExactNumericValues(rawVal, targetTrimmed)
             : null;
 
     switch (f.operator) {
         case 'eq':
+            if (isNaNVal) return targetTrimmed.toLowerCase() === 'nan';
             return exactCmp !== null
                 ? exactCmp === 0
                 : strVal.toLowerCase() === targetStr.toLowerCase();
         case 'neq':
+            if (isNaNVal) return targetTrimmed.toLowerCase() !== 'nan';
             return exactCmp !== null
                 ? exactCmp !== 0
                 : strVal.toLowerCase() !== targetStr.toLowerCase();
         case 'gt':
+            if (isNaNVal) return false;
             return exactCmp !== null ? exactCmp > 0 : strVal > targetStr;
         case 'gte':
+            if (isNaNVal) return false;
             return exactCmp !== null ? exactCmp >= 0 : strVal >= targetStr;
         case 'lt':
+            if (isNaNVal) return false;
             return exactCmp !== null ? exactCmp < 0 : strVal < targetStr;
         case 'lte':
+            if (isNaNVal) return false;
             return exactCmp !== null ? exactCmp <= 0 : strVal <= targetStr;
         case 'contains':
             return strVal.toLowerCase().includes(targetStr.toLowerCase());
@@ -6243,7 +6301,7 @@ export function exportDatasetToText(
                 const obj: Record<string, unknown> = {};
                 for (const c of cols) {
                     const v = r[c];
-                    obj[c] = typeof v === 'bigint' ? v.toString() : v;
+                    obj[c] = v === undefined ? null : typeof v === 'bigint' ? v.toString() : v;
                 }
                 return obj;
             });
@@ -6258,7 +6316,7 @@ export function exportDatasetToText(
                     const obj: Record<string, unknown> = {};
                     for (const c of cols) {
                         const v = r[c];
-                        obj[c] = typeof v === 'bigint' ? v.toString() : v;
+                        obj[c] = v === undefined ? null : typeof v === 'bigint' ? v.toString() : v;
                     }
                     return JSON.stringify(obj);
                 })
@@ -6346,5 +6404,427 @@ export function exportDatasetToText(
 
         default:
             return '';
+    }
+}
+// ============================================================
+// 12. BACKGROUND WEB WORKER PARSING & MAIN-THREAD FALLBACK
+// ============================================================
+
+export interface ColumnarWorkerLike {
+    postMessage(message: unknown, transfer?: Transferable[]): void;
+    terminate(): void;
+    addEventListener(type: string, listener: (ev: unknown) => void): void;
+    removeEventListener(type: string, listener: (ev: unknown) => void): void;
+}
+
+export interface ColumnarParseDispatcherOptions {
+    workerFactory?: (scriptUrl: string) => ColumnarWorkerLike;
+    createObjectURL?: (blob: Blob) => string;
+    revokeObjectURL?: (url: string) => void;
+    disableWorker?: boolean;
+}
+
+export interface ColumnarParseAsyncOutcome {
+    result: ColumnarParseResult;
+    executionMode: 'worker' | 'main-thread-fallback';
+    requestId: number;
+}
+
+export interface ColumnarParseCancelledError extends Error {
+    isCancelled: true;
+    requestId: number;
+}
+
+export function isColumnarParseCancelledError(err: unknown): err is ColumnarParseCancelledError {
+    return Boolean(
+        err &&
+        typeof err === 'object' &&
+        (err as { isCancelled?: unknown }).isCancelled === true
+    );
+}
+
+function createCancelledError(requestId: number, message = 'Parse operation was cancelled.'): ColumnarParseCancelledError {
+    const err = new Error(message) as ColumnarParseCancelledError;
+    err.isCancelled = true;
+    err.requestId = requestId;
+    return err;
+}
+
+/**
+ * Generates the self-contained Web Worker script by serializing the active engine functions
+ * and lookup tables at runtime, avoiding any duplicate parser implementation.
+ */
+export function buildColumnarWorkerScriptSource(): string {
+    const workerFunctions: [string, { toString(): string; name?: string }][] = [
+        ['bytesToHex', bytesToHex],
+        ['detectColumnarFormat', detectColumnarFormat],
+        ['readUnsignedVarint', readUnsignedVarint],
+        ['readZigZagVarint', readZigZagVarint],
+        ['writeUnsignedVarint', writeUnsignedVarint],
+        ['writeZigZagVarint', writeZigZagVarint],
+        ['compressSnappyBlock', compressSnappyBlock],
+        ['decompressSnappyBlock', decompressSnappyBlock],
+        ['decodeRleBitPackedHybrid', decodeRleBitPackedHybrid],
+        ['encodeRleBitPackedHybrid', encodeRleBitPackedHybrid],
+        ['buildHuffmanTable', buildHuffmanTable],
+        ['inflateRawDeflate', inflateRawDeflate],
+        ['decompressGzipOrDeflate', decompressGzipOrDeflate],
+        ['decompressLz4Block', decompressLz4Block],
+        ['decompressLz4RawBlock', decompressLz4RawBlock],
+        ['ThriftCompactWriter', ThriftCompactWriter],
+        ['ThriftCompactReader', ThriftCompactReader],
+        ['computeCrc32', computeCrc32],
+        ['formatScaledDecimal', formatScaledDecimal],
+        ['decodeTwoComplementBigEndian', decodeTwoComplementBigEndian],
+        ['decodeParquetStatBytes', decodeParquetStatBytes],
+        ['decodeParquetPlainValues', decodeParquetPlainValues],
+        ['decompressParquetPagePayload', decompressParquetPagePayload],
+        ['reconstructDremelSingleLevelList', reconstructDremelSingleLevelList],
+        ['decodeParquetColumnChunkValues', decodeParquetColumnChunkValues],
+        ['buildParquetLeafSchemaHierarchy', buildParquetLeafSchemaHierarchy],
+        ['parseParquetBinary', parseParquetBinary],
+        ['coerceNumericStat', coerceNumericStat],
+        ['readAvroBinaryDatum', readAvroBinaryDatum],
+        ['buildSchemaFromAvroJson', buildSchemaFromAvroJson],
+        ['parseAvroBinary', parseAvroBinary],
+        ['fbReadTableSlots', fbReadTableSlots],
+        ['fbDeref', fbDeref],
+        ['fbReadString', fbReadString],
+        ['parseFeatherV1Binary', parseFeatherV1Binary],
+        ['decodeGenuineArrowIpcStream', decodeGenuineArrowIpcStream],
+        ['parseFeatherOrArrowBinary', parseFeatherOrArrowBinary],
+        ['parseJsonOrJsonlText', parseJsonOrJsonlText],
+        ['parseCsvTextToRows', parseCsvTextToRows],
+        ['splitCsvLine', splitCsvLine],
+        ['coercePrimitiveValue', coercePrimitiveValue],
+        ['inferSchemaFromRows', inferSchemaFromRows],
+        ['computeColumnProfiles', computeColumnProfiles],
+        ['buildRowGroupMetadata', buildRowGroupMetadata],
+        ['parseColumnarFile', parseColumnarFile],
+    ];
+
+    const fnSnippets = workerFunctions.map(([origName, fn]) => {
+        const src = fn.toString();
+        const runtimeName = fn.name;
+        if (runtimeName && runtimeName !== origName) {
+            return `${src}\nconst ${origName} = ${runtimeName};`;
+        }
+        return src;
+    });
+
+    return [
+        `'use strict';`,
+        `var __name = (typeof __name !== 'undefined') ? __name : function(target, value) { try { return Object.defineProperty(target, 'name', { value: value, configurable: true }); } catch (_) { return target; } };`,
+        `const textEncoder = new TextEncoder();`,
+        `const textDecoder = new TextDecoder('utf-8', { fatal: false });`,
+        `const COLUMNAR_ENGINE_VERSION = ${JSON.stringify(COLUMNAR_ENGINE_VERSION)};`,
+        `const MAX_SAFE_FILE_BYTES = ${MAX_SAFE_FILE_BYTES};`,
+        `const MAX_DECOMPRESSED_PAGE_BYTES = ${MAX_DECOMPRESSED_PAGE_BYTES};`,
+        `const MAX_DECLARED_ROW_COUNT = ${MAX_DECLARED_ROW_COUNT};`,
+        `const MAX_DECLARED_COLUMN_COUNT = ${MAX_DECLARED_COLUMN_COUNT};`,
+        `const DEFLATE_LEN_BASE = ${JSON.stringify(DEFLATE_LEN_BASE)};`,
+        `const DEFLATE_LEN_EXTRA = ${JSON.stringify(DEFLATE_LEN_EXTRA)};`,
+        `const DEFLATE_DIST_BASE = ${JSON.stringify(DEFLATE_DIST_BASE)};`,
+        `const DEFLATE_DIST_EXTRA = ${JSON.stringify(DEFLATE_DIST_EXTRA)};`,
+        `const DEFLATE_CL_ORDER = ${JSON.stringify(DEFLATE_CL_ORDER)};`,
+        `const CT_STOP = ${CT_STOP};`,
+        `const CT_BOOLEAN_TRUE = ${CT_BOOLEAN_TRUE};`,
+        `const CT_BOOLEAN_FALSE = ${CT_BOOLEAN_FALSE};`,
+        `const CT_BYTE = ${CT_BYTE};`,
+        `const CT_I16 = ${CT_I16};`,
+        `const CT_I32 = ${CT_I32};`,
+        `const CT_I64 = ${CT_I64};`,
+        `const CT_DOUBLE = ${CT_DOUBLE};`,
+        `const CT_BINARY = ${CT_BINARY};`,
+        `const CT_LIST = ${CT_LIST};`,
+        `const CT_SET = ${CT_SET};`,
+        `const CT_MAP = ${CT_MAP};`,
+        `const CT_STRUCT = ${CT_STRUCT};`,
+        `const PARQUET_TYPE_TO_ENUM = ${JSON.stringify(PARQUET_TYPE_TO_ENUM)};`,
+        `const PARQUET_ENUM_TO_TYPE = ${JSON.stringify(PARQUET_ENUM_TO_TYPE)};`,
+        `const PARQUET_CODEC_ENUM_TO_NAME = ${JSON.stringify(PARQUET_CODEC_ENUM_TO_NAME)};`,
+        `const PARQUET_ENCODING_ENUM_TO_NAME = ${JSON.stringify(PARQUET_ENCODING_ENUM_TO_NAME)};`,
+        `const PARQUET_CONVERTED_TYPE_MAP = ${JSON.stringify(PARQUET_CONVERTED_TYPE_MAP)};`,
+        `const SUPPORTED_PARQUET_CODECS = new Set(${JSON.stringify(Array.from(SUPPORTED_PARQUET_CODECS))});`,
+        `const SUPPORTED_PARQUET_ENCODINGS = new Set(${JSON.stringify(Array.from(SUPPORTED_PARQUET_ENCODINGS))});`,
+        `const SUPPORTED_AVRO_CODECS = new Set(${JSON.stringify(Array.from(SUPPORTED_AVRO_CODECS))});`,
+        ...fnSnippets,
+        `self.addEventListener('message', function(ev) {`,
+        `  const msg = ev && ev.data ? ev.data : {};`,
+        `  const requestId = msg.requestId;`,
+        `  const fileName = typeof msg.fileName === 'string' ? msg.fileName : 'dataset.parquet';`,
+        `  try {`,
+        `    const raw = msg.bytes;`,
+        `    const bytes = raw instanceof Uint8Array ? raw : raw instanceof ArrayBuffer ? new Uint8Array(raw) : new Uint8Array(0);`,
+        `    const result = parseColumnarFile(bytes, fileName);`,
+        `    self.postMessage({ requestId: requestId, ok: true, result: result });`,
+        `  } catch (err) {`,
+        `    const errMsg = err && typeof err.message === 'string' ? err.message : String(err);`,
+        `    self.postMessage({ requestId: requestId, ok: false, isParseError: true, error: errMsg });`,
+        `  }`,
+        `});`,
+    ].join('\n');
+}
+
+export interface ColumnarParseWorkerDispatcher {
+    parse(bytes: Uint8Array, fileName?: string): Promise<ColumnarParseAsyncOutcome>;
+    cancelCurrent(reason?: string): void;
+    dispose(): void;
+    getActiveRequestId(): number;
+}
+
+/**
+ * Creates a race-safe background Web Worker dispatcher for `parseColumnarFile`.
+ * - Offloads binary parsing and decompression to a dedicated Web Worker when available.
+ * - Automatically falls back to synchronous main-thread `parseColumnarFile` if Worker creation or runtime execution fails.
+ * - Prevents stale Worker responses from overwriting newer file selections via monotonic `requestId` tracking.
+ * - Cleans up Worker instances, event listeners, and `blob:` object URLs on completion, error, superseding upload, or disposal.
+ */
+export function createColumnarParseWorkerDispatcher(
+    options: ColumnarParseDispatcherOptions = {}
+): ColumnarParseWorkerDispatcher {
+    let latestRequestId = 0;
+    let disposed = false;
+    let activeCancelFn: ((reason?: string) => void) | null = null;
+
+    const cancelCurrent = (reason = 'Parse request superseded by a newer file selection.') => {
+        if (activeCancelFn) {
+            const fn = activeCancelFn;
+            activeCancelFn = null;
+            fn(reason);
+        }
+    };
+
+    const dispose = () => {
+        disposed = true;
+        cancelCurrent('Dispatcher disposed.');
+    };
+
+    const parse = (
+        bytes: Uint8Array,
+        fileName = 'dataset.parquet'
+    ): Promise<ColumnarParseAsyncOutcome> => {
+        if (disposed) {
+            return Promise.reject(new Error('Columnar parse dispatcher has been disposed.'));
+        }
+
+        // Cancel any in-flight request before starting the new one
+        cancelCurrent('Parse request superseded by a newer file selection.');
+        const requestId = ++latestRequestId;
+
+        // Pre-validate empty / oversized buffers before allocating Worker resources
+        if (!bytes || bytes.length === 0) {
+            return Promise.reject(
+                new Error(
+                    'Uploaded file is empty (0 bytes). Please provide a valid Parquet, Avro, Feather, CSV, or JSONL file.'
+                )
+            );
+        }
+        if (bytes.length > MAX_SAFE_FILE_BYTES) {
+            return Promise.reject(
+                new Error(
+                    `File size (${(bytes.length / (1024 * 1024)).toFixed(1)} MB) exceeds the in-browser allocation safeguard of ${MAX_SAFE_FILE_BYTES / (1024 * 1024)
+                    } MB.`
+                )
+            );
+        }
+
+        const runFallback = (): Promise<ColumnarParseAsyncOutcome> => {
+            return new Promise<ColumnarParseAsyncOutcome>((resolve, reject) => {
+                if (disposed || requestId !== latestRequestId) {
+                    reject(createCancelledError(requestId));
+                    return;
+                }
+                try {
+                    const result = parseColumnarFile(bytes, fileName);
+                    if (disposed || requestId !== latestRequestId) {
+                        reject(createCancelledError(requestId));
+                        return;
+                    }
+                    resolve({
+                        result,
+                        executionMode: 'main-thread-fallback',
+                        requestId,
+                    });
+                } catch (err: unknown) {
+                    reject(err instanceof Error ? err : new Error(String(err)));
+                }
+            });
+        };
+
+        const canUseWorker =
+            !options.disableWorker &&
+            (typeof options.workerFactory === 'function' ||
+                (typeof Worker !== 'undefined' &&
+                    typeof Blob !== 'undefined' &&
+                    typeof URL !== 'undefined' &&
+                    typeof URL.createObjectURL === 'function'));
+
+        if (!canUseWorker) {
+            return runFallback();
+        }
+
+        return new Promise<ColumnarParseAsyncOutcome>((resolve, reject) => {
+            let worker: ColumnarWorkerLike | null = null;
+            let objectUrl: string | null = null;
+            let settled = false;
+
+            const createUrl =
+                options.createObjectURL ??
+                ((blob: Blob) => URL.createObjectURL(blob));
+            const revokeUrl =
+                options.revokeObjectURL ??
+                ((url: string) => {
+                    if (typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+                        URL.revokeObjectURL(url);
+                    }
+                });
+
+            let onMessage: ((ev: unknown) => void) | null = null;
+            let onError: ((ev: unknown) => void) | null = null;
+
+            const cleanupResources = () => {
+                if (worker) {
+                    try {
+                        if (onMessage) worker.removeEventListener('message', onMessage);
+                        if (onError) worker.removeEventListener('error', onError);
+                    } catch {
+                        // ignore listener removal errors
+                    }
+                    try {
+                        worker.terminate();
+                    } catch {
+                        // ignore termination errors
+                    }
+                    worker = null;
+                }
+                if (objectUrl) {
+                    try {
+                        revokeUrl(objectUrl);
+                    } catch {
+                        // ignore URL revocation errors
+                    }
+                    objectUrl = null;
+                }
+                if (activeCancelFn === cancelThisRequest) {
+                    activeCancelFn = null;
+                }
+            };
+
+            const cancelThisRequest = (reason = 'Parse operation was cancelled.') => {
+                if (settled) return;
+                settled = true;
+                cleanupResources();
+                reject(createCancelledError(requestId, reason));
+            };
+
+            activeCancelFn = cancelThisRequest;
+
+            onMessage = (ev: unknown) => {
+                if (settled) return;
+                const data = (ev as { data?: Record<string, unknown> })?.data;
+                if (!data || data.requestId !== requestId) {
+                    // Ignore stale or unrelated worker responses
+                    return;
+                }
+                if (disposed || requestId !== latestRequestId) {
+                    settled = true;
+                    cleanupResources();
+                    reject(createCancelledError(requestId));
+                    return;
+                }
+                settled = true;
+                cleanupResources();
+                if (data.ok && data.result) {
+                    resolve({
+                        result: data.result as ColumnarParseResult,
+                        executionMode: 'worker',
+                        requestId,
+                    });
+                } else {
+                    reject(
+                        new Error(
+                            typeof data.error === 'string'
+                                ? data.error
+                                : 'Unable to parse binary file.'
+                        )
+                    );
+                }
+            };
+
+            onError = () => {
+                if (settled) return;
+                if (disposed || requestId !== latestRequestId) {
+                    settled = true;
+                    cleanupResources();
+                    reject(createCancelledError(requestId));
+                    return;
+                }
+                // Worker runtime error: clean up Worker resources and safely fall back to main thread
+                settled = true;
+                cleanupResources();
+                runFallback().then(resolve, reject);
+            };
+
+            try {
+                const scriptSource = buildColumnarWorkerScriptSource();
+                if (typeof Blob !== 'undefined') {
+                    const blob = new Blob([scriptSource], { type: 'application/javascript' });
+                    objectUrl = createUrl(blob);
+                } else {
+                    objectUrl = 'blob:columnar-worker';
+                }
+
+                worker = options.workerFactory
+                    ? options.workerFactory(objectUrl)
+                    : (new Worker(objectUrl) as unknown as ColumnarWorkerLike);
+
+                worker.addEventListener('message', onMessage);
+                worker.addEventListener('error', onError);
+
+                // Clone buffer for zero-copy transfer so caller's `bytes` remains intact if fallback is needed
+                const copyBytes = new Uint8Array(bytes.length);
+                copyBytes.set(bytes);
+                worker.postMessage(
+                    {
+                        requestId,
+                        fileName,
+                        bytes: copyBytes.buffer,
+                    },
+                    [copyBytes.buffer]
+                );
+            } catch {
+                // Worker initialization or postMessage failed: clean up and fall back to main thread
+                if (!settled) {
+                    settled = true;
+                    cleanupResources();
+                    runFallback().then(resolve, reject);
+                }
+            }
+        });
+    };
+
+    return {
+        parse,
+        cancelCurrent,
+        dispose,
+        getActiveRequestId: () => latestRequestId,
+    };
+}
+
+/**
+ * Convenience single-call async parser using a disposable Worker dispatcher with automatic main-thread fallback.
+ */
+export async function parseColumnarFileAsync(
+    bytes: Uint8Array,
+    fileName = 'dataset.parquet',
+    options: ColumnarParseDispatcherOptions = {}
+): Promise<ColumnarParseResult> {
+    const dispatcher = createColumnarParseWorkerDispatcher(options);
+    try {
+        const outcome = await dispatcher.parse(bytes, fileName);
+        return outcome.result;
+    } finally {
+        dispatcher.dispose();
     }
 }

@@ -19,3 +19,4 @@ const res = spawnSync(npxCmd, args, {
 });
 
 process.exit(res.status ?? 0);
+
