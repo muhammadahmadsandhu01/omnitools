@@ -565,7 +565,7 @@ export default function ParquetViewer() {
                                 : 'Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse'}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4),{' '}
+                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4/LZ4_RAW),{' '}
                             <span className="font-mono font-semibold">.avro</span> ({'Obj\\x01'} OCF, Null/Deflate/Snappy),{' '}
                             <span className="font-mono font-semibold">.feather</span> (V1 <span className="font-mono">FEA1</span> CTable &amp; V2 <span className="font-mono">ARROW1</span> IPC),{' '}
                             <span className="font-mono font-semibold">.arrow / .ipc</span>, plus <span className="font-mono font-semibold">.jsonl / .csv</span>.
@@ -746,9 +746,9 @@ export default function ParquetViewer() {
                                 1. Supported Formats &amp; Codecs
                             </span>
                             <p className="leading-relaxed">
-                                <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, 1-level Dremel LIST, DECIMAL, INT96) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
+                                <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, 1-level Dremel LIST, DECIMAL, INT96) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, <span className="font-mono">LZ4</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
                                 <strong>Avro OCF ({'Obj\\x01'}):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified).<br />
-                                <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (<span className="font-mono">UNCOMPRESSED</span>) &amp; V2 Arrow IPC FlatBuffers parser (<span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">LZ4_FRAME</span>).
+                                <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (<span className="font-mono">UNCOMPRESSED</span>) &amp; V2 Arrow IPC FlatBuffers parser (standard <span className="font-mono">UNCOMPRESSED</span> &amp; <span className="font-mono">LZ4_FRAME</span>, plus KivaroTools internal Snappy fallback container).
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">

@@ -29,7 +29,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'What is the difference between Apache Parquet, Apache Avro, and Apache Arrow Feather (.arrow)?',
     answer:
-      'Apache Parquet (.parquet) is a compressed columnar storage format with a trailing Thrift FileMetaData footer, engineered for analytical OLAP data warehouses (Snowflake, AWS Athena, Google BigQuery, Databricks, DuckDB). Apache Avro (.avro) is a row-oriented Object Container File (Obj\\x01) that embeds its JSON schema (avro.schema) in the file header alongside a 16-byte sync marker. Feather exists in two distinct binary architectures: legacy Feather V1 (FEA1 magic bytes, which stores uncompressed columns described by a trailing CTable / PrimitiveArray FlatBuffer) and Feather V2 (ARROW1 magic bytes, which uses the Apache Arrow IPC encapsulated Schema + RecordBatch format with optional LZ4_FRAME compression). KivaroTools implements dedicated, separate parsers for both Feather V1 and Feather V2.',
+      'Apache Parquet (.parquet) is a compressed columnar storage format with a trailing Thrift FileMetaData footer, engineered for analytical OLAP data warehouses (Snowflake, AWS Athena, Google BigQuery, Databricks, DuckDB). Apache Avro (.avro) is a row-oriented Object Container File (Obj\\x01) that embeds its JSON schema (avro.schema) in the file header alongside a 16-byte sync marker. Feather exists in two distinct binary architectures: legacy Feather V1 (FEA1 magic bytes, which stores uncompressed columns described by a trailing CTable / PrimitiveArray FlatBuffer) and Feather V2 (ARROW1 magic bytes, which uses the Apache Arrow IPC encapsulated Schema + RecordBatch format with standard UNCOMPRESSED or LZ4_FRAME compression, plus a KivaroTools internal Snappy fallback container for in-browser transcoding). KivaroTools implements dedicated, separate parsers for both Feather V1 and Feather V2.',
   },
   {
     question: 'How does KivaroTools prevent 64-bit integer (INT64 / UINT64) precision loss in the browser?',
@@ -54,7 +54,7 @@ export const PARQUET_VIEWER_FAQS: FaqItem[] = [
   {
     question: 'What compression codecs and encodings are supported for Parquet, Avro, and Feather files?',
     answer:
-      'The pure-TypeScript binary engine decodes Uncompressed (PLAIN), Snappy (LZ77 block decompression with Avro 4-byte CRC32 checksum verification), GZIP / DEFLATE (synchronous RFC 1951 / RFC 1952 INFLATE), and LZ4 (LZ4_RAW in Parquet and LZ4_FRAME in Feather V2) blocks, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE) across DataPage v1, DataPage v2, and DictionaryPage structures. If a file uses an unsupported compression codec (such as ZSTD, Brotli, LZO, bzip2, or xz) or an unsupported delta page encoding (such as DELTA_BINARY_PACKED), the parser displays an explicit unsupported-codec diagnostic message rather than returning fabricated or corrupted data.',
+      'The pure-TypeScript binary engine decodes Uncompressed (PLAIN), Snappy (LZ77 block decompression in Parquet, Avro with 4-byte CRC32 checksum verification, and the KivaroTools internal Feather fallback container), GZIP / DEFLATE (synchronous RFC 1951 / RFC 1952 INFLATE), and LZ4 (both LZ4 and LZ4_RAW in Parquet, and standard LZ4_FRAME in Feather V2 / Arrow IPC) blocks, along with Parquet Hybrid Run-Length Encoding / Bit-Packing (RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE) across DataPage v1, DataPage v2, and DictionaryPage structures. If a file uses an unsupported compression codec (such as ZSTD, Brotli, LZO, bzip2, or xz) or an unsupported delta page encoding (such as DELTA_BINARY_PACKED), the parser displays an explicit unsupported-codec diagnostic message rather than returning fabricated or corrupted data.',
   },
   {
     question: 'What is CWE-1236 CSV Formula Injection protection and why does it matter when exporting data?',
@@ -493,7 +493,7 @@ export default function ParquetViewerSeo() {
                     Apache Parquet (<code>PAR1</code>)
                   </th>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">
-                    <code>UNCOMPRESSED</code>, <code>SNAPPY</code>, <code>GZIP</code>, <code>LZ4_RAW</code> •{' '}
+                    <code>UNCOMPRESSED</code>, <code>SNAPPY</code>, <code>GZIP</code>, <code>LZ4</code>, <code>LZ4_RAW</code> •{' '}
                     <code>PLAIN</code>, <code>RLE_DICTIONARY</code>, <code>PLAIN_DICTIONARY</code>, <code>RLE</code>{' '}
                     (DataPage v1 &amp; v2)
                   </td>
@@ -550,8 +550,8 @@ export default function ParquetViewerSeo() {
                     Feather V2 / Arrow IPC (<code>ARROW1</code> / <code>0xFFFFFFFF</code>)
                   </th>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">
-                    Encapsulated Arrow IPC <code>Schema</code> + <code>RecordBatch</code> FlatBuffers reader (
-                    <code>UNCOMPRESSED</code>, <code>LZ4_FRAME</code>, Snappy container)
+                    Encapsulated Arrow IPC <code>Schema</code> + <code>RecordBatch</code> FlatBuffers reader (standard{' '}
+                    <code>UNCOMPRESSED</code>, <code>LZ4_FRAME</code>; plus KivaroTools internal Snappy fallback container)
                   </td>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">
                     <code>Bool</code>, <code>Int8..64</code> (BigInt), <code>UInt8..64</code>, <code>Float32/64</code>,{' '}
@@ -846,12 +846,12 @@ ecommerce_orders_v2_schema = pa.schema([
                   Compression Codecs
                 </th>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)
+                  Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Supported: null, deflate, snappy with CRC32 (zstandard, bzip2 &amp; xz unsupported)
                 </td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Supported: V1 Uncompressed • V2 Uncompressed &amp; LZ4_FRAME (ZSTD unsupported)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Supported: V1 Uncompressed • V2 standard Uncompressed &amp; LZ4_FRAME + KivaroTools internal Snappy fallback (ZSTD unsupported)</td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">External (.csv.gz / .zip)</td>
               </tr>
               <tr>
@@ -1153,7 +1153,7 @@ ecommerce_orders_v2_schema = pa.schema([
                   .parquet / .avro / .feather
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
-                  In-memory binary transcoding across supported Parquet (PAR1), Avro (Obj\x01), and Arrow Feather (ARROW1) schemas (preserving 64-bit BigInt strings, IEEE-754 Float32/Float64, booleans, nulls, and UTF-8)
+                  In-memory binary transcoding across supported Parquet (PAR1), Avro (Obj\x01), and Arrow Feather (ARROW1 internal Snappy fallback container) schemas (preserving 64-bit BigInt strings, IEEE-754 Float32/Float64, booleans, nulls, and UTF-8)
                 </td>
                 <td className="p-3 border border-slate-200 dark:border-slate-700">
                   Kafka Avro stream ingestion into Parquet lakehouses or Arrow dataframe pipelines without Python dependencies
@@ -1310,7 +1310,7 @@ ecommerce_orders_v2_schema = pa.schema([
               <li>Parquet to JSON &amp; JSONL (NDJSON) converter</li>
               <li>Parquet schema viewer &amp; Thrift footer inspector</li>
               <li>Parquet Row Group &amp; Column Chunk zone map viewer</li>
-              <li>Snappy, GZIP, LZ4_RAW &amp; RLE Parquet reader online (ZSTD/Brotli explicitly flagged as unsupported)</li>
+              <li>Snappy, GZIP, LZ4 / LZ4_RAW &amp; RLE Parquet reader online (ZSTD/Brotli explicitly flagged as unsupported)</li>
               <li>64-bit INT64 BigInt safe Parquet to JSON converter</li>
             </ul>
           </div>

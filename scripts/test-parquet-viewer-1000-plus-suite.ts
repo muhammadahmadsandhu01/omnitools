@@ -796,9 +796,9 @@ assertCat(
 );
 assertCat(
     'E_Xlsx_DDL_UI_SEO_Parity',
-    seoSource.includes('Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)') &&
+    seoSource.includes('Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)') &&
     seoSource.includes('Supported: null, deflate, snappy with CRC32 (zstandard, bzip2 &amp; xz unsupported)') &&
-    seoSource.includes('Supported: V1 Uncompressed • V2 Uncompressed &amp; LZ4_FRAME (ZSTD unsupported)'),
+    seoSource.includes('Supported: V1 Uncompressed • V2 standard Uncompressed &amp; LZ4_FRAME + KivaroTools internal Snappy fallback (ZSTD unsupported)'),
     'Issue #1: ParquetViewerSeo.tsx explicitly documents supported codecs and marks ZSTD/Brotli/LZO/bzip2/xz as unsupported'
 );
 assertCat(

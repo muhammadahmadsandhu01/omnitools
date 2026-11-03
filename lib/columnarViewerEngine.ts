@@ -5,14 +5,14 @@
  * 1. Apache Parquet (PAR1): Apache Thrift TCompactProtocol FileMetaData footer, SchemaElement tree,
  *    RowGroup / ColumnChunk / Statistics zone maps, and DataPage v1/v2 + DictionaryPage decoding for
  *    PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE encodings across UNCOMPRESSED, SNAPPY,
- *    GZIP (RFC 1952), and LZ4_RAW codecs (including DECIMAL, UINT8..64, INT96, and 1-level Dremel LISTs).
+ *    GZIP (RFC 1952), LZ4, and LZ4_RAW codecs (including DECIMAL, UINT8..64, INT96, and 1-level Dremel LISTs).
  * 2. Apache Avro OCF (Obj\x01): Object Container File header metadata map, embedded avro.schema JSON,
  *    16-byte header & per-block sync-marker verification, and ZigZag binary datum decoding across
  *    null, deflate (RFC 1951), and snappy (with 4-byte CRC32 verification) blocks.
  * 3. Feather V1 (FEA1) & Feather V2 / Arrow IPC (ARROW1 / 0xFFFFFFFF):
  *    - Dedicated Feather V1 CTable / PrimitiveArray FlatBuffers reader (UNCOMPRESSED PLAIN columns).
  *    - Independent Feather V2 / Arrow IPC encapsulated Schema + RecordBatch FlatBuffers reader
- *      (UNCOMPRESSED and LZ4_FRAME buffers).
+ *      (standard UNCOMPRESSED and LZ4_FRAME buffers, plus KivaroTools internal Snappy fallback container).
  * 4. 64-Bit BigInt Numeric Precision: Exact BigInt & decimal comparison (compareExactNumericValues)
  *    across display, bi-directional NULL-last sorting, all numeric filter operators, and exports.
  * 5. Native OpenXML .XLSX Workbook Compiler (PKZIP 0x504B0304) & Tested 15-Vector CWE-1236 Formula Mitigation.
@@ -1935,8 +1935,8 @@ export function encodeAvroBinary(
 }
 
 /**
- * Encodes an Apache Arrow IPC / Feather v2 ("ARROW1") container with a binary FlatBuffers
- * Footer table + compressed columnar RecordBatch buffers.
+ * Encodes a KivaroTools internal Snappy Feather ("ARROW1") fallback container with a binary FlatBuffers
+ * Footer table + Snappy-compressed payload.
  */
 export function encodeFeatherBinary(
     rows: Record<string, unknown>[],
@@ -2569,7 +2569,7 @@ function decompressParquetPagePayload(
     }
     if (!SUPPORTED_PARQUET_CODECS.has(codec)) {
         throw new Error(
-            `Unsupported Parquet compression codec "${codec}". Pure-TypeScript in-browser decoding supports UNCOMPRESSED, SNAPPY, GZIP, and LZ4_RAW. Re-encode with Snappy/GZIP or use PyArrow/DuckDB for ${codec} pages.`
+            `Unsupported Parquet compression codec "${codec}". Pure-TypeScript in-browser decoding supports UNCOMPRESSED, SNAPPY, GZIP, LZ4, and LZ4_RAW. Re-encode with Snappy/GZIP or use PyArrow/DuckDB for ${codec} pages.`
         );
     }
     if (codec === 'UNCOMPRESSED' || codec === 'NONE') return compressedSlice;
@@ -2654,7 +2654,7 @@ function decodeParquetColumnChunkValues(
 
     if (!SUPPORTED_PARQUET_CODECS.has(colChunk.codec)) {
         throw new Error(
-            `Column "${colChunk.name}" is compressed with unsupported codec "${colChunk.codec}". Supported Parquet codecs in browser memory are UNCOMPRESSED, SNAPPY, GZIP, and LZ4_RAW.`
+            `Column "${colChunk.name}" is compressed with unsupported codec "${colChunk.codec}". Supported Parquet codecs in browser memory are UNCOMPRESSED, SNAPPY, GZIP, LZ4, and LZ4_RAW.`
         );
     }
 
