@@ -1496,6 +1496,18 @@ ecommerce_orders_v2_schema = pa.schema([
               Turn your exported Parquet or Avro CSV/Excel spreadsheets into executive PDF tables in your browser.
             </p>
           </Link>
+
+          <Link
+            href="/document/pdf-scrubber"
+            className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
+          >
+            <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+              PDF Bank Statement &amp; Invoice Data Scrubber (PII Redactor) →
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Permanently redact IBANs, Luhn Card PANs, Tax IDs, coupled running balances, and all 12 hidden PDF surfaces locally.
+            </p>
+          </Link>
         </div>
       </section>
     </article>

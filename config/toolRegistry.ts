@@ -20,6 +20,7 @@ import SqlFormatter from '@/components/tools/SqlFormatter';
 import RegexTester from '@/components/tools/RegexTester';
 import ParquetViewer from '@/components/tools/ParquetViewer';
 import PdfMergeSplit from '@/components/tools/PdfMergeSplit';
+import PdfScrubber from '@/components/tools/PdfScrubber';
 import ImageToPdf from '@/components/tools/ImageToPdf';
 import PdfToWord from '@/components/tools/PdfToWord';
 import WordToPdf from '@/components/tools/WordToPdf';
@@ -55,6 +56,7 @@ import SqlFormatterSeo from '@/components/seo/SqlFormatterSeo';
 import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
 import ParquetViewerSeo from '@/components/seo/ParquetViewerSeo';
 import PdfMergeSplitSeo from '@/components/seo/PdfMergeSplitSeo';
+import PdfScrubberSeo from '@/components/seo/PdfScrubberSeo';
 import ImageToPdfSeo from '@/components/seo/ImageToPdfSeo';
 import PdfToWordSeo from '@/components/seo/PdfToWordSeo';
 import WordToPdfSeo from '@/components/seo/WordToPdfSeo';
@@ -126,6 +128,12 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'shrink-pdf': PdfCompressor, // Alias
   'compress-pdf-to-100kb': PdfCompressor, // Alias
   'compress-pdf-to-200kb': PdfCompressor, // Alias
+  'pdf-scrubber': PdfScrubber,
+  'pdf-redactor': PdfScrubber, // Alias -> /document/pdf-redactor
+  'pdf-pii-scrubber': PdfScrubber, // Alias -> /document/pdf-pii-scrubber
+  'bank-statement-redactor': PdfScrubber, // Alias -> /document/bank-statement-redactor
+  'invoice-redactor': PdfScrubber, // Alias -> /document/invoice-redactor
+  'redact-pdf': PdfScrubber, // Alias -> /document/redact-pdf
 
   // Media
   'webp-to-jpg-png': WebpToJpgPng,
@@ -198,6 +206,12 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'shrink-pdf': PdfCompressorSeo, // Alias
   'compress-pdf-to-100kb': PdfCompressorSeo, // Alias
   'compress-pdf-to-200kb': PdfCompressorSeo, // Alias
+  'pdf-scrubber': PdfScrubberSeo,
+  'pdf-redactor': PdfScrubberSeo, // Alias
+  'pdf-pii-scrubber': PdfScrubberSeo, // Alias
+  'bank-statement-redactor': PdfScrubberSeo, // Alias
+  'invoice-redactor': PdfScrubberSeo, // Alias
+  'redact-pdf': PdfScrubberSeo, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPngSeo,

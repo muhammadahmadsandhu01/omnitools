@@ -174,6 +174,7 @@ const popularFooterTools = [
   { name: 'PDF Merge & Split (750 MB)', href: '/document/pdf-merge-split' },
   { name: 'PDF to Word (.DOCX Converter)', href: '/document/pdf-to-word' },
   { name: 'Compress PDF (Target KB)', href: '/document/compress-pdf' },
+  { name: 'PDF Statement & Invoice Scrubber', href: '/document/pdf-scrubber' },
   { name: 'Image Compressor (Target KB)', href: '/media/image-compressor' },
   { name: 'Word Counter & Grammar Coach', href: '/seo/text-analyzer' },
   { name: 'Custom QR Code Generator', href: '/seo/qr-generator' },

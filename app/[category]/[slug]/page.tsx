@@ -65,15 +65,21 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                           slug === 'compress-pdf-to-100kb' ||
                           slug === 'compress-pdf-to-200kb'
                           ? 'compress-pdf'
-                          : slug === 'parquet-to-csv' ||
-                            slug === 'avro-viewer' ||
-                            slug === 'avro-to-json' ||
-                            slug === 'avro-to-csv' ||
-                            slug === 'feather-viewer' ||
-                            slug === 'arrow-viewer' ||
-                            slug === 'feather-to-csv'
-                            ? 'parquet-viewer'
-                            : slug;
+                          : slug === 'pdf-redactor' ||
+                            slug === 'pdf-pii-scrubber' ||
+                            slug === 'bank-statement-redactor' ||
+                            slug === 'invoice-redactor' ||
+                            slug === 'redact-pdf'
+                            ? 'pdf-scrubber'
+                            : slug === 'parquet-to-csv' ||
+                              slug === 'avro-viewer' ||
+                              slug === 'avro-to-json' ||
+                              slug === 'avro-to-csv' ||
+                              slug === 'feather-viewer' ||
+                              slug === 'arrow-viewer' ||
+                              slug === 'feather-to-csv'
+                              ? 'parquet-viewer'
+                              : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -84,7 +90,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
       resolvedSlug === 'excel-to-pdf' ||
       resolvedSlug === 'pdf-to-ppt' ||
       resolvedSlug === 'pdf-to-jpg' ||
-      resolvedSlug === 'compress-pdf'
+      resolvedSlug === 'compress-pdf' ||
+      resolvedSlug === 'pdf-scrubber'
       ? 'document'
       : category === 'pdf'
         ? 'document'

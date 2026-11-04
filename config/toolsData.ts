@@ -354,7 +354,7 @@ export const tools: Tool[] = [
       'Proportional discount allocation across taxable and tax-exempt items for VAT/GST compliance',
       'Custom company logo upload, IBAN/SWIFT remittance blocks, JSON draft backup, and CWE-1236 safe CSV export',
     ],
-    relatedToolSlugs: ['salary-calculator', 'crypto-converter', 'emi-calculator', 'compound-interest', 'image-to-pdf'],
+    relatedToolSlugs: ['pdf-scrubber', 'salary-calculator', 'crypto-converter', 'emi-calculator', 'compound-interest', 'image-to-pdf'],
   },
 
   {
@@ -1198,7 +1198,70 @@ export const tools: Tool[] = [
       'One-click range presets (All Pages, Odd Pages, Even Pages, First & Last) with automatic deduplication and bounds validation',
       'Preflight %PDF- magic-byte & encryption inspection plus post-generation output PDF integrity verification',
     ],
-    relatedToolSlugs: ['image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
+    relatedToolSlugs: ['pdf-scrubber', 'image-to-pdf', 'invoice-generator', 'image-compressor', 'webp-to-jpg-png'],
+  },
+
+  {
+    id: 'pdf-scrubber',
+    name: 'PDF Bank Statement & Invoice Data Scrubber — Deep CDR PII Redactor',
+    slug: 'pdf-scrubber',
+    categoryId: 'document',
+    description:
+      'Permanently redact IBANs, Luhn Card PANs, ABA Routing/MICR lines, SSN/CNIC/GSTIN/VAT IDs, ZATCA QR payloads, coupled running balances, and all 12 internal PDF metadata surfaces locally in your browser.',
+    isPopular: true,
+    status: 'published',
+    seoTitle: 'PDF Bank Statement & Invoice Scrubber — Free Redactor',
+    seoDescription:
+      'Permanently redact bank statements, tax invoices, and W-2 PDFs in your browser. Scrub IBANs, cards, tax IDs, running balances, and all 12 hidden PDF surfaces.',
+    keywords: [
+      'pdf bank statement scrubber online free',
+      'redact bank statement for rental application',
+      'redact bank statement for mortgage loan',
+      'redact account number keep last 4 digits pdf',
+      'hide personal spend on bank statement pdf',
+      'scrub sensitive data from pdf invoice online',
+      'client side pdf pii redactor no upload',
+      'anonymize bank statement pdf for chatgpt ai',
+      'remove hidden metadata from bank statement pdf',
+      'redact w2 and 1099 tax form pdf online',
+      'redact payslip and salary statement pdf free',
+      'permanent pdf redactor without adobe acrobat',
+      'verify if pdf redaction is permanent online',
+      'test pdf redaction ctrl a copy paste leak',
+      'redact iban and swift bic code from pdf',
+      'mask credit card pan luhn check pdf redactor',
+      'redact us aba routing and check micr pdf',
+      'redact ssn ein and tax id from pdf online',
+      'redact pakistan cnic ntn and iban in pdf',
+      'redact indian gstin pan and aadhaar in pdf',
+      'scrub zatca qr code and vat tin pdf invoice',
+      'remove embedded factur-x zugferd xml in pdf',
+      'pdf deep cdr sanitizer remove xmp metadata',
+      'strip incremental save history xref in pdf',
+      'remove hidden ocr text layer from scanned pdf',
+      'prevent running balance subtraction leak pdf',
+      'redact unit price and total on invoice pdf',
+      'foia exemption b4 b6 pdf privilege log tool',
+      'export pdf redaction privilege log to xlsx',
+      'pdf redaction sha256 audit certificate json',
+      'tokenize pii in financial pdf for llm rag',
+      'reversible encrypted pdf redaction vault',
+    ],
+    featureList: [
+      'True PDF 1.7 content-stream character excision (Tj/TJ operators) and RFC 1950/1951 /FlateDecode decompression that passes Ctrl+A and pdftotext forensic extraction tests',
+      '12-Surface Deep Content Disarm & Reconstruction (CDR) sanitizer that strips /Info, XMP /Metadata, /Outlines bookmarks, /Annots sticky notes, /AcroForm /V values, Factur-X XML attachments, /JS scripts, 3 Tr hidden OCR, and incremental %%EOF trailers',
+      '8-region mathematical checksum validators (Modulo-10 Luhn Card PANs, ISO 13616 Mod-97 IBAN across 80+ countries, US Federal Reserve [3,7,1] ABA Routing, Check MICR, US SSN/EIN, Pakistan NADRA CNIC/NTN, India Mod-36 GSTIN/PAN/Verhoeff Aadhaar, Saudi ZATCA TLV Base64 QR, and Australian Mod-89 ABN)',
+      'Financial Math Dependency & Reverse-Engineering Leak Guard that detects when redacted transaction amounts or invoice totals can be solved from adjacent visible Running Balances or Subtotal + VAT = Grand Total equations',
+      '6 purpose-built financial presets (Mortgage Underwriter Keep-Last-4, Landlord Proof-of-Income, Freelancer Portfolio Invoice, External Tax Audit, AI/LLM Deterministic Token Pseudonymizer, and Strict Zero-PII FOIA Mode)',
+      'Built-in Live Forensic Unredact Self-Test, downloadable SHA-256 Compliance Audit Certificate (.json), CWE-1236 formula-safe eDiscovery Privilege Logs (.xlsx & .csv), and passphrase-encrypted reversible sidecars (.kivaro-vault)',
+    ],
+    relatedToolSlugs: [
+      'excel-to-pdf',
+      'pdf-merge-split',
+      'pdf-to-excel',
+      'invoice-generator',
+      'pdf-to-word',
+    ],
   },
 
   {
@@ -1311,7 +1374,7 @@ export const tools: Tool[] = [
       'Interactive Pre-Download Document Inspector & Live Text Editor to review and modify extracted content before saving',
       'Instant 1-click Sample Business Contract PDF loader and full compatibility with Microsoft Word, Google Docs, Apple Pages, and LibreOffice',
     ],
-    relatedToolSlugs: ['word-to-pdf', 'pdf-to-excel', 'pdf-merge-split', 'pdf-to-ppt', 'text-analyzer'],
+    relatedToolSlugs: ['pdf-scrubber', 'word-to-pdf', 'pdf-to-excel', 'pdf-merge-split', 'pdf-to-ppt', 'text-analyzer'],
   },
 
   {
@@ -1414,7 +1477,7 @@ export const tools: Tool[] = [
       'Dual workbook modes (Single Consolidated Master Sheet or Separate Worksheet Tab per PDF Page) with automatic numeric/currency typing',
       'Interactive in-browser editable data grid and built-in CWE-1236 Spreadsheet Formula Injection sanitization (=, +, -, @)',
     ],
-    relatedToolSlugs: ['excel-to-pdf', 'json-converter', 'pdf-to-word', 'invoice-generator', 'pdf-merge-split'],
+    relatedToolSlugs: ['pdf-scrubber', 'excel-to-pdf', 'json-converter', 'pdf-to-word', 'invoice-generator', 'pdf-merge-split'],
   },
 
   {
@@ -1463,7 +1526,7 @@ export const tools: Tool[] = [
       'Automatic repeating navy header banners across multi-page tables, alternating zebra row striping, and customizable cell gridlines',
       'Multi-sheet workbook selector (convert all tabs or specific sheets) across A4, US Letter, and A3 Ledger paper sizes',
     ],
-    relatedToolSlugs: ['pdf-to-excel', 'json-converter', 'word-to-pdf', 'invoice-generator', 'pdf-merge-split'],
+    relatedToolSlugs: ['pdf-scrubber', 'pdf-to-excel', 'json-converter', 'word-to-pdf', 'invoice-generator', 'pdf-merge-split'],
   },
 
   {
