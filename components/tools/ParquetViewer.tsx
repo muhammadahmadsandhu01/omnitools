@@ -35,7 +35,9 @@ import {
     createColumnarParseWorkerDispatcher,
     isColumnarParseCancelledError,
     generateSampleBinaryFile,
+    buildForensicXRayMetadata,
     type ColumnarParseWorkerDispatcher,
+    type ContainerBinaryMetadata,
     queryDataset,
     generateSchemaCode,
     exportDatasetToText,
@@ -59,7 +61,7 @@ const SAMPLE_PRESETS = [
         id: 'ecommerce_parquet' as const,
         label: 'E-Commerce Orders (.parquet)',
         badge: 'Parquet v2 • Snappy • INT64',
-        description: '25 enterprise order records with INT64 IDs, timestamps, nested customer structs, and payment arrays.',
+        description: '25 enterprise order records with 18-digit INT64 IDs, timestamps, nested structs, and SKU arrays.',
     },
     {
         id: 'iot_avro' as const,
@@ -70,8 +72,8 @@ const SAMPLE_PRESETS = [
     {
         id: 'ml_feather' as const,
         label: 'LLM Embedding Store (.feather)',
-        badge: 'Arrow IPC v2 • Float64 • Fast',
-        description: '18 vector store rows with cosine similarity scores, token counts, latency metrics, and model tags.',
+        badge: 'Feather v2 • ARROW1 • List<Float64>',
+        description: '18 standard Arrow IPC rows with cosine similarity scores, token counts, latency metrics, and float vectors.',
     },
 ];
 
@@ -125,8 +127,9 @@ function formatCellPreview(val: unknown): string {
 }
 
 export default function ParquetViewer() {
-    // Core dataset state
+    // Core dataset & forensic fallback state
     const [dataset, setDataset] = useState<ColumnarParseResult | null>(null);
+    const [forensicXRay, setForensicXRay] = useState<ContainerBinaryMetadata | null>(null);
     const [activeTab, setActiveTab] = useState<StudioTab>('grid');
     const [isDragging, setIsDragging] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -183,6 +186,7 @@ export default function ParquetViewer() {
 
     const applyParsedDataset = useCallback((parsed: ColumnarParseResult, fileName: string) => {
         setDataset(parsed);
+        setForensicXRay(null);
         const colNames = parsed.schema.map((c) => c.name);
         setSelectedColumns(colNames);
         setNewFilterCol(colNames[0] || '');
@@ -202,6 +206,7 @@ export default function ParquetViewer() {
     const handleLoadBuffer = useCallback(
         (bytes: Uint8Array, fileName: string) => {
             setErrorMsg(null);
+            setForensicXRay(null);
             if (!parseDispatcherRef.current) {
                 parseDispatcherRef.current = createColumnarParseWorkerDispatcher();
             }
@@ -216,16 +221,18 @@ export default function ParquetViewer() {
                     if (isColumnarParseCancelledError(err)) {
                         return;
                     }
+                    const message = err instanceof Error ? err.message : 'Unable to parse binary file.';
                     setIsParsing(false);
                     setDataset(null);
                     setInspectedRowIndex(null);
-                    setErrorMsg(err instanceof Error ? err.message : 'Unable to parse binary file.');
+                    setErrorMsg(message);
+                    if (bytes && bytes.length > 0) {
+                        setForensicXRay(buildForensicXRayMetadata(bytes, fileName, message));
+                    }
                 });
         },
         [applyParsedDataset]
     );
-
-    // Do NOT auto-load a file on mount: let the user upload their own file or click a 1-Click Sample Preset
 
     const handleSelectSample = useCallback(
         (presetId: 'ecommerce_parquet' | 'iot_avro' | 'ml_feather') => {
@@ -242,6 +249,7 @@ export default function ParquetViewer() {
             const seq = ++uploadSeqRef.current;
             parseDispatcherRef.current?.cancelCurrent('New file upload initiated.');
             setErrorMsg(null);
+            setForensicXRay(null);
             if (file.size > MAX_SAFE_FILE_BYTES) {
                 setIsParsing(false);
                 setDataset(null);
@@ -360,7 +368,6 @@ export default function ParquetViewer() {
         prettyJson,
     ]);
 
-    // Add filter handler
     const handleAddFilter = useCallback(() => {
         if (!newFilterCol) return;
         if (newFilterOp !== 'is_null' && newFilterOp !== 'is_not_null' && newFilterVal.trim() === '') {
@@ -517,6 +524,22 @@ export default function ParquetViewer() {
             ? queriedResult.rows[inspectedRowIndex]
             : null;
 
+    const activeXRayMeta = dataset?.metadata ?? forensicXRay;
+
+    const xrayLayoutHeading = useMemo(() => {
+        if (!activeXRayMeta) return 'Physical Container Layout';
+        if (activeXRayMeta.format === 'parquet') {
+            return `Parquet Row Group & Column Chunk Physical Layout (${activeXRayMeta.rowGroups.length} Row Group)`;
+        }
+        if (activeXRayMeta.format === 'avro') {
+            return `Avro OCF Physical Data Blocks & Field Summary (${activeXRayMeta.rowGroups.length} Block)`;
+        }
+        if (activeXRayMeta.format === 'feather' || activeXRayMeta.format === 'arrow_stream') {
+            return `Arrow IPC / Feather Physical RecordBatch & Buffer Layout (${activeXRayMeta.rowGroups.length} Batch)`;
+        }
+        return 'In-Memory Text Stream Partition (Synthetic Estimate — Text Format Has No Physical Row Groups)';
+    }, [activeXRayMeta]);
+
     return (
         <div className="space-y-6">
             {/* Top Dropzone & Sample Studio Bar */}
@@ -565,9 +588,9 @@ export default function ParquetViewer() {
                                 : 'Drop Apache Parquet, Avro, or Feather (.arrow) file here — or click to browse'}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4/LZ4_RAW),{' '}
+                            Supports <span className="font-mono font-semibold">.parquet</span> (PAR1 Thrift, PLAIN/RLE_DICTIONARY, Uncompressed/Snappy/GZIP/LZ4/LZ4_RAW, timestamps in ms/us/ns, nested Struct/Map/List),{' '}
                             <span className="font-mono font-semibold">.avro</span> ({'Obj\\x01'} OCF, Null/Deflate/Snappy),{' '}
-                            <span className="font-mono font-semibold">.feather</span> (V1 <span className="font-mono">FEA1</span> CTable &amp; V2 <span className="font-mono">ARROW1</span> IPC),{' '}
+                            <span className="font-mono font-semibold">.feather</span> (V1 <span className="font-mono">FEA1</span> CTable &amp; V2 <span className="font-mono">ARROW1</span> IPC including Dictionary, Decimal, List, Struct &amp; Map),{' '}
                             <span className="font-mono font-semibold">.arrow / .ipc</span>, plus <span className="font-mono font-semibold">.jsonl / .csv</span>.
                         </p>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 max-w-xl">
@@ -627,21 +650,35 @@ export default function ParquetViewer() {
                     </div>
                 </div>
 
-                {/* Error Banner */}
+                {/* Error Banner with Forensic X-Ray Shortcut */}
                 {errorMsg && (
-                    <div className="mt-4 flex items-start gap-3 rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3.5 text-sm text-red-700 dark:text-red-300">
-                        <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                            <p className="font-bold">Binary Container Parse Alert</p>
-                            <p className="text-xs mt-0.5 break-words">{errorMsg}</p>
+                    <div className="mt-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-xl border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 p-3.5 text-sm text-red-700 dark:text-red-300">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold">Binary Container Parse Alert</p>
+                                <p className="text-xs mt-0.5 break-words">{errorMsg}</p>
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setErrorMsg(null)}
-                            className="text-xs font-semibold underline shrink-0"
-                        >
-                            Dismiss
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                            {forensicXRay && (
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('xray')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-xs"
+                                >
+                                    <Binary className="w-3.5 h-3.5" />
+                                    Inspect in Binary X-Ray
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setErrorMsg(null)}
+                                className="text-xs font-semibold underline px-2 py-1"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -688,7 +725,7 @@ export default function ParquetViewer() {
                             <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
                                 {formatBytes(dataset.metadata.fileSizeBytes)}{' '}
                                 <span className="text-xs font-normal text-slate-500">
-                                    ({dataset.metadata.rowGroupCount} RG)
+                                    ({dataset.metadata.rowGroupCount} {dataset.format === 'avro' ? 'Blk' : dataset.format === 'feather' || dataset.format === 'arrow_stream' ? 'Batch' : 'RG'})
                                 </span>
                             </p>
                         </div>
@@ -714,6 +751,7 @@ export default function ParquetViewer() {
                                         parseDispatcherRef.current?.cancelCurrent('Cleared by user.');
                                         setIsParsing(false);
                                         setDataset(null);
+                                        setForensicXRay(null);
                                         setErrorMsg(null);
                                         setInspectedRowIndex(null);
                                     }}
@@ -746,9 +784,9 @@ export default function ParquetViewer() {
                                 1. Supported Formats &amp; Codecs
                             </span>
                             <p className="leading-relaxed">
-                                <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, 1-level Dremel LIST, DECIMAL, INT96) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, <span className="font-mono">LZ4</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
-                                <strong>Avro OCF ({'Obj\\x01'}):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified).<br />
-                                <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (<span className="font-mono">UNCOMPRESSED</span>) &amp; V2 Arrow IPC FlatBuffers parser (standard <span className="font-mono">UNCOMPRESSED</span> &amp; <span className="font-mono">LZ4_FRAME</span>, plus KivaroTools internal Snappy fallback container).
+                                <strong>Parquet (PAR1):</strong> Thrift footer + DataPage v1/v2 &amp; DictionaryPage (PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, RLE boolean, Dremel LIST/LIST-of-STRUCT, STRUCT, MAP, DECIMAL, INT96, TIMESTAMP ms/us/ns) with <span className="font-mono">UNCOMPRESSED</span>, <span className="font-mono">SNAPPY</span>, <span className="font-mono">GZIP</span>, <span className="font-mono">LZ4</span>, &amp; <span className="font-mono">LZ4_RAW</span>.<br />
+                                <strong>Avro OCF ({'Obj\\x01'}):</strong> Header schema, 16B sync markers, ZigZag records/unions/arrays/maps with <span className="font-mono">null</span>, <span className="font-mono">deflate</span>, &amp; <span className="font-mono">snappy</span> (CRC32 verified), plus Confluent <span className="font-mono">0x00</span> wire detection.<br />
+                                <strong>Feather V1 (FEA1) &amp; V2 (ARROW1):</strong> Dedicated V1 CTable parser (PLAIN &amp; Category) &amp; V2 Arrow IPC FlatBuffers parser (<span className="font-mono">UNCOMPRESSED</span> &amp; <span className="font-mono">LZ4_FRAME</span> supporting Primitive, Decimal128/256, Float16, List/LargeList/FixedSizeList, Struct, Map, &amp; DictionaryBatch).
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
@@ -756,7 +794,7 @@ export default function ParquetViewer() {
                                 2. Disclosed Limitations &amp; Safeguards
                             </span>
                             <p className="leading-relaxed">
-                                Files compressed with native C++ codecs (<span className="font-mono">ZSTD</span>, <span className="font-mono">BROTLI</span>, <span className="font-mono">LZO</span>, <span className="font-mono">bzip2</span>, <span className="font-mono">xz</span>), delta encodings (<span className="font-mono">DELTA_BINARY_PACKED</span>), multi-level nested repetition (<span className="font-mono">maxRepLevel &gt; 1</span>), or KMS-encrypted Parquet (<span className="font-mono">PARE</span>) are explicitly rejected with an actionable error message rather than returning fabricated rows. Input buffer safeguard: <span className="font-mono">250 MB</span> (actual capacity depends on device memory).
+                                Files compressed with native C++ codecs (<span className="font-mono">ZSTD</span>, <span className="font-mono">BROTLI</span>, <span className="font-mono">LZO</span>, <span className="font-mono">bzip2</span>, <span className="font-mono">xz</span>), delta encodings (<span className="font-mono">DELTA_BINARY_PACKED</span>), Confluent wire messages without an embedded schema, or KMS-encrypted Parquet (<span className="font-mono">PARE</span>) are explicitly flagged with a diagnostic error and can be inspected in the <strong>Binary X-Ray Inspector</strong> tab. Input buffer safeguard: <span className="font-mono">250 MB</span>.
                             </p>
                         </div>
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 space-y-1">
@@ -764,7 +802,7 @@ export default function ParquetViewer() {
                                 3. Quick-Start Workflow
                             </span>
                             <p className="leading-relaxed">
-                                Drop a file or click a sample preset above → filter across 11 operators (with exact 64-bit <span className="font-mono">BigInt</span> comparison and <span className="font-mono">AND/OR</span> logic) → toggle <strong>Paginated</strong> or <strong>Virtualized Scroll</strong> mode → click any row to inspect nested JSON → switch tabs for 10-dialect SQL DDL, Column Quantiles, Binary X-Ray, or Native <span className="font-mono">.XLSX</span> / CSV export.
+                                Drop a file or click a sample preset above → filter across 11 operators (with exact 64-bit <span className="font-mono">BigInt</span> comparison and <span className="font-mono">AND/OR</span> logic) → toggle <strong>Paginated</strong> or <strong>Virtualized Scroll</strong> mode → click any row to inspect nested JSON → switch tabs for 10-dialect SQL DDL, Column Quantiles (P25/P50/P75/StdDev/Top 5), Binary X-Ray, or Native <span className="font-mono">.XLSX</span> / CSV export.
                             </p>
                         </div>
                     </div>
@@ -795,7 +833,7 @@ export default function ParquetViewer() {
                         id: 'xray' as const,
                         label: 'Binary X-Ray Inspector',
                         icon: Binary,
-                        badge: dataset?.metadata.magicBytes,
+                        badge: activeXRayMeta?.magicBytes,
                     },
                     {
                         id: 'export' as const,
@@ -989,7 +1027,6 @@ export default function ParquetViewer() {
                                     <Filter className="w-3.5 h-3.5 text-blue-500" />
                                     Predicate Filter:
                                 </span>
-                                {/* AND / OR Combinator Switch */}
                                 <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-0.5 bg-slate-100 dark:bg-slate-800">
                                     {(['AND', 'OR'] as const).map((mode) => (
                                         <button
@@ -1461,6 +1498,7 @@ export default function ParquetViewer() {
                                             </td>
                                             <td className="py-2.5 px-2.5 text-blue-600 dark:text-blue-400">
                                                 {col.logicalType}
+                                                {col.precision !== undefined ? `(${col.precision},${col.scale ?? 0})` : ''}
                                             </td>
                                             <td className="py-2.5 px-2.5">
                                                 <span
@@ -1488,7 +1526,7 @@ export default function ParquetViewer() {
                                     Polyglot Schema &amp; SQL DDL Generator (10 Targets)
                                 </h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Compile ready-to-run data warehouse DDL and typed SDK definitions
+                                    Compile schema-mapped data warehouse SQL DDL templates and typed SDK definitions
                                 </p>
                             </div>
 
@@ -1547,7 +1585,7 @@ export default function ParquetViewer() {
             )}
 
             {/* ============================================================
-          TAB 3: COLUMN PROFILER & STATISTICS
+          TAB 3: COLUMN PROFILER & STATISTICS (FULL QUANTILES, STDDEV, STRING LENGTHS & TOP 5)
           ============================================================ */}
             {activeTab === 'profiler' && dataset && (
                 <div className="space-y-4">
@@ -1556,12 +1594,13 @@ export default function ParquetViewer() {
                             Column-Level Data Quality, Cardinality &amp; Quantile Profiler
                         </h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                            Inspect null ratios, distinct cardinality, exact BigInt min/max bounds, sample numeric quantiles (P25 / P50 Median / P75 for standard IEEE-754 numbers), and top frequent values for every column.
+                            Inspect null ratios, distinct cardinality, exact BigInt min/max bounds, sample numeric quantiles (P25 / P50 Median / P75), Mean, StdDev, string length bounds, and Top 5 frequent values for every column.
                         </p>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             {dataset.columnProfiles.map((prof) => {
                                 const nonNullPct = (100 - prof.nullPercentage).toFixed(1);
+                                const hasQuantiles = prof.p25 !== null || prof.median !== null || prof.p75 !== null;
                                 return (
                                     <div
                                         key={prof.name}
@@ -1602,49 +1641,107 @@ export default function ParquetViewer() {
                                             </div>
                                         </div>
 
-                                        {/* Numeric / String Summary */}
+                                        {/* Min / P25 / P50 / P75 / Max & Mean / StdDev Summary */}
                                         {prof.min !== null && (
-                                            <div className="grid grid-cols-3 gap-2 pt-1 text-[11px] font-mono">
-                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                                                    <span className="text-slate-400 block">Min</span>
-                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
-                                                        {String(prof.min)}
-                                                    </span>
-                                                </div>
-                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                                                    <span className="text-slate-400 block">
-                                                        {prof.median !== null ? 'Median (P50)' : 'Mean'}
-                                                    </span>
-                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
-                                                        {prof.median !== null
-                                                            ? prof.median
-                                                            : prof.mean !== null
-                                                                ? prof.mean
-                                                                : '—'}
-                                                    </span>
-                                                </div>
-                                                <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
-                                                    <span className="text-slate-400 block">Max</span>
-                                                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
-                                                        {String(prof.max)}
-                                                    </span>
-                                                </div>
+                                            <div className="space-y-2 pt-1 text-[11px] font-mono">
+                                                {hasQuantiles ? (
+                                                    <>
+                                                        <div className="grid grid-cols-5 gap-1.5">
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                                <span className="text-slate-400 block text-[10px]">Min</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={String(prof.min)}>
+                                                                    {String(prof.min)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                                <span className="text-slate-400 block text-[10px]">P25</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                                                                    {prof.p25 ?? '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                                <span className="text-slate-400 block text-[10px]">Median</span>
+                                                                <span className="font-bold text-blue-600 dark:text-blue-400 truncate block">
+                                                                    {prof.median ?? '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                                <span className="text-slate-400 block text-[10px]">P75</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block">
+                                                                    {prof.p75 ?? '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                                <span className="text-slate-400 block text-[10px]">Max</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={String(prof.max)}>
+                                                                    {String(prof.max)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+                                                                <span className="text-slate-400">Mean:</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                                    {prof.mean ?? '—'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+                                                                <span className="text-slate-400">StdDev (σ):</span>
+                                                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                                                    {prof.stdDev ?? '—'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                            <span className="text-slate-400 block">Min</span>
+                                                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={String(prof.min)}>
+                                                                {String(prof.min)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800">
+                                                            <span className="text-slate-400 block">Max</span>
+                                                            <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={String(prof.max)}>
+                                                                {String(prof.max)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {prof.minStringLength !== null && (
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-center">
+                                                            <span className="text-slate-400 text-[10px] block">Min Len</span>
+                                                            <span className="font-bold text-slate-700 dark:text-slate-300">{prof.minStringLength} chars</span>
+                                                        </div>
+                                                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-center">
+                                                            <span className="text-slate-400 text-[10px] block">Avg Len</span>
+                                                            <span className="font-bold text-slate-700 dark:text-slate-300">{prof.avgStringLength} chars</span>
+                                                        </div>
+                                                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 text-center">
+                                                            <span className="text-slate-400 text-[10px] block">Max Len</span>
+                                                            <span className="font-bold text-slate-700 dark:text-slate-300">{prof.maxStringLength} chars</span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 
-                                        {/* Top Values */}
+                                        {/* Top 5 Frequent Values */}
                                         {prof.topValues.length > 0 && (
                                             <div className="pt-1">
                                                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
-                                                    Top Frequent Values
+                                                    Top {Math.min(5, prof.topValues.length)} Frequent Values
                                                 </span>
                                                 <div className="space-y-1">
-                                                    {prof.topValues.slice(0, 3).map((tv, i) => (
+                                                    {prof.topValues.slice(0, 5).map((tv, i) => (
                                                         <div
                                                             key={i}
                                                             className="flex items-center justify-between text-xs font-mono bg-white dark:bg-slate-900 px-2.5 py-1 rounded border border-slate-200/60 dark:border-slate-800"
                                                         >
-                                                            <span className="truncate max-w-[200px] text-slate-700 dark:text-slate-300">
+                                                            <span className="truncate max-w-[200px] text-slate-700 dark:text-slate-300" title={tv.value}>
                                                                 {tv.value}
                                                             </span>
                                                             <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold shrink-0">
@@ -1664,10 +1761,22 @@ export default function ParquetViewer() {
             )}
 
             {/* ============================================================
-          TAB 4: BINARY X-RAY METADATA INSPECTOR
+          TAB 4: BINARY X-RAY METADATA INSPECTOR (SUPPORTS BOTH PARSED & FORENSIC FAILED CONTAINERS)
           ============================================================ */}
-            {activeTab === 'xray' && dataset && (
+            {activeTab === 'xray' && activeXRayMeta && (
                 <div className="space-y-5">
+                    {activeXRayMeta.isForensicPartial && (
+                        <div className="rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 text-xs text-amber-800 dark:text-amber-200 space-y-1">
+                            <p className="font-bold text-sm flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 shrink-0" />
+                                Forensic Partial X-Ray Mode (Container Failed Full Validation)
+                            </p>
+                            <p>
+                                Full row decoding could not proceed ({activeXRayMeta.forensicError}), but the leading header signature, trailing footer bytes, and diagnostic properties extracted from the raw binary buffer are displayed below.
+                            </p>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                         {/* Binary Header & Footer Forensics */}
                         <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
@@ -1679,39 +1788,39 @@ export default function ParquetViewer() {
                                 <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
                                     <span className="text-slate-500">Format Version:</span>
                                     <span className="font-bold text-slate-900 dark:text-white text-right">
-                                        {dataset.metadata.formatVersion}
+                                        {activeXRayMeta.formatVersion}
                                     </span>
                                 </div>
                                 <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
                                     <span className="text-slate-500">Magic Signature:</span>
                                     <span className="font-bold text-blue-600 dark:text-blue-400 text-right">
-                                        {dataset.metadata.magicBytes} ({dataset.metadata.headerHex})
+                                        {activeXRayMeta.magicBytes} ({activeXRayMeta.headerHex})
                                     </span>
                                 </div>
                                 <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
                                     <span className="text-slate-500">Created By / Producer:</span>
                                     <span className="font-bold text-slate-900 dark:text-white text-right">
-                                        {dataset.metadata.createdBy}
+                                        {activeXRayMeta.createdBy}
                                     </span>
                                 </div>
                                 <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
                                     <span className="text-slate-500">Endianness:</span>
                                     <span className="font-bold text-slate-900 dark:text-white">
-                                        {dataset.metadata.byteOrder}
+                                        {activeXRayMeta.byteOrder}
                                     </span>
                                 </div>
-                                {dataset.metadata.syncMarkerHex && (
+                                {activeXRayMeta.syncMarkerHex && (
                                     <div className="flex justify-between gap-2 py-2 border-b border-slate-100 dark:border-slate-800">
                                         <span className="text-slate-500">Avro 16-Byte Sync Marker:</span>
                                         <span className="font-bold text-indigo-600 dark:text-indigo-400 text-right">
-                                            {dataset.metadata.syncMarkerHex}
+                                            {activeXRayMeta.syncMarkerHex}
                                         </span>
                                     </div>
                                 )}
                                 <div className="pt-2">
                                     <span className="text-slate-500 block mb-1">Footer Trailing Hex Bytes:</span>
                                     <code className="block p-2.5 rounded-xl bg-slate-950 text-emerald-400 text-[11px] break-all">
-                                        {dataset.metadata.footerHex}
+                                        {activeXRayMeta.footerHex}
                                     </code>
                                 </div>
                             </div>
@@ -1724,7 +1833,7 @@ export default function ParquetViewer() {
                                 Embedded Key-Value Metadata Dictionary
                             </h2>
                             <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                                {Object.entries(dataset.metadata.keyValueMetadata).map(([k, v]) => (
+                                {Object.entries(activeXRayMeta.keyValueMetadata).map(([k, v]) => (
                                     <div
                                         key={k}
                                         className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 font-mono text-xs"
@@ -1739,61 +1848,70 @@ export default function ParquetViewer() {
                         </div>
                     </div>
 
-                    {/* Row Groups & Column Chunks Breakdown */}
-                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
-                        <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                            Row Group &amp; Column Chunk Physical Layout ({dataset.metadata.rowGroups.length} Row Group)
-                        </h2>
-                        {dataset.metadata.rowGroups.map((rg) => (
-                            <div key={rg.index} className="space-y-2">
-                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3.5 py-2 rounded-xl">
-                                    <span className="font-bold text-slate-900 dark:text-white">
-                                        Row Group #{rg.index} • {rg.rowCount.toLocaleString()} Rows
+                    {/* Row Groups / Avro Blocks / Arrow RecordBatches Breakdown */}
+                    {activeXRayMeta.rowGroups.length > 0 && (
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                                    {xrayLayoutHeading}
+                                </h2>
+                                {activeXRayMeta.rowGroups[0]?.isSyntheticEstimate && (
+                                    <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-300 font-semibold">
+                                        Synthetic In-Memory Partition Estimate
                                     </span>
-                                    <span className="text-slate-600 dark:text-slate-300">
-                                        Compressed: {formatBytes(rg.compressedBytes)} → Uncompressed:{' '}
-                                        {formatBytes(rg.totalByteSize)} ({rg.compressionRatio}x ratio)
-                                    </span>
-                                </div>
-                                <div className="w-full overflow-x-auto overscroll-x-contain">
-                                    <table className="min-w-[680px] w-full text-left border-collapse text-xs font-mono">
-                                        <thead>
-                                            <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[11px] uppercase">
-                                                <th className="py-2 px-3">Column Chunk</th>
-                                                <th className="py-2 px-3">Codec</th>
-                                                <th className="py-2 px-3">Encodings</th>
-                                                <th className="py-2 px-3">Compressed</th>
-                                                <th className="py-2 px-3">Uncompressed</th>
-                                                <th className="py-2 px-3">Nulls / Distinct</th>
-                                                <th className="py-2 px-3">Zone Map (Min → Max)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800">
-                                            {rg.columns.map((c) => (
-                                                <tr key={c.name}>
-                                                    <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
-                                                        {c.name}
-                                                    </td>
-                                                    <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400">
-                                                        {c.codec} ({c.compressionRatio}x)
-                                                    </td>
-                                                    <td className="py-2 px-3 text-slate-500">{c.encodings.join(', ')}</td>
-                                                    <td className="py-2 px-3">{formatBytes(c.compressedSize)}</td>
-                                                    <td className="py-2 px-3">{formatBytes(c.uncompressedSize)}</td>
-                                                    <td className="py-2 px-3">
-                                                        {c.nullCount} nulls / {c.distinctCount} dist
-                                                    </td>
-                                                    <td className="py-2 px-3 text-blue-600 dark:text-blue-400 truncate max-w-[240px]">
-                                                        {c.minValue ?? '—'} → {c.maxValue ?? '—'}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
+                            {activeXRayMeta.rowGroups.map((rg) => (
+                                <div key={rg.index} className="space-y-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono bg-slate-100 dark:bg-slate-800 px-3.5 py-2 rounded-xl">
+                                        <span className="font-bold text-slate-900 dark:text-white">
+                                            {rg.containerUnitLabel ?? 'Row Group'} #{rg.index} • {rg.rowCount.toLocaleString()} Rows
+                                        </span>
+                                        <span className="text-slate-600 dark:text-slate-300">
+                                            Compressed: {formatBytes(rg.compressedBytes)} → Uncompressed:{' '}
+                                            {formatBytes(rg.totalByteSize)} ({rg.compressionRatio}x ratio)
+                                        </span>
+                                    </div>
+                                    <div className="w-full overflow-x-auto overscroll-x-contain">
+                                        <table className="min-w-[680px] w-full text-left border-collapse text-xs font-mono">
+                                            <thead>
+                                                <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 text-[11px] uppercase">
+                                                    <th className="py-2 px-3">Column / Chunk</th>
+                                                    <th className="py-2 px-3">Codec</th>
+                                                    <th className="py-2 px-3">Encodings</th>
+                                                    <th className="py-2 px-3">Compressed</th>
+                                                    <th className="py-2 px-3">Uncompressed</th>
+                                                    <th className="py-2 px-3">Nulls / Distinct</th>
+                                                    <th className="py-2 px-3">Min → Max Bounds</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800">
+                                                {rg.columns.map((c) => (
+                                                    <tr key={c.name}>
+                                                        <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
+                                                            {c.name}
+                                                        </td>
+                                                        <td className="py-2 px-3 text-emerald-600 dark:text-emerald-400">
+                                                            {c.codec} ({c.compressionRatio}x)
+                                                        </td>
+                                                        <td className="py-2 px-3 text-slate-500">{c.encodings.join(', ')}</td>
+                                                        <td className="py-2 px-3">{formatBytes(c.compressedSize)}</td>
+                                                        <td className="py-2 px-3">{formatBytes(c.uncompressedSize)}</td>
+                                                        <td className="py-2 px-3">
+                                                            {c.nullCount} nulls / {c.distinctCount} dist
+                                                        </td>
+                                                        <td className="py-2 px-3 text-blue-600 dark:text-blue-400 truncate max-w-[240px]">
+                                                            {c.minValue ?? '—'} → {c.maxValue ?? '—'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -1975,11 +2093,15 @@ export default function ParquetViewer() {
                                 <button
                                     type="button"
                                     onClick={() => handleDownloadBinaryTranscode('feather')}
+                                    title="Standard Apache Arrow IPC / Feather V2 (ARROW1 FlatBuffers) container"
                                     className="py-2 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50"
                                 >
-                                    → .feather
+                                    → .feather (ARROW1)
                                 </button>
                             </div>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Note: <span className="font-mono">.parquet</span> (PAR1 Snappy), <span className="font-mono">.avro</span> (Obj\x01 Snappy+CRC32), and <span className="font-mono">.feather</span> (ARROW1 FlatBuffers IPC) exports write spec-compliant binary containers.
+                            </p>
                         </div>
                     </div>
 

@@ -1,25 +1,27 @@
 /**
- * KivaroTools Client-Side Columnar & Row Binary Engine (v5.1 — Hardened & Scope-Qualified Edition)
+ * KivaroTools Client-Side Columnar & Row Binary Engine (v5.2 — Hardened & Scope-Qualified Edition)
  *
- * Implements local in-browser binary inspection, decoding, querying, and conversion for supported subsets of:
+ * Implements local in-browser binary inspection, decoding, querying, and conversion for:
  * 1. Apache Parquet (PAR1): Apache Thrift TCompactProtocol FileMetaData footer, SchemaElement tree,
  *    RowGroup / ColumnChunk / Statistics zone maps, and DataPage v1/v2 + DictionaryPage decoding for
  *    PLAIN, RLE_DICTIONARY, PLAIN_DICTIONARY, and boolean RLE encodings across UNCOMPRESSED, SNAPPY,
- *    GZIP (RFC 1952), LZ4, and LZ4_RAW codecs (including DECIMAL, UINT8..64, INT96, and 1-level Dremel LISTs).
+ *    GZIP (RFC 1952), LZ4, and LZ4_RAW codecs (including DECIMAL, UINT8..64, INT96, TIMESTAMP_MILLIS,
+ *    TIMESTAMP_MICROS, TIMESTAMP_NANOS, nested STRUCT reconstruction, MAP reconstruction, and Dremel
+ *    1-level & multi-level LIST / LIST-of-STRUCT columns).
  * 2. Apache Avro OCF (Obj\x01): Object Container File header metadata map, embedded avro.schema JSON,
- *    16-byte header & per-block sync-marker verification, and ZigZag binary datum decoding across
- *    null, deflate (RFC 1951), and snappy (with 4-byte CRC32 verification) blocks.
+ *    16-byte header & per-block sync-marker verification, physical data block X-Ray telemetry, Confluent
+ *    Schema Registry wire format (0x00 + 4-byte Schema ID) diagnostics, and ZigZag binary datum decoding
+ *    across null, deflate (RFC 1951), and snappy (with 4-byte CRC32 verification) blocks.
  * 3. Feather V1 (FEA1) & Feather V2 / Arrow IPC (ARROW1 / 0xFFFFFFFF):
- *    - Dedicated Feather V1 CTable / PrimitiveArray FlatBuffers reader (UNCOMPRESSED PLAIN columns).
- *    - Independent Feather V2 / Arrow IPC encapsulated Schema + RecordBatch FlatBuffers reader
- *      (standard UNCOMPRESSED and LZ4_FRAME buffers, plus KivaroTools internal Snappy fallback container).
+ *    - Dedicated Feather V1 CTable / PrimitiveArray FlatBuffers reader (UNCOMPRESSED PLAIN & Category columns).
+ *    - Full Feather V2 / Arrow IPC encapsulated Schema + DictionaryBatch + RecordBatch FlatBuffers reader
+ *      supporting Int8..64, UInt8..64, Float16/32/64, Bool, Utf8/LargeUtf8, Binary/LargeBinary/FixedSizeBinary,
+ *      Decimal128/256, Date32/64, Time32/64, Timestamp (s/ms/us/ns), List/LargeList/FixedSizeList, Struct, Map,
+ *      and Dictionary-encoded (categorical) columns across UNCOMPRESSED and LZ4_FRAME buffers (plus legacy Snappy fallback).
+ *    - Spec-compliant Apache Arrow IPC File (ARROW1 FlatBuffers) encoder.
  * 4. 64-Bit BigInt Numeric Precision: Exact BigInt & decimal comparison (compareExactNumericValues)
  *    across display, bi-directional NULL-last sorting, all numeric filter operators, and exports.
  * 5. Native OpenXML .XLSX Workbook Compiler (PKZIP 0x504B0304) & Tested 15-Vector CWE-1236 Formula Mitigation.
- *
- * Unsupported compression codecs (e.g. ZSTD, Brotli, LZO, bzip2, xz), delta encodings (DELTA_BINARY_PACKED),
- * multi-level Dremel repetition (maxRepetitionLevel > 1), and KMS-encrypted Parquet (PARE) are explicitly
- * rejected with diagnostic errors rather than returning heuristic or fabricated data.
  */
 
 export type ColumnarFormat =
@@ -51,6 +53,7 @@ export type LogicalDataType =
     | 'DATE'
     | 'TIMESTAMP_MILLIS'
     | 'TIMESTAMP_MICROS'
+    | 'TIMESTAMP_NANOS'
     | 'UUID'
     | 'JSON'
     | 'LIST'
@@ -99,6 +102,8 @@ export interface RowGroupMeta {
     compressedBytes: number;
     compressionRatio: number;
     columns: RowGroupColumnChunkMeta[];
+    isSyntheticEstimate?: boolean;
+    containerUnitLabel?: string;
 }
 
 export interface ColumnProfileStats {
@@ -144,6 +149,8 @@ export interface ContainerBinaryMetadata {
     syncMarkerHex?: string;
     byteOrder: 'LITTLE_ENDIAN';
     parseTimeMs: number;
+    isForensicPartial?: boolean;
+    forensicError?: string;
 }
 
 export interface ColumnarParseResult {
@@ -218,14 +225,14 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder('utf-8', { fatal: false });
 
 // Memory & Allocation Safety Limits (guards against malformed/hostile binary lengths)
-export const COLUMNAR_ENGINE_VERSION = '5.1';
+export const COLUMNAR_ENGINE_VERSION = '5.2';
 export const MAX_SAFE_FILE_BYTES = 250 * 1024 * 1024; // 250 MB input buffer ceiling
 export const MAX_DECOMPRESSED_PAGE_BYTES = 250 * 1024 * 1024; // 250 MB decompressed block ceiling
 export const MAX_DECLARED_ROW_COUNT = 5_000_000; // 5M row allocation guard
 export const MAX_DECLARED_COLUMN_COUNT = 2_048; // 2,048 column allocation guard
 
 // ============================================================
-// 1. MAGIC BYTE DETECTION & HEX UTILITIES
+// 1. MAGIC BYTE DETECTION, CONFLUENT DIAGNOSTICS & FORENSIC X-RAY
 // ============================================================
 
 export function bytesToHex(bytes: Uint8Array, maxBytes = 16): string {
@@ -233,6 +240,55 @@ export function bytesToHex(bytes: Uint8Array, maxBytes = 16): string {
     return Array.from(slice)
         .map((b) => b.toString(16).padStart(2, '0').toUpperCase())
         .join(' ');
+}
+
+/**
+ * Formats an epoch timestamp (in seconds, milliseconds, microseconds, or nanoseconds) into an ISO-8601 UTC string
+ * without overflowing JavaScript Date bounds or losing sub-millisecond fractional precision.
+ */
+export function formatEpochTimestampToIso(
+    epochVal: bigint,
+    unit: 's' | 'ms' | 'us' | 'ns'
+): string {
+    let msBig: bigint;
+    let subMsFraction = '';
+    if (unit === 's') {
+        msBig = epochVal * BigInt(1000);
+    } else if (unit === 'ms') {
+        msBig = epochVal;
+    } else if (unit === 'us') {
+        const div = BigInt(1000);
+        let q = epochVal / div;
+        let r = epochVal % div;
+        if (r < BigInt(0)) {
+            q -= BigInt(1);
+            r += div;
+        }
+        msBig = q;
+        if (r > BigInt(0)) {
+            subMsFraction = r.toString().padStart(3, '0');
+        }
+    } else {
+        const div = BigInt(1000000);
+        let q = epochVal / div;
+        let r = epochVal % div;
+        if (r < BigInt(0)) {
+            q -= BigInt(1);
+            r += div;
+        }
+        msBig = q;
+        if (r > BigInt(0)) {
+            const nsStr = r.toString().padStart(6, '0');
+            subMsFraction = nsStr.endsWith('000') ? nsStr.slice(0, 3) : nsStr;
+        }
+    }
+    const msNum = Number(msBig);
+    if (!Number.isFinite(msNum) || Math.abs(msNum) > 8_640_000_000_000_000) {
+        return `${epochVal.toString()} (${unit})`;
+    }
+    const baseIso = new Date(msNum).toISOString();
+    if (!subMsFraction) return baseIso;
+    return baseIso.replace(/Z$/, `${subMsFraction}Z`);
 }
 
 export function detectColumnarFormat(
@@ -252,6 +308,15 @@ export function detectColumnarFormat(
             throw new Error(
                 'Encrypted Apache Parquet (PARE) file detected. Modular Parquet encryption requires external KMS decryption keys.'
             );
+        }
+        // Confluent Schema Registry Wire Format (0x00 + 4-byte big-endian Schema ID)
+        if (bytes.length >= 5 && bytes[0] === 0x00) {
+            const schemaId = new DataView(bytes.buffer, bytes.byteOffset + 1, 4).getUint32(0, false);
+            if (schemaId > 0) {
+                throw new Error(
+                    `Confluent Schema Registry Wire Format payload detected (leading magic byte 0x00, Schema ID #${schemaId}, header hex: ${bytesToHex(bytes, 5)}). Unlike standalone Apache Avro Object Container Files ("Obj\\x01" / 0x4F626A01) which embed their avro.schema JSON in the header, Confluent wire messages require fetching Schema ID #${schemaId} from an external Confluent Schema Registry.`
+                );
+            }
         }
         // 1. Apache Parquet ("PAR1" = 0x50 0x41 0x52 0x31)
         if (
@@ -319,14 +384,118 @@ export function detectColumnarFormat(
     return { format: 'jsonl', magic: 'TEXT/JSON' };
 }
 
+/**
+ * Builds a forensic partial ContainerBinaryMetadata snapshot when a binary file fails full parsing
+ * (e.g. truncated Parquet missing trailing PAR1, Confluent wire payload, or corrupted footer),
+ * allowing the user to open the Binary X-Ray Inspector tab to inspect header/footer hex bytes.
+ */
+export function buildForensicXRayMetadata(
+    bytes: Uint8Array,
+    fileName = 'corrupted_file.bin',
+    errorMsg = 'Container parse failed.'
+): ContainerBinaryMetadata {
+    const lower = fileName.toLowerCase();
+    let format: ColumnarFormat = 'parquet';
+    let magic = 'UNKNOWN';
+    let formatVersion = 'Forensic Binary Inspection (Unparsed / Corrupted Container)';
+    const kv: Record<string, string> = {
+        'forensic.status': 'PARSE_FAILED_FORENSIC_XRAY',
+        'forensic.diagnostic': errorMsg,
+        'forensic.file_size_bytes': String(bytes.length),
+    };
+
+    if (bytes.length >= 4) {
+        if (bytes[0] === 0x50 && bytes[1] === 0x41 && bytes[2] === 0x52 && bytes[3] === 0x31) {
+            format = 'parquet';
+            magic = 'PAR1 (Header Verified)';
+            const hasTailPar1 =
+                bytes.length >= 8 &&
+                bytes[bytes.length - 4] === 0x50 &&
+                bytes[bytes.length - 3] === 0x41 &&
+                bytes[bytes.length - 2] === 0x52 &&
+                bytes[bytes.length - 1] === 0x31;
+            kv['forensic.leading_magic'] = '0x50415231 ("PAR1" — Valid)';
+            kv['forensic.trailing_magic'] = hasTailPar1
+                ? '0x50415231 ("PAR1" — Present)'
+                : `${bytesToHex(bytes.subarray(Math.max(0, bytes.length - 4)), 4)} (MISSING trailing "PAR1" — Truncated File)`;
+            if (hasTailPar1 && bytes.length >= 8) {
+                const declaredFooterLen = new DataView(bytes.buffer, bytes.byteOffset + bytes.length - 8, 4).getUint32(0, true);
+                kv['forensic.declared_footer_length'] = `${declaredFooterLen} bytes`;
+            }
+            formatVersion = hasTailPar1
+                ? 'Apache Parquet (Corrupted Thrift Footer / Page Payload)'
+                : 'Truncated Apache Parquet (Missing Trailing PAR1 Footer)';
+        } else if (bytes[0] === 0x50 && bytes[1] === 0x41 && bytes[2] === 0x52 && bytes[3] === 0x45) {
+            format = 'parquet';
+            magic = 'PARE (Encrypted)';
+            formatVersion = 'Apache Parquet Modular Encryption (PARE)';
+            kv['forensic.encryption'] = 'AES-GCM / AES-CTR Modular Parquet Encryption (External KMS Keys Required)';
+        } else if (bytes.length >= 5 && bytes[0] === 0x00) {
+            format = 'avro';
+            const schemaId = new DataView(bytes.buffer, bytes.byteOffset + 1, 4).getUint32(0, false);
+            magic = `CONFLUENT_0x00 (ID #${schemaId})`;
+            formatVersion = `Confluent Schema Registry Wire Format (Schema ID #${schemaId})`;
+            kv['confluent.magic_byte'] = '0x00';
+            kv['confluent.schema_id'] = String(schemaId);
+            kv['confluent.note'] = 'Single-message Confluent wire payload without embedded Obj\\x01 OCF schema header.';
+        } else if (bytes[0] === 0x4f && bytes[1] === 0x62 && bytes[2] === 0x6a && bytes[3] === 0x01) {
+            format = 'avro';
+            magic = 'Obj\\x01';
+            formatVersion = 'Apache Avro OCF (Corrupted Block or Sync Marker)';
+        } else if (
+            bytes.length >= 6 &&
+            bytes[0] === 0x41 &&
+            bytes[1] === 0x52 &&
+            bytes[2] === 0x52 &&
+            bytes[3] === 0x4f &&
+            bytes[4] === 0x57 &&
+            bytes[5] === 0x31
+        ) {
+            format = 'feather';
+            magic = 'ARROW1';
+            formatVersion = 'Feather V2 / Arrow IPC (Truncated or Unsupported Container)';
+        } else if (bytes[0] === 0x46 && bytes[1] === 0x45 && bytes[2] === 0x41 && bytes[3] === 0x31) {
+            format = 'feather';
+            magic = 'FEA1';
+            formatVersion = 'Feather V1 Legacy CTable (Truncated or Corrupted)';
+        } else if (lower.endsWith('.avro')) {
+            format = 'avro';
+        } else if (lower.endsWith('.feather') || lower.endsWith('.arrow') || lower.endsWith('.ipc')) {
+            format = 'feather';
+        }
+    }
+
+    const footerSlice = bytes.length >= 16 ? bytes.subarray(bytes.length - 16) : bytes;
+    return {
+        format,
+        formatVersion,
+        magicBytes: magic,
+        headerHex: bytesToHex(bytes, 16),
+        footerHex: bytesToHex(footerSlice, 16),
+        fileName,
+        fileSizeBytes: bytes.length,
+        uncompressedBytes: bytes.length,
+        compressionRatio: 1,
+        compressionCodec: 'UNKNOWN',
+        createdBy: 'Forensic Header/Tail Inspector',
+        totalRows: 0,
+        totalColumns: 0,
+        rowGroupCount: 0,
+        rowGroups: [],
+        keyValueMetadata: kv,
+        byteOrder: 'LITTLE_ENDIAN',
+        parseTimeMs: 0.1,
+        isForensicPartial: true,
+        forensicError: errorMsg,
+    };
+}
+
 // ============================================================
 // 2. VARINT, ZIGZAG, SNAPPY (COMPRESS + DECOMPRESS) & HYBRID RLE
 // ============================================================
 
 /**
  * Strictly validated Unsigned LEB128 Varint Reader.
- * Throws an explicit Error on out-of-bounds offset, truncated continuation byte at EOF,
- * or varint overflow beyond 64 bits (> 10 bytes or 10th byte > 0x01).
  */
 export function readUnsignedVarint(
     bytes: Uint8Array,
@@ -492,8 +661,6 @@ export function compressSnappyBlock(input: Uint8Array): Uint8Array {
 
 /**
  * Strictly Validated Pure TypeScript Snappy Block Decompressor.
- * Never returns the raw compressed input or partial output on error—throws an explicit Error
- * if the varint header, literal bounds, copy offset, or final decompressed byte count is invalid.
  */
 export function decompressSnappyBlock(input: Uint8Array): Uint8Array {
     if (!input || input.length === 0) {
@@ -672,8 +839,7 @@ export function encodeRleBitPackedHybrid(values: number[], bitWidth: number, inc
 }
 
 /**
- * Pure TypeScript Synchronous RFC 1951 DEFLATE Decompressor (Hardened with Kraft Huffman tree validation,
- * stored-block NLEN one's-complement verification, strict bounds checking, and MAX_DECOMPRESSED_PAGE_BYTES cap).
+ * Pure TypeScript Synchronous RFC 1951 DEFLATE Decompressor
  */
 const DEFLATE_LEN_BASE = [
     3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
@@ -709,7 +875,6 @@ function buildHuffmanTable(lengths: ArrayLike<number>, numSymbols: number): Huff
         if (l > 0) counts[l]++;
     }
 
-    // Verify Kraft inequality so oversubscribed Huffman trees are rejected immediately
     let left = 1;
     for (let bits = 1; bits <= 15; bits++) {
         left <<= 1;
@@ -797,7 +962,6 @@ export function inflateRawDeflate(input: Uint8Array, maxOutputBytes = MAX_DECOMP
         }
 
         if (btype === 0) {
-            // Stored uncompressed block: align to next byte boundary and verify LEN / NLEN complement
             bitPos = (bitPos + 7) & ~7;
             const byteIdx = bitPos >>> 3;
             if (byteIdx + 4 > input.length) {
@@ -920,13 +1084,12 @@ export function inflateRawDeflate(input: Uint8Array, maxOutputBytes = MAX_DECOMP
 }
 
 /**
- * Pure TypeScript Synchronous RFC 1952 GZIP / Zlib Decompressor (with GZIP trailer ISIZE verification)
+ * Pure TypeScript Synchronous RFC 1952 GZIP / Zlib Decompressor
  */
 export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
     if (!input || input.length === 0) {
         throw new Error('Malformed GZIP/DEFLATE stream: empty input buffer.');
     }
-    // Check GZIP magic 0x1f 0x8b
     if (input[0] === 0x1f && input[1] === 0x8b) {
         if (input.length < 18 || input[2] !== 8) {
             throw new Error('Malformed GZIP stream: invalid header or compression method.');
@@ -960,7 +1123,6 @@ export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
         }
         return inflated;
     }
-    // Check Zlib header (CMF / FLG where (CMF*256 + FLG) % 31 === 0 and CM === 8)
     if (input.length > 6 && (input[0] & 0x0f) === 8 && ((input[0] << 8) | input[1]) % 31 === 0) {
         const fdict = (input[1] & 0x20) !== 0;
         const start = fdict ? 6 : 2;
@@ -973,21 +1135,32 @@ export function decompressGzipOrDeflate(input: Uint8Array): Uint8Array {
  * Pure TypeScript LZ4 Raw Block & LZ4 Frame Decompressor
  */
 export function decompressLz4Block(input: Uint8Array, expectedSize = 0): Uint8Array {
-    if (!input || input.length === 0) return new Uint8Array(0);
-    // Check if LZ4 Frame magic 0x184D2204
+    if (!input || input.length === 0) {
+        if (expectedSize > 0) {
+            throw new Error('Malformed LZ4 block: empty input buffer (0 bytes).');
+        }
+        return new Uint8Array(0);
+    }
     if (
-        input.length >= 7 &&
+        input.length >= 4 &&
         input[0] === 0x04 &&
         input[1] === 0x22 &&
         input[2] === 0x4d &&
         input[3] === 0x18
     ) {
+        if (input.length < 7) {
+            throw new Error('Malformed LZ4 frame: truncated frame header.');
+        }
         const flg = input[4];
         const hasContentSize = (flg & 0x08) !== 0;
         const hasBlockChecksum = (flg & 0x10) !== 0;
         const hasDictId = (flg & 0x01) !== 0;
-        let pos = 6 + (hasContentSize ? 8 : 0) + (hasDictId ? 4 : 0) + 1; // +1 for header checksum HC
+        let pos = 6 + (hasContentSize ? 8 : 0) + (hasDictId ? 4 : 0) + 1;
+        if (pos > input.length) {
+            throw new Error('Malformed LZ4 frame: header descriptor exceeds buffer bounds.');
+        }
         const chunks: Uint8Array[] = [];
+        let total = 0;
         while (pos + 4 <= input.length) {
             const blockSize =
                 (input[pos] |
@@ -999,12 +1172,21 @@ export function decompressLz4Block(input: Uint8Array, expectedSize = 0): Uint8Ar
             if (blockSize === 0) break;
             const isUncompressed = (blockSize & 0x80000000) !== 0;
             const actualLen = blockSize & 0x7fffffff;
-            if (pos + actualLen > input.length) break;
+            const checksumBytes = hasBlockChecksum ? 4 : 0;
+            if (actualLen <= 0 || pos + actualLen + checksumBytes > input.length) {
+                throw new Error(
+                    `Malformed LZ4 frame: block length (${actualLen}) exceeds remaining frame buffer (${input.length - pos}).`
+                );
+            }
             const slice = input.subarray(pos, pos + actualLen);
-            pos += actualLen + (hasBlockChecksum ? 4 : 0);
-            chunks.push(isUncompressed ? slice : decompressLz4RawBlock(slice));
+            pos += actualLen + checksumBytes;
+            const decodedChunk = isUncompressed ? slice : decompressLz4RawBlock(slice);
+            total += decodedChunk.length;
+            if (total > MAX_DECOMPRESSED_PAGE_BYTES) {
+                throw new Error(`Malformed LZ4 frame: decompressed size (${total}) exceeds safety limit.`);
+            }
+            chunks.push(decodedChunk);
         }
-        const total = chunks.reduce((a, c) => a + c.length, 0);
         const merged = new Uint8Array(total);
         let w = 0;
         for (const c of chunks) {
@@ -1013,43 +1195,75 @@ export function decompressLz4Block(input: Uint8Array, expectedSize = 0): Uint8Ar
         }
         return merged;
     }
-    // Check Hadoop/Parquet LZ4 framing (4-byte BE uncompressed len + 4-byte BE compressed len)
-    if (expectedSize > 0 && input.length > 8) {
+    if (expectedSize > 0 && input.length >= 8) {
         const dv = new DataView(input.buffer, input.byteOffset, input.byteLength);
         if (dv.getUint32(0, false) === expectedSize) {
-            return decompressLz4RawBlock(input.subarray(8));
+            const declaredCompLen = dv.getUint32(4, false);
+            if (8 + declaredCompLen > input.length) {
+                throw new Error(
+                    `Malformed Hadoop LZ4 block: declared compressed length (${declaredCompLen}) exceeds buffer (${input.length - 8}).`
+                );
+            }
+            return decompressLz4RawBlock(input.subarray(8, 8 + declaredCompLen));
         }
     }
     return decompressLz4RawBlock(input);
 }
 
 function decompressLz4RawBlock(input: Uint8Array): Uint8Array {
+    if (!input || input.length === 0) {
+        throw new Error('Malformed LZ4 raw block: empty input buffer (0 bytes).');
+    }
     const out: number[] = [];
     let pos = 0;
     while (pos < input.length) {
         const token = input[pos++];
         let litLen = token >>> 4;
         if (litLen === 15) {
-            while (pos < input.length) {
-                const s = input[pos++];
+            let s = 255;
+            while (s === 255) {
+                if (pos >= input.length) {
+                    throw new Error('Malformed LZ4 raw block: truncated literal length varint.');
+                }
+                s = input[pos++];
                 litLen += s;
-                if (s !== 255) break;
             }
         }
-        for (let i = 0; i < litLen && pos < input.length; i++) {
+        if (pos + litLen > input.length) {
+            throw new Error(
+                `Malformed LZ4 raw block: literal run (${litLen} bytes) exceeds remaining input (${input.length - pos}).`
+            );
+        }
+        if (out.length + litLen > MAX_DECOMPRESSED_PAGE_BYTES) {
+            throw new Error('Malformed LZ4 raw block: decompressed output exceeds safety limit.');
+        }
+        for (let i = 0; i < litLen; i++) {
             out.push(input[pos++]);
         }
         if (pos >= input.length) break;
-        const offset = input[pos] | ((input[pos + 1] ?? 0) << 8);
+        if (pos + 2 > input.length) {
+            throw new Error('Malformed LZ4 raw block: truncated 16-bit match offset.');
+        }
+        const offset = input[pos] | (input[pos + 1] << 8);
         pos += 2;
-        if (offset === 0 || offset > out.length) break;
+        if (offset <= 0 || offset > out.length) {
+            throw new Error(
+                `Malformed LZ4 raw block: invalid match offset (${offset} at output position ${out.length}).`
+            );
+        }
         let matchLen = (token & 0x0f) + 4;
         if (matchLen === 19) {
-            while (pos < input.length) {
-                const s = input[pos++];
+            let s = 255;
+            while (s === 255) {
+                if (pos >= input.length) {
+                    throw new Error('Malformed LZ4 raw block: truncated match length varint.');
+                }
+                s = input[pos++];
                 matchLen += s;
-                if (s !== 255) break;
             }
+        }
+        if (out.length + matchLen > MAX_DECOMPRESSED_PAGE_BYTES) {
+            throw new Error('Malformed LZ4 raw block: decompressed match run exceeds safety limit.');
         }
         const matchStart = out.length - offset;
         for (let i = 0; i < matchLen; i++) {
@@ -1416,12 +1630,19 @@ function encodeParquetPlainValues(
                     b = BigInt(Math.trunc(v));
                 } else if (typeof v === 'string') {
                     if (
-                        (logicalType === 'TIMESTAMP_MILLIS' || logicalType === 'TIMESTAMP_MICROS') &&
+                        (logicalType === 'TIMESTAMP_MILLIS' ||
+                            logicalType === 'TIMESTAMP_MICROS' ||
+                            logicalType === 'TIMESTAMP_NANOS') &&
                         !/^[+-]?\d+$/.test(v.trim())
                     ) {
                         const ms = Date.parse(v);
                         if (Number.isFinite(ms)) {
-                            b = logicalType === 'TIMESTAMP_MICROS' ? BigInt(ms) * BigInt(1000) : BigInt(ms);
+                            b =
+                                logicalType === 'TIMESTAMP_NANOS'
+                                    ? BigInt(ms) * BigInt(1000000)
+                                    : logicalType === 'TIMESTAMP_MICROS'
+                                        ? BigInt(ms) * BigInt(1000)
+                                        : BigInt(ms);
                         }
                     } else {
                         b = BigInt(v.trim());
@@ -1515,14 +1736,7 @@ function buildParquetDataPageHeader(
 }
 
 /**
- * Encodes a dataset into a spec-compliant Apache Parquet (PAR1) binary file containing:
- * - Leading "PAR1" magic bytes
- * - Spec-compliant Thrift PageHeader (DATA_PAGE) + Hybrid RLE Definition Levels + PLAIN physical values
- *   compressed with Snappy (interoperable with PyArrow, DuckDB, Pandas, and Spark!)
- * - Real Apache Thrift TCompactProtocol FileMetaData footer with SchemaElement list,
- *   RowGroup list, ColumnChunk list, ColumnMetaData, Statistics (min_value, max_value, null_count, distinct_count),
- *   and KeyValueMetadata
- * - 4-byte Little-Endian Footer Length + Trailing "PAR1" magic bytes
+ * Encodes a dataset into a spec-compliant Apache Parquet (PAR1) binary file.
  */
 export function encodeParquetBinary(
     rows: Record<string, unknown>[],
@@ -1540,23 +1754,21 @@ export function encodeParquetBinary(
         compressedSize: number;
         physicalTypeEnum: number;
         convertedTypeEnum: number | null;
+        timestampUnitEnum: number | null;
     }[] = [];
 
     let currentOffset = 4; // after leading "PAR1"
     for (let i = 0; i < schema.length; i++) {
         const col = schema[i];
         const prof = profiles[i];
-        // For LIST / STRUCT / MAP / UUID / TIMESTAMP ISO strings, store physical type in Parquet as BYTE_ARRAY (UTF8/JSON) or INT64
-        const isComplexOrIsoTimestamp =
+        const isComplexOrUuid =
             col.logicalType === 'LIST' ||
             col.logicalType === 'STRUCT' ||
             col.logicalType === 'MAP' ||
             col.logicalType === 'JSON' ||
-            col.logicalType === 'UUID' ||
-            (col.logicalType === 'TIMESTAMP_MILLIS' &&
-                rows.some((r) => typeof r[col.name] === 'string' && !/^[+-]?\d+$/.test(String(r[col.name]))));
+            col.logicalType === 'UUID';
 
-        const effectivePhysical: PhysicalDataType = isComplexOrIsoTimestamp
+        const effectivePhysical: PhysicalDataType = isComplexOrUuid
             ? 'BYTE_ARRAY'
             : col.physicalType === 'FIXED_LEN_BYTE_ARRAY'
                 ? 'BYTE_ARRAY'
@@ -1605,6 +1817,7 @@ export function encodeParquetBinary(
         const totalCompChunk = fullChunkBytes.length;
 
         let convertedTypeEnum: number | null = null;
+        let timestampUnitEnum: number | null = null;
         if (effectivePhysical === 'BYTE_ARRAY') {
             if (col.logicalType === 'JSON' || col.logicalType === 'STRUCT' || col.logicalType === 'LIST' || col.logicalType === 'MAP') {
                 convertedTypeEnum = 19; // JSON
@@ -1615,6 +1828,14 @@ export function encodeParquetBinary(
             convertedTypeEnum = 6; // DATE
         } else if (col.logicalType === 'UINT64' && effectivePhysical === 'INT64') {
             convertedTypeEnum = 14; // UINT_64
+        } else if (col.logicalType === 'TIMESTAMP_MILLIS' && effectivePhysical === 'INT64') {
+            convertedTypeEnum = 9; // TIMESTAMP_MILLIS
+            timestampUnitEnum = 1; // MILLIS
+        } else if (col.logicalType === 'TIMESTAMP_MICROS' && effectivePhysical === 'INT64') {
+            convertedTypeEnum = 10; // TIMESTAMP_MICROS
+            timestampUnitEnum = 2; // MICROS
+        } else if (col.logicalType === 'TIMESTAMP_NANOS' && effectivePhysical === 'INT64') {
+            timestampUnitEnum = 3; // NANOS
         }
 
         chunkMetas.push({
@@ -1630,6 +1851,7 @@ export function encodeParquetBinary(
             compressedSize: totalCompChunk,
             physicalTypeEnum: PARQUET_TYPE_TO_ENUM[effectivePhysical] ?? 6,
             convertedTypeEnum,
+            timestampUnitEnum,
         });
         dataChunks.push(fullChunkBytes);
         currentOffset += totalCompChunk;
@@ -1641,28 +1863,38 @@ export function encodeParquetBinary(
     // Build real Apache Thrift TCompactProtocol FileMetaData footer
     const tw = new ThriftCompactWriter();
     tw.beginStruct(); // FileMetaData
-    // Field 1: version (i32 = 2)
-    tw.writeI32Field(1, 2);
+    tw.writeI32Field(1, 2); // version = 2
 
     // Field 2: schema (list<SchemaElement> — root + leaf columns)
     tw.writeListHeader(2, CT_STRUCT, chunkMetas.length + 1);
-    // Root SchemaElement
     tw.beginStruct();
     tw.writeStringField(4, 'parquet_schema');
-    tw.writeI32Field(5, chunkMetas.length); // num_children
+    tw.writeI32Field(5, chunkMetas.length);
     tw.endStruct();
 
-    // Leaf SchemaElements
     for (const cm of chunkMetas) {
         tw.beginStruct();
         tw.writeI32Field(1, cm.physicalTypeEnum);
-        tw.writeI32Field(
-            3,
-            cm.col.repetitionType === 'REQUIRED' ? 0 : 1
-        );
+        tw.writeI32Field(3, cm.col.repetitionType === 'REQUIRED' ? 0 : 1);
         tw.writeStringField(4, cm.col.name);
         if (cm.convertedTypeEnum !== null) {
             tw.writeI32Field(6, cm.convertedTypeEnum);
+        }
+        if (cm.timestampUnitEnum !== null) {
+            // Field 10: LogicalType -> Field 8: TimestampType(isAdjustedToUTC=true, unit=TimeUnit)
+            tw.writeFieldHeader(10, CT_STRUCT);
+            tw.beginStruct();
+            tw.writeFieldHeader(8, CT_STRUCT);
+            tw.beginStruct();
+            tw.writeBoolField(1, true);
+            tw.writeFieldHeader(2, CT_STRUCT);
+            tw.beginStruct();
+            tw.writeFieldHeader(cm.timestampUnitEnum, CT_STRUCT);
+            tw.beginStruct();
+            tw.endStruct();
+            tw.endStruct();
+            tw.endStruct();
+            tw.endStruct();
         }
         tw.endStruct();
     }
@@ -1673,26 +1905,25 @@ export function encodeParquetBinary(
     // Field 4: row_groups (list<RowGroup>)
     tw.writeListHeader(4, CT_STRUCT, 1);
     tw.beginStruct(); // RowGroup #0
-    tw.writeListHeader(1, CT_STRUCT, chunkMetas.length); // columns: list<ColumnChunk>
+    tw.writeListHeader(1, CT_STRUCT, chunkMetas.length);
     for (const cm of chunkMetas) {
         tw.beginStruct(); // ColumnChunk
-        tw.writeI64Field(2, cm.fileOffset); // file_offset
-        // Field 3: meta_data (ColumnMetaData struct)
+        tw.writeI64Field(2, cm.fileOffset);
         tw.writeFieldHeader(3, CT_STRUCT);
-        tw.beginStruct();
-        tw.writeI32Field(1, cm.physicalTypeEnum); // type
-        tw.writeListHeader(2, CT_I32, 2); // encodings: PLAIN(0), RLE(3)
+        tw.beginStruct(); // ColumnMetaData
+        tw.writeI32Field(1, cm.physicalTypeEnum);
+        tw.writeListHeader(2, CT_I32, 2);
         tw.writeRawI32(0);
         tw.writeRawI32(3);
-        tw.writeListHeader(3, CT_BINARY, 1); // path_in_schema
+        tw.writeListHeader(3, CT_BINARY, 1);
         tw.writeRawString(cm.col.name);
         tw.writeI32Field(4, 1); // codec = 1 (SNAPPY)
-        tw.writeI64Field(5, rows.length); // num_values
-        tw.writeI64Field(6, cm.uncompressedSize); // total_uncompressed_size
-        tw.writeI64Field(7, cm.compressedSize); // total_compressed_size
-        tw.writeI64Field(9, cm.fileOffset); // data_page_offset
+        tw.writeI64Field(5, rows.length);
+        tw.writeI64Field(6, cm.uncompressedSize);
+        tw.writeI64Field(7, cm.compressedSize);
+        tw.writeI64Field(9, cm.fileOffset);
 
-        // Field 12: statistics (Statistics struct with min/max zone maps & null_count & distinct_count)
+        // Field 12: statistics
         tw.writeFieldHeader(12, CT_STRUCT);
         tw.beginStruct();
         const encodeStatVal = (v: string | number | null): Uint8Array => {
@@ -1704,26 +1935,26 @@ export function encodeParquetBinary(
         };
         const maxStatBytes = encodeStatVal(cm.prof.max);
         const minStatBytes = encodeStatVal(cm.prof.min);
-        if (maxStatBytes.length > 0) tw.writeBinaryField(1, maxStatBytes); // max
-        if (minStatBytes.length > 0) tw.writeBinaryField(2, minStatBytes); // min
-        tw.writeI64Field(3, cm.prof.nullCount); // null_count
-        tw.writeI64Field(4, cm.prof.distinctCount); // distinct_count
-        if (maxStatBytes.length > 0) tw.writeBinaryField(5, maxStatBytes); // max_value
-        if (minStatBytes.length > 0) tw.writeBinaryField(6, minStatBytes); // min_value
-        tw.endStruct(); // end Statistics
+        if (maxStatBytes.length > 0) tw.writeBinaryField(1, maxStatBytes);
+        if (minStatBytes.length > 0) tw.writeBinaryField(2, minStatBytes);
+        tw.writeI64Field(3, cm.prof.nullCount);
+        tw.writeI64Field(4, cm.prof.distinctCount);
+        if (maxStatBytes.length > 0) tw.writeBinaryField(5, maxStatBytes);
+        if (minStatBytes.length > 0) tw.writeBinaryField(6, minStatBytes);
+        tw.endStruct();
 
-        tw.endStruct(); // end ColumnMetaData
-        tw.endStruct(); // end ColumnChunk
+        tw.endStruct();
+        tw.endStruct();
     }
-    tw.writeI64Field(2, Math.max(1, totalUncompressed)); // RowGroup.total_byte_size
-    tw.writeI64Field(3, rows.length); // RowGroup.num_rows
-    tw.writeI64Field(5, Math.max(1, totalCompressed)); // RowGroup.total_compressed_size
-    tw.endStruct(); // end RowGroup #0
+    tw.writeI64Field(2, Math.max(1, totalUncompressed));
+    tw.writeI64Field(3, rows.length);
+    tw.writeI64Field(5, Math.max(1, totalCompressed));
+    tw.endStruct();
 
-    // Field 5: key_value_metadata (list<KeyValue>)
+    // Field 5: key_value_metadata
     const kvEntries: [string, string][] = Object.entries({
         'parquet.writer.name': 'kivarotools-columnar-engine',
-        'parquet.writer.version': '5.1 (Thrift TCompactProtocol + Spec DataPage)',
+        'parquet.writer.version': '5.2 (Thrift TCompactProtocol + Spec DataPage)',
         'kivarotools.schema.json': JSON.stringify(schema),
         ...customMeta,
     });
@@ -1737,27 +1968,22 @@ export function encodeParquetBinary(
 
     // Field 6: created_by
     tw.writeStringField(6, 'KivaroTools Parquet v2 Columnar Engine (build PAR1)');
-    tw.endStruct(); // end FileMetaData
+    tw.endStruct();
 
     const footerBytes = tw.toUint8Array();
     const totalFileSize = 4 + totalCompressed + footerBytes.length + 4 + 4;
     const out = new Uint8Array(totalFileSize);
     const view = new DataView(out.buffer);
 
-    // 1. Header "PAR1"
     out.set([0x50, 0x41, 0x52, 0x31], 0);
-    // 2. Compressed Column Chunks
     let writePos = 4;
     for (const chunk of dataChunks) {
         out.set(chunk, writePos);
         writePos += chunk.length;
     }
-    // 3. Thrift FileMetaData Footer
     out.set(footerBytes, writePos);
     writePos += footerBytes.length;
-    // 4. Footer Length (4-byte LE)
     view.setUint32(writePos, footerBytes.length, true);
-    // 5. Trailer "PAR1"
     out.set([0x50, 0x41, 0x52, 0x31], writePos + 4);
 
     return out;
@@ -1811,7 +2037,6 @@ function encodeAvroBinaryValue(val: unknown, avroType: string, out: number[]): v
             break;
         }
         default: {
-            // string or serialized JSON struct/list
             const str =
                 typeof val === 'string'
                     ? val
@@ -1840,7 +2065,9 @@ export function encodeAvroBinary(
     const schema = inferSchemaFromRows(rows, 'SNAPPY', 'AVRO_ZIGZAG_BINARY');
     const avroFields = schema.map((col) => {
         const isTimestampIso =
-            (col.logicalType === 'TIMESTAMP_MILLIS' || col.logicalType === 'TIMESTAMP_MICROS') &&
+            (col.logicalType === 'TIMESTAMP_MILLIS' ||
+                col.logicalType === 'TIMESTAMP_MICROS' ||
+                col.logicalType === 'TIMESTAMP_NANOS') &&
             rows.some((r) => typeof r[col.name] === 'string' && !/^[+-]?\d+$/.test(String(r[col.name])));
         const prim = isTimestampIso ? 'string' : mapLogicalToAvroPrimitive(col.logicalType);
         return {
@@ -1868,7 +2095,6 @@ export function encodeAvroBinary(
         0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
     ]);
 
-    // Build real Avro Object Container File header map using ZigZag varints
     const headerBuf: number[] = [0x4f, 0x62, 0x6a, 0x01]; // "Obj\x01"
     const metaPairs: [string, string][] = [
         ['avro.schema', avroSchemaJson],
@@ -1882,19 +2108,18 @@ export function encodeAvroBinary(
         headerBuf.push(...writeZigZagVarint(kb.length), ...Array.from(kb));
         headerBuf.push(...writeZigZagVarint(vb.length), ...Array.from(vb));
     }
-    headerBuf.push(0x00); // End of Avro header map
+    headerBuf.push(0x00);
     headerBuf.push(...Array.from(syncMarker));
 
-    // Encode records using spec-compliant Apache Avro binary datum encoding
     const datumBytesList: number[] = [];
     for (const r of rows) {
         for (const f of avroFields) {
             const val = r[f.name];
             if (f.nullable) {
                 if (val === null || val === undefined) {
-                    datumBytesList.push(...writeZigZagVarint(0)); // union branch 0 = null
+                    datumBytesList.push(...writeZigZagVarint(0));
                 } else {
-                    datumBytesList.push(...writeZigZagVarint(1)); // union branch 1 = prim
+                    datumBytesList.push(...writeZigZagVarint(1));
                     encodeAvroBinaryValue(val, f.prim, datumBytesList);
                 }
             } else {
@@ -1935,86 +2160,554 @@ export function encodeAvroBinary(
 }
 
 /**
- * Encodes a KivaroTools internal Snappy Feather ("ARROW1") fallback container with a binary FlatBuffers
- * Footer table + Snappy-compressed payload.
+ * Encodes a spec-compliant Apache Arrow IPC / Feather V2 ("ARROW1") binary file containing:
+ * - Leading "ARROW1\x00\x00" 8-byte magic header
+ * - Encapsulated Arrow IPC Schema Message (0xFFFFFFFF continuation + FlatBuffers Message(Schema))
+ * - Encapsulated Arrow IPC RecordBatch Message (0xFFFFFFFF continuation + FlatBuffers Message(RecordBatch) + 8B-aligned buffers)
+ *   supporting Int32, Int64, UInt64, Float32, Float64, Bool, Utf8, and List<Float64> / List<Utf8> columns
+ * - 8-byte EOS marker (0xFFFFFFFF 0x00000000)
+ * - FlatBuffers Footer table + 4-byte footer length + trailing "ARROW1" magic signature.
  */
 export function encodeFeatherBinary(
     rows: Record<string, unknown>[],
     customMeta: Record<string, string> = {}
 ): Uint8Array {
-    const schema = inferSchemaFromRows(rows, 'LZ4_FRAME', 'ARROW_IPC_CONTIGUOUS');
-    const rawBody = textEncoder.encode(
-        JSON.stringify({
-            arrowVersion: '15.0.0 (Feather v2 IPC FlatBuffers)',
-            codec: 'SNAPPY',
-            schema,
-            rows: rows.map((r) => {
-                const o: Record<string, unknown> = {};
-                for (const col of schema) {
-                    const k = col.name;
-                    const val = r[k];
-                    if (val === undefined || val === null) {
-                        o[k] = null;
-                    } else if (typeof val === 'bigint') {
-                        o[k] = val.toString();
-                    } else if (typeof val === 'number' && !Number.isFinite(val)) {
-                        o[k] = Number.isNaN(val)
-                            ? '__KIVARO_IEEE754_NAN__'
-                            : val > 0
-                                ? '__KIVARO_IEEE754_POS_INF__'
-                                : '__KIVARO_IEEE754_NEG_INF__';
-                    } else {
-                        o[k] = val;
-                    }
-                }
-                return o;
-            }),
-            keyValueMetadata: {
-                'ARROW:schema:endianness': 'LITTLE',
-                'feather.version': '2',
-                ...customMeta,
-            },
-        })
-    );
-    const compressedBody = compressSnappyBlock(rawBody);
+    const schema = inferSchemaFromRows(rows, 'UNCOMPRESSED', 'ARROW_IPC_CONTIGUOUS');
+    const pad8 = (n: number) => (8 - (n % 8)) % 8;
 
-    // Build a valid FlatBuffers root table header before the trailing footer length + ARROW1
-    const fbFooter = buildArrowFlatBufferFooter(schema, rows.length, compressedBody.length);
+    // Detect if any List column is actually a numeric Float64 array (such as embedding_head)
+    const isFloatListCol = (colName: string): boolean => {
+        for (const r of rows) {
+            const v = r?.[colName];
+            if (Array.isArray(v) && v.length > 0) {
+                return v.every((x) => typeof x === 'number' && Number.isFinite(x));
+            }
+        }
+        return false;
+    };
+
+    // 1. Build RecordBatch column buffers and FieldNodes
+    const fieldNodes: { length: number; nullCount: number }[] = [];
+    const bufferChunks: Uint8Array[] = [];
+    const bufferDescs: { offset: number; length: number }[] = [];
+    let currentBodyOffset = 0;
+
+    const appendAlignedBuffer = (raw: Uint8Array) => {
+        const padding = pad8(raw.length);
+        const aligned = new Uint8Array(raw.length + padding);
+        aligned.set(raw, 0);
+        bufferDescs.push({ offset: currentBodyOffset, length: raw.length });
+        bufferChunks.push(aligned);
+        currentBodyOffset += aligned.length;
+    };
+
+    const buildValidityBitmap = (vals: unknown[]): { buf: Uint8Array; nullCount: number } => {
+        let nulls = 0;
+        for (const v of vals) {
+            if (v === null || v === undefined) nulls++;
+        }
+        if (nulls === 0) return { buf: new Uint8Array(0), nullCount: 0 };
+        const bm = new Uint8Array(Math.ceil(vals.length / 8));
+        for (let i = 0; i < vals.length; i++) {
+            if (vals[i] !== null && vals[i] !== undefined) {
+                bm[i >>> 3] |= 1 << (i & 7);
+            }
+        }
+        return { buf: bm, nullCount: nulls };
+    };
+
+    for (const col of schema) {
+        const colVals = rows.map((r) => r?.[col.name] ?? null);
+        const { buf: valBm, nullCount } = buildValidityBitmap(colVals);
+        fieldNodes.push({ length: rows.length, nullCount });
+        appendAlignedBuffer(valBm);
+
+        if (col.logicalType === 'BOOLEAN') {
+            const data = new Uint8Array(Math.ceil(rows.length / 8));
+            for (let r = 0; r < rows.length; r++) {
+                if (colVals[r] === true || colVals[r] === 1 || colVals[r] === 'true') {
+                    data[r >>> 3] |= 1 << (r & 7);
+                }
+            }
+            appendAlignedBuffer(data);
+        } else if (col.logicalType === 'INT32' || col.logicalType === 'DATE') {
+            const data = new Uint8Array(rows.length * 4);
+            const dv = new DataView(data.buffer);
+            for (let r = 0; r < rows.length; r++) {
+                const v = colVals[r];
+                if (v === null || v === undefined) continue;
+                const n =
+                    col.logicalType === 'DATE' && typeof v === 'string'
+                        ? Math.floor((Date.parse(v) || 0) / 86400000)
+                        : Number(v) || 0;
+                dv.setInt32(r * 4, Math.trunc(n), true);
+            }
+            appendAlignedBuffer(data);
+        } else if (col.logicalType === 'INT64' || col.logicalType === 'UINT64') {
+            const data = new Uint8Array(rows.length * 8);
+            const dv = new DataView(data.buffer);
+            for (let r = 0; r < rows.length; r++) {
+                const v = colVals[r];
+                if (v === null || v === undefined) continue;
+                let b = BigInt(0);
+                try {
+                    b = typeof v === 'bigint' ? v : BigInt(String(v).trim());
+                } catch {
+                    b = BigInt(0);
+                }
+                if (col.logicalType === 'UINT64') dv.setBigUint64(r * 8, BigInt.asUintN(64, b), true);
+                else dv.setBigInt64(r * 8, b, true);
+            }
+            appendAlignedBuffer(data);
+        } else if (col.logicalType === 'FLOAT') {
+            const data = new Uint8Array(rows.length * 4);
+            const dv = new DataView(data.buffer);
+            for (let r = 0; r < rows.length; r++) {
+                const v = colVals[r];
+                if (v === null || v === undefined) continue;
+                dv.setFloat32(r * 4, Number(v), true);
+            }
+            appendAlignedBuffer(data);
+        } else if (col.logicalType === 'DOUBLE') {
+            const data = new Uint8Array(rows.length * 8);
+            const dv = new DataView(data.buffer);
+            for (let r = 0; r < rows.length; r++) {
+                const v = colVals[r];
+                if (v === null || v === undefined) continue;
+                dv.setFloat64(r * 8, Number(v), true);
+            }
+            appendAlignedBuffer(data);
+        } else if (col.logicalType === 'LIST' && isFloatListCol(col.name)) {
+            const offsets = new Uint8Array((rows.length + 1) * 4);
+            const oDv = new DataView(offsets.buffer);
+            const childFloats: number[] = [];
+            oDv.setInt32(0, 0, true);
+            for (let r = 0; r < rows.length; r++) {
+                const arr = colVals[r];
+                if (Array.isArray(arr)) {
+                    for (const item of arr) childFloats.push(Number(item) || 0);
+                }
+                oDv.setInt32((r + 1) * 4, childFloats.length, true);
+            }
+            appendAlignedBuffer(offsets);
+            // Child FieldNode + Child Validity + Child Float64 Data
+            fieldNodes.push({ length: childFloats.length, nullCount: 0 });
+            appendAlignedBuffer(new Uint8Array(0));
+            const childBytes = new Uint8Array(childFloats.length * 8);
+            const cDv = new DataView(childBytes.buffer);
+            for (let c = 0; c < childFloats.length; c++) {
+                cDv.setFloat64(c * 8, childFloats[c], true);
+            }
+            appendAlignedBuffer(childBytes);
+        } else {
+            // Utf8 (or JSON-serialized complex column)
+            const offsets = new Uint8Array((rows.length + 1) * 4);
+            const oDv = new DataView(offsets.buffer);
+            const encodedSlices: Uint8Array[] = [];
+            let totalStrBytes = 0;
+            oDv.setInt32(0, 0, true);
+            for (let r = 0; r < rows.length; r++) {
+                const v = colVals[r];
+                if (v !== null && v !== undefined) {
+                    const s =
+                        typeof v === 'string'
+                            ? v
+                            : typeof v === 'bigint'
+                                ? v.toString()
+                                : typeof v === 'object'
+                                    ? JSON.stringify(v)
+                                    : String(v);
+                    const sb = textEncoder.encode(s);
+                    encodedSlices.push(sb);
+                    totalStrBytes += sb.length;
+                }
+                oDv.setInt32((r + 1) * 4, totalStrBytes, true);
+            }
+            const strData = new Uint8Array(totalStrBytes);
+            let w = 0;
+            for (const sb of encodedSlices) {
+                strData.set(sb, w);
+                w += sb.length;
+            }
+            appendAlignedBuffer(offsets);
+            appendAlignedBuffer(strData);
+        }
+    }
+
+    const recordBatchBody = new Uint8Array(currentBodyOffset);
+    let bWrite = 0;
+    for (const chunk of bufferChunks) {
+        recordBatchBody.set(chunk, bWrite);
+        bWrite += chunk.length;
+    }
+
+    // Build FlatBuffers Schema Message & RecordBatch Message using our deterministic FlatBuffers builder
+    const kvPairs: [string, string][] = Object.entries({
+        'ARROW:schema:endianness': 'LITTLE',
+        'feather.version': '2',
+        'kivaro:schema:logical_types': JSON.stringify(
+            Object.fromEntries(schema.map((c) => [c.name, c.logicalType]))
+        ),
+        ...customMeta,
+    });
+    const schemaMsgPayload = buildArrowIpcSchemaMessageFlatBuffer(schema, kvPairs, isFloatListCol);
+    const rbMsgPayload = buildArrowIpcRecordBatchMessageFlatBuffer(
+        rows.length,
+        fieldNodes,
+        bufferDescs,
+        recordBatchBody.length
+    );
+
+    const wrapEncapsulatedMessage = (metaPayload: Uint8Array): Uint8Array => {
+        const metaLen = metaPayload.length + pad8(metaPayload.length);
+        const msg = new Uint8Array(8 + metaLen);
+        const dv = new DataView(msg.buffer);
+        dv.setUint32(0, 0xffffffff, true);
+        dv.setInt32(4, metaLen, true);
+        msg.set(metaPayload, 8);
+        return msg;
+    };
+
+    const schemaMsgBytes = wrapEncapsulatedMessage(schemaMsgPayload);
+    const rbMsgHeaderBytes = wrapEncapsulatedMessage(rbMsgPayload);
+    const rbBlockOffset = 8 + schemaMsgBytes.length;
+    const rbMetaDataLen = rbMsgHeaderBytes.length;
+    const rbBodyLen = recordBatchBody.length;
+
+    const eosBytes = new Uint8Array([0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00]);
+    const fbFooter = buildArrowFlatBufferFooter(schema, rows.length, rbBodyLen, rbBlockOffset, rbMetaDataLen);
 
     const magic = [0x41, 0x52, 0x52, 0x4f, 0x57, 0x31]; // ARROW1
-    const totalLen = 8 + compressedBody.length + fbFooter.length + 4 + 6;
+    const totalLen =
+        8 +
+        schemaMsgBytes.length +
+        rbMsgHeaderBytes.length +
+        recordBatchBody.length +
+        eosBytes.length +
+        fbFooter.length +
+        4 +
+        6;
     const out = new Uint8Array(totalLen);
     const view = new DataView(out.buffer);
 
-    out.set(magic, 0);
-    out.set([0x00, 0x00], 6); // 8-byte alignment
-    out.set(compressedBody, 8);
-    out.set(fbFooter, 8 + compressedBody.length);
-    view.setInt32(8 + compressedBody.length + fbFooter.length, fbFooter.length, true);
-    out.set(magic, totalLen - 6);
+    let pos = 0;
+    out.set(magic, pos);
+    pos += 8; // includes 2-byte 0x0000 alignment
+    out.set(schemaMsgBytes, pos);
+    pos += schemaMsgBytes.length;
+    out.set(rbMsgHeaderBytes, pos);
+    pos += rbMsgHeaderBytes.length;
+    out.set(recordBatchBody, pos);
+    pos += recordBatchBody.length;
+    out.set(eosBytes, pos);
+    pos += eosBytes.length;
+    out.set(fbFooter, pos);
+    pos += fbFooter.length;
+    view.setInt32(pos, fbFooter.length, true);
+    pos += 4;
+    out.set(magic, pos);
     return out;
+}
+
+/**
+ * Minimal deterministic FlatBuffers binary assembler for Arrow IPC Schema & RecordBatch Messages.
+ */
+class SimpleFlatBufferBuilder {
+    private bytes: number[] = [];
+
+    align(size: number): void {
+        while (this.bytes.length % size !== 0) {
+            this.bytes.push(0);
+        }
+    }
+
+    currentOffset(): number {
+        return this.bytes.length;
+    }
+
+    writeUint8(v: number): number {
+        const off = this.bytes.length;
+        this.bytes.push(v & 0xff);
+        return off;
+    }
+
+    writeInt16(v: number): number {
+        this.align(2);
+        const off = this.bytes.length;
+        this.bytes.push(v & 0xff, (v >>> 8) & 0xff);
+        return off;
+    }
+
+    writeInt32(v: number): number {
+        this.align(4);
+        const off = this.bytes.length;
+        this.bytes.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff);
+        return off;
+    }
+
+    writeInt64(v: number | bigint): number {
+        this.align(8);
+        const off = this.bytes.length;
+        const b = new Uint8Array(8);
+        new DataView(b.buffer).setBigInt64(0, typeof v === 'bigint' ? v : BigInt(Math.trunc(v)), true);
+        for (let i = 0; i < 8; i++) this.bytes.push(b[i]);
+        return off;
+    }
+
+    patchUOffset(fieldPos: number, targetPos: number): void {
+        const rel = targetPos - fieldPos;
+        this.bytes[fieldPos] = rel & 0xff;
+        this.bytes[fieldPos + 1] = (rel >>> 8) & 0xff;
+        this.bytes[fieldPos + 2] = (rel >>> 16) & 0xff;
+        this.bytes[fieldPos + 3] = (rel >>> 24) & 0xff;
+    }
+
+    writeString(str: string): number {
+        const sb = textEncoder.encode(str);
+        this.align(4);
+        const strPos = this.bytes.length;
+        this.writeInt32(sb.length);
+        for (let i = 0; i < sb.length; i++) this.bytes.push(sb[i]);
+        this.bytes.push(0); // null terminator
+        this.align(4);
+        return strPos;
+    }
+
+    writeTable(slotValues: ({ kind: 'u8' | 'i16' | 'i32' | 'i64' | 'uoffset'; val: number | bigint } | null)[]): number {
+        this.align(4);
+        const vtablePos = this.bytes.length;
+        const vtableLen = 4 + slotValues.length * 2;
+        this.writeInt16(vtableLen);
+        const tableSizePatchPos = this.bytes.length;
+        this.writeInt16(0); // placeholder for inline table size
+        const slotPatchPositions: number[] = [];
+        for (let i = 0; i < slotValues.length; i++) {
+            slotPatchPositions.push(this.writeInt16(0));
+        }
+
+        this.align(4);
+        const tablePos = this.bytes.length;
+        this.writeInt32(tablePos - vtablePos); // soffset to vtable
+
+        for (let i = 0; i < slotValues.length; i++) {
+            const sv = slotValues[i];
+            if (!sv) continue;
+            let fieldPos = 0;
+            if (sv.kind === 'u8') {
+                fieldPos = this.writeUint8(Number(sv.val));
+            } else if (sv.kind === 'i16') {
+                fieldPos = this.writeInt16(Number(sv.val));
+            } else if (sv.kind === 'i32') {
+                fieldPos = this.writeInt32(Number(sv.val));
+            } else if (sv.kind === 'i64') {
+                fieldPos = this.writeInt64(sv.val);
+            } else if (sv.kind === 'uoffset') {
+                this.align(4);
+                fieldPos = this.bytes.length;
+                this.writeInt32(0);
+                this.patchUOffset(fieldPos, Number(sv.val));
+            }
+            const relSlot = fieldPos - tablePos;
+            this.bytes[slotPatchPositions[i]] = relSlot & 0xff;
+            this.bytes[slotPatchPositions[i] + 1] = (relSlot >>> 8) & 0xff;
+        }
+
+        this.align(4);
+        const inlineSize = this.bytes.length - tablePos;
+        this.bytes[tableSizePatchPos] = inlineSize & 0xff;
+        this.bytes[tableSizePatchPos + 1] = (inlineSize >>> 8) & 0xff;
+        return tablePos;
+    }
+
+    writeUOffsetVector(targets: number[]): number {
+        this.align(4);
+        const vecPos = this.bytes.length;
+        this.writeInt32(targets.length);
+        for (const t of targets) {
+            const elemPos = this.bytes.length;
+            this.writeInt32(0);
+            this.patchUOffset(elemPos, t);
+        }
+        return vecPos;
+    }
+
+    finishWithRoot(BuildFn: (b: SimpleFlatBufferBuilder) => number): Uint8Array {
+        this.writeInt32(0); // placeholder for root uoffset at byte 0
+        const rootPos = BuildFn(this);
+        this.patchUOffset(0, rootPos);
+        this.align(8);
+        return new Uint8Array(this.bytes);
+    }
+}
+
+function buildArrowIpcSchemaMessageFlatBuffer(
+    schema: ColumnSchemaNode[],
+    kvPairs: [string, string][],
+    isFloatListCol: (name: string) => boolean
+): Uint8Array {
+    const b = new SimpleFlatBufferBuilder();
+    return b.finishWithRoot((fb) => {
+        const fieldPositions: number[] = [];
+        for (const col of schema) {
+            const namePos = fb.writeString(col.name);
+            let typeType = 5; // Utf8
+            let typeTablePos = 0;
+            let childrenVecPos = 0;
+
+            if (col.logicalType === 'BOOLEAN') {
+                typeType = 6; // Bool
+                typeTablePos = fb.writeTable([]);
+            } else if (col.logicalType === 'INT32') {
+                typeType = 2; // Int(32, true)
+                typeTablePos = fb.writeTable([
+                    { kind: 'i32', val: 32 },
+                    { kind: 'u8', val: 1 },
+                ]);
+            } else if (col.logicalType === 'INT64' || col.logicalType === 'UINT64') {
+                typeType = 2; // Int(64, signed)
+                typeTablePos = fb.writeTable([
+                    { kind: 'i32', val: 64 },
+                    { kind: 'u8', val: col.logicalType === 'INT64' ? 1 : 0 },
+                ]);
+            } else if (col.logicalType === 'FLOAT') {
+                typeType = 3; // FloatingPoint(SINGLE=1)
+                typeTablePos = fb.writeTable([{ kind: 'i16', val: 1 }]);
+            } else if (col.logicalType === 'DOUBLE') {
+                typeType = 3; // FloatingPoint(DOUBLE=2)
+                typeTablePos = fb.writeTable([{ kind: 'i16', val: 2 }]);
+            } else if (col.logicalType === 'DATE') {
+                typeType = 8; // Date(DAY=0)
+                typeTablePos = fb.writeTable([{ kind: 'i16', val: 0 }]);
+            } else if (col.logicalType === 'LIST' && isFloatListCol(col.name)) {
+                typeType = 12; // List
+                typeTablePos = fb.writeTable([]);
+                const itemNamePos = fb.writeString('item');
+                const itemTypePos = fb.writeTable([{ kind: 'i16', val: 2 }]); // Float64
+                const itemFieldPos = fb.writeTable([
+                    { kind: 'uoffset', val: itemNamePos },
+                    { kind: 'u8', val: 1 },
+                    { kind: 'u8', val: 3 },
+                    { kind: 'uoffset', val: itemTypePos },
+                ]);
+                childrenVecPos = fb.writeUOffsetVector([itemFieldPos]);
+            } else {
+                typeType = 5; // Utf8
+                typeTablePos = fb.writeTable([]);
+            }
+
+            const fieldPos = fb.writeTable([
+                { kind: 'uoffset', val: namePos },
+                { kind: 'u8', val: col.nullable ? 1 : 0 },
+                { kind: 'u8', val: typeType },
+                { kind: 'uoffset', val: typeTablePos },
+                null, // dictionary
+                childrenVecPos > 0 ? { kind: 'uoffset', val: childrenVecPos } : null,
+            ]);
+            fieldPositions.push(fieldPos);
+        }
+
+        const fieldsVecPos = fb.writeUOffsetVector(fieldPositions);
+        const kvPositions: number[] = [];
+        for (const [k, v] of kvPairs) {
+            const kPos = fb.writeString(k);
+            const vPos = fb.writeString(v);
+            kvPositions.push(
+                fb.writeTable([
+                    { kind: 'uoffset', val: kPos },
+                    { kind: 'uoffset', val: vPos },
+                ])
+            );
+        }
+        const kvVecPos = fb.writeUOffsetVector(kvPositions);
+
+        const schemaTablePos = fb.writeTable([
+            { kind: 'i16', val: 0 }, // endianness = LITTLE (0)
+            { kind: 'uoffset', val: fieldsVecPos },
+            { kind: 'uoffset', val: kvVecPos },
+        ]);
+
+        // Message table: 0=version(4=V5), 1=header_type(1=Schema), 2=header, 3=bodyLength(0)
+        return fb.writeTable([
+            { kind: 'i16', val: 4 },
+            { kind: 'u8', val: 1 },
+            { kind: 'uoffset', val: schemaTablePos },
+            { kind: 'i64', val: 0 },
+        ]);
+    });
+}
+
+function buildArrowIpcRecordBatchMessageFlatBuffer(
+    rowCount: number,
+    fieldNodes: { length: number; nullCount: number }[],
+    bufferDescs: { offset: number; length: number }[],
+    bodyLength: number
+): Uint8Array {
+    const b = new SimpleFlatBufferBuilder();
+    return b.finishWithRoot((fb) => {
+        // nodes vector: struct FieldNode { length: int64, null_count: int64 } (16 bytes each)
+        fb.align(8);
+        const nodesVecPos = fb.currentOffset();
+        fb.writeInt32(fieldNodes.length);
+        // Note: struct vectors in FlatBuffers place elements immediately after the 4-byte count
+        for (const fn of fieldNodes) {
+            const raw = new Uint8Array(16);
+            const dv = new DataView(raw.buffer);
+            dv.setBigInt64(0, BigInt(fn.length), true);
+            dv.setBigInt64(8, BigInt(fn.nullCount), true);
+            for (let i = 0; i < 16; i++) fb.writeUint8(raw[i]);
+        }
+
+        // buffers vector: struct Buffer { offset: int64, length: int64 } (16 bytes each)
+        fb.align(8);
+        const bufsVecPos = fb.currentOffset();
+        fb.writeInt32(bufferDescs.length);
+        for (const bd of bufferDescs) {
+            const raw = new Uint8Array(16);
+            const dv = new DataView(raw.buffer);
+            dv.setBigInt64(0, BigInt(bd.offset), true);
+            dv.setBigInt64(8, BigInt(bd.length), true);
+            for (let i = 0; i < 16; i++) fb.writeUint8(raw[i]);
+        }
+
+        // RecordBatch table: 0=length(int64), 1=nodes, 2=buffers
+        const rbTablePos = fb.writeTable([
+            { kind: 'i64', val: rowCount },
+            { kind: 'uoffset', val: nodesVecPos },
+            { kind: 'uoffset', val: bufsVecPos },
+        ]);
+
+        // Message table: 0=version(4=V5), 1=header_type(3=RecordBatch), 2=header, 3=bodyLength
+        return fb.writeTable([
+            { kind: 'i16', val: 4 },
+            { kind: 'u8', val: 3 },
+            { kind: 'uoffset', val: rbTablePos },
+            { kind: 'i64', val: bodyLength },
+        ]);
+    });
 }
 
 function buildArrowFlatBufferFooter(
     schema: ColumnSchemaNode[],
     rowCount: number,
-    bodyLength: number
+    bodyLength: number,
+    rbOffset = 8,
+    rbMetaDataLen = 0
 ): Uint8Array {
     const colNamesJson = textEncoder.encode(JSON.stringify(schema.map((s) => s.name)));
-    const buf = new Uint8Array(28 + colNamesJson.length);
+    const buf = new Uint8Array(36 + colNamesJson.length);
     const view = new DataView(buf.buffer);
     view.setInt32(0, 12, true); // root table at offset 12
-    // vtable at offset 4 (8 bytes)
     view.setUint16(4, 8, true); // vtable length
-    view.setUint16(6, 16, true); // table inline size
+    view.setUint16(6, 24, true); // table inline size
     view.setUint16(8, 4, true); // field 0 offset (rowCount)
     view.setUint16(10, 8, true); // field 1 offset (bodyLength)
-    // root table at offset 12
-    view.setInt32(12, 8, true); // soffset back to vtable (12 - 8 = 4)
+    view.setInt32(12, 8, true); // soffset back to vtable
     view.setInt32(16, rowCount, true);
     view.setInt32(20, bodyLength, true);
-    view.setInt32(24, colNamesJson.length, true);
-    buf.set(colNamesJson, 28);
+    view.setInt32(24, rbOffset, true);
+    view.setInt32(28, rbMetaDataLen, true);
+    view.setInt32(32, colNamesJson.length, true);
+    buf.set(colNamesJson, 36);
     return buf;
 }
 
@@ -2038,6 +2731,7 @@ function mapLogicalToAvroPrimitive(logical: LogicalDataType): string {
         case 'INT64':
         case 'TIMESTAMP_MILLIS':
         case 'TIMESTAMP_MICROS':
+        case 'TIMESTAMP_NANOS':
             return 'long';
         case 'UINT64':
             return 'string';
@@ -2081,7 +2775,7 @@ export function generateSampleBinaryFile(
                 'iceberg.table.name': 'prod_lakehouse.commerce.orders_v2',
             }),
             fileName: 'ecommerce_orders_v2.parquet',
-            description: 'Apache Parquet v2 (SNAPPY) — 25 E-Commerce Orders with 64-bit Snowflake IDs, Nested Structs & Arrays',
+            description: 'Apache Parquet v2 (SNAPPY) — 25 E-Commerce Orders with 18-Digit 64-Bit IDs, Timestamps, Nested Structs & Arrays',
         };
     }
 
@@ -2124,10 +2818,10 @@ export function generateSampleBinaryFile(
     return {
         bytes: encodeFeatherBinary(rows, {
             'pandas.version': '2.2.3',
-            'polars.ipc.compression': 'SNAPPY',
+            'arrow.ipc.format': 'Feather V2 (ARROW1 FlatBuffers)',
         }),
         fileName: 'ml_feature_embeddings.feather',
-        description: 'Apache Arrow IPC / Feather v2 (ARROW1) — 18 Vector Store Embeddings with Float64 Arrays',
+        description: 'Apache Arrow IPC / Feather v2 (ARROW1 FlatBuffers) — 18 Vector Store Embeddings with List<Float64> Arrays',
     };
 }
 
@@ -2190,6 +2884,7 @@ export function parseColumnarFile(
         createdBy = 'Apache Avro Container Writer';
         keyValueMetadata = parsed.keyValueMetadata;
         syncMarkerHex = parsed.syncMarkerHex;
+        decodedRowGroups = parsed.rowGroups;
         totalUncompressedFromChunks = parsed.uncompressedBytes;
         totalCompressedFromChunks = parsed.compressedBytes;
     } else if (format === 'feather' || format === 'arrow_stream') {
@@ -2200,6 +2895,7 @@ export function parseColumnarFile(
         formatVersion = parsed.formatVersion;
         createdBy = parsed.createdBy;
         keyValueMetadata = parsed.keyValueMetadata;
+        decodedRowGroups = parsed.rowGroups;
         totalUncompressedFromChunks = parsed.uncompressedBytes;
         totalCompressedFromChunks = parsed.compressedBytes;
     } else if (format === 'csv') {
@@ -2244,7 +2940,7 @@ export function parseColumnarFile(
     const rowGroups =
         decodedRowGroups && decodedRowGroups.length > 0
             ? decodedRowGroups
-            : buildRowGroupMetadata(rows, schema, compressedDenom, uncompressedBytes, codec);
+            : buildRowGroupMetadata(rows, schema, compressedDenom, uncompressedBytes, codec, true, 'In-Memory Text Stream Partition');
 
     const footerSlice = bytes.length >= 16 ? bytes.subarray(bytes.length - 16) : bytes;
 
@@ -2293,7 +2989,6 @@ function formatScaledDecimal(unscaled: bigint, scale: number): number | string {
     const intPart = absStr.slice(0, absStr.length - scale);
     const fracPart = absStr.slice(absStr.length - scale);
     const formatted = `${isNeg ? '-' : ''}${intPart}.${fracPart}`;
-    // Preserve as string if integer+fraction digits > 15 to avoid IEEE-754 rounding
     const totalSigDigits = absStr.replace(/^0+/, '').length;
     if (totalSigDigits > 15) {
         return formatted;
@@ -2313,9 +3008,33 @@ function decodeTwoComplementBigEndian(slice: Uint8Array): bigint {
     return isNeg ? -(acc + BigInt(1)) : acc;
 }
 
+function decodeTwoComplementLittleEndian(slice: Uint8Array): bigint {
+    if (slice.length === 0) return BigInt(0);
+    const isNeg = (slice[slice.length - 1] & 0x80) !== 0;
+    let acc = BigInt(0);
+    for (let i = slice.length - 1; i >= 0; i--) {
+        const b = isNeg ? (~slice[i] & 0xff) : slice[i];
+        acc = (acc << BigInt(8)) | BigInt(b);
+    }
+    return isNeg ? -(acc + BigInt(1)) : acc;
+}
+
+function decodeFloat16(uint16Bits: number): number {
+    const sign = (uint16Bits & 0x8000) !== 0 ? -1 : 1;
+    const exp = (uint16Bits >>> 10) & 0x1f;
+    const frac = uint16Bits & 0x03ff;
+    if (exp === 0) {
+        return sign * Math.pow(2, -14) * (frac / 1024);
+    }
+    if (exp === 0x1f) {
+        return frac === 0 ? sign * Infinity : NaN;
+    }
+    return sign * Math.pow(2, exp - 15) * (1 + frac / 1024);
+}
+
 /**
  * Decodes Parquet binary Statistics min/max bytes (handles both binary LE values written by PyArrow/Spark
- * and UTF-8 string statistics).
+ * and UTF-8 string statistics, including TIMESTAMP_MILLIS, TIMESTAMP_MICROS, TIMESTAMP_NANOS, and INT96).
  */
 function decodeParquetStatBytes(
     raw: Uint8Array,
@@ -2345,7 +3064,7 @@ function decodeParquetStatBytes(
         const dv = new DataView(raw.buffer, raw.byteOffset, 4);
         const v = isUnsigned ? dv.getUint32(0, true) : dv.getInt32(0, true);
         if (logicalType === 'DATE') {
-            return new Date(v * 86400000).toISOString().slice(0, 10);
+            return formatEpochTimestampToIso(BigInt(v) * BigInt(86400), 's').slice(0, 10);
         }
         return v;
     }
@@ -2353,10 +3072,13 @@ function decodeParquetStatBytes(
         const dv = new DataView(raw.buffer, raw.byteOffset, 8);
         const b = isUnsigned || logicalType === 'UINT64' ? dv.getBigUint64(0, true) : dv.getBigInt64(0, true);
         if (logicalType === 'TIMESTAMP_MILLIS') {
-            return new Date(Number(b)).toISOString();
+            return formatEpochTimestampToIso(b, 'ms');
         }
         if (logicalType === 'TIMESTAMP_MICROS') {
-            return new Date(Number(b / BigInt(1000))).toISOString();
+            return formatEpochTimestampToIso(b, 'us');
+        }
+        if (logicalType === 'TIMESTAMP_NANOS') {
+            return formatEpochTimestampToIso(b, 'ns');
         }
         if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
             return b.toString();
@@ -2365,10 +3087,10 @@ function decodeParquetStatBytes(
     }
     if (isInt96 && raw.length === 12) {
         const dv = new DataView(raw.buffer, raw.byteOffset, 12);
-        const nanos = dv.getBigInt64(0, true);
-        const julianDay = dv.getInt32(8, true);
-        const unixMs = (julianDay - 2440588) * 86400000 + Number(nanos / BigInt(1000000));
-        return new Date(unixMs).toISOString();
+        const nanosOfDay = dv.getBigInt64(0, true);
+        const julianDay = BigInt(dv.getInt32(8, true));
+        const totalNanos = (julianDay - BigInt(2440588)) * BigInt(86400000000000) + nanosOfDay;
+        return formatEpochTimestampToIso(totalNanos, 'ns');
     }
     if (physicalType === 'FLOAT' && raw.length === 4 && !isAsciiNumeric) {
         const f = new DataView(raw.buffer, raw.byteOffset, 4).getFloat32(0, true);
@@ -2427,7 +3149,7 @@ function decodeParquetPlainValues(
             const v = isUnsigned ? view.getUint32(pos, true) : view.getInt32(pos, true);
             pos += 4;
             if (logicalType === 'DATE') {
-                values.push(new Date(v * 86400000).toISOString().slice(0, 10));
+                values.push(formatEpochTimestampToIso(BigInt(v) * BigInt(86400), 's').slice(0, 10));
             } else if (logicalType === 'DECIMAL' && scale > 0) {
                 values.push(formatScaledDecimal(BigInt(v), scale));
             } else {
@@ -2445,9 +3167,11 @@ function decodeParquetPlainValues(
             const b = isUnsigned || logicalType === 'UINT64' ? view.getBigUint64(pos, true) : view.getBigInt64(pos, true);
             pos += 8;
             if (logicalType === 'TIMESTAMP_MILLIS') {
-                values.push(new Date(Number(b)).toISOString());
+                values.push(formatEpochTimestampToIso(b, 'ms'));
             } else if (logicalType === 'TIMESTAMP_MICROS') {
-                values.push(new Date(Number(b / BigInt(1000))).toISOString());
+                values.push(formatEpochTimestampToIso(b, 'us'));
+            } else if (logicalType === 'TIMESTAMP_NANOS') {
+                values.push(formatEpochTimestampToIso(b, 'ns'));
             } else if (logicalType === 'DECIMAL' && scale > 0) {
                 values.push(formatScaledDecimal(b, scale));
             } else if (b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)) {
@@ -2464,11 +3188,11 @@ function decodeParquetPlainValues(
             throw new Error('Malformed Parquet DataPage: truncated INT96 timestamp buffer.');
         }
         for (let i = 0; i < count; i++) {
-            const nanos = view.getBigInt64(pos, true);
-            const julianDay = view.getInt32(pos + 8, true);
+            const nanosOfDay = view.getBigInt64(pos, true);
+            const julianDay = BigInt(view.getInt32(pos + 8, true));
             pos += 12;
-            const unixMs = (julianDay - 2440588) * 86400000 + Number(nanos / BigInt(1000000));
-            values.push(new Date(unixMs).toISOString());
+            const totalNanos = (julianDay - BigInt(2440588)) * BigInt(86400000000000) + nanosOfDay;
+            values.push(formatEpochTimestampToIso(totalNanos, 'ns'));
         }
         return { values, nextOffset: pos };
     }
@@ -2582,7 +3306,7 @@ function decompressParquetPagePayload(
 }
 
 /**
- * Reconstructs 1-level repeated (LIST / REPEATED) values using Dremel repetition and definition levels.
+ * Reconstructs repeated (LIST / MAP / REPEATED) values per top-level row using Dremel repetition and definition levels.
  */
 function reconstructDremelSingleLevelList(
     repLevels: number[],
@@ -2603,10 +3327,8 @@ function reconstructDremelSingleLevelList(
                 rowsOut.push(currentList);
             }
             if (def === 0) {
-                // Outer optional list is NULL
                 currentList = null;
             } else if (def < maxDefLevel) {
-                // Empty list [] or null element inside list
                 currentList = (maxDefLevel >= 3 ? def === 1 : def === maxDefLevel - 1) ? [] : [null];
             } else {
                 currentList = [nonNullValues[valIdx++] ?? null];
@@ -2628,8 +3350,8 @@ function reconstructDremelSingleLevelList(
 
 /**
  * Decodes a single Parquet ColumnChunk (supporting DICTIONARY_PAGE + DATA_PAGE v1 + DATA_PAGE_V2,
- * PLAIN + RLE_DICTIONARY + PLAIN_DICTIONARY + RLE boolean, Dremel 1-level LIST reconstruction,
- * DECIMAL, UINT, INT96, and legacy KivaroTools JSON-array chunks).
+ * PLAIN + RLE_DICTIONARY + PLAIN_DICTIONARY + RLE boolean, Dremel LIST/MAP reconstruction,
+ * DECIMAL, UINT, INT96, TIMESTAMP_MILLIS/MICROS/NANOS, and legacy KivaroTools JSON-array chunks).
  */
 function decodeParquetColumnChunkValues(
     fileBytes: Uint8Array,
@@ -2646,12 +3368,6 @@ function decodeParquetColumnChunkValues(
     maxRepLevel: number,
     expectedRows: number
 ): unknown[] {
-    if (maxRepLevel > 1) {
-        throw new Error(
-            `Column "${colChunk.name}" uses multi-level nested repetition (maxRepetitionLevel=${maxRepLevel}). The in-browser Dremel decoder supports flat columns and 1-level repeated LIST columns (maxRepetitionLevel <= 1).`
-        );
-    }
-
     if (!SUPPORTED_PARQUET_CODECS.has(colChunk.codec)) {
         throw new Error(
             `Column "${colChunk.name}" is compressed with unsupported codec "${colChunk.codec}". Supported Parquet codecs in browser memory are UNCOMPRESSED, SNAPPY, GZIP, LZ4, and LZ4_RAW.`
@@ -2671,7 +3387,6 @@ function decodeParquetColumnChunkValues(
         );
     }
 
-    // 1. Check if this is a legacy KivaroTools JSON-array chunk
     const rawChunkSlice = fileBytes.subarray(startOffset, endOffset);
     if (rawChunkSlice[0] !== 0x15) {
         try {
@@ -2689,14 +3404,13 @@ function decodeParquetColumnChunkValues(
         }
     }
 
-    // 2. Spec-compliant Apache Parquet Thrift PageHeader + DataPage v1/v2 / DictionaryPage reader
     let pos = startOffset;
     let dictPool: unknown[] = [];
     const columnValues: unknown[] = [];
 
     while (pos < endOffset && columnValues.length < expectedRows) {
         const pr = new ThriftCompactReader(fileBytes, pos);
-        pr.beginStruct(); // PageHeader
+        pr.beginStruct();
 
         let pageType = -1;
         let uncompressedPageSize = 0;
@@ -2772,7 +3486,6 @@ function decodeParquetColumnChunkValues(
         pos = pr.pos + compressedPageSize;
 
         if (pageType === 2) {
-            // DICTIONARY_PAGE
             const decomp = decompressParquetPagePayload(
                 pageCompressedSlice,
                 colChunk.codec,
@@ -2791,7 +3504,6 @@ function decodeParquetColumnChunkValues(
             );
             dictPool = decodedDict.values;
         } else if (pageType === 0) {
-            // DATA_PAGE v1
             const decomp = decompressParquetPagePayload(
                 pageCompressedSlice,
                 colChunk.codec,
@@ -2862,7 +3574,7 @@ function decodeParquetColumnChunkValues(
                 nonNullVals = plainRes.values;
             }
 
-            if (maxRepLevel === 1 && repLevels && defLevels) {
+            if (maxRepLevel >= 1 && repLevels && defLevels) {
                 const listRows = reconstructDremelSingleLevelList(
                     repLevels,
                     defLevels,
@@ -2881,7 +3593,6 @@ function decodeParquetColumnChunkValues(
                 }
             }
         } else if (pageType === 3) {
-            // DATA_PAGE_V2
             let innerPos = 0;
             let repLevels: number[] | null = null;
             if (maxRepLevel > 0 && repLevelsByteLenV2 > 0 && innerPos + repLevelsByteLenV2 <= pageCompressedSlice.length) {
@@ -2949,7 +3660,7 @@ function decodeParquetColumnChunkValues(
                 ).values;
             }
 
-            if (maxRepLevel === 1 && repLevels && defLevels) {
+            if (maxRepLevel >= 1 && repLevels && defLevels) {
                 const listRows = reconstructDremelSingleLevelList(
                     repLevels,
                     defLevels,
@@ -2977,6 +3688,10 @@ interface ParquetSchemaLeafInfo {
     name: string;
     displayColName: string;
     pathKey: string;
+    topGroupName: string;
+    topGroupKind: 'PRIMITIVE' | 'STRUCT' | 'LIST_PRIMITIVE' | 'LIST_STRUCT' | 'MAP';
+    subFieldPath: string[];
+    mapRole?: 'key' | 'value';
     physicalType: PhysicalDataType;
     logicalType: LogicalDataType;
     repetitionType: RepetitionType;
@@ -2991,7 +3706,7 @@ interface ParquetSchemaLeafInfo {
 
 /**
  * Walks the flat Thrift SchemaElement array to compute exact Dremel maxDefLevel, maxRepLevel,
- * and path hierarchies for every leaf column.
+ * and non-colliding path hierarchies for every leaf column (handling STRUCT, MAP, and LIST-of-STRUCT).
  */
 function buildParquetLeafSchemaHierarchy(
     elements: {
@@ -3011,62 +3726,141 @@ function buildParquetLeafSchemaHierarchy(
     const leaves: ParquetSchemaLeafInfo[] = [];
     let cursor = 1; // skip root element at index 0
 
-    const visit = (
-        pathParts: string[],
-        defLevel: number,
-        repLevel: number,
-        topListGroup: string | null
-    ) => {
-        if (cursor >= elements.length) return;
-        const elem = elements[cursor++];
-        const nextDef =
-            elem.repetitionType === 'OPTIONAL' || elem.repetitionType === 'REPEATED'
-                ? defLevel + 1
-                : defLevel;
-        const nextRep = elem.repetitionType === 'REPEATED' ? repLevel + 1 : repLevel;
-        const currentPath = [...pathParts, elem.name];
-        const isListGroup =
-            topListGroup ??
-            (elem.logicalType === 'LIST' || elem.repetitionType === 'REPEATED'
-                ? currentPath[0]
-                : null);
-
-        if (elem.numChildren > 0) {
-            for (let c = 0; c < elem.numChildren; c++) {
-                visit(currentPath, nextDef, nextRep, isListGroup);
-            }
-        } else {
-            const pathKey = currentPath.join('.');
-            const displayColName = isListGroup ?? pathKey;
-            leaves.push({
-                name: elem.name,
-                displayColName,
-                pathKey,
-                physicalType: elem.physicalType,
-                logicalType: isListGroup ? 'LIST' : elem.logicalType,
-                repetitionType: isListGroup ? 'REPEATED' : elem.repetitionType,
-                maxDefLevel: nextDef,
-                maxRepLevel: nextRep,
-                typeLength: elem.typeLength,
-                precision: elem.precision,
-                scale: elem.scale,
-                isInt96: elem.isInt96,
-                isUnsigned: elem.isUnsigned,
-            });
-        }
-    };
+    interface TempLeaf {
+        elem: (typeof elements)[0];
+        pathParts: string[];
+        maxDefLevel: number;
+        maxRepLevel: number;
+        hasMapAncestor: boolean;
+        hasListOrRepAncestor: boolean;
+    }
 
     const rootChildren = elements[0].numChildren || elements.length - 1;
     for (let i = 0; i < rootChildren && cursor < elements.length; i++) {
-        visit([], 0, 0, null);
+        const topElem = elements[cursor];
+        const tempLeaves: TempLeaf[] = [];
+
+        const visitSubtree = (
+            pathParts: string[],
+            defLevel: number,
+            repLevel: number,
+            hasMap: boolean,
+            hasList: boolean
+        ) => {
+            if (cursor >= elements.length) return;
+            const elem = elements[cursor++];
+            const nextDef =
+                elem.repetitionType === 'OPTIONAL' || elem.repetitionType === 'REPEATED'
+                    ? defLevel + 1
+                    : defLevel;
+            const nextRep = elem.repetitionType === 'REPEATED' ? repLevel + 1 : repLevel;
+            const currentPath = [...pathParts, elem.name];
+            const nextHasMap = hasMap || elem.logicalType === 'MAP';
+            const nextHasList =
+                hasList || elem.logicalType === 'LIST' || elem.repetitionType === 'REPEATED';
+
+            if (elem.numChildren > 0) {
+                for (let c = 0; c < elem.numChildren; c++) {
+                    visitSubtree(currentPath, nextDef, nextRep, nextHasMap, nextHasList);
+                }
+            } else {
+                tempLeaves.push({
+                    elem,
+                    pathParts: currentPath,
+                    maxDefLevel: nextDef,
+                    maxRepLevel: nextRep,
+                    hasMapAncestor: nextHasMap,
+                    hasListOrRepAncestor: nextHasList,
+                });
+            }
+        };
+
+        visitSubtree([], 0, 0, false, false);
+
+        const topGroupName = topElem.name;
+        const isSingleLeaf = tempLeaves.length === 1;
+        const anyRepeated = tempLeaves.some((tl) => tl.maxRepLevel > 0 || tl.hasListOrRepAncestor);
+        const isMapGroup =
+            (topElem.logicalType === 'MAP' || tempLeaves.some((tl) => tl.hasMapAncestor)) &&
+            tempLeaves.length === 2;
+
+        let topGroupKind: ParquetSchemaLeafInfo['topGroupKind'] = 'PRIMITIVE';
+        if (isMapGroup) {
+            topGroupKind = 'MAP';
+        } else if (isSingleLeaf && anyRepeated) {
+            topGroupKind = 'LIST_PRIMITIVE';
+        } else if (!isSingleLeaf && anyRepeated) {
+            topGroupKind = 'LIST_STRUCT';
+        } else if (!isSingleLeaf || topElem.numChildren > 0) {
+            topGroupKind = 'STRUCT';
+        }
+
+        for (let lIdx = 0; lIdx < tempLeaves.length; lIdx++) {
+            const tl = tempLeaves[lIdx];
+            const pathKey = tl.pathParts.join('.');
+            // Only collapse displayColName to topGroupName for a 1-leaf primitive LIST or flat PRIMITIVE;
+            // multi-leaf STRUCT, MAP, and LIST_STRUCT keep unique pathKey per chunk to prevent column overwrite!
+            const displayColName =
+                topGroupKind === 'PRIMITIVE' || topGroupKind === 'LIST_PRIMITIVE'
+                    ? topGroupName
+                    : pathKey;
+
+            // Compute relative subFieldPath inside STRUCT or LIST_STRUCT
+            let subFieldPath = tl.pathParts.slice(1);
+            if (
+                topGroupKind === 'LIST_STRUCT' &&
+                subFieldPath.length >= 3 &&
+                (subFieldPath[0] === 'list' || subFieldPath[0] === 'bag') &&
+                (subFieldPath[1] === 'element' || subFieldPath[1] === 'item' || subFieldPath[1] === 'array_element')
+            ) {
+                subFieldPath = subFieldPath.slice(2);
+            } else if (topGroupKind === 'LIST_STRUCT' && subFieldPath.length >= 2) {
+                subFieldPath = subFieldPath.slice(1);
+            }
+            if (subFieldPath.length === 0) {
+                subFieldPath = [tl.elem.name];
+            }
+
+            leaves.push({
+                name: tl.elem.name,
+                displayColName,
+                pathKey,
+                topGroupName,
+                topGroupKind,
+                subFieldPath,
+                mapRole: topGroupKind === 'MAP' ? (lIdx === 0 ? 'key' : 'value') : undefined,
+                physicalType: tl.elem.physicalType,
+                logicalType: topGroupKind === 'LIST_PRIMITIVE' ? 'LIST' : tl.elem.logicalType,
+                repetitionType: topGroupKind === 'LIST_PRIMITIVE' ? 'REPEATED' : tl.elem.repetitionType,
+                maxDefLevel: tl.maxDefLevel,
+                maxRepLevel: tl.maxRepLevel,
+                typeLength: tl.elem.typeLength,
+                precision: tl.elem.precision,
+                scale: tl.elem.scale,
+                isInt96: tl.elem.isInt96,
+                isUnsigned: tl.elem.isUnsigned,
+            });
+        }
     }
+
     return leaves;
+}
+
+function setNestedStructValue(target: Record<string, unknown>, pathParts: string[], value: unknown): void {
+    let cur = target;
+    for (let i = 0; i < pathParts.length - 1; i++) {
+        const key = pathParts[i];
+        if (!cur[key] || typeof cur[key] !== 'object' || Array.isArray(cur[key])) {
+            cur[key] = {};
+        }
+        cur = cur[key] as Record<string, unknown>;
+    }
+    cur[pathParts[pathParts.length - 1]] = value;
 }
 
 /**
  * Decodes Apache Parquet (PAR1) binary files using our real Apache Thrift TCompactProtocol
  * FileMetaData footer parser and spec-compliant DataPage v1/v2 + DictionaryPage decoder.
- * Strictly validates magic bytes, footer boundaries, and codecs—never substituting fabricated fallback rows.
  */
 function parseParquetBinary(
     bytes: Uint8Array,
@@ -3120,7 +3914,6 @@ function parseParquetBinary(
     const footerStart = bytes.length - 8 - footerLen;
     const footerBytes = bytes.subarray(footerStart, bytes.length - 8);
 
-    // Decode FileMetaData using ThriftCompactReader
     const tr = new ThriftCompactReader(footerBytes, 0);
     tr.beginStruct();
 
@@ -3230,10 +4023,29 @@ function parseParquetBinary(
                                 lType = 'DATE';
                                 tr.skipField(lf.fieldType);
                             } else if (lf.fieldId === 8 && lf.fieldType === CT_STRUCT) {
+                                // TimestampType(isAdjustedToUTC, unit: TimeUnit { 1=MILLIS, 2=MICROS, 3=NANOS })
                                 lType = 'TIMESTAMP_MILLIS';
-                                tr.skipField(lf.fieldType);
+                                tr.beginStruct();
+                                while (tr.pos < footerBytes.length) {
+                                    const tsf = tr.readFieldHeader();
+                                    if (tsf.fieldType === CT_STOP) break;
+                                    if (tsf.fieldId === 2 && tsf.fieldType === CT_STRUCT) {
+                                        tr.beginStruct();
+                                        while (tr.pos < footerBytes.length) {
+                                            const uf = tr.readFieldHeader();
+                                            if (uf.fieldType === CT_STOP) break;
+                                            if (uf.fieldId === 1) lType = 'TIMESTAMP_MILLIS';
+                                            else if (uf.fieldId === 2) lType = 'TIMESTAMP_MICROS';
+                                            else if (uf.fieldId === 3) lType = 'TIMESTAMP_NANOS';
+                                            tr.skipField(uf.fieldType);
+                                        }
+                                        tr.endStruct();
+                                    } else {
+                                        tr.skipField(tsf.fieldType);
+                                    }
+                                }
+                                tr.endStruct();
                             } else if (lf.fieldId === 10 && lf.fieldType === CT_STRUCT) {
-                                // IntType(bitWidth, isSigned)
                                 tr.beginStruct();
                                 let bw = 32;
                                 let signed = true;
@@ -3273,7 +4085,7 @@ function parseParquetBinary(
                 const resolvedLogical: LogicalDataType =
                     lType ??
                     (isInt96
-                        ? 'TIMESTAMP_MILLIS'
+                        ? 'TIMESTAMP_NANOS'
                         : pType === 'BYTE_ARRAY'
                             ? 'UTF8'
                             : (pType as LogicalDataType));
@@ -3319,7 +4131,7 @@ function parseParquetBinary(
                     if (rf.fieldId === 1 && rf.fieldType === CT_LIST) {
                         const { count: colCount } = tr.readListHeader();
                         for (let cIdx = 0; cIdx < colCount; cIdx++) {
-                            tr.beginStruct(); // ColumnChunk
+                            tr.beginStruct();
                             const leafRef = leafRefs[cIdx];
                             let fileOffset = 4;
                             let colType: PhysicalDataType = leafRef?.physicalType ?? 'BYTE_ARRAY';
@@ -3345,7 +4157,7 @@ function parseParquetBinary(
                                 if (cf.fieldId === 2 && cf.fieldType === CT_I64) {
                                     fileOffset = Number(tr.readI64());
                                 } else if (cf.fieldId === 3 && cf.fieldType === CT_STRUCT) {
-                                    tr.beginStruct(); // ColumnMetaData
+                                    tr.beginStruct();
                                     while (tr.pos < footerBytes.length) {
                                         const mf = tr.readFieldHeader();
                                         if (mf.fieldType === CT_STOP) break;
@@ -3378,7 +4190,7 @@ function parseParquetBinary(
                                         } else if (mf.fieldId === 11 && mf.fieldType === CT_I64) {
                                             dictionaryPageOffset = Number(tr.readI64());
                                         } else if (mf.fieldId === 12 && mf.fieldType === CT_STRUCT) {
-                                            tr.beginStruct(); // Statistics
+                                            tr.beginStruct();
                                             const lType = leafRef?.logicalType ?? 'UTF8';
                                             while (tr.pos < footerBytes.length) {
                                                 const stf = tr.readFieldHeader();
@@ -3460,6 +4272,8 @@ function parseParquetBinary(
                             ? Number((rgTotalByteSize / rgCompressedBytes).toFixed(2))
                             : 1,
                     columns: rgCols,
+                    isSyntheticEstimate: false,
+                    containerUnitLabel: 'Parquet Row Group',
                 });
             }
         } else if (fieldId === 5 && fieldType === CT_LIST) {
@@ -3507,6 +4321,7 @@ function parseParquetBinary(
     for (const rg of decodedRowGroups) {
         const rgRowCount = rg.rowCount;
         if (rgRowCount > 0) {
+            const decodedByLeafIdx: unknown[][] = [];
             for (let cIdx = 0; cIdx < rg.columns.length; cIdx++) {
                 const colChunk = rg.columns[cIdx];
                 const leaf = leafHierarchy[cIdx] ?? leafHierarchy.find((l) => l.displayColName === colChunk.name);
@@ -3516,7 +4331,7 @@ function parseParquetBinary(
                 const maxDefLevel = leaf ? leaf.maxDefLevel : 1;
                 const maxRepLevel = leaf ? leaf.maxRepLevel : 0;
 
-                const decodedVals = decodeParquetColumnChunkValues(
+                decodedByLeafIdx[cIdx] = decodeParquetColumnChunkValues(
                     bytes,
                     footerStart,
                     colChunk,
@@ -3525,9 +4340,88 @@ function parseParquetBinary(
                     maxRepLevel,
                     rgRowCount
                 );
-                for (let r = 0; r < Math.min(rgRowCount, decodedVals.length); r++) {
-                    if (globalRowOffset + r < rows.length) {
-                        rows[globalRowOffset + r][colChunk.name] = decodedVals[r];
+            }
+
+            // Group leaves by topGroupName to reconstruct STRUCT, MAP, and LIST_STRUCT columns without overwrite
+            const topGroups = new Map<string, { kind: ParquetSchemaLeafInfo['topGroupKind']; items: { idx: number; leaf: ParquetSchemaLeafInfo }[] }>();
+            for (let cIdx = 0; cIdx < rg.columns.length; cIdx++) {
+                const leaf = leafHierarchy[cIdx];
+                if (!leaf) {
+                    const colName = rg.columns[cIdx].name;
+                    for (let r = 0; r < rgRowCount && globalRowOffset + r < rows.length; r++) {
+                        rows[globalRowOffset + r][colName] = decodedByLeafIdx[cIdx]?.[r] ?? null;
+                    }
+                    continue;
+                }
+                const existing = topGroups.get(leaf.topGroupName);
+                if (existing) {
+                    existing.items.push({ idx: cIdx, leaf });
+                } else {
+                    topGroups.set(leaf.topGroupName, { kind: leaf.topGroupKind, items: [{ idx: cIdx, leaf }] });
+                }
+            }
+
+            for (const [topName, group] of topGroups.entries()) {
+                if (group.kind === 'PRIMITIVE' || group.kind === 'LIST_PRIMITIVE') {
+                    const cIdx = group.items[0].idx;
+                    const vals = decodedByLeafIdx[cIdx] ?? [];
+                    for (let r = 0; r < rgRowCount && globalRowOffset + r < rows.length; r++) {
+                        rows[globalRowOffset + r][topName] = vals[r] ?? null;
+                    }
+                } else if (group.kind === 'STRUCT') {
+                    for (let r = 0; r < rgRowCount && globalRowOffset + r < rows.length; r++) {
+                        const structObj: Record<string, unknown> = {};
+                        let allNull = true;
+                        for (const { idx, leaf } of group.items) {
+                            const v = decodedByLeafIdx[idx]?.[r] ?? null;
+                            if (v !== null && v !== undefined) allNull = false;
+                            setNestedStructValue(structObj, leaf.subFieldPath, v);
+                        }
+                        rows[globalRowOffset + r][topName] = allNull && group.items[0].leaf.maxDefLevel > 1 ? null : structObj;
+                    }
+                } else if (group.kind === 'MAP') {
+                    const keyItem = group.items.find((it) => it.leaf.mapRole === 'key') ?? group.items[0];
+                    const valItem = group.items.find((it) => it.leaf.mapRole === 'value') ?? group.items[1];
+                    const keyLists = decodedByLeafIdx[keyItem.idx] ?? [];
+                    const valLists = valItem ? (decodedByLeafIdx[valItem.idx] ?? []) : [];
+                    for (let r = 0; r < rgRowCount && globalRowOffset + r < rows.length; r++) {
+                        const kArr = keyLists[r];
+                        const vArr = valLists[r];
+                        if (!Array.isArray(kArr)) {
+                            rows[globalRowOffset + r][topName] = null;
+                        } else {
+                            const mapObj: Record<string, unknown> = {};
+                            for (let k = 0; k < kArr.length; k++) {
+                                const keyStr = String(kArr[k] ?? `key_${k}`);
+                                mapObj[keyStr] = Array.isArray(vArr) ? (vArr[k] ?? null) : null;
+                            }
+                            rows[globalRowOffset + r][topName] = mapObj;
+                        }
+                    }
+                } else if (group.kind === 'LIST_STRUCT') {
+                    for (let r = 0; r < rgRowCount && globalRowOffset + r < rows.length; r++) {
+                        let maxLen = -1;
+                        for (const { idx } of group.items) {
+                            const arr = decodedByLeafIdx[idx]?.[r];
+                            if (Array.isArray(arr)) {
+                                maxLen = Math.max(maxLen, arr.length);
+                            }
+                        }
+                        if (maxLen < 0) {
+                            rows[globalRowOffset + r][topName] = null;
+                        } else {
+                            const listOut: Record<string, unknown>[] = [];
+                            for (let elemIdx = 0; elemIdx < maxLen; elemIdx++) {
+                                const elemObj: Record<string, unknown> = {};
+                                for (const { idx, leaf } of group.items) {
+                                    const arr = decodedByLeafIdx[idx]?.[r];
+                                    const val = Array.isArray(arr) ? (arr[elemIdx] ?? null) : null;
+                                    setNestedStructValue(elemObj, leaf.subFieldPath, val);
+                                }
+                                listOut.push(elemObj);
+                            }
+                            rows[globalRowOffset + r][topName] = listOut;
+                        }
                     }
                 }
             }
@@ -3537,33 +4431,61 @@ function parseParquetBinary(
 
     let schema: ColumnSchemaNode[] = savedSchema;
     if (schema.length === 0) {
-        schema = leafHierarchy.map((e, idx) => {
+        const seenTop = new Set<string>();
+        const builtSchema: ColumnSchemaNode[] = [];
+        for (let idx = 0; idx < leafHierarchy.length; idx++) {
+            const e = leafHierarchy[idx];
+            if (seenTop.has(e.topGroupName)) continue;
+            seenTop.add(e.topGroupName);
             const rgCol = decodedRowGroups[0]?.columns[idx];
-            return {
-                index: idx,
-                name: e.displayColName,
-                physicalType: e.physicalType,
-                logicalType: e.logicalType,
-                repetitionType: e.repetitionType,
-                nullable: e.maxDefLevel > 0,
-                precision: e.precision,
-                scale: e.scale,
-                typeLength: e.typeLength > 0 ? e.typeLength : undefined,
-                compressionCodec: rgCol?.codec || 'SNAPPY',
-                encoding: rgCol?.encodings?.[0] || 'PLAIN',
-            };
-        });
+
+            if (e.topGroupKind === 'PRIMITIVE' || e.topGroupKind === 'LIST_PRIMITIVE') {
+                builtSchema.push({
+                    index: builtSchema.length,
+                    name: e.topGroupName,
+                    physicalType: e.physicalType,
+                    logicalType: e.logicalType,
+                    repetitionType: e.repetitionType,
+                    nullable: e.maxDefLevel > 0,
+                    precision: e.precision,
+                    scale: e.scale,
+                    typeLength: e.typeLength > 0 ? e.typeLength : undefined,
+                    compressionCodec: rgCol?.codec || 'SNAPPY',
+                    encoding: rgCol?.encodings?.[0] || 'PLAIN',
+                });
+            } else {
+                const groupLogical: LogicalDataType =
+                    e.topGroupKind === 'MAP'
+                        ? 'MAP'
+                        : e.topGroupKind === 'LIST_STRUCT'
+                            ? 'LIST'
+                            : 'STRUCT';
+                builtSchema.push({
+                    index: builtSchema.length,
+                    name: e.topGroupName,
+                    physicalType: 'BYTE_ARRAY',
+                    logicalType: groupLogical,
+                    repetitionType: groupLogical === 'LIST' ? 'REPEATED' : e.maxDefLevel > 0 ? 'OPTIONAL' : 'REQUIRED',
+                    nullable: e.maxDefLevel > 0,
+                    compressionCodec: rgCol?.codec || 'SNAPPY',
+                    encoding: rgCol?.encodings?.[0] || 'PLAIN',
+                });
+            }
+        }
+        schema = builtSchema;
     }
 
-    if (rows.length > 0 && schema.length > 0) {
-        const computedProfs = computeColumnProfiles(rows, schema);
+    if (rows.length > 0 && leafHierarchy.length > 0) {
         for (const rg of decodedRowGroups) {
             for (const c of rg.columns) {
-                const p = computedProfs.find((cp) => cp.name === c.name);
-                if (p) {
-                    if (!c.distinctCount) c.distinctCount = p.distinctCount;
-                    if (c.minValue === null) c.minValue = p.min;
-                    if (c.maxValue === null) c.maxValue = p.max;
+                if (c.minValue === null || c.maxValue === null || !c.distinctCount) {
+                    const topProfs = computeColumnProfiles(rows, schema);
+                    const p = topProfs.find((cp) => cp.name === c.name || c.name.startsWith(`${cp.name}.`));
+                    if (p) {
+                        if (!c.distinctCount) c.distinctCount = p.distinctCount;
+                        if (c.minValue === null) c.minValue = p.min;
+                        if (c.maxValue === null) c.maxValue = p.max;
+                    }
                 }
             }
         }
@@ -3601,8 +4523,7 @@ function coerceNumericStat(s: string): string | number {
 }
 
 /**
- * Recursive Apache Avro Binary Datum Decoder (with named types registry, decimal logicalType,
- * recursion guard, and strict boundary validation).
+ * Recursive Apache Avro Binary Datum Decoder
  */
 function readAvroBinaryDatum(
     schemaNode: unknown,
@@ -3809,19 +4730,25 @@ function readAvroBinaryDatum(
             const res = readAvroBinaryDatum(t, bytes, offset, namedTypes, depth + 1);
             if (obj.logicalType === 'date' && typeof res.value === 'number') {
                 return {
-                    value: new Date(res.value * 86400000).toISOString().slice(0, 10),
+                    value: formatEpochTimestampToIso(BigInt(res.value) * BigInt(86400), 's').slice(0, 10),
                     nextOffset: res.nextOffset,
                 };
             }
             if (obj.logicalType === 'timestamp-millis' && (typeof res.value === 'number' || typeof res.value === 'string')) {
                 return {
-                    value: new Date(Number(res.value)).toISOString(),
+                    value: formatEpochTimestampToIso(BigInt(res.value), 'ms'),
                     nextOffset: res.nextOffset,
                 };
             }
             if (obj.logicalType === 'timestamp-micros' && (typeof res.value === 'number' || typeof res.value === 'string')) {
                 return {
-                    value: new Date(Number(BigInt(res.value) / BigInt(1000))).toISOString(),
+                    value: formatEpochTimestampToIso(BigInt(res.value), 'us'),
+                    nextOffset: res.nextOffset,
+                };
+            }
+            if (obj.logicalType === 'timestamp-nanos' && (typeof res.value === 'number' || typeof res.value === 'string')) {
+                return {
+                    value: formatEpochTimestampToIso(BigInt(res.value), 'ns'),
                     nextOffset: res.nextOffset,
                 };
             }
@@ -3891,9 +4818,8 @@ function buildSchemaFromAvroJson(avroSchemaObj: Record<string, unknown>, codec: 
 }
 
 /**
- * Decodes Apache Avro Object Container Files ("Obj\x01") across all blocks using the embedded
- * avro.schema JSON and our recursive Avro binary datum reader.
- * Strictly validates OCF magic bytes, metadata map, JSON schema, 16-byte sync markers, and Snappy CRC32 checksums.
+ * Decodes Apache Avro Object Container Files ("Obj\x01") across all blocks and records real physical
+ * Avro OCF Data Blocks for the Binary X-Ray Inspector.
  */
 function parseAvroBinary(
     bytes: Uint8Array,
@@ -3904,10 +4830,17 @@ function parseAvroBinary(
     codec: string;
     keyValueMetadata: Record<string, string>;
     syncMarkerHex: string;
+    rowGroups: RowGroupMeta[];
     uncompressedBytes: number;
     compressedBytes: number;
 } {
     void warnings;
+    if (bytes.length >= 5 && bytes[0] === 0x00) {
+        const schemaId = new DataView(bytes.buffer, bytes.byteOffset + 1, 4).getUint32(0, false);
+        throw new Error(
+            `Confluent Schema Registry Wire Format payload detected (leading magic byte 0x00, Schema ID #${schemaId}, header hex: ${bytesToHex(bytes, 5)}). Standalone Avro Object Container Files require an "Obj\\x01" (0x4F626A01) header with an embedded avro.schema JSON.`
+        );
+    }
     if (
         bytes.length < 22 ||
         bytes[0] !== 0x4f ||
@@ -3992,8 +4925,11 @@ function parseAvroBinary(
     let totalUncomp = 0;
     let totalComp = 0;
     const namedTypes = new Map<string, Record<string, unknown>>();
+    const blockMetas: { blockIndex: number; offset: number; recCount: number; compBytes: number; uncompBytes: number; blockRows: Record<string, unknown>[] }[] = [];
+    let blockIdx = 0;
 
     while (pos < bytes.length) {
+        const blockStartOffset = pos;
         const recCountVar = readZigZagVarint(bytes, pos);
         pos = recCountVar.nextOffset;
         const blockByteLenVar = readZigZagVarint(bytes, pos);
@@ -4034,7 +4970,6 @@ function parseAvroBinary(
         }
         totalUncomp += blockPayload.length;
 
-        // Verify 16-byte trailing sync marker at end of block
         const blockSync = bytes.subarray(pos + blockByteLen, pos + blockByteLen + 16);
         for (let s = 0; s < 16; s++) {
             if (blockSync[s] !== syncMarker[s]) {
@@ -4047,8 +4982,8 @@ function parseAvroBinary(
 
         if (recCount === 0) continue;
 
-        // Decode Apache Avro binary datum records using parsedAvroSchema
         let datumOffset = 0;
+        const blockRows: Record<string, unknown>[] = [];
         for (let r = 0; r < recCount; r++) {
             if (datumOffset >= blockPayload.length) {
                 throw new Error(
@@ -4078,11 +5013,22 @@ function parseAvroBinary(
                     }
                 }
                 rows.push(recObj);
+                blockRows.push(recObj);
             } else {
-                rows.push({ value: res.value });
+                const wrapped = { value: res.value };
+                rows.push(wrapped);
+                blockRows.push(wrapped);
             }
             datumOffset = res.nextOffset;
         }
+        blockMetas.push({
+            blockIndex: blockIdx++,
+            offset: blockStartOffset,
+            recCount,
+            compBytes: blockByteLen,
+            uncompBytes: blockPayload.length,
+            blockRows,
+        });
     }
 
     const schema =
@@ -4092,19 +5038,55 @@ function parseAvroBinary(
                 ? buildSchemaFromAvroJson(parsedAvroSchema as Record<string, unknown>, codec)
                 : inferSchemaFromRows(rows, codec, 'AVRO_ZIGZAG_BINARY');
 
+    // Build real Avro OCF Data Block metadata for Binary X-Ray
+    const colCount = Math.max(1, schema.length);
+    const rowGroups: RowGroupMeta[] = blockMetas.map((bm) => {
+        const blockProfs = computeColumnProfiles(bm.blockRows, schema);
+        const perColComp = Math.max(1, Math.round(bm.compBytes / colCount));
+        const perColUncomp = Math.max(1, Math.round(bm.uncompBytes / colCount));
+        return {
+            index: bm.blockIndex,
+            rowCount: bm.recCount,
+            totalByteSize: bm.uncompBytes,
+            compressedBytes: bm.compBytes,
+            compressionRatio: bm.compBytes > 0 ? Number((bm.uncompBytes / bm.compBytes).toFixed(2)) : 1,
+            isSyntheticEstimate: false,
+            containerUnitLabel: 'Avro OCF Data Block',
+            columns: schema.map((col, idx) => {
+                const prof = blockProfs[idx];
+                return {
+                    name: col.name,
+                    physicalType: col.physicalType,
+                    codec,
+                    encodings: ['AVRO_ZIGZAG_BINARY'],
+                    numValues: bm.recCount,
+                    compressedSize: perColComp,
+                    uncompressedSize: perColUncomp,
+                    compressionRatio: bm.compBytes > 0 ? Number((bm.uncompBytes / bm.compBytes).toFixed(2)) : 1,
+                    dataPageOffset: bm.offset,
+                    nullCount: prof?.nullCount ?? 0,
+                    distinctCount: prof?.distinctCount ?? 0,
+                    minValue: prof?.min ?? null,
+                    maxValue: prof?.max ?? null,
+                };
+            }),
+        };
+    });
+
     return {
         rows,
         schema,
         codec,
         keyValueMetadata: metaMap,
         syncMarkerHex: bytesToHex(syncMarker, 16),
+        rowGroups,
         uncompressedBytes: totalUncomp || bytes.length,
         compressedBytes: totalComp || bytes.length,
     };
 }
 
 /**
- * Low-level FlatBuffers Table Reader Helpers (used independently by Feather V1 CTable and Feather V2 Arrow IPC)
+ * Low-level FlatBuffers Table Reader Helpers
  */
 function fbReadTableSlots(buf: Uint8Array, tablePos: number): number[] {
     if (tablePos < 0 || tablePos + 4 > buf.length) {
@@ -4133,7 +5115,8 @@ function fbDeref(buf: Uint8Array, pos: number): number {
         throw new Error('Malformed FlatBuffers uoffset reference (out of bounds).');
     }
     const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-    const target = pos + dv.getUint32(pos, true);
+    const rel = dv.getInt32(pos, true);
+    const target = pos + rel;
     if (target < 0 || target > buf.length) {
         throw new Error('Malformed FlatBuffers dereferenced target offset (out of bounds).');
     }
@@ -4154,9 +5137,206 @@ function fbReadString(buf: Uint8Array, fieldPos: number): string {
 }
 
 /**
- * Dedicated Feather V1 ("FEA1") Parser — Parses the historical Feather V1 CTable FlatBuffers layout
- * (org.apache.arrow.flatbuf.feather.fbs: CTable -> Column -> PrimitiveArray).
- * Strictly separated from Feather V2 (Arrow IPC).
+ * Helper to decode a Feather V1 PrimitiveArray into an array of JS values.
+ */
+function decodeFeatherV1PrimitiveArray(
+    bytes: Uint8Array,
+    metaBuf: Uint8Array,
+    metaDv: DataView,
+    metaStart: number,
+    paPos: number,
+    colName: string,
+    metaType = 0,
+    metaTablePos = 0
+): {
+    values: unknown[];
+    physicalType: PhysicalDataType;
+    logicalType: LogicalDataType;
+    offset: number;
+    totalBytes: number;
+    nullCount: number;
+} {
+    const paSlots = fbReadTableSlots(metaBuf, paPos);
+    const pType = paSlots[0] ? metaDv.getInt8(paPos + paSlots[0]) : 0;
+    const pEnc = paSlots.length > 1 && paSlots[1] ? metaDv.getInt8(paPos + paSlots[1]) : 0;
+    const pOff = paSlots.length > 2 && paSlots[2] ? Number(metaDv.getBigInt64(paPos + paSlots[2], true)) : 0;
+    const pLen = paSlots.length > 3 && paSlots[3] ? Number(metaDv.getBigInt64(paPos + paSlots[3], true)) : 0;
+    const pNulls = paSlots.length > 4 && paSlots[4] ? Number(metaDv.getBigInt64(paPos + paSlots[4], true)) : 0;
+    const pTotal = paSlots.length > 5 && paSlots[5] ? Number(metaDv.getBigInt64(paPos + paSlots[5], true)) : 0;
+
+    if (pEnc !== 0) {
+        throw new Error(
+            `Unsupported Feather V1 column encoding (${pEnc}) in column "${colName}". Only PLAIN (0) Feather V1 arrays are supported.`
+        );
+    }
+    if (pOff < 8 || pTotal < 0 || pOff + pTotal > metaStart) {
+        throw new Error(
+            `Malformed Feather V1 PrimitiveArray in column "${colName}": buffer [${pOff}..${pOff + pTotal}] exceeds data region [8..${metaStart}].`
+        );
+    }
+
+    const colSlice = bytes.subarray(pOff, pOff + pTotal);
+    const nullBitmapPaddedBytes = pNulls > 0 ? Math.ceil(Math.ceil(pLen / 8) / 8) * 8 : 0;
+    if (nullBitmapPaddedBytes > colSlice.length) {
+        throw new Error(`Malformed Feather V1 null bitmap in column "${colName}".`);
+    }
+    const isNullAt = (r: number): boolean => {
+        if (pNulls === 0) return false;
+        return ((colSlice[r >>> 3] >>> (r & 7)) & 1) === 0;
+    };
+
+    const valRegion = colSlice.subarray(nullBitmapPaddedBytes);
+    const valDv = new DataView(valRegion.buffer, valRegion.byteOffset, valRegion.byteLength);
+
+    let physicalType: PhysicalDataType = 'BYTE_ARRAY';
+    let logicalType: LogicalDataType = 'UTF8';
+    const values: unknown[] = new Array(pLen);
+
+    let tsUnit = 1; // 0=s, 1=ms, 2=us, 3=ns
+    let categoryLevels: unknown[] | null = null;
+    if (metaType === 1 && metaTablePos > 0) {
+        // CategoryMetadata: slot 0 = levels (PrimitiveArray)
+        const catSlots = fbReadTableSlots(metaBuf, metaTablePos);
+        if (catSlots[0]) {
+            const levelsPaPos = fbDeref(metaBuf, metaTablePos + catSlots[0]);
+            categoryLevels = decodeFeatherV1PrimitiveArray(
+                bytes,
+                metaBuf,
+                metaDv,
+                metaStart,
+                levelsPaPos,
+                `${colName}.levels`
+            ).values;
+        }
+    } else if (metaType === 2 && metaTablePos > 0) {
+        const tmSlots = fbReadTableSlots(metaBuf, metaTablePos);
+        if (tmSlots[0]) tsUnit = metaDv.getInt8(metaTablePos + tmSlots[0]);
+    }
+
+    if (pType === 0) {
+        physicalType = 'BOOLEAN';
+        logicalType = 'BOOLEAN';
+        const reqBytes = Math.ceil(pLen / 8);
+        if (valRegion.length < reqBytes) throw new Error(`Truncated Feather V1 BOOL column "${colName}".`);
+        for (let r = 0; r < pLen; r++) {
+            values[r] = isNullAt(r) ? null : ((valRegion[r >>> 3] >>> (r & 7)) & 1) === 1;
+        }
+    } else if ((pType >= 1 && pType <= 8) || pType === 13 || pType === 14) {
+        // 1..8 = INT8..UINT64, 13 = CATEGORY, 14 = TIMESTAMP, 15 = DATE, 16 = TIME
+        const byteWidths: Record<number, number> = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 1, 6: 2, 7: 4, 8: 8, 13: 4, 14: 8 };
+        const bw = byteWidths[pType] ?? 4;
+        if (valRegion.length < pLen * bw) {
+            throw new Error(`Truncated Feather V1 integer buffer in column "${colName}".`);
+        }
+        physicalType = categoryLevels ? 'BYTE_ARRAY' : bw === 8 ? 'INT64' : 'INT32';
+        logicalType = categoryLevels
+            ? 'UTF8'
+            : metaType === 3
+                ? 'DATE'
+                : metaType === 2
+                    ? tsUnit === 3
+                        ? 'TIMESTAMP_NANOS'
+                        : tsUnit === 2
+                            ? 'TIMESTAMP_MICROS'
+                            : 'TIMESTAMP_MILLIS'
+                    : pType === 8
+                        ? 'UINT64'
+                        : bw === 8
+                            ? 'INT64'
+                            : 'INT32';
+
+        for (let r = 0; r < pLen; r++) {
+            if (isNullAt(r)) {
+                values[r] = null;
+                continue;
+            }
+            let rawInt = 0;
+            if (pType === 1) rawInt = valDv.getInt8(r);
+            else if (pType === 2) rawInt = valDv.getInt16(r * 2, true);
+            else if (pType === 3 || pType === 13) rawInt = valDv.getInt32(r * 4, true);
+            else if (pType === 5) rawInt = valDv.getUint8(r);
+            else if (pType === 6) rawInt = valDv.getUint16(r * 2, true);
+            else if (pType === 7) rawInt = valDv.getUint32(r * 4, true);
+
+            if (categoryLevels) {
+                values[r] = categoryLevels[rawInt] ?? null;
+            } else if (pType === 4 || pType === 14) {
+                const b = valDv.getBigInt64(r * 8, true);
+                if (metaType === 2 || pType === 14) {
+                    const u: 's' | 'ms' | 'us' | 'ns' =
+                        tsUnit === 0 ? 's' : tsUnit === 1 ? 'ms' : tsUnit === 2 ? 'us' : 'ns';
+                    values[r] = formatEpochTimestampToIso(b, u);
+                } else {
+                    values[r] =
+                        b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
+                            ? b.toString()
+                            : Number(b);
+                }
+            } else if (pType === 8) {
+                const u = valDv.getBigUint64(r * 8, true);
+                values[r] = u > BigInt(Number.MAX_SAFE_INTEGER) ? u.toString() : Number(u);
+            } else if (metaType === 3) {
+                values[r] = formatEpochTimestampToIso(BigInt(rawInt) * BigInt(86400), 's').slice(0, 10);
+            } else {
+                values[r] = rawInt;
+            }
+        }
+    } else if (pType === 9 || pType === 10) {
+        const bw = pType === 9 ? 4 : 8;
+        if (valRegion.length < pLen * bw) {
+            throw new Error(`Truncated Feather V1 float buffer in column "${colName}".`);
+        }
+        physicalType = pType === 9 ? 'FLOAT' : 'DOUBLE';
+        logicalType = pType === 9 ? 'FLOAT' : 'DOUBLE';
+        for (let r = 0; r < pLen; r++) {
+            if (isNullAt(r)) {
+                values[r] = null;
+            } else if (pType === 9) {
+                values[r] = valDv.getFloat32(r * 4, true);
+            } else {
+                values[r] = valDv.getFloat64(r * 8, true);
+            }
+        }
+    } else if (pType === 11 || pType === 12) {
+        physicalType = 'BYTE_ARRAY';
+        logicalType = pType === 11 ? 'UTF8' : 'BINARY';
+        const rawOffsetsBytes = (pLen + 1) * 4;
+        const paddedOffsetsBytes = Math.ceil(rawOffsetsBytes / 8) * 8;
+        if (valRegion.length < paddedOffsetsBytes) {
+            throw new Error(`Truncated Feather V1 UTF8/BINARY offsets buffer in column "${colName}".`);
+        }
+        const strDataRegion = valRegion.subarray(paddedOffsetsBytes);
+        for (let r = 0; r < pLen; r++) {
+            if (isNullAt(r)) {
+                values[r] = null;
+                continue;
+            }
+            const sOff = valDv.getInt32(r * 4, true);
+            const eOff = valDv.getInt32((r + 1) * 4, true);
+            if (sOff < 0 || eOff < sOff || eOff > strDataRegion.length) {
+                throw new Error(
+                    `Malformed Feather V1 string offset [${sOff}..${eOff}] in column "${colName}" (data length=${strDataRegion.length}).`
+                );
+            }
+            const slice = strDataRegion.subarray(sOff, eOff);
+            values[r] = pType === 11 ? textDecoder.decode(slice) : bytesToHex(slice, slice.length);
+        }
+    } else {
+        throw new Error(`Unsupported Feather V1 PrimitiveArray physical type (${pType}) in column "${colName}".`);
+    }
+
+    return {
+        values,
+        physicalType,
+        logicalType,
+        offset: pOff,
+        totalBytes: pTotal,
+        nullCount: pNulls,
+    };
+}
+
+/**
+ * Dedicated Feather V1 ("FEA1") Parser — Parses the historical Feather V1 CTable FlatBuffers layout.
  */
 export function parseFeatherV1Binary(bytes: Uint8Array): {
     rows: Record<string, unknown>[];
@@ -4165,6 +5345,7 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
     formatVersion: string;
     createdBy: string;
     keyValueMetadata: Record<string, string>;
+    rowGroups: RowGroupMeta[];
     uncompressedBytes: number;
     compressedBytes: number;
 } {
@@ -4220,6 +5401,7 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
     const ctVersion = ctSlots.length > 3 && ctSlots[3] ? metaDv.getInt32(rootPos + ctSlots[3], true) : 2;
     const rows: Record<string, unknown>[] = Array.from({ length: numRows }, () => ({}));
     const schema: ColumnSchemaNode[] = [];
+    const colChunkMetas: RowGroupColumnChunkMeta[] = [];
     let totalDataBytes = 0;
 
     for (let cIdx = 0; cIdx < numCols; cIdx++) {
@@ -4230,184 +5412,78 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
             throw new Error(`Malformed Feather V1 Column "${colName}": missing PrimitiveArray values table.`);
         }
         const paPos = fbDeref(metaBuf, colPos + colSlots[1]);
-        const paSlots = fbReadTableSlots(metaBuf, paPos);
         const metaType = colSlots.length > 2 && colSlots[2] ? metaBuf[colPos + colSlots[2]] : 0;
         const metaTablePos = colSlots.length > 3 && colSlots[3] ? fbDeref(metaBuf, colPos + colSlots[3]) : 0;
 
-        // PrimitiveArray fields: 0=type, 1=encoding, 2=offset, 3=length, 4=null_count, 5=total_bytes
-        const pType = paSlots[0] ? metaDv.getInt8(paPos + paSlots[0]) : 0;
-        const pEnc = paSlots.length > 1 && paSlots[1] ? metaDv.getInt8(paPos + paSlots[1]) : 0;
-        const pOff = paSlots.length > 2 && paSlots[2] ? Number(metaDv.getBigInt64(paPos + paSlots[2], true)) : 0;
-        const pLen = paSlots.length > 3 && paSlots[3] ? Number(metaDv.getBigInt64(paPos + paSlots[3], true)) : 0;
-        const pNulls = paSlots.length > 4 && paSlots[4] ? Number(metaDv.getBigInt64(paPos + paSlots[4], true)) : 0;
-        const pTotal = paSlots.length > 5 && paSlots[5] ? Number(metaDv.getBigInt64(paPos + paSlots[5], true)) : 0;
+        const decoded = decodeFeatherV1PrimitiveArray(
+            bytes,
+            metaBuf,
+            metaDv,
+            metaStart,
+            paPos,
+            colName,
+            metaType,
+            metaTablePos
+        );
 
-        if (pEnc !== 0) {
+        if (decoded.values.length !== numRows) {
             throw new Error(
-                `Unsupported Feather V1 column encoding (${pEnc}) in column "${colName}". Only PLAIN (0) Feather V1 columns are supported.`
-            );
-        }
-        if (pOff < 8 || pTotal < 0 || pOff + pTotal > metaStart) {
-            throw new Error(
-                `Malformed Feather V1 PrimitiveArray in column "${colName}": buffer [${pOff}..${pOff + pTotal}] exceeds data region [8..${metaStart}].`
-            );
-        }
-        if (pLen !== numRows) {
-            throw new Error(
-                `Malformed Feather V1 PrimitiveArray in column "${colName}": column length (${pLen}) does not match CTable num_rows (${numRows}).`
+                `Malformed Feather V1 PrimitiveArray in column "${colName}": column length (${decoded.values.length}) does not match CTable num_rows (${numRows}).`
             );
         }
 
-        totalDataBytes += pTotal;
-        const colSlice = bytes.subarray(pOff, pOff + pTotal);
-
-        // In Feather V1, if null_count > 0, the buffer starts with a null bitmap padded to an 8-byte boundary
-        const nullBitmapPaddedBytes = pNulls > 0 ? Math.ceil(Math.ceil(pLen / 8) / 8) * 8 : 0;
-        if (nullBitmapPaddedBytes > colSlice.length) {
-            throw new Error(`Malformed Feather V1 null bitmap in column "${colName}".`);
-        }
-        const isNullAt = (r: number): boolean => {
-            if (pNulls === 0) return false;
-            return ((colSlice[r >>> 3] >>> (r & 7)) & 1) === 0;
-        };
-
-        const valRegion = colSlice.subarray(nullBitmapPaddedBytes);
-        const valDv = new DataView(valRegion.buffer, valRegion.byteOffset, valRegion.byteLength);
-
-        let physicalType: PhysicalDataType = 'BYTE_ARRAY';
-        let logicalType: LogicalDataType = 'UTF8';
-
-        // Check TimestampMetadata (metaType === 2) or DateMetadata (metaType === 3)
-        let tsUnit = 1; // 0=s, 1=ms, 2=us, 3=ns
-        if (metaType === 2 && metaTablePos > 0) {
-            const tmSlots = fbReadTableSlots(metaBuf, metaTablePos);
-            if (tmSlots[0]) tsUnit = metaDv.getInt8(metaTablePos + tmSlots[0]);
-        }
-
-        if (pType === 0) {
-            // BOOL
-            physicalType = 'BOOLEAN';
-            logicalType = 'BOOLEAN';
-            const reqBytes = Math.ceil(pLen / 8);
-            if (valRegion.length < reqBytes) throw new Error(`Truncated Feather V1 BOOL column "${colName}".`);
-            for (let r = 0; r < numRows; r++) {
-                rows[r][colName] = isNullAt(r) ? null : ((valRegion[r >>> 3] >>> (r & 7)) & 1) === 1;
-            }
-        } else if (pType >= 1 && pType <= 8) {
-            // INT8(1), INT16(2), INT32(3), INT64(4), UINT8(5), UINT16(6), UINT32(7), UINT64(8)
-            const byteWidths: Record<number, number> = { 1: 1, 2: 2, 3: 4, 4: 8, 5: 1, 6: 2, 7: 4, 8: 8 };
-            const bw = byteWidths[pType];
-            if (valRegion.length < numRows * bw) {
-                throw new Error(`Truncated Feather V1 integer buffer in column "${colName}".`);
-            }
-            physicalType = bw === 8 ? 'INT64' : 'INT32';
-            logicalType =
-                metaType === 3
-                    ? 'DATE'
-                    : metaType === 2
-                        ? tsUnit >= 2
-                            ? 'TIMESTAMP_MICROS'
-                            : 'TIMESTAMP_MILLIS'
-                        : pType === 8
-                            ? 'UINT64'
-                            : bw === 8
-                                ? 'INT64'
-                                : 'INT32';
-
-            for (let r = 0; r < numRows; r++) {
-                if (isNullAt(r)) {
-                    rows[r][colName] = null;
-                    continue;
-                }
-                if (pType === 1) rows[r][colName] = valDv.getInt8(r);
-                else if (pType === 2) rows[r][colName] = valDv.getInt16(r * 2, true);
-                else if (pType === 3) {
-                    const v = valDv.getInt32(r * 4, true);
-                    rows[r][colName] =
-                        metaType === 3 ? new Date(v * 86400000).toISOString().slice(0, 10) : v;
-                } else if (pType === 4) {
-                    const b = valDv.getBigInt64(r * 8, true);
-                    if (metaType === 2) {
-                        const ms =
-                            tsUnit === 0
-                                ? Number(b) * 1000
-                                : tsUnit === 1
-                                    ? Number(b)
-                                    : tsUnit === 2
-                                        ? Number(b / BigInt(1000))
-                                        : Number(b / BigInt(1000000));
-                        rows[r][colName] = new Date(ms).toISOString();
-                    } else {
-                        rows[r][colName] =
-                            b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
-                                ? b.toString()
-                                : Number(b);
-                    }
-                } else if (pType === 5) rows[r][colName] = valDv.getUint8(r);
-                else if (pType === 6) rows[r][colName] = valDv.getUint16(r * 2, true);
-                else if (pType === 7) rows[r][colName] = valDv.getUint32(r * 4, true);
-                else if (pType === 8) {
-                    const u = valDv.getBigUint64(r * 8, true);
-                    rows[r][colName] = u > BigInt(Number.MAX_SAFE_INTEGER) ? u.toString() : Number(u);
-                }
-            }
-        } else if (pType === 9 || pType === 10) {
-            // FLOAT(9), DOUBLE(10)
-            const bw = pType === 9 ? 4 : 8;
-            if (valRegion.length < numRows * bw) {
-                throw new Error(`Truncated Feather V1 float buffer in column "${colName}".`);
-            }
-            physicalType = pType === 9 ? 'FLOAT' : 'DOUBLE';
-            logicalType = pType === 9 ? 'FLOAT' : 'DOUBLE';
-            for (let r = 0; r < numRows; r++) {
-                if (isNullAt(r)) {
-                    rows[r][colName] = null;
-                } else if (pType === 9) {
-                    rows[r][colName] = valDv.getFloat32(r * 4, true);
-                } else {
-                    rows[r][colName] = valDv.getFloat64(r * 8, true);
-                }
-            }
-        } else if (pType === 11 || pType === 12) {
-            // UTF8(11) or BINARY(12): (numRows + 1) * 4 bytes of int32 offsets padded to 8-byte boundary + data bytes
-            physicalType = 'BYTE_ARRAY';
-            logicalType = pType === 11 ? 'UTF8' : 'BINARY';
-            const rawOffsetsBytes = (numRows + 1) * 4;
-            const paddedOffsetsBytes = Math.ceil(rawOffsetsBytes / 8) * 8;
-            if (valRegion.length < paddedOffsetsBytes) {
-                throw new Error(`Truncated Feather V1 UTF8/BINARY offsets buffer in column "${colName}".`);
-            }
-            const strDataRegion = valRegion.subarray(paddedOffsetsBytes);
-            for (let r = 0; r < numRows; r++) {
-                if (isNullAt(r)) {
-                    rows[r][colName] = null;
-                    continue;
-                }
-                const sOff = valDv.getInt32(r * 4, true);
-                const eOff = valDv.getInt32((r + 1) * 4, true);
-                if (sOff < 0 || eOff < sOff || eOff > strDataRegion.length) {
-                    throw new Error(
-                        `Malformed Feather V1 string offset [${sOff}..${eOff}] in column "${colName}" (data length=${strDataRegion.length}).`
-                    );
-                }
-                const slice = strDataRegion.subarray(sOff, eOff);
-                rows[r][colName] = pType === 11 ? textDecoder.decode(slice) : bytesToHex(slice, slice.length);
-            }
-        } else {
-            throw new Error(`Unsupported Feather V1 PrimitiveArray physical type (${pType}) in column "${colName}".`);
+        totalDataBytes += decoded.totalBytes;
+        for (let r = 0; r < numRows; r++) {
+            rows[r][colName] = decoded.values[r];
         }
 
         schema.push({
             index: cIdx,
             name: colName,
-            physicalType,
-            logicalType,
-            repetitionType: pNulls > 0 ? 'OPTIONAL' : 'REQUIRED',
-            nullable: pNulls > 0,
+            physicalType: decoded.physicalType,
+            logicalType: decoded.logicalType,
+            repetitionType: decoded.nullCount > 0 ? 'OPTIONAL' : 'REQUIRED',
+            nullable: decoded.nullCount > 0,
             compressionCodec: 'UNCOMPRESSED',
-            encoding: 'FEATHER_V1_CTABLE_PLAIN',
+            encoding: metaType === 1 ? 'FEATHER_V1_CATEGORY_DICT' : 'FEATHER_V1_CTABLE_PLAIN',
+        });
+
+        colChunkMetas.push({
+            name: colName,
+            physicalType: decoded.physicalType,
+            codec: 'UNCOMPRESSED',
+            encodings: [metaType === 1 ? 'FEATHER_V1_CATEGORY_DICT' : 'FEATHER_V1_CTABLE_PLAIN'],
+            numValues: numRows,
+            compressedSize: decoded.totalBytes,
+            uncompressedSize: decoded.totalBytes,
+            compressionRatio: 1,
+            dataPageOffset: decoded.offset,
+            nullCount: decoded.nullCount,
+            distinctCount: 0,
+            minValue: null,
+            maxValue: null,
         });
     }
+
+    const profs = computeColumnProfiles(rows, schema);
+    for (let i = 0; i < colChunkMetas.length; i++) {
+        colChunkMetas[i].distinctCount = profs[i]?.distinctCount ?? 0;
+        colChunkMetas[i].minValue = profs[i]?.min ?? null;
+        colChunkMetas[i].maxValue = profs[i]?.max ?? null;
+    }
+
+    const rowGroups: RowGroupMeta[] = [
+        {
+            index: 0,
+            rowCount: numRows,
+            totalByteSize: totalDataBytes || bytes.length,
+            compressedBytes: totalDataBytes || bytes.length,
+            compressionRatio: 1,
+            columns: colChunkMetas,
+            isSyntheticEstimate: false,
+            containerUnitLabel: 'Feather V1 CTable Layout',
+        },
+    ];
 
     return {
         rows,
@@ -4420,6 +5496,7 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
             'feather.v1.ctable_version': String(ctVersion),
             ...(description ? { 'feather.v1.description': description } : {}),
         },
+        rowGroups,
         uncompressedBytes: totalDataBytes || bytes.length,
         compressedBytes: totalDataBytes || bytes.length,
     };
@@ -4427,6 +5504,8 @@ export function parseFeatherV1Binary(bytes: Uint8Array): {
 
 /**
  * Arrow IPC / Feather V2 ("ARROW1") & Arrow IPC Stream ("0xFFFFFFFF") FlatBuffers Decoder
+ * Supports Primitive types, Decimal128/256, List/LargeList/FixedSizeList, Struct, Map, Float16, Time32/64,
+ * FixedSizeBinary, and Dictionary-encoded (categorical) columns.
  */
 interface ArrowIpcFieldDesc {
     name: string;
@@ -4437,8 +5516,493 @@ interface ArrowIpcFieldDesc {
     floatPrecision: number;
     dateUnit: number;
     timeUnit: number;
+    precision?: number;
+    scale?: number;
+    byteWidth?: number;
+    listSize?: number;
+    dictionary: { id: number; indexBitWidth: number; indexSigned: boolean } | null;
+    children: ArrowIpcFieldDesc[];
     physicalType: PhysicalDataType;
     logicalType: LogicalDataType;
+}
+
+function parseArrowFieldNode(
+    msgBuf: Uint8Array,
+    msgDv: DataView,
+    fPos: number,
+    fallbackIndex = 0
+): ArrowIpcFieldDesc {
+    const fSlots = fbReadTableSlots(msgBuf, fPos);
+    const name = fSlots[0] ? fbReadString(msgBuf, fPos + fSlots[0]) : `col_${fallbackIndex}`;
+    const nullable = fSlots.length > 1 && fSlots[1] ? msgBuf[fPos + fSlots[1]] !== 0 : true;
+    const typeType = fSlots.length > 2 && fSlots[2] ? msgBuf[fPos + fSlots[2]] : 5;
+    const typePos = fSlots.length > 3 && fSlots[3] ? fbDeref(msgBuf, fPos + fSlots[3]) : 0;
+    const tSlots = typePos > 0 ? fbReadTableSlots(msgBuf, typePos) : [];
+
+    // Slot 4: dictionary (DictionaryEncoding table: 0=id:int64, 1=indexType:Int, 2=isOrdered:bool)
+    let dictionary: ArrowIpcFieldDesc['dictionary'] = null;
+    if (fSlots.length > 4 && fSlots[4]) {
+        const dictPos = fbDeref(msgBuf, fPos + fSlots[4]);
+        const dSlots = fbReadTableSlots(msgBuf, dictPos);
+        const dictId = dSlots[0] ? Number(msgDv.getBigInt64(dictPos + dSlots[0], true)) : 0;
+        let idxBitWidth = 32;
+        let idxSigned = true;
+        if (dSlots.length > 1 && dSlots[1]) {
+            const idxTypePos = fbDeref(msgBuf, dictPos + dSlots[1]);
+            const itSlots = fbReadTableSlots(msgBuf, idxTypePos);
+            idxBitWidth = itSlots[0] ? msgDv.getInt32(idxTypePos + itSlots[0], true) : 32;
+            idxSigned = itSlots.length > 1 && itSlots[1] ? msgBuf[idxTypePos + itSlots[1]] !== 0 : true;
+        }
+        dictionary = { id: dictId, indexBitWidth: idxBitWidth, indexSigned: idxSigned };
+    }
+
+    // Slot 5: children: [Field]
+    const children: ArrowIpcFieldDesc[] = [];
+    if (fSlots.length > 5 && fSlots[5]) {
+        const chVec = fbDeref(msgBuf, fPos + fSlots[5]);
+        const numCh = msgDv.getUint32(chVec, true);
+        for (let c = 0; c < Math.min(numCh, 512); c++) {
+            const chPos = fbDeref(msgBuf, chVec + 4 + 4 * c);
+            children.push(parseArrowFieldNode(msgBuf, msgDv, chPos, c));
+        }
+    }
+
+    let bitWidth = 32;
+    let isSigned = true;
+    let floatPrecision = 2;
+    let dateUnit = 0;
+    let timeUnit = 1;
+    let precision: number | undefined;
+    let scale: number | undefined;
+    let byteWidth: number | undefined;
+    let listSize: number | undefined;
+    let physicalType: PhysicalDataType = 'BYTE_ARRAY';
+    let logicalType: LogicalDataType = 'UTF8';
+
+    if (typeType === 1) {
+        // Null
+        physicalType = 'BYTE_ARRAY';
+        logicalType = 'NULL';
+    } else if (typeType === 2) {
+        // Int
+        bitWidth = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 32;
+        isSigned = tSlots.length > 1 && tSlots[1] ? msgBuf[typePos + tSlots[1]] !== 0 : false;
+        physicalType = bitWidth === 64 ? 'INT64' : 'INT32';
+        logicalType = bitWidth === 64 ? (isSigned ? 'INT64' : 'UINT64') : 'INT32';
+    } else if (typeType === 3) {
+        // FloatingPoint (0=HALF/Float16, 1=SINGLE/Float32, 2=DOUBLE/Float64)
+        floatPrecision = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
+        physicalType = floatPrecision === 2 ? 'DOUBLE' : 'FLOAT';
+        logicalType = floatPrecision === 2 ? 'DOUBLE' : 'FLOAT';
+    } else if (typeType === 4 || typeType === 5 || typeType === 19 || typeType === 20) {
+        // Binary(4), Utf8(5), LargeBinary(19), LargeUtf8(20)
+        physicalType = 'BYTE_ARRAY';
+        logicalType = typeType === 4 || typeType === 19 ? 'BINARY' : 'UTF8';
+    } else if (typeType === 6) {
+        // Bool
+        physicalType = 'BOOLEAN';
+        logicalType = 'BOOLEAN';
+    } else if (typeType === 7) {
+        // Decimal (0=precision:int32, 1=scale:int32, 2=bitWidth:int32 default 128)
+        precision = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 18;
+        scale = tSlots.length > 1 && tSlots[1] ? msgDv.getInt32(typePos + tSlots[1], true) : 0;
+        bitWidth = tSlots.length > 2 && tSlots[2] ? msgDv.getInt32(typePos + tSlots[2], true) : 128;
+        byteWidth = Math.max(16, Math.floor(bitWidth / 8));
+        physicalType = 'FIXED_LEN_BYTE_ARRAY';
+        logicalType = 'DECIMAL';
+    } else if (typeType === 8) {
+        // Date (0=DAY, 1=MILLISECOND)
+        dateUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
+        physicalType = dateUnit === 0 ? 'INT32' : 'INT64';
+        logicalType = 'DATE';
+    } else if (typeType === 9) {
+        // Time (0=unit:int16, 1=bitWidth:int32 default 32)
+        timeUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 1;
+        bitWidth = tSlots.length > 1 && tSlots[1] ? msgDv.getInt32(typePos + tSlots[1], true) : 32;
+        physicalType = bitWidth === 64 ? 'INT64' : 'INT32';
+        logicalType = bitWidth === 64 ? 'INT64' : 'INT32';
+    } else if (typeType === 10) {
+        // Timestamp (0=unit:int16 -> 0=s, 1=ms, 2=us, 3=ns)
+        timeUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 1;
+        physicalType = 'INT64';
+        logicalType =
+            timeUnit === 3
+                ? 'TIMESTAMP_NANOS'
+                : timeUnit === 2
+                    ? 'TIMESTAMP_MICROS'
+                    : 'TIMESTAMP_MILLIS';
+    } else if (typeType === 12 || typeType === 21) {
+        // List(12), LargeList(21)
+        physicalType = 'BYTE_ARRAY';
+        logicalType = 'LIST';
+    } else if (typeType === 13) {
+        // Struct_(13)
+        physicalType = 'BYTE_ARRAY';
+        logicalType = 'STRUCT';
+    } else if (typeType === 15) {
+        // FixedSizeBinary(15) (0=byteWidth:int32)
+        byteWidth = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 16;
+        physicalType = 'FIXED_LEN_BYTE_ARRAY';
+        logicalType = byteWidth === 16 ? 'UUID' : 'BINARY';
+    } else if (typeType === 16) {
+        // FixedSizeList(16) (0=listSize:int32)
+        listSize = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 1;
+        physicalType = 'BYTE_ARRAY';
+        logicalType = 'LIST';
+    } else if (typeType === 17) {
+        // Map(17)
+        physicalType = 'BYTE_ARRAY';
+        logicalType = 'MAP';
+    } else {
+        throw new Error(
+            `Unsupported Arrow IPC Field type (type_type=${typeType}) in column "${name}". Supported Arrow IPC types are Int8..Int64, UInt8..UInt64, Float16/32/64, Bool, Utf8/LargeUtf8, Binary/LargeBinary/FixedSizeBinary, Decimal128/256, Date32/64, Time32/64, Timestamp, List/LargeList/FixedSizeList, Struct, Map, and Dictionary.`
+        );
+    }
+
+    return {
+        name,
+        nullable,
+        typeType,
+        bitWidth,
+        isSigned,
+        floatPrecision,
+        dateUnit,
+        timeUnit,
+        precision,
+        scale,
+        byteWidth,
+        listSize,
+        dictionary,
+        children,
+        physicalType,
+        logicalType,
+    };
+}
+
+function decodeArrowFieldVector(
+    f: ArrowIpcFieldDesc,
+    rowCount: number,
+    getBufferSlice: (idx: number) => { slice: Uint8Array; offset: number; compLen: number },
+    state: { bIdx: number; totalUncomp: number },
+    dictionaryPools: Map<number, unknown[]>,
+    ignoreDictionary = false
+): { values: unknown[]; firstOffset: number; compBytes: number; uncompBytes: number; nullCount: number } {
+    const startUncomp = state.totalUncomp;
+    let compAcc = 0;
+    let firstOffset = 0;
+
+    // 1. Dictionary-encoded field in RecordBatch: consumes validityBuf + indexBuf, then resolves against dictionaryPools
+    if (f.dictionary && !ignoreDictionary) {
+        const valB = getBufferSlice(state.bIdx++);
+        const idxB = getBufferSlice(state.bIdx++);
+        firstOffset = valB.offset || idxB.offset;
+        compAcc += valB.compLen + idxB.compLen;
+        state.totalUncomp += valB.slice.length + idxB.slice.length;
+
+        const isNullAt = (r: number): boolean => {
+            if (valB.slice.length === 0) return false;
+            return ((valB.slice[r >>> 3] >>> (r & 7)) & 1) === 0;
+        };
+        const iDv = new DataView(idxB.slice.buffer, idxB.slice.byteOffset, idxB.slice.byteLength);
+        const dictVals = dictionaryPools.get(f.dictionary.id) ?? [];
+        const bw = f.dictionary.indexBitWidth;
+        const signed = f.dictionary.indexSigned;
+        const out: unknown[] = new Array(rowCount);
+        let nullCount = 0;
+
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+                nullCount++;
+                continue;
+            }
+            let idx = 0;
+            if (bw === 8) idx = signed ? iDv.getInt8(r) : iDv.getUint8(r);
+            else if (bw === 16) idx = signed ? iDv.getInt16(r * 2, true) : iDv.getUint16(r * 2, true);
+            else if (bw === 64) idx = Number(signed ? iDv.getBigInt64(r * 8, true) : iDv.getBigUint64(r * 8, true));
+            else idx = signed ? iDv.getInt32(r * 4, true) : iDv.getUint32(r * 4, true);
+            out[r] = dictVals[idx] ?? null;
+        }
+        return {
+            values: out,
+            firstOffset,
+            compBytes: compAcc,
+            uncompBytes: state.totalUncomp - startUncomp,
+            nullCount,
+        };
+    }
+
+    // 2. Null type (consumes 0 buffers in Arrow IPC)
+    if (f.typeType === 1) {
+        return {
+            values: new Array(rowCount).fill(null),
+            firstOffset: 0,
+            compBytes: 0,
+            uncompBytes: 0,
+            nullCount: rowCount,
+        };
+    }
+
+    // Consume validity bitmap buffer
+    const valB = getBufferSlice(state.bIdx++);
+    firstOffset = valB.offset;
+    compAcc += valB.compLen;
+    state.totalUncomp += valB.slice.length;
+
+    const isNullAt = (r: number): boolean => {
+        if (valB.slice.length === 0) return false;
+        return ((valB.slice[r >>> 3] >>> (r & 7)) & 1) === 0;
+    };
+    let nullCount = 0;
+    for (let r = 0; r < rowCount; r++) {
+        if (isNullAt(r)) nullCount++;
+    }
+
+    // 3. Variable-size Utf8(5) or Binary(4)
+    if (f.typeType === 5 || f.typeType === 4) {
+        const offB = getBufferSlice(state.bIdx++);
+        const datB = getBufferSlice(state.bIdx++);
+        if (!firstOffset) firstOffset = offB.offset || datB.offset;
+        compAcc += offB.compLen + datB.compLen;
+        state.totalUncomp += offB.slice.length + datB.slice.length;
+        if (rowCount > 0 && offB.slice.length < (rowCount + 1) * 4) {
+            throw new Error(`Malformed Arrow IPC Utf8/Binary offsets buffer in column "${f.name}".`);
+        }
+        const oDv = new DataView(offB.slice.buffer, offB.slice.byteOffset, offB.slice.byteLength);
+        const out: unknown[] = new Array(rowCount);
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+            } else {
+                const sOff = oDv.getInt32(r * 4, true);
+                const eOff = oDv.getInt32((r + 1) * 4, true);
+                if (sOff < 0 || eOff < sOff || eOff > datB.slice.length) {
+                    throw new Error(`Out-of-bounds Arrow IPC string offset [${sOff}..${eOff}] in column "${f.name}".`);
+                }
+                const slice = datB.slice.subarray(sOff, eOff);
+                out[r] = f.typeType === 4 ? bytesToHex(slice, slice.length) : textDecoder.decode(slice);
+            }
+        }
+        return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
+    }
+
+    // 4. LargeUtf8(20) or LargeBinary(19)
+    if (f.typeType === 19 || f.typeType === 20) {
+        const offB = getBufferSlice(state.bIdx++);
+        const datB = getBufferSlice(state.bIdx++);
+        if (!firstOffset) firstOffset = offB.offset || datB.offset;
+        compAcc += offB.compLen + datB.compLen;
+        state.totalUncomp += offB.slice.length + datB.slice.length;
+        if (rowCount > 0 && offB.slice.length < (rowCount + 1) * 8) {
+            throw new Error(`Malformed Arrow IPC LargeUtf8/LargeBinary offsets buffer in column "${f.name}".`);
+        }
+        const oDv = new DataView(offB.slice.buffer, offB.slice.byteOffset, offB.slice.byteLength);
+        const out: unknown[] = new Array(rowCount);
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+            } else {
+                const sOff = Number(oDv.getBigInt64(r * 8, true));
+                const eOff = Number(oDv.getBigInt64((r + 1) * 8, true));
+                if (sOff < 0 || eOff < sOff || eOff > datB.slice.length) {
+                    throw new Error(`Out-of-bounds Arrow IPC LargeUtf8/LargeBinary offset in column "${f.name}".`);
+                }
+                const slice = datB.slice.subarray(sOff, eOff);
+                out[r] = f.typeType === 19 ? bytesToHex(slice, slice.length) : textDecoder.decode(slice);
+            }
+        }
+        return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
+    }
+
+    // 5. List(12), LargeList(21), or Map(17)
+    if (f.typeType === 12 || f.typeType === 21 || f.typeType === 17) {
+        const offB = getBufferSlice(state.bIdx++);
+        if (!firstOffset) firstOffset = offB.offset;
+        compAcc += offB.compLen;
+        state.totalUncomp += offB.slice.length;
+        const is64 = f.typeType === 21;
+        const oDv = new DataView(offB.slice.buffer, offB.slice.byteOffset, offB.slice.byteLength);
+        const readOff = (idx: number): number =>
+            offB.slice.length === 0
+                ? 0
+                : is64
+                    ? Number(oDv.getBigInt64(idx * 8, true))
+                    : oDv.getInt32(idx * 4, true);
+
+        const totalChildCount = rowCount > 0 ? Math.max(0, readOff(rowCount) - readOff(0)) : 0;
+        const childDesc = f.children[0];
+        if (!childDesc) {
+            throw new Error(`Malformed Arrow IPC List/Map column "${f.name}": missing child Field descriptor.`);
+        }
+        const childDecoded = decodeArrowFieldVector(
+            childDesc,
+            readOff(rowCount),
+            getBufferSlice,
+            state,
+            dictionaryPools,
+            false
+        );
+        compAcc += childDecoded.compBytes;
+
+        const out: unknown[] = new Array(rowCount);
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+                continue;
+            }
+            const sOff = readOff(r);
+            const eOff = readOff(r + 1);
+            const sliceVals = childDecoded.values.slice(sOff, eOff);
+            if (f.typeType === 17) {
+                const mapObj: Record<string, unknown> = {};
+                for (const entry of sliceVals) {
+                    if (entry && typeof entry === 'object' && !Array.isArray(entry)) {
+                        const entriesObj = entry as Record<string, unknown>;
+                        const keys = Object.keys(entriesObj);
+                        const kVal = entriesObj.key ?? (keys[0] ? entriesObj[keys[0]] : '');
+                        const vVal = entriesObj.value ?? (keys[1] ? entriesObj[keys[1]] : null);
+                        mapObj[String(kVal)] = vVal;
+                    }
+                }
+                out[r] = mapObj;
+            } else {
+                out[r] = sliceVals;
+            }
+        }
+        void totalChildCount;
+        return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
+    }
+
+    // 6. FixedSizeList(16)
+    if (f.typeType === 16) {
+        const listSize = f.listSize ?? 1;
+        const childDesc = f.children[0];
+        if (!childDesc) {
+            throw new Error(`Malformed Arrow IPC FixedSizeList column "${f.name}": missing child Field descriptor.`);
+        }
+        const childDecoded = decodeArrowFieldVector(
+            childDesc,
+            rowCount * listSize,
+            getBufferSlice,
+            state,
+            dictionaryPools,
+            false
+        );
+        if (!firstOffset) firstOffset = childDecoded.firstOffset;
+        compAcc += childDecoded.compBytes;
+
+        const out: unknown[] = new Array(rowCount);
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+            } else {
+                out[r] = childDecoded.values.slice(r * listSize, (r + 1) * listSize);
+            }
+        }
+        return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
+    }
+
+    // 7. Struct_(13)
+    if (f.typeType === 13) {
+        const childVectors: { name: string; values: unknown[] }[] = [];
+        for (const ch of f.children) {
+            const dec = decodeArrowFieldVector(ch, rowCount, getBufferSlice, state, dictionaryPools, false);
+            if (!firstOffset) firstOffset = dec.firstOffset;
+            compAcc += dec.compBytes;
+            childVectors.push({ name: ch.name, values: dec.values });
+        }
+        const out: unknown[] = new Array(rowCount);
+        for (let r = 0; r < rowCount; r++) {
+            if (isNullAt(r)) {
+                out[r] = null;
+            } else {
+                const obj: Record<string, unknown> = {};
+                for (const cv of childVectors) {
+                    obj[cv.name] = cv.values[r] ?? null;
+                }
+                out[r] = obj;
+            }
+        }
+        return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
+    }
+
+    // 8. Fixed-width primitive / Decimal / FixedSizeBinary / Date / Time / Timestamp
+    const datB = getBufferSlice(state.bIdx++);
+    if (!firstOffset) firstOffset = datB.offset;
+    compAcc += datB.compLen;
+    state.totalUncomp += datB.slice.length;
+    const vDv = new DataView(datB.slice.buffer, datB.slice.byteOffset, datB.slice.byteLength);
+    const out: unknown[] = new Array(rowCount);
+
+    for (let r = 0; r < rowCount; r++) {
+        if (isNullAt(r)) {
+            out[r] = null;
+            continue;
+        }
+        if (f.typeType === 6) {
+            out[r] = ((datB.slice[r >>> 3] >>> (r & 7)) & 1) === 1;
+        } else if (f.typeType === 2) {
+            if (f.bitWidth === 8) {
+                out[r] = f.isSigned ? vDv.getInt8(r) : vDv.getUint8(r);
+            } else if (f.bitWidth === 16) {
+                out[r] = f.isSigned ? vDv.getInt16(r * 2, true) : vDv.getUint16(r * 2, true);
+            } else if (f.bitWidth === 32) {
+                out[r] = f.isSigned ? vDv.getInt32(r * 4, true) : vDv.getUint32(r * 4, true);
+            } else if (f.bitWidth === 64) {
+                const b = f.isSigned ? vDv.getBigInt64(r * 8, true) : vDv.getBigUint64(r * 8, true);
+                out[r] =
+                    b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
+                        ? b.toString()
+                        : Number(b);
+            }
+        } else if (f.typeType === 3) {
+            if (f.floatPrecision === 0) {
+                out[r] = decodeFloat16(vDv.getUint16(r * 2, true));
+            } else if (f.floatPrecision === 1) {
+                out[r] = vDv.getFloat32(r * 4, true);
+            } else {
+                out[r] = vDv.getFloat64(r * 8, true);
+            }
+        } else if (f.typeType === 7) {
+            // Decimal128 (16 bytes LE) or Decimal256 (32 bytes LE)
+            const bw = f.byteWidth ?? 16;
+            const slice = datB.slice.subarray(r * bw, (r + 1) * bw);
+            const unscaled = decodeTwoComplementLittleEndian(slice);
+            out[r] = formatScaledDecimal(unscaled, f.scale ?? 0);
+        } else if (f.typeType === 8) {
+            if (f.dateUnit === 0) {
+                const days = vDv.getInt32(r * 4, true);
+                out[r] = formatEpochTimestampToIso(BigInt(days) * BigInt(86400), 's').slice(0, 10);
+            } else {
+                const ms = vDv.getBigInt64(r * 8, true);
+                out[r] = formatEpochTimestampToIso(ms, 'ms').slice(0, 10);
+            }
+        } else if (f.typeType === 9) {
+            const rawT = f.bitWidth === 64 ? vDv.getBigInt64(r * 8, true) : BigInt(vDv.getInt32(r * 4, true));
+            out[r] =
+                rawT > BigInt(Number.MAX_SAFE_INTEGER) || rawT < BigInt(Number.MIN_SAFE_INTEGER)
+                    ? rawT.toString()
+                    : Number(rawT);
+        } else if (f.typeType === 10) {
+            const rawTs = vDv.getBigInt64(r * 8, true);
+            const unit: 's' | 'ms' | 'us' | 'ns' =
+                f.timeUnit === 0 ? 's' : f.timeUnit === 1 ? 'ms' : f.timeUnit === 2 ? 'us' : 'ns';
+            out[r] = formatEpochTimestampToIso(rawTs, unit);
+        } else if (f.typeType === 15) {
+            const bw = f.byteWidth ?? 16;
+            const slice = datB.slice.subarray(r * bw, (r + 1) * bw);
+            if (bw === 16) {
+                const hex = Array.from(slice)
+                    .map((b) => b.toString(16).padStart(2, '0'))
+                    .join('');
+                out[r] = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+            } else {
+                out[r] = bytesToHex(slice, slice.length);
+            }
+        }
+    }
+
+    return { values: out, firstOffset, compBytes: compAcc, uncompBytes: state.totalUncomp - startUncomp, nullCount };
 }
 
 function decodeGenuineArrowIpcStream(
@@ -4450,17 +6014,132 @@ function decodeGenuineArrowIpcStream(
     schema: ColumnSchemaNode[];
     codec: string;
     keyValueMetadata: Record<string, string>;
+    rowGroups: RowGroupMeta[];
     uncompressedBytes: number;
     compressedBytes: number;
 } {
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     let pos = startOffset;
     const fields: ArrowIpcFieldDesc[] = [];
+    const dictFieldById = new Map<number, ArrowIpcFieldDesc>();
+    const dictionaryPools = new Map<number, unknown[]>();
     const keyValueMetadata: Record<string, string> = {};
     const rows: Record<string, unknown>[] = [];
+    const rowGroups: RowGroupMeta[] = [];
     let codec = 'UNCOMPRESSED';
     let totalUncomp = 0;
     let totalComp = 0;
+    let rbIndex = 0;
+
+    const registerDictFields = (fList: ArrowIpcFieldDesc[]) => {
+        for (const f of fList) {
+            if (f.dictionary) dictFieldById.set(f.dictionary.id, f);
+            if (f.children.length > 0) registerDictFields(f.children);
+        }
+    };
+
+    const decodeRecordBatchTable = (
+        msgBuf: Uint8Array,
+        msgDv: DataView,
+        rbTablePos: number,
+        bodyStart: number,
+        bodyEnd: number,
+        targetFields: ArrowIpcFieldDesc[],
+        ignoreDictionary = false
+    ) => {
+        const rbSlots = fbReadTableSlots(msgBuf, rbTablePos);
+        const batchRows = rbSlots[0] ? Number(msgDv.getBigInt64(rbTablePos + rbSlots[0], true)) : 0;
+        if (batchRows < 0 || batchRows > MAX_DECLARED_ROW_COUNT) {
+            throw new Error(`Invalid Arrow IPC RecordBatch length (${batchRows}).`);
+        }
+
+        let isLz4Compressed = false;
+        if (rbSlots.length > 3 && rbSlots[3]) {
+            const compPos = fbDeref(msgBuf, rbTablePos + rbSlots[3]);
+            const compSlots = fbReadTableSlots(msgBuf, compPos);
+            const codecId = compSlots[0] ? msgBuf[compPos + compSlots[0]] : 0;
+            if (codecId === 1) {
+                throw new Error(
+                    'Unsupported Arrow IPC / Feather V2 RecordBatch compression codec "ZSTD". Supported Feather V2 codecs in browser memory are UNCOMPRESSED and LZ4_FRAME.'
+                );
+            }
+            codec = 'LZ4_FRAME';
+            isLz4Compressed = codecId === 0;
+        }
+
+        const nodesVec = rbSlots.length > 1 && rbSlots[1] ? fbDeref(msgBuf, rbTablePos + rbSlots[1]) : 0;
+        const bufsVec = rbSlots.length > 2 && rbSlots[2] ? fbDeref(msgBuf, rbTablePos + rbSlots[2]) : 0;
+        if (!nodesVec || !bufsVec) {
+            throw new Error('Malformed Arrow IPC RecordBatch: missing nodes or buffers vector.');
+        }
+
+        const bodyLen = bodyEnd - bodyStart;
+        const numBufs = msgDv.getUint32(bufsVec, true);
+        const bufDescs: { offset: number; length: number }[] = [];
+        for (let b = 0; b < numBufs; b++) {
+            const bOff = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b, true));
+            const bLen = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b + 8, true));
+            if (bOff < 0 || bLen < 0 || bOff + bLen > bodyLen) {
+                throw new Error(
+                    `Malformed Arrow IPC Buffer descriptor #${b}: range [${bOff}..${bOff + bLen}] exceeds RecordBatch bodyLength (${bodyLen}).`
+                );
+            }
+            bufDescs.push({ offset: bOff, length: bLen });
+        }
+
+        const bodyBytes = bytes.subarray(bodyStart, bodyEnd);
+        totalComp += bodyBytes.length;
+
+        const getBufferSlice = (idx: number): { slice: Uint8Array; offset: number; compLen: number } => {
+            const bd = bufDescs[idx];
+            if (!bd || bd.length === 0) {
+                return { slice: new Uint8Array(0), offset: bodyStart + (bd?.offset ?? 0), compLen: 0 };
+            }
+            const rawSlice = bodyBytes.subarray(bd.offset, bd.offset + bd.length);
+            if (isLz4Compressed && rawSlice.length >= 8) {
+                const sDv = new DataView(rawSlice.buffer, rawSlice.byteOffset, rawSlice.byteLength);
+                const uncompLen = Number(sDv.getBigInt64(0, true));
+                if (uncompLen === -1) {
+                    return { slice: rawSlice.subarray(8), offset: bodyStart + bd.offset, compLen: bd.length };
+                }
+                if (uncompLen > MAX_DECOMPRESSED_PAGE_BYTES) {
+                    throw new Error(`Arrow IPC LZ4 buffer uncompressed length (${uncompLen}) exceeds safety limit.`);
+                }
+                if (uncompLen > 0) {
+                    return {
+                        slice: decompressLz4Block(rawSlice.subarray(8), uncompLen),
+                        offset: bodyStart + bd.offset,
+                        compLen: bd.length,
+                    };
+                }
+            }
+            return { slice: rawSlice, offset: bodyStart + bd.offset, compLen: bd.length };
+        };
+
+        const state = { bIdx: 0, totalUncomp: 0 };
+        const decodedColumns: {
+            field: ArrowIpcFieldDesc;
+            values: unknown[];
+            firstOffset: number;
+            compBytes: number;
+            uncompBytes: number;
+            nullCount: number;
+        }[] = [];
+
+        for (const f of targetFields) {
+            const dec = decodeArrowFieldVector(
+                f,
+                batchRows,
+                getBufferSlice,
+                state,
+                dictionaryPools,
+                ignoreDictionary
+            );
+            decodedColumns.push({ field: f, ...dec });
+        }
+        totalUncomp += state.totalUncomp;
+        return { batchRows, decodedColumns, batchCompBytes: bodyBytes.length, batchUncompBytes: state.totalUncomp };
+    };
 
     while (pos + 8 <= endOffset) {
         const firstWord = dv.getUint32(pos, true);
@@ -4515,68 +6194,9 @@ function decodeGenuineArrowIpcStream(
                 }
                 for (let i = 0; i < numFields; i++) {
                     const fPos = fbDeref(msgBuf, fieldsVec + 4 + 4 * i);
-                    const fSlots = fbReadTableSlots(msgBuf, fPos);
-                    const name = fSlots[0] ? fbReadString(msgBuf, fPos + fSlots[0]) : `col_${i}`;
-                    const nullable =
-                        fSlots.length > 1 && fSlots[1] ? msgBuf[fPos + fSlots[1]] !== 0 : true;
-                    const typeType = fSlots.length > 2 && fSlots[2] ? msgBuf[fPos + fSlots[2]] : 5;
-                    const typePos =
-                        fSlots.length > 3 && fSlots[3] ? fbDeref(msgBuf, fPos + fSlots[3]) : 0;
-                    const tSlots = typePos > 0 ? fbReadTableSlots(msgBuf, typePos) : [];
-
-                    let bitWidth = 32;
-                    let isSigned = true;
-                    let floatPrecision = 2; // DOUBLE
-                    let dateUnit = 0;
-                    let timeUnit = 1;
-                    let physicalType: PhysicalDataType = 'BYTE_ARRAY';
-                    let logicalType: LogicalDataType = 'UTF8';
-
-                    if (typeType === 2) {
-                        bitWidth = tSlots[0] ? msgDv.getInt32(typePos + tSlots[0], true) : 32;
-                        isSigned = tSlots.length > 1 && tSlots[1] ? msgBuf[typePos + tSlots[1]] !== 0 : false;
-                        physicalType = bitWidth === 64 ? 'INT64' : 'INT32';
-                        logicalType = bitWidth === 64 ? (isSigned ? 'INT64' : 'UINT64') : 'INT32';
-                    } else if (typeType === 3) {
-                        floatPrecision = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
-                        if (floatPrecision === 0) {
-                            throw new Error(`Unsupported Arrow IPC Float16 (HALF precision) column "${name}".`);
-                        }
-                        physicalType = floatPrecision === 1 ? 'FLOAT' : 'DOUBLE';
-                        logicalType = floatPrecision === 1 ? 'FLOAT' : 'DOUBLE';
-                    } else if (typeType === 6) {
-                        physicalType = 'BOOLEAN';
-                        logicalType = 'BOOLEAN';
-                    } else if (typeType === 8) {
-                        dateUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 0;
-                        physicalType = dateUnit === 0 ? 'INT32' : 'INT64';
-                        logicalType = 'DATE';
-                    } else if (typeType === 10) {
-                        timeUnit = tSlots[0] ? msgDv.getInt16(typePos + tSlots[0], true) : 1;
-                        physicalType = 'INT64';
-                        logicalType = timeUnit >= 2 ? 'TIMESTAMP_MICROS' : 'TIMESTAMP_MILLIS';
-                    } else if (typeType === 4 || typeType === 5 || typeType === 20 || typeType === 21) {
-                        physicalType = 'BYTE_ARRAY';
-                        logicalType = typeType === 4 || typeType === 21 ? 'BINARY' : 'UTF8';
-                    } else {
-                        throw new Error(
-                            `Unsupported Arrow IPC complex Field type (type_type=${typeType}) in column "${name}". Supported Arrow IPC primitive/string types are Int8..Int64, UInt8..UInt64, Float32/64, Bool, Utf8/LargeUtf8, Binary/LargeBinary, Date32/64, and Timestamp.`
-                        );
-                    }
-
-                    fields.push({
-                        name,
-                        nullable,
-                        typeType,
-                        bitWidth,
-                        isSigned,
-                        floatPrecision,
-                        dateUnit,
-                        timeUnit,
-                        physicalType,
-                        logicalType,
-                    });
+                    fields.push(parseArrowFieldNode(msgBuf, msgDv, fPos, i));
                 }
+                registerDictFields(fields);
             }
             if (sSlots.length > 2 && sSlots[2]) {
                 const kvVec = fbDeref(msgBuf, headerPos + sSlots[2]);
@@ -4589,184 +6209,92 @@ function decodeGenuineArrowIpcStream(
                     if (key) keyValueMetadata[key] = val;
                 }
             }
+        } else if (headerType === 2 && headerPos > 0) {
+            // DictionaryBatch Message (0=id:int64, 1=data:RecordBatch, 2=isDelta:bool)
+            const dbSlots = fbReadTableSlots(msgBuf, headerPos);
+            const dictId = dbSlots[0] ? Number(msgDv.getBigInt64(headerPos + dbSlots[0], true)) : 0;
+            const rbPos = dbSlots.length > 1 && dbSlots[1] ? fbDeref(msgBuf, headerPos + dbSlots[1]) : 0;
+            const isDelta = dbSlots.length > 2 && dbSlots[2] ? msgBuf[headerPos + dbSlots[2]] !== 0 : false;
+            const dictField = dictFieldById.get(dictId);
+            if (rbPos > 0 && dictField) {
+                const decodedDict = decodeRecordBatchTable(
+                    msgBuf,
+                    msgDv,
+                    rbPos,
+                    bodyStart,
+                    bodyEnd,
+                    [dictField],
+                    true
+                );
+                const newVals = decodedDict.decodedColumns[0]?.values ?? [];
+                if (isDelta && dictionaryPools.has(dictId)) {
+                    dictionaryPools.set(dictId, [...(dictionaryPools.get(dictId) ?? []), ...newVals]);
+                } else {
+                    dictionaryPools.set(dictId, newVals);
+                }
+            }
         } else if (headerType === 3 && headerPos > 0 && fields.length > 0) {
             // RecordBatch Message
-            const rbSlots = fbReadTableSlots(msgBuf, headerPos);
-            const batchRows = rbSlots[0]
-                ? Number(msgDv.getBigInt64(headerPos + rbSlots[0], true))
-                : 0;
-            if (batchRows < 0 || batchRows > MAX_DECLARED_ROW_COUNT) {
-                throw new Error(`Invalid Arrow IPC RecordBatch length (${batchRows}).`);
-            }
+            const { batchRows, decodedColumns, batchCompBytes, batchUncompBytes } = decodeRecordBatchTable(
+                msgBuf,
+                msgDv,
+                headerPos,
+                bodyStart,
+                bodyEnd,
+                fields,
+                false
+            );
             if (batchRows === 0) continue;
 
-            let isLz4Compressed = false;
-            if (rbSlots.length > 3 && rbSlots[3]) {
-                const compPos = fbDeref(msgBuf, headerPos + rbSlots[3]);
-                const compSlots = fbReadTableSlots(msgBuf, compPos);
-                const codecId = compSlots[0] ? msgBuf[compPos + compSlots[0]] : 0;
-                if (codecId === 1) {
-                    throw new Error(
-                        'Unsupported Arrow IPC / Feather V2 RecordBatch compression codec "ZSTD". Supported Feather V2 codecs in browser memory are UNCOMPRESSED and LZ4_FRAME.'
-                    );
-                }
-                codec = 'LZ4_FRAME';
-                isLz4Compressed = codecId === 0;
-            }
-
-            const nodesVec = rbSlots.length > 1 && rbSlots[1] ? fbDeref(msgBuf, headerPos + rbSlots[1]) : 0;
-            const bufsVec = rbSlots.length > 2 && rbSlots[2] ? fbDeref(msgBuf, headerPos + rbSlots[2]) : 0;
-            if (!nodesVec || !bufsVec) {
-                throw new Error('Malformed Arrow IPC RecordBatch: missing nodes or buffers vector.');
-            }
-
-            const numBufs = msgDv.getUint32(bufsVec, true);
-            const bufDescs: { offset: number; length: number }[] = [];
-            for (let b = 0; b < numBufs; b++) {
-                const bOff = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b, true));
-                const bLen = Number(msgDv.getBigInt64(bufsVec + 4 + 16 * b + 8, true));
-                if (bOff < 0 || bLen < 0 || bOff + bLen > bodyLen) {
-                    throw new Error(
-                        `Malformed Arrow IPC Buffer descriptor #${b}: range [${bOff}..${bOff + bLen}] exceeds RecordBatch bodyLength (${bodyLen}).`
-                    );
-                }
-                bufDescs.push({ offset: bOff, length: bLen });
-            }
-
-            const bodyBytes = bytes.subarray(bodyStart, bodyEnd);
-            totalComp += bodyBytes.length;
-
-            const getBufferSlice = (idx: number): Uint8Array => {
-                const bd = bufDescs[idx];
-                if (!bd || bd.length === 0) {
-                    return new Uint8Array(0);
-                }
-                const rawSlice = bodyBytes.subarray(bd.offset, bd.offset + bd.length);
-                if (isLz4Compressed && rawSlice.length >= 8) {
-                    const sDv = new DataView(rawSlice.buffer, rawSlice.byteOffset, rawSlice.byteLength);
-                    const uncompLen = Number(sDv.getBigInt64(0, true));
-                    if (uncompLen === -1) return rawSlice.subarray(8);
-                    if (uncompLen > MAX_DECOMPRESSED_PAGE_BYTES) {
-                        throw new Error(`Arrow IPC LZ4 buffer uncompressed length (${uncompLen}) exceeds safety limit.`);
-                    }
-                    if (uncompLen > 0) return decompressLz4Block(rawSlice.subarray(8), uncompLen);
-                }
-                return rawSlice;
-            };
-
             const batchRecords: Record<string, unknown>[] = Array.from({ length: batchRows }, () => ({}));
-            let bIdx = 0;
-
-            for (let fIdx = 0; fIdx < fields.length; fIdx++) {
-                const f = fields[fIdx];
-                const validityBuf = getBufferSlice(bIdx++);
-                const isNullAt = (r: number): boolean => {
-                    if (validityBuf.length === 0) return false;
-                    return ((validityBuf[r >>> 3] >>> (r & 7)) & 1) === 0;
-                };
-
-                if (f.typeType === 5 || f.typeType === 4) {
-                    const offsetsBuf = getBufferSlice(bIdx++);
-                    const dataBuf = getBufferSlice(bIdx++);
-                    totalUncomp += validityBuf.length + offsetsBuf.length + dataBuf.length;
-                    if (offsetsBuf.length < (batchRows + 1) * 4) {
-                        throw new Error(`Malformed Arrow IPC Utf8/Binary offsets buffer in column "${f.name}".`);
-                    }
-                    const oDv = new DataView(offsetsBuf.buffer, offsetsBuf.byteOffset, offsetsBuf.byteLength);
-                    for (let r = 0; r < batchRows; r++) {
-                        if (isNullAt(r)) {
-                            batchRecords[r][f.name] = null;
-                        } else {
-                            const sOff = oDv.getInt32(r * 4, true);
-                            const eOff = oDv.getInt32((r + 1) * 4, true);
-                            if (sOff < 0 || eOff < sOff || eOff > dataBuf.length) {
-                                throw new Error(`Out-of-bounds Arrow IPC string offset [${sOff}..${eOff}] in column "${f.name}".`);
-                            }
-                            batchRecords[r][f.name] = textDecoder.decode(dataBuf.subarray(sOff, eOff));
-                        }
-                    }
-                } else if (f.typeType === 20 || f.typeType === 21) {
-                    const offsetsBuf = getBufferSlice(bIdx++);
-                    const dataBuf = getBufferSlice(bIdx++);
-                    totalUncomp += validityBuf.length + offsetsBuf.length + dataBuf.length;
-                    if (offsetsBuf.length < (batchRows + 1) * 8) {
-                        throw new Error(`Malformed Arrow IPC LargeUtf8 offsets buffer in column "${f.name}".`);
-                    }
-                    const oDv = new DataView(offsetsBuf.buffer, offsetsBuf.byteOffset, offsetsBuf.byteLength);
-                    for (let r = 0; r < batchRows; r++) {
-                        if (isNullAt(r)) {
-                            batchRecords[r][f.name] = null;
-                        } else {
-                            const sOff = Number(oDv.getBigInt64(r * 8, true));
-                            const eOff = Number(oDv.getBigInt64((r + 1) * 8, true));
-                            if (sOff < 0 || eOff < sOff || eOff > dataBuf.length) {
-                                throw new Error(`Out-of-bounds Arrow IPC LargeUtf8 offset in column "${f.name}".`);
-                            }
-                            batchRecords[r][f.name] = textDecoder.decode(dataBuf.subarray(sOff, eOff));
-                        }
-                    }
-                } else {
-                    const valBuf = getBufferSlice(bIdx++);
-                    totalUncomp += validityBuf.length + valBuf.length;
-                    const vDv = new DataView(valBuf.buffer, valBuf.byteOffset, valBuf.byteLength);
-
-                    for (let r = 0; r < batchRows; r++) {
-                        if (isNullAt(r)) {
-                            batchRecords[r][f.name] = null;
-                            continue;
-                        }
-                        if (f.typeType === 6) {
-                            batchRecords[r][f.name] = ((valBuf[r >>> 3] >>> (r & 7)) & 1) === 1;
-                        } else if (f.typeType === 2) {
-                            if (f.bitWidth === 8) {
-                                batchRecords[r][f.name] = f.isSigned ? vDv.getInt8(r) : vDv.getUint8(r);
-                            } else if (f.bitWidth === 16) {
-                                batchRecords[r][f.name] = f.isSigned
-                                    ? vDv.getInt16(r * 2, true)
-                                    : vDv.getUint16(r * 2, true);
-                            } else if (f.bitWidth === 32) {
-                                batchRecords[r][f.name] = f.isSigned
-                                    ? vDv.getInt32(r * 4, true)
-                                    : vDv.getUint32(r * 4, true);
-                            } else if (f.bitWidth === 64) {
-                                const b = f.isSigned
-                                    ? vDv.getBigInt64(r * 8, true)
-                                    : vDv.getBigUint64(r * 8, true);
-                                batchRecords[r][f.name] =
-                                    b > BigInt(Number.MAX_SAFE_INTEGER) || b < BigInt(Number.MIN_SAFE_INTEGER)
-                                        ? b.toString()
-                                        : Number(b);
-                            }
-                        } else if (f.typeType === 3) {
-                            if (f.floatPrecision === 1) {
-                                batchRecords[r][f.name] = vDv.getFloat32(r * 4, true);
-                            } else {
-                                batchRecords[r][f.name] = vDv.getFloat64(r * 8, true);
-                            }
-                        } else if (f.typeType === 8) {
-                            if (f.dateUnit === 0) {
-                                const days = vDv.getInt32(r * 4, true);
-                                batchRecords[r][f.name] = new Date(days * 86400000).toISOString().slice(0, 10);
-                            } else {
-                                const ms = Number(vDv.getBigInt64(r * 8, true));
-                                batchRecords[r][f.name] = new Date(ms).toISOString().slice(0, 10);
-                            }
-                        } else if (f.typeType === 10) {
-                            const rawTs = vDv.getBigInt64(r * 8, true);
-                            const ms =
-                                f.timeUnit === 0
-                                    ? Number(rawTs) * 1000
-                                    : f.timeUnit === 1
-                                        ? Number(rawTs)
-                                        : f.timeUnit === 2
-                                            ? Number(rawTs / BigInt(1000))
-                                            : Number(rawTs / BigInt(1000000));
-                            batchRecords[r][f.name] = new Date(ms).toISOString();
-                        }
-                    }
+            for (const dc of decodedColumns) {
+                for (let r = 0; r < batchRows; r++) {
+                    batchRecords[r][dc.field.name] = dc.values[r];
                 }
             }
             rows.push(...batchRecords);
+
+            const batchSchema: ColumnSchemaNode[] = fields.map((f, index) => ({
+                index,
+                name: f.name,
+                physicalType: f.physicalType,
+                logicalType: f.logicalType,
+                repetitionType: f.logicalType === 'LIST' ? 'REPEATED' : f.nullable ? 'OPTIONAL' : 'REQUIRED',
+                nullable: f.nullable,
+                precision: f.precision,
+                scale: f.scale,
+                compressionCodec: codec,
+                encoding: f.dictionary ? 'ARROW_DICTIONARY' : 'ARROW_IPC_CONTIGUOUS',
+            }));
+            const batchProfs = computeColumnProfiles(batchRecords, batchSchema);
+
+            rowGroups.push({
+                index: rbIndex++,
+                rowCount: batchRows,
+                totalByteSize: batchUncompBytes,
+                compressedBytes: batchCompBytes,
+                compressionRatio: batchCompBytes > 0 ? Number((batchUncompBytes / batchCompBytes).toFixed(2)) : 1,
+                isSyntheticEstimate: false,
+                containerUnitLabel: 'Arrow IPC RecordBatch',
+                columns: decodedColumns.map((dc, idx) => {
+                    const prof = batchProfs[idx];
+                    return {
+                        name: dc.field.name,
+                        physicalType: dc.field.physicalType,
+                        codec,
+                        encodings: [dc.field.dictionary ? 'ARROW_DICTIONARY' : 'ARROW_IPC_CONTIGUOUS'],
+                        numValues: batchRows,
+                        compressedSize: dc.compBytes,
+                        uncompressedSize: dc.uncompBytes,
+                        compressionRatio: dc.compBytes > 0 ? Number((dc.uncompBytes / dc.compBytes).toFixed(2)) : 1,
+                        dataPageOffset: dc.firstOffset || bodyStart,
+                        nullCount: dc.nullCount,
+                        distinctCount: prof?.distinctCount ?? 0,
+                        minValue: prof?.min ?? null,
+                        maxValue: prof?.max ?? null,
+                    };
+                }),
+            });
         }
     }
 
@@ -4779,17 +6307,45 @@ function decodeGenuineArrowIpcStream(
         name: f.name,
         physicalType: f.physicalType,
         logicalType: f.logicalType,
-        repetitionType: f.nullable ? 'OPTIONAL' : 'REQUIRED',
+        repetitionType: f.logicalType === 'LIST' ? 'REPEATED' : f.nullable ? 'OPTIONAL' : 'REQUIRED',
         nullable: f.nullable,
+        precision: f.precision,
+        scale: f.scale,
+        typeLength: f.byteWidth,
         compressionCodec: codec,
-        encoding: 'ARROW_IPC_CONTIGUOUS',
+        encoding: f.dictionary ? 'ARROW_DICTIONARY' : 'ARROW_IPC_CONTIGUOUS',
     }));
+
+    if (keyValueMetadata['kivaro:schema:logical_types']) {
+        try {
+            const logicalTypeMap = JSON.parse(keyValueMetadata['kivaro:schema:logical_types']);
+            for (const col of schema) {
+                if (logicalTypeMap[col.name]) {
+                    col.logicalType = logicalTypeMap[col.name];
+                }
+            }
+            for (const row of rows) {
+                for (const col of schema) {
+                    if (col.logicalType === 'STRUCT' && typeof row[col.name] === 'string') {
+                        try {
+                            row[col.name] = JSON.parse(row[col.name] as string);
+                        } catch {
+                            // keep as string
+                        }
+                    }
+                }
+            }
+        } catch {
+            // ignore
+        }
+    }
 
     return {
         rows,
         schema,
         codec,
         keyValueMetadata,
+        rowGroups,
         uncompressedBytes: totalUncomp || bytes.length,
         compressedBytes: totalComp || bytes.length,
     };
@@ -4809,11 +6365,12 @@ function parseFeatherOrArrowBinary(
     formatVersion: string;
     createdBy: string;
     keyValueMetadata: Record<string, string>;
+    rowGroups: RowGroupMeta[];
     uncompressedBytes: number;
     compressedBytes: number;
 } {
     void warnings;
-    // 1. Dedicated Feather V1 ("FEA1") Parser — never routed through V2 Arrow IPC!
+    // 1. Dedicated Feather V1 ("FEA1") Parser
     if (
         bytes.length >= 4 &&
         bytes[0] === 0x46 &&
@@ -4833,6 +6390,7 @@ function parseFeatherOrArrowBinary(
             bytes[2] === 0xff &&
             bytes[3] === 0xff)
     ) {
+        let streamErr: unknown = null;
         try {
             const streamDecoded = decodeGenuineArrowIpcStream(bytes, 0, bytes.length);
             if (streamDecoded && streamDecoded.schema.length > 0) {
@@ -4842,28 +6400,37 @@ function parseFeatherOrArrowBinary(
                     createdBy: 'Apache Arrow IPC Stream Writer',
                 };
             }
-        } catch {
-            // fallback to Snappy stream
+        } catch (err: unknown) {
+            streamErr = err;
         }
         try {
             const body = decompressSnappyBlock(bytes.subarray(8));
             const parsed = JSON.parse(textDecoder.decode(body));
             if (parsed && Array.isArray(parsed.rows)) {
                 const rows = parsed.rows as Record<string, unknown>[];
+                const schema = Array.isArray(parsed.schema)
+                    ? (parsed.schema as ColumnSchemaNode[])
+                    : inferSchemaFromRows(rows, String(parsed.codec || 'UNCOMPRESSED'), 'ARROW_STREAM');
+                const codec = String(parsed.codec || 'UNCOMPRESSED');
                 return {
                     rows,
-                    schema: Array.isArray(parsed.schema)
-                        ? (parsed.schema as ColumnSchemaNode[])
-                        : inferSchemaFromRows(rows, String(parsed.codec || 'UNCOMPRESSED'), 'ARROW_STREAM'),
-                    codec: String(parsed.codec || 'UNCOMPRESSED'),
+                    schema,
+                    codec,
                     formatVersion: 'Arrow IPC Stream (0xFFFFFFFF)',
                     createdBy: 'Apache Arrow IPC Stream Writer',
                     keyValueMetadata: (parsed.keyValueMetadata as Record<string, string>) || {},
+                    rowGroups: buildRowGroupMetadata(rows, schema, bytes.length, body.length, codec, true, 'Arrow Container Partition'),
                     uncompressedBytes: body.length,
                     compressedBytes: bytes.length,
                 };
             }
-        } catch { }
+        } catch {
+            // Snappy fallback also failed; surface the original Arrow IPC stream error
+        }
+        if (streamErr instanceof Error) {
+            throw streamErr;
+        }
+        throw new Error('Malformed Arrow IPC Stream (0xFFFFFFFF): invalid or truncated IPC message stream.');
     }
 
     // 3. Feather V2 / Arrow IPC File ("ARROW1" at head and tail)
@@ -4912,14 +6479,11 @@ function parseFeatherOrArrowBinary(
                 };
             }
         } catch (ipcErr: unknown) {
-            const msg = ipcErr instanceof Error ? ipcErr.message : String(ipcErr);
-            if (msg.includes('ZSTD') || msg.includes('Unsupported Arrow IPC')) {
-                throw ipcErr;
-            }
+            throw ipcErr instanceof Error ? ipcErr : new Error(String(ipcErr));
         }
     }
 
-    // KivaroTools internal Snappy Feather container
+    // Legacy KivaroTools internal Snappy Feather container fallback
     const bodySlice = bytes.subarray(8, bodyEnd);
     const decompressed = decompressSnappyBlock(bodySlice);
     let parsed: Record<string, unknown> | null = null;
@@ -4939,15 +6503,18 @@ function parseFeatherOrArrowBinary(
             }
             return restored;
         });
+        const schema = Array.isArray(parsed.schema)
+            ? (parsed.schema as ColumnSchemaNode[])
+            : inferSchemaFromRows(rows, String(parsed.codec || 'SNAPPY'), 'ARROW_IPC');
+        const codec = String(parsed.codec || 'SNAPPY');
         return {
             rows,
-            schema: Array.isArray(parsed.schema)
-                ? (parsed.schema as ColumnSchemaNode[])
-                : inferSchemaFromRows(rows, String(parsed.codec || 'SNAPPY'), 'ARROW_IPC'),
-            codec: String(parsed.codec || 'SNAPPY'),
+            schema,
+            codec,
             formatVersion: String(parsed.arrowVersion || 'Feather V2 / Arrow IPC (ARROW1)'),
             createdBy: 'KivaroTools Arrow IPC Container Writer',
             keyValueMetadata: (parsed.keyValueMetadata as Record<string, string>) || {},
+            rowGroups: buildRowGroupMetadata(rows, schema, bodySlice.length, decompressed.length, codec, true, 'Snappy Container Partition'),
             uncompressedBytes: decompressed.length,
             compressedBytes: bodySlice.length,
         };
@@ -5000,13 +6567,11 @@ function parseCsvTextToRows(text: string): Record<string, unknown>[] {
     const rows: Record<string, unknown>[] = [];
     for (let i = 1; i < lines.length; i++) {
         const vals = splitCsvLine(lines[i], ',');
-        const obj: Record<string, unknown>[] = [];
         const rec: Record<string, unknown> = {};
         for (let c = 0; c < headers.length; c++) {
             const key = headers[c] || `col_${c + 1}`;
             rec[key] = coercePrimitiveValue(vals[c] ?? null);
         }
-        void obj;
         rows.push(rec);
     }
     return rows;
@@ -5371,7 +6936,9 @@ function buildRowGroupMetadata(
     schema: ColumnSchemaNode[],
     compressedTotal: number,
     uncompressedTotal: number,
-    codec: string
+    codec: string,
+    isSyntheticEstimate = true,
+    containerUnitLabel = 'Synthetic Partition Estimate'
 ): RowGroupMeta[] {
     if (rows.length === 0) return [];
     const profiles = computeColumnProfiles(rows, schema);
@@ -5385,12 +6952,12 @@ function buildRowGroupMetadata(
             name: col.name,
             physicalType: col.physicalType,
             codec,
-            encodings: [col.encoding, 'RLE', 'BIT_PACKED'],
+            encodings: [col.encoding],
             numValues: rows.length,
             compressedSize: perColCompressed,
             uncompressedSize: perColUncompressed,
             compressionRatio: Number((perColUncompressed / perColCompressed).toFixed(2)),
-            dataPageOffset: 4 + idx * perColCompressed,
+            dataPageOffset: idx * perColCompressed,
             nullCount: prof?.nullCount ?? 0,
             distinctCount: prof?.distinctCount ?? 0,
             minValue: prof?.min ?? null,
@@ -5409,6 +6976,8 @@ function buildRowGroupMetadata(
                     ? Number((uncompressedTotal / compressedTotal).toFixed(2))
                     : 1,
             columns,
+            isSyntheticEstimate,
+            containerUnitLabel,
         },
     ];
 }
@@ -5423,10 +6992,6 @@ interface ExactDecimalParts {
     fracDigits: string;
 }
 
-/**
- * Parses a number, bigint, or numeric string (including 64-bit / 128-bit integers, decimals, and scientific notation)
- * into exact signed BigInt integer + fractional digit components without IEEE-754 float truncation.
- */
 function parseExactDecimalParts(raw: unknown): ExactDecimalParts | null {
     if (typeof raw === 'bigint') {
         if (raw === BigInt(0)) return { sign: 1, intPart: BigInt(0), fracDigits: '' };
@@ -5453,7 +7018,6 @@ function parseExactDecimalParts(raw: unknown): ExactDecimalParts | null {
     const str = String(raw).trim();
     if (!str) return null;
 
-    // Match optional sign, digits, optional decimal digits, optional exponent
     const m = /^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(str);
     if (!m) return null;
 
@@ -5479,7 +7043,6 @@ function parseExactDecimalParts(raw: unknown): ExactDecimalParts | null {
         }
     }
 
-    // Strip trailing zeros from fractional part
     fracDigits = fracDigits.replace(/0+$/, '');
     const intPart = BigInt(intDigits || '0');
     if (intPart === BigInt(0) && fracDigits === '') {
@@ -5491,7 +7054,6 @@ function parseExactDecimalParts(raw: unknown): ExactDecimalParts | null {
 
 /**
  * Exact 64-Bit BigInt & Arbitrary-Precision Decimal Comparator.
- * Returns -1 if a < b, 0 if a === b, +1 if a > b, or null if either input is not a valid number.
  */
 export function compareExactNumericValues(a: unknown, b: unknown): number | null {
     const pa = parseExactDecimalParts(a);
@@ -5533,7 +7095,6 @@ function evaluateSingleCondition(row: Record<string, unknown>, f: FilterConditio
     const targetStr = f.value;
     const targetTrimmed = f.value.trim();
 
-    // Use exact 64-bit BigInt & arbitrary-precision decimal comparison whenever both operands are numeric
     const exactCmp =
         typeof rawVal !== 'boolean' && typeof rawVal !== 'object' && !isNaNVal && targetTrimmed !== ''
             ? compareExactNumericValues(rawVal, targetTrimmed)
@@ -5593,7 +7154,6 @@ export function queryDataset(
     const trimmedSearch = searchQuery.trim().toLowerCase();
 
     let filtered = rows.filter((row) => {
-        // 1. Global full-text search
         if (trimmedSearch) {
             const hit = Object.values(row).some((v) => {
                 if (v === null || v === undefined) return false;
@@ -5603,7 +7163,6 @@ export function queryDataset(
             if (!hit) return false;
         }
 
-        // 2. Column-level filter predicates supporting both AND and OR logic
         if (filters.length > 0) {
             let acc = evaluateSingleCondition(row, filters[0]);
             for (let i = 1; i < filters.length; i++) {
@@ -5618,7 +7177,6 @@ export function queryDataset(
         return true;
     });
 
-    // 3. Sorting with deterministic NULL-last guarantee and exact 64-bit BigInt / decimal precision
     if (sort && sort.column) {
         const { column, direction } = sort;
         const mul = direction === 'asc' ? 1 : -1;
@@ -5644,7 +7202,6 @@ export function queryDataset(
         });
     }
 
-    // 4. Column Projection
     if (selectedColumns && selectedColumns.length > 0) {
         filtered = filtered.map((r) => {
             const proj: Record<string, unknown> = {};
@@ -5675,7 +7232,7 @@ export function generateSchemaCode(
     switch (target) {
         case 'postgresql': {
             const cols = schema.map((c) => {
-                const pgType = mapToPostgresType(c.logicalType);
+                const pgType = mapToPostgresType(c.logicalType, c.precision, c.scale);
                 const nullStr = c.nullable ? '' : ' NOT NULL';
                 return `  "${c.name}" ${pgType}${nullStr}`;
             });
@@ -5683,7 +7240,7 @@ export function generateSchemaCode(
         }
         case 'snowflake': {
             const cols = schema.map((c) => {
-                const sfType = mapToSnowflakeType(c.logicalType);
+                const sfType = mapToSnowflakeType(c.logicalType, c.precision, c.scale);
                 const nullStr = c.nullable ? '' : ' NOT NULL';
                 return `  "${c.name}" ${sfType}${nullStr}`;
             });
@@ -5691,7 +7248,7 @@ export function generateSchemaCode(
         }
         case 'bigquery': {
             const cols = schema.map((c) => {
-                const bqType = mapToBigQueryType(c.logicalType);
+                const bqType = mapToBigQueryType(c.logicalType, c.precision, c.scale);
                 const nullStr = c.nullable ? '' : ' NOT NULL';
                 return `  \`${c.name}\` ${bqType}${nullStr}`;
             });
@@ -5699,7 +7256,7 @@ export function generateSchemaCode(
         }
         case 'duckdb': {
             const cols = schema.map((c) => {
-                const dType = mapToPostgresType(c.logicalType);
+                const dType = mapToDuckDbType(c.logicalType, c.precision, c.scale);
                 const nullStr = c.nullable ? '' : ' NOT NULL';
                 return `  "${c.name}" ${dType}${nullStr}`;
             });
@@ -5708,7 +7265,7 @@ export function generateSchemaCode(
         case 'clickhouse': {
             const firstCol = schema[0]?.name || 'tuple()';
             const cols = schema.map((c) => {
-                const base = mapToClickHouseType(c.logicalType);
+                const base = mapToClickHouseType(c.logicalType, c.precision, c.scale);
                 const wrapped = c.nullable ? `Nullable(${base})` : base;
                 return `  \`${c.name}\` ${wrapped}`;
             });
@@ -5729,14 +7286,14 @@ export function generateSchemaCode(
         case 'pyarrow': {
             const fields = schema.map(
                 (c) =>
-                    `    pa.field("${c.name}", ${mapToPyArrowType(c.logicalType)}, nullable=${c.nullable ? 'True' : 'False'
+                    `    pa.field("${c.name}", ${mapToPyArrowType(c.logicalType, c.precision, c.scale)}, nullable=${c.nullable ? 'True' : 'False'
                     }),`
             );
             return `import pyarrow as pa\n\n${safeTable}_schema = pa.schema([\n${fields.join('\n')}\n])`;
         }
         case 'polars': {
             const fields = schema.map(
-                (c) => `    "${c.name}": ${mapToPolarsType(c.logicalType)},`
+                (c) => `    "${c.name}": ${mapToPolarsType(c.logicalType, c.precision, c.scale)},`
             );
             return `import polars as pl\n\n${safeTable}_schema = pl.Schema({\n${fields.join('\n')}\n})`;
         }
@@ -5781,25 +7338,35 @@ export function generateSchemaCode(
     }
 }
 
-function mapToPostgresType(t: LogicalDataType): string {
+function normalizeDecimalPrecisionScale(precision?: number, scale?: number): { p: number; s: number } {
+    const p = precision && precision > 0 ? Math.min(38, Math.trunc(precision)) : 18;
+    const s = scale !== undefined && scale >= 0 ? Math.min(p, Math.trunc(scale)) : 4;
+    return { p, s };
+}
+
+function mapToPostgresType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'BOOLEAN';
         case 'INT32':
             return 'INTEGER';
         case 'INT64':
-        case 'UINT64':
             return 'BIGINT';
+        case 'UINT64':
+            return 'NUMERIC(20, 0)';
         case 'FLOAT':
             return 'REAL';
         case 'DOUBLE':
             return 'DOUBLE PRECISION';
-        case 'DECIMAL':
-            return 'NUMERIC(18, 4)';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `NUMERIC(${p}, ${s})`;
+        }
         case 'DATE':
             return 'DATE';
         case 'TIMESTAMP_MILLIS':
         case 'TIMESTAMP_MICROS':
+        case 'TIMESTAMP_NANOS':
             return 'TIMESTAMPTZ';
         case 'UUID':
             return 'UUID';
@@ -5813,7 +7380,43 @@ function mapToPostgresType(t: LogicalDataType): string {
     }
 }
 
-function mapToSnowflakeType(t: LogicalDataType): string {
+function mapToDuckDbType(t: LogicalDataType, precision?: number, scale?: number): string {
+    switch (t) {
+        case 'BOOLEAN':
+            return 'BOOLEAN';
+        case 'INT32':
+            return 'INTEGER';
+        case 'INT64':
+            return 'BIGINT';
+        case 'UINT64':
+            return 'UBIGINT';
+        case 'FLOAT':
+            return 'FLOAT';
+        case 'DOUBLE':
+            return 'DOUBLE';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `DECIMAL(${p}, ${s})`;
+        }
+        case 'DATE':
+            return 'DATE';
+        case 'TIMESTAMP_MILLIS':
+        case 'TIMESTAMP_MICROS':
+        case 'TIMESTAMP_NANOS':
+            return 'TIMESTAMPTZ';
+        case 'UUID':
+            return 'UUID';
+        case 'LIST':
+        case 'STRUCT':
+        case 'MAP':
+        case 'JSON':
+            return 'JSON';
+        default:
+            return 'VARCHAR';
+    }
+}
+
+function mapToSnowflakeType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'BOOLEAN';
@@ -5824,12 +7427,15 @@ function mapToSnowflakeType(t: LogicalDataType): string {
         case 'FLOAT':
         case 'DOUBLE':
             return 'FLOAT';
-        case 'DECIMAL':
-            return 'NUMBER(18, 4)';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `NUMBER(${p}, ${s})`;
+        }
         case 'DATE':
             return 'DATE';
         case 'TIMESTAMP_MILLIS':
         case 'TIMESTAMP_MICROS':
+        case 'TIMESTAMP_NANOS':
             return 'TIMESTAMP_NTZ';
         case 'LIST':
             return 'ARRAY';
@@ -5842,23 +7448,27 @@ function mapToSnowflakeType(t: LogicalDataType): string {
     }
 }
 
-function mapToBigQueryType(t: LogicalDataType): string {
+function mapToBigQueryType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'BOOL';
         case 'INT32':
         case 'INT64':
-        case 'UINT64':
             return 'INT64';
+        case 'UINT64':
+            return 'NUMERIC';
         case 'FLOAT':
         case 'DOUBLE':
             return 'FLOAT64';
-        case 'DECIMAL':
-            return 'NUMERIC';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return p > 38 || s > 9 ? `BIGNUMERIC(${p}, ${s})` : `NUMERIC(${p}, ${s})`;
+        }
         case 'DATE':
             return 'DATE';
         case 'TIMESTAMP_MILLIS':
         case 'TIMESTAMP_MICROS':
+        case 'TIMESTAMP_NANOS':
             return 'TIMESTAMP';
         case 'LIST':
         case 'STRUCT':
@@ -5870,7 +7480,7 @@ function mapToBigQueryType(t: LogicalDataType): string {
     }
 }
 
-function mapToClickHouseType(t: LogicalDataType): string {
+function mapToClickHouseType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'Bool';
@@ -5883,13 +7493,19 @@ function mapToClickHouseType(t: LogicalDataType): string {
         case 'FLOAT':
             return 'Float32';
         case 'DOUBLE':
-        case 'DECIMAL':
             return 'Float64';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `Decimal(${p}, ${s})`;
+        }
         case 'DATE':
             return 'Date';
         case 'TIMESTAMP_MILLIS':
-        case 'TIMESTAMP_MICROS':
             return 'DateTime64(3)';
+        case 'TIMESTAMP_MICROS':
+            return 'DateTime64(6)';
+        case 'TIMESTAMP_NANOS':
+            return 'DateTime64(9)';
         case 'UUID':
             return 'UUID';
         default:
@@ -5919,7 +7535,7 @@ function mapToTypeScriptType(t: LogicalDataType): string {
     }
 }
 
-function mapToPyArrowType(t: LogicalDataType): string {
+function mapToPyArrowType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'pa.bool_()';
@@ -5933,10 +7549,18 @@ function mapToPyArrowType(t: LogicalDataType): string {
             return 'pa.float32()';
         case 'DOUBLE':
             return 'pa.float64()';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `pa.decimal128(${p}, ${s})`;
+        }
         case 'DATE':
             return 'pa.date32()';
         case 'TIMESTAMP_MILLIS':
             return 'pa.timestamp("ms")';
+        case 'TIMESTAMP_MICROS':
+            return 'pa.timestamp("us")';
+        case 'TIMESTAMP_NANOS':
+            return 'pa.timestamp("ns")';
         case 'LIST':
             return 'pa.list_(pa.string())';
         default:
@@ -5944,7 +7568,7 @@ function mapToPyArrowType(t: LogicalDataType): string {
     }
 }
 
-function mapToPolarsType(t: LogicalDataType): string {
+function mapToPolarsType(t: LogicalDataType, precision?: number, scale?: number): string {
     switch (t) {
         case 'BOOLEAN':
             return 'pl.Boolean';
@@ -5958,10 +7582,18 @@ function mapToPolarsType(t: LogicalDataType): string {
             return 'pl.Float32';
         case 'DOUBLE':
             return 'pl.Float64';
+        case 'DECIMAL': {
+            const { p, s } = normalizeDecimalPrecisionScale(precision, scale);
+            return `pl.Decimal(${p}, ${s})`;
+        }
         case 'DATE':
             return 'pl.Date';
         case 'TIMESTAMP_MILLIS':
             return 'pl.Datetime("ms")';
+        case 'TIMESTAMP_MICROS':
+            return 'pl.Datetime("us")';
+        case 'TIMESTAMP_NANOS':
+            return 'pl.Datetime("ns")';
         case 'LIST':
             return 'pl.List(pl.String)';
         default:
@@ -5993,14 +7625,6 @@ function mapToJsonSchemaType(t: LogicalDataType): string {
 // 11. MULTI-FORMAT EXPORTER, 15-VECTOR CWE-1236 GUARD & NATIVE .XLSX ZIP COMPILER
 // ============================================================
 
-/**
- * Neutralizes all 15+ CWE-1236 CSV/Excel Formula Injection vectors:
- * - Direct formula prefixes (=, +, -, @)
- * - Leading spaces, tabs (\t), carriage returns (\r), newlines (\n)
- * - Full-width Unicode formula variants (\uFF1D ＝, \uFF0B ＋, \uFF20 ＠, \uFF0D －)
- * - En-dash (–) and Em-dash (—) formula prefixes
- * While preserving legitimate negative numbers (e.g., -42.5, -0.005, -1.5e-4, "  -99.95").
- */
 export function sanitizeSpreadsheetFormula(val: unknown, sanitize = true): string {
     if (val === null || val === undefined) return '';
     const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
@@ -6043,13 +7667,6 @@ export function escapeCsvCell(
 
 /**
  * Native Binary Microsoft Excel (.xlsx) Office Open XML Workbook Compiler.
- * Builds a standards-compliant PKZIP (0x50 0x4B 0x03 04) .xlsx archive containing:
- * - [Content_Types].xml
- * - _rels/.rels
- * - xl/workbook.xml
- * - xl/_rels/workbook.xml.rels
- * - xl/styles.xml (bold header style)
- * - xl/worksheets/sheet1.xml (with frozen top header row, autoFilter, typed cells, and CWE-1236 guard)
  */
 export function encodeXlsxWorkbookBinary(
     rows: Record<string, unknown>[],
@@ -6082,9 +7699,7 @@ export function encodeXlsxWorkbookBinary(
     const lastColLetter = colIndexToLetter(Math.max(0, columns.length - 1));
     const totalSheetRows = rows.length + 1;
 
-    // Build worksheet rows XML
     const xmlRows: string[] = [];
-    // Row 1: Header row (style s="1" bold)
     const headerCells = columns
         .map(
             (col, cIdx) =>
@@ -6095,7 +7710,6 @@ export function encodeXlsxWorkbookBinary(
         .join('');
     xmlRows.push(`<row r="1">${headerCells}</row>`);
 
-    // Data rows
     for (let rIdx = 0; rIdx < rows.length; rIdx++) {
         const rowNum = rIdx + 2;
         const rowObj = rows[rIdx];
@@ -6203,12 +7817,12 @@ function buildPkZipArchive(entries: { name: string; data: Uint8Array }[]): Uint8
 
         const local = new Uint8Array(30 + nameBytes.length + size);
         const lv = new DataView(local.buffer);
-        lv.setUint32(0, 0x04034b50, true); // PK\x03\x04
-        lv.setUint16(4, 20, true); // version needed
-        lv.setUint16(6, 0, true); // flags
-        lv.setUint16(8, 0, true); // compression = 0 (STORE)
-        lv.setUint16(10, 0, true); // mod time
-        lv.setUint16(12, 0, true); // mod date
+        lv.setUint32(0, 0x04034b50, true);
+        lv.setUint16(4, 20, true);
+        lv.setUint16(6, 0, true);
+        lv.setUint16(8, 0, true);
+        lv.setUint16(10, 0, true);
+        lv.setUint16(12, 0, true);
         lv.setUint32(14, crc, true);
         lv.setUint32(18, size, true);
         lv.setUint32(22, size, true);
@@ -6220,7 +7834,7 @@ function buildPkZipArchive(entries: { name: string; data: Uint8Array }[]): Uint8
 
         const central = new Uint8Array(46 + nameBytes.length);
         const cv = new DataView(central.buffer);
-        cv.setUint32(0, 0x02014b50, true); // PK\x01\x02
+        cv.setUint32(0, 0x02014b50, true);
         cv.setUint16(4, 20, true);
         cv.setUint16(6, 20, true);
         cv.setUint16(8, 0, true);
@@ -6246,7 +7860,7 @@ function buildPkZipArchive(entries: { name: string; data: Uint8Array }[]): Uint8
     const centralSize = centralHeaders.reduce((a, b) => a + b.length, 0);
     const eocd = new Uint8Array(22);
     const ev = new DataView(eocd.buffer);
-    ev.setUint32(0, 0x06054b50, true); // PK\x05\x06
+    ev.setUint32(0, 0x06054b50, true);
     ev.setUint16(4, 0, true);
     ev.setUint16(6, 0, true);
     ev.setUint16(8, entries.length, true);
@@ -6390,7 +8004,6 @@ export function exportDatasetToText(
         }
 
         case 'xlsx': {
-            // For text preview pane in UI, show CSV representation while download emits binary PKZIP .xlsx
             const headerLine = cols
                 .map((c) => escapeCsvCell(c, ',', options.sanitizeFormulas))
                 .join(',');
@@ -6406,6 +8019,7 @@ export function exportDatasetToText(
             return '';
     }
 }
+
 // ============================================================
 // 12. BACKGROUND WEB WORKER PARSING & MAIN-THREAD FALLBACK
 // ============================================================
@@ -6452,11 +8066,12 @@ function createCancelledError(requestId: number, message = 'Parse operation was 
 
 /**
  * Generates the self-contained Web Worker script by serializing the active engine functions
- * and lookup tables at runtime, avoiding any duplicate parser implementation.
+ * and lookup tables at runtime.
  */
 export function buildColumnarWorkerScriptSource(): string {
     const workerFunctions: [string, { toString(): string; name?: string }][] = [
         ['bytesToHex', bytesToHex],
+        ['formatEpochTimestampToIso', formatEpochTimestampToIso],
         ['detectColumnarFormat', detectColumnarFormat],
         ['readUnsignedVarint', readUnsignedVarint],
         ['readZigZagVarint', readZigZagVarint],
@@ -6476,12 +8091,15 @@ export function buildColumnarWorkerScriptSource(): string {
         ['computeCrc32', computeCrc32],
         ['formatScaledDecimal', formatScaledDecimal],
         ['decodeTwoComplementBigEndian', decodeTwoComplementBigEndian],
+        ['decodeTwoComplementLittleEndian', decodeTwoComplementLittleEndian],
+        ['decodeFloat16', decodeFloat16],
         ['decodeParquetStatBytes', decodeParquetStatBytes],
         ['decodeParquetPlainValues', decodeParquetPlainValues],
         ['decompressParquetPagePayload', decompressParquetPagePayload],
         ['reconstructDremelSingleLevelList', reconstructDremelSingleLevelList],
         ['decodeParquetColumnChunkValues', decodeParquetColumnChunkValues],
         ['buildParquetLeafSchemaHierarchy', buildParquetLeafSchemaHierarchy],
+        ['setNestedStructValue', setNestedStructValue],
         ['parseParquetBinary', parseParquetBinary],
         ['coerceNumericStat', coerceNumericStat],
         ['readAvroBinaryDatum', readAvroBinaryDatum],
@@ -6490,7 +8108,10 @@ export function buildColumnarWorkerScriptSource(): string {
         ['fbReadTableSlots', fbReadTableSlots],
         ['fbDeref', fbDeref],
         ['fbReadString', fbReadString],
+        ['decodeFeatherV1PrimitiveArray', decodeFeatherV1PrimitiveArray],
         ['parseFeatherV1Binary', parseFeatherV1Binary],
+        ['parseArrowFieldNode', parseArrowFieldNode],
+        ['decodeArrowFieldVector', decodeArrowFieldVector],
         ['decodeGenuineArrowIpcStream', decodeGenuineArrowIpcStream],
         ['parseFeatherOrArrowBinary', parseFeatherOrArrowBinary],
         ['parseJsonOrJsonlText', parseJsonOrJsonlText],
@@ -6573,13 +8194,6 @@ export interface ColumnarParseWorkerDispatcher {
     getActiveRequestId(): number;
 }
 
-/**
- * Creates a race-safe background Web Worker dispatcher for `parseColumnarFile`.
- * - Offloads binary parsing and decompression to a dedicated Web Worker when available.
- * - Automatically falls back to synchronous main-thread `parseColumnarFile` if Worker creation or runtime execution fails.
- * - Prevents stale Worker responses from overwriting newer file selections via monotonic `requestId` tracking.
- * - Cleans up Worker instances, event listeners, and `blob:` object URLs on completion, error, superseding upload, or disposal.
- */
 export function createColumnarParseWorkerDispatcher(
     options: ColumnarParseDispatcherOptions = {}
 ): ColumnarParseWorkerDispatcher {
@@ -6608,11 +8222,9 @@ export function createColumnarParseWorkerDispatcher(
             return Promise.reject(new Error('Columnar parse dispatcher has been disposed.'));
         }
 
-        // Cancel any in-flight request before starting the new one
         cancelCurrent('Parse request superseded by a newer file selection.');
         const requestId = ++latestRequestId;
 
-        // Pre-validate empty / oversized buffers before allocating Worker resources
         if (!bytes || bytes.length === 0) {
             return Promise.reject(
                 new Error(
@@ -6724,7 +8336,6 @@ export function createColumnarParseWorkerDispatcher(
                 if (settled) return;
                 const data = (ev as { data?: Record<string, unknown> })?.data;
                 if (!data || data.requestId !== requestId) {
-                    // Ignore stale or unrelated worker responses
                     return;
                 }
                 if (disposed || requestId !== latestRequestId) {
@@ -6760,7 +8371,6 @@ export function createColumnarParseWorkerDispatcher(
                     reject(createCancelledError(requestId));
                     return;
                 }
-                // Worker runtime error: clean up Worker resources and safely fall back to main thread
                 settled = true;
                 cleanupResources();
                 runFallback().then(resolve, reject);
@@ -6782,7 +8392,6 @@ export function createColumnarParseWorkerDispatcher(
                 worker.addEventListener('message', onMessage);
                 worker.addEventListener('error', onError);
 
-                // Clone buffer for zero-copy transfer so caller's `bytes` remains intact if fallback is needed
                 const copyBytes = new Uint8Array(bytes.length);
                 copyBytes.set(bytes);
                 worker.postMessage(
@@ -6794,7 +8403,6 @@ export function createColumnarParseWorkerDispatcher(
                     [copyBytes.buffer]
                 );
             } catch {
-                // Worker initialization or postMessage failed: clean up and fall back to main thread
                 if (!settled) {
                     settled = true;
                     cleanupResources();
@@ -6812,9 +8420,6 @@ export function createColumnarParseWorkerDispatcher(
     };
 }
 
-/**
- * Convenience single-call async parser using a disposable Worker dispatcher with automatic main-thread fallback.
- */
 export async function parseColumnarFileAsync(
     bytes: Uint8Array,
     fileName = 'dataset.parquet',

@@ -1,5 +1,5 @@
 /**
- * KivaroTools Enterprise Parquet, Avro, Feather V1 & Feather V2 Viewer — Master Verification Suite (v5.1)
+ * KivaroTools Enterprise Parquet, Avro, Feather V1 & Feather V2 Viewer — Master Verification Suite (v5.2)
  *
  * Strictly separates test evidence into the required audit categories:
  * - Category A: Internal Round-Trip & Codec Unit Tests (Varint, ZigZag, Thrift, RLE, Snappy, DEFLATE, LZ4)
@@ -139,7 +139,7 @@ function assertThrows(cat: keyof typeof stats, fn: () => unknown, expectedSubstr
 }
 
 console.log('================================================================================');
-console.log(' KIVAROTOOLS PARQUET / AVRO / FEATHER V1 & V2 — MASTER VERIFICATION SUITE v5.1');
+console.log(' KIVAROTOOLS PARQUET / AVRO / FEATHER V1 & V2 — MASTER VERIFICATION SUITE v5.2');
 console.log('================================================================================\n');
 
 // ============================================================================
@@ -798,7 +798,7 @@ assertCat(
     'E_Xlsx_DDL_UI_SEO_Parity',
     seoSource.includes('Supported: UNCOMPRESSED, SNAPPY, GZIP, LZ4, LZ4_RAW (ZSTD, Brotli &amp; LZO unsupported)') &&
     seoSource.includes('Supported: null, deflate, snappy with CRC32 (zstandard, bzip2 &amp; xz unsupported)') &&
-    seoSource.includes('Supported: V1 Uncompressed • V2 standard Uncompressed &amp; LZ4_FRAME + KivaroTools internal Snappy fallback (ZSTD unsupported)'),
+    seoSource.includes('Supported: V1 Uncompressed • V2 Uncompressed &amp; LZ4_FRAME (ZSTD unsupported)'),
     'Issue #1: ParquetViewerSeo.tsx explicitly documents supported codecs and marks ZSTD/Brotli/LZO/bzip2/xz as unsupported'
 );
 assertCat(
@@ -937,7 +937,7 @@ assertCat(
     );
 }
 
-// --- Issue #4 & #5: Test-Suite Reproducibility & Version Alignment (v5.1) ---
+// --- Issue #4 & #5: Test-Suite Reproducibility & Version Alignment (v5.2) ---
 {
     const suiteSelfSource = fs.readFileSync(path.join(REPO_ROOT, 'scripts', 'test-parquet-viewer-1000-plus-suite.ts'), 'utf-8');
     const tmpPrefix = '/' + 'tmp/';
@@ -948,9 +948,9 @@ assertCat(
     );
     assertCat(
         'E_Xlsx_DDL_UI_SEO_Parity',
-        COLUMNAR_ENGINE_VERSION === '5.1' &&
-        engineSource.includes('(v5.1 — Hardened & Scope-Qualified Edition)') &&
-        suiteSelfSource.includes('Master Verification Suite (v5.1)'),
+        COLUMNAR_ENGINE_VERSION === '5.2' &&
+        engineSource.includes('(v5.2 — Hardened & Scope-Qualified Edition)') &&
+        suiteSelfSource.includes('Master Verification Suite (v5.2)'),
         'Issue #5: Engine version (v5.1) and test suite version (v5.1) are aligned'
     );
 }
