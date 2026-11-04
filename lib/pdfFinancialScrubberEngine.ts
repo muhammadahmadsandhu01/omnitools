@@ -856,7 +856,9 @@ export function formatRedactedReplacement(
     const baseTag =
         entity.reasonCode && entity.reasonCode !== 'NONE'
             ? `[REDACTED: ${entity.reasonCode.replace(/_/g, ' ')}]`
-            : `[REDACTED ${entity.category.replace(/_/g, ' ')}]`;
+            : options.underwriterAttestationBadge
+                ? `[REDACTED ${entity.category.replace(/_/g, ' ')}] [PRIVACY REDACTED]`
+                : `[REDACTED ${entity.category.replace(/_/g, ' ')}]`;
 
     if (options.antiInferencePadding) {
         // Fixed standardized token width so character count cannot be inferred (PoPETs 2023 mitigation)
@@ -1167,15 +1169,15 @@ function detectFinancialEntitiesAndTables(
         for (const l of p.lines) fullTextConcat += l.text + '\n';
     }
 
+    const isStatement = /\b(bank\s*statement|account\s*summary|beginning\s*balance|ending\s*balance|running\s*balance|account\s*statement)\b/i.test(fullTextConcat);
     const isInvoice = /invoice\s*#|tax\s*invoice|bill\s*to|zatca|factur-x|zugferd|subtotal|unit\s*price/i.test(fullTextConcat);
-    const isPayroll = /\b(w-2|1099|payroll|remittance|employee\s*ssn|net\s*pay|withholding)\b/i.test(fullTextConcat);
-    const isStatement = /\b(bank\s*statement|account\s*summary|beginning\s*balance|ending\s*balance|running\s*balance|iban|micr)\b/i.test(fullTextConcat);
-    const docType: FinancialDocType = isPayroll
-        ? 'payroll_tax_form'
-        : isInvoice && !isStatement
+    const isPayroll = /\b(w-2|1099|payroll\s*tax|payroll\s*&\s*tax|employee\s*w-2|remittance\s*packet|employee\s*ssn|net\s*pay|gross\s*pay|withholding)\b/i.test(fullTextConcat);
+    const docType: FinancialDocType = isStatement
+        ? 'bank_statement'
+        : isInvoice
             ? 'tax_invoice'
-            : isStatement
-                ? 'bank_statement'
+            : isPayroll
+                ? 'payroll_tax_form'
                 : 'generic_financial_pdf';
 
     let entSeq = 1;
