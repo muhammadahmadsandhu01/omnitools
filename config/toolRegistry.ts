@@ -213,6 +213,7 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'invoice-redactor': PdfScrubberSeo, // Alias
   'redact-pdf': PdfScrubberSeo, // Alias
 
+
   // Media
   'webp-to-jpg-png': WebpToJpgPngSeo,
   'webp-converter': WebpToJpgPngSeo, // Alias
