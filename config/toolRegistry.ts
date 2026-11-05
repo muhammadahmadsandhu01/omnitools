@@ -21,6 +21,7 @@ import RegexTester from '@/components/tools/RegexTester';
 import ParquetViewer from '@/components/tools/ParquetViewer';
 import PdfMergeSplit from '@/components/tools/PdfMergeSplit';
 import PdfScrubber from '@/components/tools/PdfScrubber';
+import HarAnalyzer from '@/components/tools/HarAnalyzer';
 import ImageToPdf from '@/components/tools/ImageToPdf';
 import PdfToWord from '@/components/tools/PdfToWord';
 import WordToPdf from '@/components/tools/WordToPdf';
@@ -57,6 +58,7 @@ import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
 import ParquetViewerSeo from '@/components/seo/ParquetViewerSeo';
 import PdfMergeSplitSeo from '@/components/seo/PdfMergeSplitSeo';
 import PdfScrubberSeo from '@/components/seo/PdfScrubberSeo';
+import HarAnalyzerSeo from '@/components/seo/HarAnalyzerSeo';
 import ImageToPdfSeo from '@/components/seo/ImageToPdfSeo';
 import PdfToWordSeo from '@/components/seo/PdfToWordSeo';
 import WordToPdfSeo from '@/components/seo/WordToPdfSeo';
@@ -104,6 +106,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'feather-viewer': ParquetViewer,
   'arrow-viewer': ParquetViewer,
   'feather-to-csv': ParquetViewer,
+  'har-analyzer': HarAnalyzer,
+  'har-viewer': HarAnalyzer, // Alias
+  'har-sanitizer': HarAnalyzer, // Alias
+  'har-to-k6': HarAnalyzer, // Alias
+  'har-to-playwright': HarAnalyzer, // Alias
+  'har-to-openapi': HarAnalyzer, // Alias
+  'saml-har-analyzer': HarAnalyzer, // Alias 
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -182,6 +191,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'feather-viewer': ParquetViewerSeo,
   'arrow-viewer': ParquetViewerSeo,
   'feather-to-csv': ParquetViewerSeo,
+  'har-analyzer': HarAnalyzerSeo,
+  'har-viewer': HarAnalyzerSeo, // Alias
+  'har-sanitizer': HarAnalyzerSeo, // Alias
+  'har-to-k6': HarAnalyzerSeo, // Alias
+  'har-to-playwright': HarAnalyzerSeo, // Alias
+  'har-to-openapi': HarAnalyzerSeo, // Alias
+  'saml-har-analyzer': HarAnalyzerSeo, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,

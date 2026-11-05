@@ -79,7 +79,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                               slug === 'arrow-viewer' ||
                               slug === 'feather-to-csv'
                               ? 'parquet-viewer'
-                              : slug;
+                              : slug === 'har-viewer' ||
+                                slug === 'har-sanitizer' ||
+                                slug === 'har-to-k6' ||
+                                slug === 'har-to-playwright' ||
+                                slug === 'har-to-openapi' ||
+                                slug === 'saml-har-analyzer'
+                                ? 'har-analyzer'
+                                : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -99,7 +106,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           ? 'media'
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
-            : resolvedSlug === 'parquet-viewer'
+            : resolvedSlug === 'parquet-viewer' ||
+              resolvedSlug === 'har-analyzer'
               ? 'developer'
               : category;
 

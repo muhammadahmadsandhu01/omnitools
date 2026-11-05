@@ -1525,6 +1525,18 @@ Row #2:         2026-10-08 | [TRANSACTION ROW REDACTED]
                             safe Excel export.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/developer/har-analyzer"
+                        className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
+                    >
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                            HAR File Analyzer, Waterfall Viewer &amp; Sanitizer →
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Inspect 7-phase HTTP waterfalls, decode JWT &amp; SAML 2.0 assertions, scrub secrets across 14 surfaces, and export to k6, Playwright &amp; OpenAPI 3.1.
+                        </p>
+                    </Link>
                 </div>
             </section>
         </article>

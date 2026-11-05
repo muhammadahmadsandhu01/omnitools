@@ -32,7 +32,8 @@
     "build:vinext": "vite build",
     "start:vinext": "vite preview",
     "deploy:vinext": "vinext-cloudflare deploy",
-    "test:pdf-scrubber": "tsx scripts/test-pdf-scrubber.ts"
+    "test:pdf-scrubber": "tsx scripts/test-pdf-scrubber.ts",
+    "typescript": "tsc --noEmit"
   },
   "dependencies": {
     "@vinext/cloudflare": "^1.1.1",
