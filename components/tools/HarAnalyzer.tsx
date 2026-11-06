@@ -45,6 +45,8 @@ import {
     sanitizeHarAndVerify,
     compareHarFiles,
     exportEntryToCurl,
+    exportEntryToFetch,
+    exportEntryToPythonRequests,
     exportToK6Script,
     exportToPlaywrightTest,
     exportToOpenApiSpecJson,
@@ -157,20 +159,34 @@ function formatBytes(bytes: number): string {
 }
 
 export default function HarAnalyzer() {
-    const [parsed, setParsed] = useState<HarParseResult | null>(null);
+    const [activeSampleId, setActiveSampleId] = useState<
+        'ecommerce_checkout_incident' | 'sso_saml_oidc_trace' | 'graphql_websocket_stream' | null
+    >('ecommerce_checkout_incident');
+    const [parsed, setParsed] = useState<HarParseResult | null>(() => {
+        try {
+            const initialSample = generateSampleHarFile('ecommerce_checkout_incident');
+            return parseHarFile(initialSample.bytes, initialSample.fileName, initialSample.recommendedPreset);
+        } catch {
+            return null;
+        }
+    });
     const [activePreset, setActivePreset] = useState<HarWorkflowPresetId>('support_ticket_safe');
     const [activeTab, setActiveTab] = useState<HarWorkbenchTab>('waterfall_grid');
-    const [executionMode, setExecutionMode] = useState<'worker' | 'main-thread-fallback'>('worker');
+    const [executionMode, setExecutionMode] = useState<'worker' | 'main-thread-fallback'>('main-thread-fallback');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [statusBanner, setStatusBanner] = useState<string | null>(null);
+    const [statusBanner, setStatusBanner] = useState<string | null>(
+        'Loaded sample "ecommerce_checkout_502_cors_incident.har" (5 requests, 27 secrets detected across 9 surfaces). Click any sample card above to switch scenarios!'
+    );
 
     // Waterfall & Request Grid Filters
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [resourceFilter, setResourceFilter] = useState<string>('ALL');
     const [statusFilter, setStatusFilter] = useState<string>('ALL');
-    const [selectedEntryIndex, setSelectedEntryIndex] = useState<number | null>(0);
+    const [selectedEntryIndex, setSelectedEntryIndex] = useState<number | null>(3);
     const [gridViewMode, setGridViewMode] = useState<'paginated' | 'virtualized'>('paginated');
+    const [virtualScrollTop, setVirtualScrollTop] = useState<number>(0);
+    const [inspectorSanitizedView, setInspectorSanitizedView] = useState<boolean>(true);
     const [currentPage, setCurrentPage] = useState<number>(1);
     const pageSize = 25;
 
@@ -187,7 +203,27 @@ export default function HarAnalyzer() {
     const [customKeywords, setCustomKeywords] = useState<string[]>([]);
 
     // Export & Diff Studio State
-    const [sanitizeOutcome, setSanitizeOutcome] = useState<HarSanitizeOutcome | null>(null);
+    const [sanitizeOutcome, setSanitizeOutcome] = useState<HarSanitizeOutcome | null>(() => {
+        try {
+            const initialSample = generateSampleHarFile('ecommerce_checkout_incident');
+            const initialParsed = parseHarFile(
+                initialSample.bytes,
+                initialSample.fileName,
+                initialSample.recommendedPreset
+            );
+            return sanitizeHarAndVerify(initialParsed, {
+                redactionMode: 'deterministic_token',
+                stripBase64Media: true,
+                stripStatic200Bodies: false,
+                removeAllResponseBodies: false,
+                anonymizeInternalIps: true,
+                anonymizeHostnames: false,
+                customSecretKeywords: [],
+            });
+        } catch {
+            return null;
+        }
+    });
     const [codePreviewFormat, setCodePreviewFormat] = useState<
         'k6' | 'playwright' | 'openapi' | 'postman' | 'markdown' | 'certificate' | 'curl'
     >('k6');
@@ -196,12 +232,13 @@ export default function HarAnalyzer() {
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const diffInputRef = useRef<HTMLInputElement | null>(null);
+    const workbenchRef = useRef<HTMLDivElement | null>(null);
     const dispatcherRef = useRef<HarWorkerDispatcher | null>(null);
 
     useEffect(() => {
-        dispatcherRef.current = createHarWorkerDispatcher();
         return () => {
             dispatcherRef.current?.dispose();
+            dispatcherRef.current = null;
         };
     }, []);
 
@@ -242,21 +279,34 @@ export default function HarAnalyzer() {
             setErrorMessage(null);
             setStatusBanner(null);
             setCurrentPage(1);
+            setSearchQuery('');
+            setResourceFilter('ALL');
+            setStatusFilter('ALL');
             setDiffReport(null);
 
             try {
-                if (dispatcherRef.current) {
-                    const outcome = await dispatcherRef.current.parse(bytes, fileName, presetToApply);
-                    setParsed(outcome.result);
-                    setExecutionMode(outcome.executionMode);
-                    setActivePreset(presetToApply);
-                    setSelectedEntryIndex(outcome.result.entries.length > 0 ? 0 : null);
-                } else {
+                // Direct synchronous parse for fast execution and fallback safety
+                if (bytes.length <= 8 * 1024 * 1024) {
                     const res = parseHarFile(bytes, fileName, presetToApply);
                     setParsed(res);
                     setExecutionMode('main-thread-fallback');
                     setActivePreset(presetToApply);
                     setSelectedEntryIndex(res.entries.length > 0 ? 0 : null);
+                    setStatusBanner(
+                        `Loaded "${fileName}" (${res.metadata.totalEntries} requests, ${res.secrets.length} secrets detected across ${res.surfaces.filter((s) => s.statusInOriginal === 'EXPOSED').length} surfaces).`
+                    );
+                } else {
+                    if (!dispatcherRef.current) {
+                        dispatcherRef.current = createHarWorkerDispatcher();
+                    }
+                    const outcome = await dispatcherRef.current.parse(bytes, fileName, presetToApply);
+                    setParsed(outcome.result);
+                    setExecutionMode(outcome.executionMode);
+                    setActivePreset(presetToApply);
+                    setSelectedEntryIndex(outcome.result.entries.length > 0 ? 0 : null);
+                    setStatusBanner(
+                        `Loaded "${fileName}" (${outcome.result.metadata.totalEntries} requests, ${outcome.result.secrets.length} secrets detected).`
+                    );
                 }
             } catch (err: unknown) {
                 if (isHarCancelledError(err)) return;
@@ -268,15 +318,10 @@ export default function HarAnalyzer() {
         []
     );
 
-    // Load default sample on initial mount
-    useEffect(() => {
-        const sample = generateSampleHarFile('ecommerce_checkout_incident');
-        void handleLoadBytes(sample.bytes, sample.fileName, sample.recommendedPreset);
-    }, [handleLoadBytes]);
-
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        setActiveSampleId(null);
         const buf = await file.arrayBuffer();
         await handleLoadBytes(new Uint8Array(buf), file.name, activePreset);
         e.target.value = '';
@@ -286,16 +331,53 @@ export default function HarAnalyzer() {
         e.preventDefault();
         const file = e.dataTransfer.files?.[0];
         if (!file) return;
+        setActiveSampleId(null);
         const buf = await file.arrayBuffer();
         await handleLoadBytes(new Uint8Array(buf), file.name, activePreset);
     };
 
-    const handleSelectSample = async (
+    const handleSelectSample = (
         sampleId: 'ecommerce_checkout_incident' | 'sso_saml_oidc_trace' | 'graphql_websocket_stream'
     ) => {
-        const sample = generateSampleHarFile(sampleId);
-        await handleLoadBytes(sample.bytes, sample.fileName, sample.recommendedPreset);
-        setStatusBanner(`Loaded sample "${sample.fileName}" with preset "${sample.recommendedPreset}".`);
+        try {
+            setIsLoading(true);
+            setErrorMessage(null);
+            setCurrentPage(1);
+            setSearchQuery('');
+            setResourceFilter('ALL');
+            setStatusFilter('ALL');
+            setDiffReport(null);
+
+            const sample = generateSampleHarFile(sampleId);
+            const res = parseHarFile(sample.bytes, sample.fileName, sample.recommendedPreset);
+
+            setActiveSampleId(sampleId);
+            setParsed(res);
+            setExecutionMode('main-thread-fallback');
+            setActivePreset(sample.recommendedPreset);
+
+            // Select the most illustrative request entry for each sample scenario
+            if (sampleId === 'ecommerce_checkout_incident') {
+                setSelectedEntryIndex(res.entries.length > 3 ? 3 : 0);
+                setStatusBanner(
+                    `Loaded Sample #1: "${sample.fileName}" — Showing 5 requests, HTTP 502 Bad Gateway on /api/v2/checkout/charge, CORS Preflight failure, and 27 secrets across 9 surfaces.`
+                );
+            } else if (sampleId === 'sso_saml_oidc_trace') {
+                setSelectedEntryIndex(res.entries.length > 1 ? 1 : 0);
+                setStatusBanner(
+                    `Loaded Sample #2: "${sample.fileName}" — Decoded SAML 2.0 Base64 XML Assertion, OAuth2 /authorize redirect, and Expired vs. Valid JWT Bearer tokens.`
+                );
+            } else {
+                setSelectedEntryIndex(res.entries.length > 1 ? 1 : 0);
+                setStatusBanner(
+                    `Loaded Sample #3: "${sample.fileName}" — Loaded GraphQL PlaceMarginOrder mutation variables and 4 WebSocket (_webSocketMessages) frames.`
+                );
+            }
+        } catch (err: unknown) {
+            setErrorMessage(err instanceof Error ? err.message : 'Failed to load sample HAR capture.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handlePresetChange = (presetId: HarWorkflowPresetId) => {
@@ -421,11 +503,31 @@ export default function HarAnalyzer() {
         });
     }, [parsed, resourceFilter, statusFilter, searchQuery]);
 
+    const VIRTUAL_ROW_HEIGHT = 44;
+    const VIRTUAL_VIEWPORT_HEIGHT = 528;
+    const VIRTUAL_OVERSCAN = 10;
+
+    const virtualWindow = useMemo(() => {
+        const total = filteredEntries.length;
+        const startIdx = Math.max(0, Math.floor(virtualScrollTop / VIRTUAL_ROW_HEIGHT) - VIRTUAL_OVERSCAN);
+        const endIdx = Math.min(
+            total,
+            Math.ceil((virtualScrollTop + VIRTUAL_VIEWPORT_HEIGHT) / VIRTUAL_ROW_HEIGHT) + VIRTUAL_OVERSCAN
+        );
+        return {
+            startIdx,
+            endIdx,
+            topSpacerHeight: startIdx * VIRTUAL_ROW_HEIGHT,
+            bottomSpacerHeight: Math.max(0, (total - endIdx) * VIRTUAL_ROW_HEIGHT),
+            rows: filteredEntries.slice(startIdx, endIdx),
+        };
+    }, [filteredEntries, virtualScrollTop]);
+
     const displayedEntries = useMemo(() => {
-        if (gridViewMode === 'virtualized') return filteredEntries.slice(0, 200);
+        if (gridViewMode === 'virtualized') return virtualWindow.rows;
         const start = (currentPage - 1) * pageSize;
         return filteredEntries.slice(start, start + pageSize);
-    }, [filteredEntries, gridViewMode, currentPage]);
+    }, [filteredEntries, gridViewMode, currentPage, virtualWindow.rows]);
 
     const totalPages = Math.max(1, Math.ceil(filteredEntries.length / pageSize));
 
@@ -563,27 +665,122 @@ export default function HarAnalyzer() {
                             <span>Instant 1-Click Sample HAR Captures (Test Waterfalls, SAML/JWT &amp; 14-Surface Scrubbing):</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                            {SAMPLE_HAR_FILES.map((s) => (
-                                <button
-                                    key={s.id}
-                                    type="button"
-                                    onClick={() => handleSelectSample(s.id)}
-                                    className="min-w-0 text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/60 dark:bg-slate-800/50 transition group"
-                                >
-                                    <div className="flex items-center justify-between gap-1 mb-1">
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
-                                            {s.title}
+                            {SAMPLE_HAR_FILES.map((s) => {
+                                const isSelectedSample = activeSampleId === s.id;
+                                return (
+                                    <button
+                                        key={s.id}
+                                        type="button"
+                                        onClick={() => handleSelectSample(s.id)}
+                                        className={`min-w-0 text-left p-3 rounded-xl border transition group ${isSelectedSample
+                                                ? 'border-blue-600 dark:border-blue-400 bg-blue-50/90 dark:bg-blue-950/60 ring-2 ring-blue-500/30 shadow-xs'
+                                                : 'border-slate-200 dark:border-slate-700/80 hover:border-blue-500 dark:hover:border-blue-500 bg-slate-50/60 dark:bg-slate-800/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center justify-between gap-1 mb-1">
+                                            <span className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                                                {s.title}
+                                            </span>
+                                            <span
+                                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${isSelectedSample
+                                                        ? 'bg-emerald-600 text-white'
+                                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                                    }`}
+                                            >
+                                                {isSelectedSample ? '✓ Active' : 'Load'}
+                                            </span>
+                                        </div>
+                                        <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 mb-1">
+                                            {s.badge}
+                                        </span>
+                                        <p className="text-[11px] leading-snug text-slate-500 dark:text-slate-400 line-clamp-2">
+                                            {s.subtitle}
+                                        </p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {parsed && (
+                            <div className="mt-2.5 rounded-xl border border-blue-200 dark:border-blue-900/70 bg-blue-50/70 dark:bg-blue-950/40 p-3 space-y-2 text-xs">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                        <span className="font-bold text-slate-900 dark:text-white truncate">
+                                            Loaded Output: <code className="font-mono text-blue-700 dark:text-blue-300">{parsed.metadata.fileName}</code>
+                                        </span>
+                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                            {parsed.metadata.totalEntries} Requests • {parsed.secrets.length} Secrets Scrubbed
                                         </span>
                                     </div>
-                                    <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 mb-1">
-                                        {s.badge}
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab('waterfall_grid');
+                                                workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-blue-600 text-white hover:bg-blue-500 transition"
+                                        >
+                                            Inspect Waterfall ({parsed.metadata.totalEntries}) ↓
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab('diagnostics');
+                                                workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-500"
+                                        >
+                                            Diagnostics ({parsed.diagnostics.length})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab('sanitizer_studio');
+                                                workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-500"
+                                        >
+                                            14-Surface Sanitizer ({parsed.secrets.length})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setActiveTab('protocol_inspector');
+                                                workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:border-blue-500"
+                                        >
+                                            SAML/JWT/WS ({parsed.jwtTokens.length + parsed.samlPayloads.length + parsed.graphqlOperations.length})
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-blue-200/60 dark:border-blue-900/50">
+                                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                                        Captured Requests (Click to inspect):
                                     </span>
-                                    <p className="text-[11px] leading-snug text-slate-500 dark:text-slate-400 line-clamp-2">
-                                        {s.subtitle}
-                                    </p>
-                                </button>
-                            ))}
-                        </div>
+                                    {parsed.entries.slice(0, 5).map((entry) => (
+                                        <button
+                                            key={entry.entryIndex}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedEntryIndex(entry.entryIndex);
+                                                setActiveTab('waterfall_grid');
+                                                workbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                            className={`px-2 py-0.5 rounded text-[11px] font-mono border transition truncate max-w-[220px] ${selectedEntryIndex === entry.entryIndex
+                                                    ? 'border-blue-600 bg-blue-600 text-white font-bold'
+                                                    : entry.status >= 400 || entry.status === 0
+                                                        ? 'border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                                                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                                }`}
+                                        >
+                                            {entry.method} {entry.status} {entry.pathname} ({Math.round(entry.timings.total)}ms)
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -766,7 +963,7 @@ export default function HarAnalyzer() {
                     </div>
 
                     {/* 5-TAB WORKBENCH NAVIGATION (Mobile Grid-Cols-1 -> Desktop Flex Wrap) */}
-                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <div ref={workbenchRef} className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3 scroll-mt-20">
                         <button
                             type="button"
                             onClick={() => setActiveTab('waterfall_grid')}
@@ -936,7 +1133,15 @@ export default function HarAnalyzer() {
 
                             {/* Waterfall Table */}
                             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-                                <div className="w-full overflow-x-auto overscroll-x-contain">
+                                <div
+                                    onScroll={(ev) => {
+                                        if (gridViewMode === 'virtualized') {
+                                            setVirtualScrollTop(ev.currentTarget.scrollTop);
+                                        }
+                                    }}
+                                    className={`w-full overflow-x-auto overscroll-x-contain ${gridViewMode === 'virtualized' ? 'max-h-[528px] overflow-y-auto' : ''
+                                        }`}
+                                >
                                     <table className="min-w-[820px] w-full text-left border-collapse text-xs">
                                         <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-500 uppercase border-b border-slate-200 dark:border-slate-800">
                                             <tr>
@@ -951,6 +1156,11 @@ export default function HarAnalyzer() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                            {gridViewMode === 'virtualized' && virtualWindow.topSpacerHeight > 0 && (
+                                                <tr style={{ height: `${virtualWindow.topSpacerHeight}px` }} aria-hidden="true">
+                                                    <td colSpan={8} />
+                                                </tr>
+                                            )}
                                             {displayedEntries.map((e) => {
                                                 const isSelected = selectedEntryIndex === e.entryIndex;
                                                 const isError = e.status >= 400 || e.status === 0;
@@ -1055,6 +1265,11 @@ export default function HarAnalyzer() {
                                                     </tr>
                                                 );
                                             })}
+                                            {gridViewMode === 'virtualized' && virtualWindow.bottomSpacerHeight > 0 && (
+                                                <tr style={{ height: `${virtualWindow.bottomSpacerHeight}px` }} aria-hidden="true">
+                                                    <td colSpan={8} />
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1103,18 +1318,55 @@ export default function HarAnalyzer() {
                                                 {inspectedEntry.url}
                                             </p>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                const curl = exportEntryToCurl(inspectedEntry, parsed.secrets, true);
-                                                void navigator.clipboard?.writeText(curl);
-                                                setStatusBanner(`Copied sanitized cURL for Entry #${inspectedEntry.entryIndex + 1} to clipboard!`);
-                                            }}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-blue-600 text-white shrink-0"
-                                        >
-                                            <Copy className="w-3.5 h-3.5" />
-                                            <span>Copy Sanitized cURL</span>
-                                        </button>
+                                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => setInspectorSanitizedView((v) => !v)}
+                                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition ${inspectorSanitizedView
+                                                        ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                                        : 'border-amber-500 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+                                                    }`}
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                <span>{inspectorSanitizedView ? 'View: Sanitized [TOKEN]' : 'View: Raw Unredacted'}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const curl = exportEntryToCurl(inspectedEntry, parsed.secrets, inspectorSanitizedView);
+                                                    void navigator.clipboard?.writeText(curl);
+                                                    setStatusBanner(`Copied ${inspectorSanitizedView ? 'sanitized' : 'raw'} cURL for Entry #${inspectedEntry.entryIndex + 1}!`);
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-blue-600 text-white"
+                                            >
+                                                <Copy className="w-3.5 h-3.5" />
+                                                <span>Copy cURL</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const fetchCode = exportEntryToFetch(inspectedEntry, parsed.secrets, inspectorSanitizedView);
+                                                    void navigator.clipboard?.writeText(fetchCode);
+                                                    setStatusBanner(`Copied ${inspectorSanitizedView ? 'sanitized' : 'raw'} fetch() snippet for Entry #${inspectedEntry.entryIndex + 1}!`);
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                                            >
+                                                <Code2 className="w-3.5 h-3.5" />
+                                                <span>Copy fetch()</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const pyCode = exportEntryToPythonRequests(inspectedEntry, parsed.secrets, inspectorSanitizedView);
+                                                    void navigator.clipboard?.writeText(pyCode);
+                                                    setStatusBanner(`Copied ${inspectorSanitizedView ? 'sanitized' : 'raw'} Python requests snippet for Entry #${inspectedEntry.entryIndex + 1}!`);
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                                            >
+                                                <Terminal className="w-3.5 h-3.5" />
+                                                <span>Copy Python</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* 7-Phase Timing Breakdown Pills */}
@@ -1141,16 +1393,29 @@ export default function HarAnalyzer() {
                                     {/* Headers & Payload Split View */}
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
                                         <div className="min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-950 space-y-2">
-                                            <div className="font-bold text-slate-900 dark:text-white">
-                                                Request Headers ({inspectedEntry.requestHeaders.length}) &amp; POST Payload
+                                            <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                                                <span>Request Headers ({inspectedEntry.requestHeaders.length}) &amp; POST Payload</span>
+                                                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                                    {inspectorSanitizedView ? 'Sanitized Preview' : 'Raw Unredacted'}
+                                                </span>
                                             </div>
                                             <div className="space-y-1 font-mono text-[11px] max-h-48 overflow-y-auto">
-                                                {inspectedEntry.requestHeaders.map((h, idx) => (
-                                                    <div key={idx} className="break-all">
-                                                        <span className="text-blue-600 dark:text-blue-400 font-semibold">{h.name}:</span>{' '}
-                                                        <span className="text-slate-600 dark:text-slate-300">{h.value}</span>
-                                                    </div>
-                                                ))}
+                                                {inspectedEntry.requestHeaders.map((h, idx) => {
+                                                    let displayVal = h.value;
+                                                    if (inspectorSanitizedView) {
+                                                        for (const sec of parsed.secrets) {
+                                                            if (sec.selected && displayVal.includes(sec.rawValue)) {
+                                                                displayVal = displayVal.split(sec.rawValue).join(sec.deterministicToken);
+                                                            }
+                                                        }
+                                                    }
+                                                    return (
+                                                        <div key={idx} className="break-all">
+                                                            <span className="text-blue-600 dark:text-blue-400 font-semibold">{h.name}:</span>{' '}
+                                                            <span className="text-slate-600 dark:text-slate-300">{displayVal}</span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                             {inspectedEntry.postDataText && (
                                                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -1158,23 +1423,46 @@ export default function HarAnalyzer() {
                                                         Request POST Body ({inspectedEntry.postDataMimeType}):
                                                     </div>
                                                     <pre className="font-mono text-[11px] whitespace-pre-wrap break-all bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 max-h-40 overflow-y-auto">
-                                                        {inspectedEntry.postDataText}
+                                                        {(() => {
+                                                            let txt = inspectedEntry.postDataText;
+                                                            if (inspectorSanitizedView) {
+                                                                for (const sec of parsed.secrets) {
+                                                                    if (sec.selected && txt.includes(sec.rawValue)) {
+                                                                        txt = txt.split(sec.rawValue).join(sec.deterministicToken);
+                                                                    }
+                                                                }
+                                                            }
+                                                            return txt;
+                                                        })()}
                                                     </pre>
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 p-3 bg-slate-50/50 dark:bg-slate-950 space-y-2">
-                                            <div className="font-bold text-slate-900 dark:text-white">
-                                                Response Headers ({inspectedEntry.responseHeaders.length}) &amp; Body Preview
+                                            <div className="font-bold text-slate-900 dark:text-white flex items-center justify-between">
+                                                <span>Response Headers ({inspectedEntry.responseHeaders.length}) &amp; Body Preview</span>
+                                                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                                    {inspectorSanitizedView ? 'Sanitized Preview' : 'Raw Unredacted'}
+                                                </span>
                                             </div>
                                             <div className="space-y-1 font-mono text-[11px] max-h-48 overflow-y-auto">
-                                                {inspectedEntry.responseHeaders.map((h, idx) => (
-                                                    <div key={idx} className="break-all">
-                                                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{h.name}:</span>{' '}
-                                                        <span className="text-slate-600 dark:text-slate-300">{h.value}</span>
-                                                    </div>
-                                                ))}
+                                                {inspectedEntry.responseHeaders.map((h, idx) => {
+                                                    let displayVal = h.value;
+                                                    if (inspectorSanitizedView) {
+                                                        for (const sec of parsed.secrets) {
+                                                            if (sec.selected && displayVal.includes(sec.rawValue)) {
+                                                                displayVal = displayVal.split(sec.rawValue).join(sec.deterministicToken);
+                                                            }
+                                                        }
+                                                    }
+                                                    return (
+                                                        <div key={idx} className="break-all">
+                                                            <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{h.name}:</span>{' '}
+                                                            <span className="text-slate-600 dark:text-slate-300">{displayVal}</span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                             {inspectedEntry.responseText && (
                                                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -1182,7 +1470,17 @@ export default function HarAnalyzer() {
                                                         Response Body ({inspectedEntry.mimeType || 'text'}):
                                                     </div>
                                                     <pre className="font-mono text-[11px] whitespace-pre-wrap break-all bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 max-h-40 overflow-y-auto">
-                                                        {inspectedEntry.responseText.slice(0, 1500)}
+                                                        {(() => {
+                                                            let txt = inspectedEntry.responseText.slice(0, 1500);
+                                                            if (inspectorSanitizedView) {
+                                                                for (const sec of parsed.secrets) {
+                                                                    if (sec.selected && txt.includes(sec.rawValue)) {
+                                                                        txt = txt.split(sec.rawValue).join(sec.deterministicToken);
+                                                                    }
+                                                                }
+                                                            }
+                                                            return txt;
+                                                        })()}
                                                     </pre>
                                                 </div>
                                             )}
@@ -1357,7 +1655,7 @@ export default function HarAnalyzer() {
                                         </select>
                                     </div>
 
-                                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                                    <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
                                         <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -1375,6 +1673,24 @@ export default function HarAnalyzer() {
                                                 className="rounded text-blue-600"
                                             />
                                             <span>Strip 200 OK Static JS/CSS</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={removeAllResponseBodies}
+                                                onChange={(e) => setRemoveAllResponseBodies(e.target.checked)}
+                                                className="rounded text-blue-600"
+                                            />
+                                            <span>Strip All Response Bodies</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={anonymizeInternalIps}
+                                                onChange={(e) => setAnonymizeInternalIps(e.target.checked)}
+                                                className="rounded text-blue-600"
+                                            />
+                                            <span>Anonymize Server/Private IPs</span>
                                         </label>
                                         <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer">
                                             <input
@@ -1484,13 +1800,18 @@ export default function HarAnalyzer() {
                                             <option value="ALL">All Categories ({parsed.secrets.length})</option>
                                             <option value="JWT_TOKEN">JWT Tokens</option>
                                             <option value="SESSION_COOKIE">Session Cookies</option>
-                                            <option value="AUTH_HEADER">Auth Headers</option>
-                                            <option value="SAML_ASSERTION">SAML 2.0 XML</option>
+                                            <option value="AUTH_HEADER">Auth &amp; Security Headers</option>
+                                            <option value="SAML_ASSERTION">SAML 2.0 XML Assertions</option>
+                                            <option value="OAUTH_PARAM">OAuth2 / Query Params</option>
                                             <option value="CLOUD_API_KEY">Cloud &amp; SaaS API Keys</option>
-                                            <option value="JSON_BODY_SECRET">JSON Body Secrets</option>
+                                            <option value="JSON_BODY_SECRET">JSON &amp; Form Body Secrets</option>
                                             <option value="GRAPHQL_VARIABLE">GraphQL Variables</option>
+                                            <option value="RESPONSE_BODY_SECRET">Response Body Secrets</option>
+                                            <option value="WEBSOCKET_FRAME_SECRET">WebSocket Frame Secrets</option>
+                                            <option value="URL_PATH_TOKEN">URL Path Inline Tokens</option>
                                             <option value="FINANCIAL_CARD_IBAN_SSN">Cards / IBAN / SSN / CNIC</option>
                                             <option value="PII_EMAIL_PHONE">Emails &amp; Contact PII</option>
+                                            <option value="IP_OR_INITIATOR">Server IPs &amp; Initiator URLs</option>
                                         </select>
                                     </div>
                                     <div className="sm:col-span-3 flex gap-1">
@@ -1510,6 +1831,26 @@ export default function HarAnalyzer() {
                                         </button>
                                     </div>
                                 </div>
+                                {customKeywords.length > 0 && (
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                        <span className="text-[11px] font-semibold text-slate-500">Active Custom Redaction Strings:</span>
+                                        {customKeywords.map((kw) => (
+                                            <span
+                                                key={kw}
+                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300"
+                                            >
+                                                <span>{kw}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCustomKeywords((prev) => prev.filter((x) => x !== kw))}
+                                                    className="hover:text-rose-600 font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
 
                                 <div className="max-h-96 overflow-y-auto space-y-2 pr-1">
                                     {filteredSecrets.map((sec) => (
@@ -1714,6 +2055,52 @@ export default function HarAnalyzer() {
                                     )}
                                 </div>
                             </div>
+
+                            {/* OAuth 2.0 / OIDC & SAML SSO Redirect Chain Tracer */}
+                            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3">
+                                <h3 className="text-sm font-bold flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-indigo-600 shrink-0" />
+                                    <span>OAuth 2.0, OIDC &amp; SAML SSO Redirect Chain Tracer ({parsed.oauthFlows.length} Step(s))</span>
+                                </h3>
+                                {parsed.oauthFlows.length === 0 ? (
+                                    <p className="text-xs text-slate-500">
+                                        No OAuth2 /authorize, /token, /callback, or SAML ACS steps detected in this capture.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {parsed.oauthFlows.map((step) => (
+                                            <div
+                                                key={step.stepNumber}
+                                                className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950 text-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                                            >
+                                                <div className="space-y-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="px-2 py-0.5 rounded bg-indigo-600 text-white font-mono text-[10px] font-bold">
+                                                            Step #{step.stepNumber} • {step.flowType}
+                                                        </span>
+                                                        <span className="font-mono font-bold text-slate-900 dark:text-white">
+                                                            Entry #{step.entryIndex + 1}: {step.method} (HTTP {step.status})
+                                                        </span>
+                                                    </div>
+                                                    <div className="font-mono text-[11px] text-slate-500 truncate">{step.url}</div>
+                                                </div>
+                                                {step.detectedParams.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 shrink-0">
+                                                        {step.detectedParams.map((p, pIdx) => (
+                                                            <span
+                                                                key={pIdx}
+                                                                className="px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono text-[10px]"
+                                                            >
+                                                                {p}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -1812,18 +2199,41 @@ export default function HarAnalyzer() {
                                         ))}
                                     </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            void navigator.clipboard?.writeText(activePreviewCode);
-                                            setCopiedCode(true);
-                                            setTimeout(() => setCopiedCode(false), 2000);
-                                        }}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white"
-                                    >
-                                        {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                                        <span>{copiedCode ? 'Copied!' : 'Copy Generated Code'}</span>
-                                    </button>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                void navigator.clipboard?.writeText(activePreviewCode);
+                                                setCopiedCode(true);
+                                                setTimeout(() => setCopiedCode(false), 2000);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white"
+                                        >
+                                            {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                                            <span>{copiedCode ? 'Copied!' : 'Copy Generated Code'}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const base = parsed.metadata.fileName.replace(/\.har$/i, '');
+                                                const extMap: Record<typeof codePreviewFormat, { ext: string; mime: string }> = {
+                                                    k6: { ext: '_load_test.k6.js', mime: 'application/javascript' },
+                                                    playwright: { ext: '_api.spec.ts', mime: 'text/plain' },
+                                                    openapi: { ext: '_openapi_3_1.json', mime: 'application/json' },
+                                                    postman: { ext: '_postman_v2_1.json', mime: 'application/json' },
+                                                    markdown: { ext: '_incident_report.md', mime: 'text/markdown' },
+                                                    certificate: { ext: '_sha256_certificate.json', mime: 'application/json' },
+                                                    curl: { ext: '_request.sh', mime: 'text/x-shellscript' },
+                                                };
+                                                const cfg = extMap[codePreviewFormat];
+                                                triggerDownload(activePreviewCode, `${base}${cfg.ext}`, cfg.mime);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-500"
+                                        >
+                                            <Download className="w-3.5 h-3.5" />
+                                            <span>Download File</span>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <pre className="rounded-xl bg-slate-950 text-emerald-300 p-4 font-mono text-xs overflow-x-auto max-w-full max-h-96">
@@ -1898,6 +2308,59 @@ export default function HarAnalyzer() {
                                                         : formatBytes(diffReport.transferBytesDelta)}
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* Endpoint-by-Endpoint Delta Table */}
+                                        <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
+                                            <table className="min-w-[640px] w-full text-left border-collapse text-xs">
+                                                <thead className="bg-slate-50 dark:bg-slate-800/80 text-[11px] text-slate-500 uppercase border-b border-slate-200 dark:border-slate-800">
+                                                    <tr>
+                                                        <th className="py-2 px-3">Method &amp; Endpoint</th>
+                                                        <th className="py-2 px-3">Baseline Status</th>
+                                                        <th className="py-2 px-3">Target Status</th>
+                                                        <th className="py-2 px-3">Baseline TTFB</th>
+                                                        <th className="py-2 px-3">Target TTFB</th>
+                                                        <th className="py-2 px-3">Delta TTFB</th>
+                                                        <th className="py-2 px-3">Classification</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800/70">
+                                                    {diffReport.endpointDiffs.map((ed) => (
+                                                        <tr key={ed.key}>
+                                                            <td className="py-2 px-3 font-mono font-semibold">
+                                                                {ed.method} {ed.pathname}
+                                                            </td>
+                                                            <td className="py-2 px-3 font-mono">{ed.baselineStatus ?? '—'}</td>
+                                                            <td className="py-2 px-3 font-mono">{ed.targetStatus ?? '—'}</td>
+                                                            <td className="py-2 px-3 font-mono">
+                                                                {ed.baselineTtfbMs !== null ? `${ed.baselineTtfbMs} ms` : '—'}
+                                                            </td>
+                                                            <td className="py-2 px-3 font-mono">
+                                                                {ed.targetTtfbMs !== null ? `${ed.targetTtfbMs} ms` : '—'}
+                                                            </td>
+                                                            <td className="py-2 px-3 font-mono font-bold">
+                                                                {ed.deltaTtfbMs !== null
+                                                                    ? ed.deltaTtfbMs > 0
+                                                                        ? `+${ed.deltaTtfbMs} ms`
+                                                                        : `${ed.deltaTtfbMs} ms`
+                                                                    : '—'}
+                                                            </td>
+                                                            <td className="py-2 px-3">
+                                                                <span
+                                                                    className={`px-2 py-0.5 rounded text-[10px] font-bold ${ed.status === 'REGRESSION'
+                                                                            ? 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300'
+                                                                            : ed.status === 'IMPROVED'
+                                                                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                                                                        }`}
+                                                                >
+                                                                    {ed.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 )}

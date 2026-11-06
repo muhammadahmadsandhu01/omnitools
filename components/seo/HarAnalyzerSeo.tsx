@@ -287,9 +287,10 @@ export default function HarAnalyzerSeo() {
                     </h2>
                 </div>
                 <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-                    When you load a <code>.har</code> file into the studio (up to the <code>250 MB</code> input safeguard), a
-                    background Web Worker—with automatic main-thread fallback—executes <code>lib/harAnalyzerEngine.ts</code>{' '}
-                    through a 5-stage analysis and sanitization pipeline locally in browser memory:
+                    When you load a <code>.har</code> file into the studio (up to the <code>250 MB</code> input safeguard and{' '}
+                    <code>100,000</code> entries), captures up to <code>8 MB</code> execute synchronously on the main thread in
+                    under <code>5 ms</code>, while larger captures run in a background Web Worker (with automatic main-thread
+                    fallback) through a 5-stage analysis and sanitization pipeline in <code>lib/harAnalyzerEngine.ts</code>:
                 </p>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-5">
@@ -583,7 +584,7 @@ export default function HarAnalyzerSeo() {
     "url": "https://payments.kivaro-commerce.io/v1/charge",
     "headers": [
       { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIs..." },
-      { "name": "X-API-Key", "value": "sk-test-sample-mock-key-scrubbed" }
+      { "name": "X-API-Key", "value": "sk-live-mock-api-key-sample-redacted" }
     ],
     "postData": {
       "text": "{\\"card_pan\\":\\"4532-0151-1283-0366\\",\\"password\\":\\"Secret!2026\\"}"

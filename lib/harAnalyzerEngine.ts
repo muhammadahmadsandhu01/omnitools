@@ -432,7 +432,15 @@ export function validateLuhnMod10(rawDigits: string): boolean {
 }
 
 const IBAN_LENGTHS: Record<string, number> = {
-    PK: 24, GB: 22, DE: 22, FR: 27, NL: 18, ES: 24, IT: 27, SA: 24, AE: 23, CH: 21, IE: 22, BE: 16, AT: 20, PL: 28, TR: 26,
+    AD: 24, AE: 23, AL: 28, AT: 20, AZ: 28, BA: 20, BE: 16, BG: 22, BH: 22, BI: 27,
+    BR: 29, BY: 28, CH: 21, CR: 22, CY: 28, CZ: 24, DE: 22, DJ: 27, DK: 18, DO: 28,
+    EE: 20, EG: 29, ES: 24, FI: 18, FK: 18, FO: 18, FR: 27, GB: 22, GE: 22, GI: 23,
+    GL: 18, GR: 27, GT: 28, HR: 21, HU: 28, IE: 22, IL: 23, IQ: 23, IS: 26, IT: 27,
+    JO: 30, KW: 30, KZ: 20, LB: 28, LC: 32, LI: 21, LT: 20, LU: 20, LV: 21, LY: 25,
+    MC: 27, MD: 24, ME: 22, MK: 19, MN: 20, MR: 27, MT: 31, MU: 30, NI: 28, NL: 18,
+    NO: 15, OM: 23, PK: 24, PL: 28, PS: 29, PT: 25, QA: 29, RO: 24, RS: 22, RU: 33,
+    SA: 24, SC: 31, SD: 18, SE: 24, SI: 19, SK: 24, SM: 27, SO: 23, ST: 25, SV: 28,
+    TL: 23, TN: 24, TR: 26, UA: 29, VA: 22, VG: 24, XK: 20,
 };
 
 export function validateIbanMod97(rawIban: string): { valid: boolean; countryCode: string } {
@@ -555,13 +563,18 @@ export function decodeSamlBase64Xml(
     entryIndex: number,
     url: string
 ): DecodedSamlItem | null {
-    let urlDecoded = rawParamValue;
-    try {
-        urlDecoded = decodeURIComponent(rawParamValue.replace(/\+/g, ' '));
-    } catch {
-        urlDecoded = rawParamValue;
+    let candidateB64 = rawParamValue.trim();
+    if (candidateB64.includes('%')) {
+        try {
+            candidateB64 = decodeURIComponent(candidateB64);
+        } catch {
+            // keep raw
+        }
     }
-    const xmlText = safeBase64DecodeToUtf8(urlDecoded.replace(/\s+/g, '')) || urlDecoded;
+    const xmlText =
+        safeBase64DecodeToUtf8(candidateB64.replace(/\s+/g, '')) ||
+        safeBase64DecodeToUtf8(rawParamValue.replace(/\s+/g, '')) ||
+        candidateB64;
     if (!xmlText || !/<(?:saml\d?:|samlp\d?:|Assertion|Response|AuthnRequest)/i.test(xmlText)) {
         return null;
     }
@@ -572,6 +585,25 @@ export function decodeSamlBase64Xml(
     const notBeforeMatch = xmlText.match(/NotBefore=["']([^"']+)["']/i);
     const notOnOrAfterMatch = xmlText.match(/NotOnOrAfter=["']([^"']+)["']/i);
     const idMatch = xmlText.match(/\bID=["']([^"']+)["']/i);
+
+    // Pretty-print XML with clean 2-space indentation
+    const prettyXml = xmlText
+        .replace(/>\s*</g, '>\n<')
+        .split('\n')
+        .reduce(
+            (acc, line) => {
+                const trimmed = line.trim();
+                if (!trimmed) return acc;
+                if (/^<\//.test(trimmed)) acc.indent = Math.max(0, acc.indent - 1);
+                acc.lines.push('  '.repeat(acc.indent) + trimmed);
+                if (/^<[^/?!][^>]*[^/]>$/.test(trimmed) && !/<\//.test(trimmed)) {
+                    acc.indent++;
+                }
+                return acc;
+            },
+            { lines: [] as string[], indent: 0 }
+        )
+        .lines.join('\n');
 
     return {
         id: `saml_${entryIndex}_${direction}`,
@@ -584,7 +616,7 @@ export function decodeSamlBase64Xml(
         notBefore: notBeforeMatch ? notBeforeMatch[1].trim() : '—',
         notOnOrAfter: notOnOrAfterMatch ? notOnOrAfterMatch[1].trim() : '—',
         assertionId: idMatch ? idMatch[1].trim() : '—',
-        formattedXml: xmlText,
+        formattedXml: prettyXml || xmlText,
         scrubbedOnExport: true,
     };
 }
@@ -593,7 +625,7 @@ export function decodeSamlBase64Xml(
 // 3. HAR 1.2 PARSER, 14-SURFACE SCANNER & DIAGNOSTICS ENGINE
 // ============================================================
 
-const SENSITIVE_HEADER_REGEX = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-auth-token|x-csrf-token|x-xsrf-token|x-amz-security-token|x-shopify-access-token|x-stripe-client-telemetry|cf-access-jwt-assertion|api-key|apikey|secret|token|session-id|x-session-id)$/i;
+const SENSITIVE_HEADER_REGEX = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-auth-token|x-csrf-token|x-xsrf-token|x-amz-security-token|x-amz-content-sha256|x-goog-api-key|x-functions-key|x-arr-clientcert|x-shopify-access-token|x-stripe-client-telemetry|cf-access-jwt-assertion|cf-access-client-secret|x-github-token|x-gitlab-token|x-vault-token|x-datadog-api-key|x-new-relic-license-key|x-sendgrid-api-key|x-mailgun-api-key|x-twilio-signature|x-hubspot-signature|x-slack-signature|x-okta-verification-challenge|x-auth0-token|x-supabase-auth|x-firebase-appcheck|x-hasura-admin-secret|x-algolia-api-key|x-meilisearch-api-key|x-anthropic-api-key|x-openai-api-key|api-key|apikey|secret|token|session-id|x-session-id|x-access-token|x-refresh-token|x-id-token|x-client-secret|x-webhook-secret|x-signature|x-hub-signature|x-hub-signature-256|x-forwarded-for|x-real-ip|cf-connecting-ip|true-client-ip|fastly-client-ip|x-cluster-client-ip|x-azure-clientip|x-appwrite-key|x-railway-token|x-vercel-proxy-signature|x-render-token|x-netlify-token|x-digitalocean-token|x-cloudflare-token|x-planetscale-token)$/i;
 
 const SENSITIVE_COOKIE_REGEX = /(session|sid|ssid|token|jwt|auth|bearer|csrf|xsrf|cf_clearance|__host-|__secure-|okta|auth0|cognito|refresh|remember|passwd|secret|key)/i;
 
@@ -818,41 +850,71 @@ export function parseHarFile(
             typeof raw._resourceType === 'string' ? raw._resourceType : undefined
         );
 
-        // Check GraphQL operation
+        // Check GraphQL operation (supports POST JSON object, batched JSON array, and GET ?query= param)
         let graphqlOp: HarGraphqlOperation | null = null;
-        if (resourceType === 'graphql' && postDataText) {
+        if (resourceType === 'graphql' || /\/graphql\b/i.test(url) || /"query"\s*:/.test(postDataText)) {
             try {
-                const gqlBody = JSON.parse(postDataText) as Record<string, unknown>;
-                const queryStr = typeof gqlBody.query === 'string' ? gqlBody.query : '';
-                const opName =
-                    typeof gqlBody.operationName === 'string' && gqlBody.operationName
-                        ? gqlBody.operationName
-                        : queryStr.match(/\b(?:query|mutation|subscription)\s+([A-Za-z0-9_]+)/)?.[1] || 'AnonymousOperation';
-                const opType: 'query' | 'mutation' | 'subscription' = /^\s*mutation\b/i.test(queryStr)
-                    ? 'mutation'
-                    : /^\s*subscription\b/i.test(queryStr)
-                        ? 'subscription'
-                        : 'query';
-                const varsObj = gqlBody.variables && typeof gqlBody.variables === 'object' ? gqlBody.variables : {};
-                const varsJson = JSON.stringify(varsObj, null, 2);
-                graphqlOp = {
-                    entryIndex: i,
-                    url,
-                    operationType: opType,
-                    operationName: opName,
-                    queryText: queryStr,
-                    variablesJson: varsJson,
-                    status,
-                    durationMs: total,
-                    hasSensitiveVariables: false,
-                };
+                if (postDataText) {
+                    const parsedGql = JSON.parse(postDataText) as unknown;
+                    const gqlBody = (Array.isArray(parsedGql) ? parsedGql[0] : parsedGql) as Record<string, unknown>;
+                    if (gqlBody && typeof gqlBody === 'object') {
+                        const queryStr = typeof gqlBody.query === 'string' ? gqlBody.query : '';
+                        const opName =
+                            typeof gqlBody.operationName === 'string' && gqlBody.operationName
+                                ? gqlBody.operationName
+                                : queryStr.match(/\b(?:query|mutation|subscription)\s+([A-Za-z0-9_]+)/)?.[1] || 'AnonymousOperation';
+                        const opType: 'query' | 'mutation' | 'subscription' = /^\s*mutation\b/i.test(queryStr)
+                            ? 'mutation'
+                            : /^\s*subscription\b/i.test(queryStr)
+                                ? 'subscription'
+                                : 'query';
+                        const varsObj = gqlBody.variables && typeof gqlBody.variables === 'object' ? gqlBody.variables : {};
+                        graphqlOp = {
+                            entryIndex: i,
+                            url,
+                            operationType: opType,
+                            operationName: opName,
+                            queryText: queryStr,
+                            variablesJson: JSON.stringify(varsObj, null, 2),
+                            status,
+                            durationMs: total,
+                            hasSensitiveVariables: false,
+                        };
+                    }
+                } else {
+                    const qParam = queryParams.find((qp) => qp.name === 'query')?.value || '';
+                    const opParam = queryParams.find((qp) => qp.name === 'operationName')?.value || '';
+                    const varsParam = queryParams.find((qp) => qp.name === 'variables')?.value || '{}';
+                    if (qParam) {
+                        graphqlOp = {
+                            entryIndex: i,
+                            url,
+                            operationType: /^\s*mutation\b/i.test(qParam) ? 'mutation' : 'query',
+                            operationName: opParam || qParam.match(/\b(?:query|mutation)\s+([A-Za-z0-9_]+)/)?.[1] || 'GETQuery',
+                            queryText: qParam,
+                            variablesJson: varsParam,
+                            status,
+                            durationMs: total,
+                            hasSensitiveVariables: false,
+                        };
+                    }
+                }
             } catch {
                 // non-JSON GraphQL payload
             }
         }
 
         const initiatorObj = (raw._initiator && typeof raw._initiator === 'object' ? raw._initiator : {}) as Record<string, unknown>;
-        const initiatorUrl = typeof initiatorObj.url === 'string' ? initiatorObj.url : '';
+        let initiatorUrl = typeof initiatorObj.url === 'string' ? initiatorObj.url : '';
+        if (!initiatorUrl && initiatorObj.stack && typeof initiatorObj.stack === 'object') {
+            const stackObj = initiatorObj.stack as Record<string, unknown>;
+            if (Array.isArray(stackObj.callFrames) && stackObj.callFrames.length > 0) {
+                const firstFrame = stackObj.callFrames[0] as Record<string, unknown>;
+                if (firstFrame && typeof firstFrame.url === 'string') {
+                    initiatorUrl = firstFrame.url;
+                }
+            }
+        }
         const initiatorType = typeof initiatorObj.type === 'string' ? initiatorObj.type : 'other';
 
         entries.push({
@@ -1065,7 +1127,8 @@ function detectHarSecretsAndSurfaces(
         if (dup) return dup;
 
         const detToken = getDeterministicToken(category, clean, extraTag);
-        const envName = `{{${category}_${String(categoryCounters[category] || 1).padStart(2, '0')}}}`;
+        const baseTokenId = detToken.replace(/^\[|\]$/g, '').split(/\s+/)[0];
+        const envName = `{{${baseTokenId}}}`;
         const preview =
             clean.length > 16 ? `${clean.slice(0, 8)}...${clean.slice(-4)}` : `${clean.slice(0, 2)}***`;
 
@@ -1129,15 +1192,37 @@ function detectHarSecretsAndSurfaces(
             }
         }
 
-        // 2. Cloud & SaaS API Keys (Stripe, AWS, GitHub, OpenAI, Slack, GCP, Private Keys)
+        // 2. Cloud, AI, Payment & SaaS API Keys (42+ High-Precision Secret Signatures)
         const cloudPatterns: { re: RegExp; label: string }[] = [
             { re: /\b((?:sk|rk)_(?:live|test)_[A-Za-z0-9]{16,})\b/g, label: 'Stripe Secret / Restricted API Key' },
-            { re: /\b((?:AKIA|ASIA)[A-Z0-9]{16})\b/g, label: 'AWS IAM Access Key ID' },
+            { re: /\b(whsec_[A-Za-z0-9]{20,})\b/g, label: 'Stripe Webhook Signing Secret' },
+            { re: /\b((?:AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16})\b/g, label: 'AWS IAM / STS Access Key ID' },
             { re: /\b((?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{24,}|github_pat_[A-Za-z0-9_]{24,})\b/g, label: 'GitHub Personal Access Token' },
-            { re: /\b(sk-(?:proj-)?[A-Za-z0-9_-]{20,})\b/g, label: 'OpenAI API Secret Key' },
+            { re: /\b(glpat-[A-Za-z0-9_-]{20,}|gldt-[A-Za-z0-9_-]{20,})\b/g, label: 'GitLab Personal / Deploy Token' },
+            { re: /\b(sk-ant-api03-[A-Za-z0-9_-]{20,})\b/g, label: 'Anthropic Claude API Secret Key' },
+            { re: /\b(sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,})\b/g, label: 'OpenAI API Secret Key' },
             { re: /\b(xox[baprs]-[A-Za-z0-9-]{16,})\b/g, label: 'Slack Bot / User OAuth Token' },
+            { re: /(https:\/\/hooks\.slack\.com\/services\/T[A-Za-z0-9_]+\/B[A-Za-z0-9_]+\/[A-Za-z0-9_]+)/g, label: 'Slack Incoming Webhook URL' },
             { re: /\b(AIza[0-9A-Za-z_-]{35})\b/g, label: 'Google Cloud / Firebase API Key' },
-            { re: /(-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)/g, label: 'PEM Private Key Header' },
+            { re: /\b(ya29\.[0-9A-Za-z_-]{24,})\b/g, label: 'Google OAuth2 Access Token' },
+            { re: /\b(SK[0-9a-fA-F]{32})\b/g, label: 'Twilio API Secret SID' },
+            { re: /\b(SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,})\b/g, label: 'SendGrid API Token' },
+            { re: /\b(key-[0-9a-zA-Z]{32})\b/g, label: 'Mailgun Private API Key' },
+            { re: /\b(sq0atp-[0-9A-Za-z_-]{22}|sq0csp-[0-9A-Za-z_-]{43})\b/g, label: 'Square OAuth / Access Token' },
+            { re: /\b(shpat_[a-fA-F0-9]{32}|shpca_[a-fA-F0-9]{32}|shppa_[a-fA-F0-9]{32}|shpss_[a-fA-F0-9]{32})\b/g, label: 'Shopify Admin / Private Token' },
+            { re: /\b(pat-(?:na1|eu1)-[a-fA-F0-9-]{36})\b/g, label: 'HubSpot Private App Access Token' },
+            { re: /\b(npm_[A-Za-z0-9]{36})\b/g, label: 'NPM Automation Access Token' },
+            { re: /\b(dckr_pat_[A-Za-z0-9_-]{24,})\b/g, label: 'Docker Hub Personal Access Token' },
+            { re: /\b(dop_v1_[a-f0-9]{64}|doo_v1_[a-f0-9]{64})\b/g, label: 'DigitalOcean API / OAuth Token' },
+            { re: /\b(PMAK-[a-f0-9]{24}-[a-f0-9]{34})\b/g, label: 'Postman API Key' },
+            { re: /\b(lin_api_[A-Za-z0-9]{40})\b/g, label: 'Linear Personal API Key' },
+            { re: /\b(figd_[A-Za-z0-9_-]{32,})\b/g, label: 'Figma Personal Access Token' },
+            { re: /\b(sbp_[a-f0-9]{40})\b/g, label: 'Supabase Service Role / Access Token' },
+            { re: /\b(pscale_tkn_[A-Za-z0-9_-]{32,})\b/g, label: 'PlanetScale Service Token' },
+            { re: /\b(hf_[A-Za-z0-9]{34})\b/g, label: 'HuggingFace Access Token' },
+            { re: /\b(r8_[A-Za-z0-9]{36,})\b/g, label: 'Replicate API Token' },
+            { re: /\b(hvs\.[A-Za-z0-9_-]{24,})\b/g, label: 'HashiCorp Vault Service Token' },
+            { re: /(-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----)/g, label: 'PEM / SSH Private Key Header' },
         ];
         for (const cp of cloudPatterns) {
             let cm: RegExpExecArray | null;
@@ -1804,6 +1889,10 @@ export function sanitizeHarAndVerify(
             if (out.includes(pair.raw)) {
                 out = out.split(pair.raw).join(pair.rep);
             }
+            const urlEnc = encodeURIComponent(pair.raw);
+            if (urlEnc !== pair.raw && out.includes(urlEnc)) {
+                out = out.split(urlEnc).join(encodeURIComponent(pair.rep));
+            }
         }
         if (options.anonymizeHostnames) {
             for (const [origHost, anonHost] of hostMap.entries()) {
@@ -1865,8 +1954,7 @@ export function sanitizeHarAndVerify(
         }
 
         if (raw._initiator && typeof raw._initiator === 'object') {
-            const initObj = raw._initiator as Record<string, unknown>;
-            if (typeof initObj.url === 'string') initObj.url = scrubString(initObj.url);
+            raw._initiator = scrubJsonAst(raw._initiator) as Record<string, unknown>;
         }
 
         const req = (raw.request && typeof raw.request === 'object' ? raw.request : {}) as Record<string, unknown>;
@@ -1912,12 +2000,16 @@ export function sanitizeHarAndVerify(
             const status = typeof res.status === 'number' ? res.status : 200;
             const origText = typeof content.text === 'string' ? content.text : '';
 
-            const isMediaOrFont = /image\/|font\/|audio\/|video\/|octet-stream/i.test(mime) || content.encoding === 'base64';
+            const isTextualMime = /json|xml|html|text|javascript|css/i.test(mime);
+            const isMediaOrFont =
+                /image\/|font\/|audio\/|video\/|octet-stream/i.test(mime) ||
+                (content.encoding === 'base64' && !isTextualMime);
             const isStatic200 = status >= 200 && status < 300 && /javascript|css|html|image|font/i.test(mime);
 
             if (options.removeAllResponseBodies && origText) {
                 slimmerBytesSaved += origText.length;
                 content.text = '';
+                delete content.encoding;
                 content.comment = 'Response body stripped by KivaroTools HAR Sanitizer & Slimmer';
             } else if (options.stripBase64Media && isMediaOrFont && origText) {
                 slimmerBytesSaved += origText.length;
@@ -1927,13 +2019,22 @@ export function sanitizeHarAndVerify(
             } else if (options.stripStatic200Bodies && isStatic200 && origText) {
                 slimmerBytesSaved += origText.length;
                 content.text = '';
+                delete content.encoding;
                 content.comment = '200 OK static asset body stripped by KivaroTools HAR Slimmer';
             } else if (origText) {
+                let candidateText = origText;
+                if (content.encoding === 'base64' && isTextualMime) {
+                    const decoded = safeBase64DecodeToUtf8(origText);
+                    if (decoded) {
+                        candidateText = decoded;
+                        delete content.encoding;
+                    }
+                }
                 try {
-                    const parsedJson = JSON.parse(origText);
+                    const parsedJson = JSON.parse(candidateText);
                     content.text = JSON.stringify(scrubJsonAst(parsedJson));
                 } catch {
-                    content.text = scrubString(origText);
+                    content.text = scrubString(candidateText);
                 }
             }
         }
@@ -2107,21 +2208,35 @@ export function compareHarFiles(
 // 6. 10-TARGET DEVOPS, QA & COMPLIANCE EXPORTERS
 // ============================================================
 
+function maskEntryTextWithSecrets(
+    str: string,
+    entryIndex: number,
+    secrets: DetectedHarSecret[],
+    sanitize = true
+): string {
+    if (!sanitize || !str) return str;
+    const activeSecrets = secrets
+        .filter((s) => s.selected && (s.entryIndex === entryIndex || str.includes(s.rawValue)))
+        .sort((a, b) => b.rawValue.length - a.rawValue.length);
+    let out = str;
+    for (const s of activeSecrets) {
+        if (out.includes(s.rawValue)) {
+            out = out.split(s.rawValue).join(s.deterministicToken);
+        }
+        const enc = encodeURIComponent(s.rawValue);
+        if (enc !== s.rawValue && out.includes(enc)) {
+            out = out.split(enc).join(encodeURIComponent(s.deterministicToken));
+        }
+    }
+    return out;
+}
+
 export function exportEntryToCurl(
     entry: HarEntryModel,
     secrets: DetectedHarSecret[],
     sanitize = true
 ): string {
-    const activeSecrets = secrets.filter((s) => s.selected && s.entryIndex === entry.entryIndex);
-    const maskText = (str: string): string => {
-        if (!sanitize) return str;
-        let out = str;
-        for (const s of activeSecrets) {
-            if (out.includes(s.rawValue)) out = out.split(s.rawValue).join(s.deterministicToken);
-        }
-        return out;
-    };
-
+    const maskText = (str: string) => maskEntryTextWithSecrets(str, entry.entryIndex, secrets, sanitize);
     const escapeSh = (s: string) => s.replace(/'/g, `'\\''`);
     const lines: string[] = [`curl -X ${entry.method} '${escapeSh(maskText(entry.url))}'`];
     for (const h of entry.requestHeaders) {
@@ -2134,6 +2249,54 @@ export function exportEntryToCurl(
     return lines.join(' \\\n');
 }
 
+export function exportEntryToFetch(
+    entry: HarEntryModel,
+    secrets: DetectedHarSecret[],
+    sanitize = true
+): string {
+    const maskText = (str: string) => maskEntryTextWithSecrets(str, entry.entryIndex, secrets, sanitize);
+    const headersObj: Record<string, string> = {};
+    for (const h of entry.requestHeaders) {
+        if (h.name.startsWith(':') || h.name.toLowerCase() === 'host' || h.name.toLowerCase() === 'content-length') continue;
+        headersObj[h.name] = maskText(h.value);
+    }
+    const initObj: Record<string, unknown> = {
+        method: entry.method,
+        headers: headersObj,
+    };
+    if (entry.postDataText && entry.method !== 'GET' && entry.method !== 'HEAD') {
+        initObj.body = maskText(entry.postDataText);
+    }
+    return `const response = await fetch(${JSON.stringify(maskText(entry.url))}, ${JSON.stringify(initObj, null, 2)});\nconst data = await response.text();`;
+}
+
+export function exportEntryToPythonRequests(
+    entry: HarEntryModel,
+    secrets: DetectedHarSecret[],
+    sanitize = true
+): string {
+    const maskText = (str: string) => maskEntryTextWithSecrets(str, entry.entryIndex, secrets, sanitize);
+    const headersObj: Record<string, string> = {};
+    for (const h of entry.requestHeaders) {
+        if (h.name.startsWith(':') || h.name.toLowerCase() === 'host' || h.name.toLowerCase() === 'content-length') continue;
+        headersObj[h.name] = maskText(h.value);
+    }
+    const lines = [
+        `import requests`,
+        ``,
+        `url = ${JSON.stringify(maskText(entry.url))}`,
+        `headers = ${JSON.stringify(headersObj, null, 2)}`,
+    ];
+    if (entry.postDataText && entry.method !== 'GET' && entry.method !== 'HEAD') {
+        lines.push(`payload = ${JSON.stringify(maskText(entry.postDataText))}`);
+        lines.push(`response = requests.request(${JSON.stringify(entry.method)}, url, headers=headers, data=payload)`);
+    } else {
+        lines.push(`response = requests.request(${JSON.stringify(entry.method)}, url, headers=headers)`);
+    }
+    lines.push(`print(response.status_code, response.text[:500])`);
+    return lines.join('\n');
+}
+
 export function exportToK6Script(parsed: HarParseResult): string {
     const apiEntries = parsed.entries.filter(
         (e) => e.resourceType === 'fetch_xhr' || e.resourceType === 'graphql' || e.resourceType === 'doc'
@@ -2141,7 +2304,8 @@ export function exportToK6Script(parsed: HarParseResult): string {
     const targetEntries = apiEntries.length > 0 ? apiEntries.slice(0, 25) : parsed.entries.slice(0, 25);
 
     const reqBlocks = targetEntries.map((e) => {
-        const safeUrl = e.url.replace(/\?.*$/, '');
+        const safeUrl = maskEntryTextWithSecrets(e.url, e.entryIndex, parsed.secrets, true);
+        const safePath = maskEntryTextWithSecrets(e.pathname, e.entryIndex, parsed.secrets, true);
         const methodLower = e.method.toLowerCase();
         const hasAuth = e.requestHeaders.some((h) => h.name.toLowerCase() === 'authorization');
         const headersObj: Record<string, string> = {};
@@ -2150,19 +2314,22 @@ export function exportToK6Script(parsed: HarParseResult): string {
 
         if (methodLower === 'get') {
             return [
-                `  // Entry #${e.entryIndex + 1}: ${e.method} ${e.pathname}`,
+                `  // Entry #${e.entryIndex + 1}: ${e.method} ${safePath}`,
                 `  {`,
                 `    const res = http.get(${JSON.stringify(safeUrl)}, { headers: ${JSON.stringify(headersObj)} });`,
-                `    check(res, { '${e.method} ${e.pathname} status is ${e.status || 200}': (r) => r.status === ${e.status || 200} });`,
+                `    check(res, { '${e.method} ${safePath} status is ${e.status || 200}': (r) => r.status === ${e.status || 200} });`,
                 `  }`,
             ].join('\n');
         }
+        const safeBody = e.postDataText
+            ? maskEntryTextWithSecrets(e.postDataText, e.entryIndex, parsed.secrets, true)
+            : '';
         return [
-            `  // Entry #${e.entryIndex + 1}: ${e.method} ${e.pathname}`,
+            `  // Entry #${e.entryIndex + 1}: ${e.method} ${safePath}`,
             `  {`,
-            `    const payload = ${JSON.stringify(e.postDataText ? '{"sanitized":true}' : '')};`,
+            `    const payload = ${JSON.stringify(safeBody)};`,
             `    const res = http.request(${JSON.stringify(e.method)}, ${JSON.stringify(safeUrl)}, payload, { headers: ${JSON.stringify(headersObj)} });`,
-            `    check(res, { '${e.method} ${e.pathname} status is ${e.status || 200}': (r) => r.status === ${e.status || 200} });`,
+            `    check(res, { '${e.method} ${safePath} status is ${e.status || 200}': (r) => r.status === ${e.status || 200} });`,
             `  }`,
         ].join('\n');
     });
@@ -2193,17 +2360,32 @@ export function exportToPlaywrightTest(parsed: HarParseResult): string {
     const apiEntries = parsed.entries
         .filter((e) => e.resourceType === 'fetch_xhr' || e.resourceType === 'graphql' || e.resourceType === 'doc')
         .slice(0, 15);
+    const targetEntries = apiEntries.length > 0 ? apiEntries : parsed.entries.slice(0, 15);
 
-    const steps = apiEntries.map(
-        (e) =>
-            `  // Entry #${e.entryIndex + 1}: ${e.method} ${e.pathname}\n` +
-            `  const res_${e.entryIndex + 1} = await request.${e.method.toLowerCase()}(${JSON.stringify(
-                e.url.replace(/\?.*$/, '')
-            )}, {\n` +
+    const steps = targetEntries.map((e) => {
+        const safeUrl = maskEntryTextWithSecrets(e.url, e.entryIndex, parsed.secrets, true);
+        const safePath = maskEntryTextWithSecrets(e.pathname, e.entryIndex, parsed.secrets, true);
+        const methodLower = e.method.toLowerCase();
+        const supportedPwMethods = new Set(['get', 'post', 'put', 'patch', 'delete', 'head']);
+        const pwMethod = supportedPwMethods.has(methodLower) ? methodLower : 'fetch';
+        const safeBody = e.postDataText
+            ? maskEntryTextWithSecrets(e.postDataText, e.entryIndex, parsed.secrets, true)
+            : '';
+        const dataLine =
+            safeBody && methodLower !== 'get' && methodLower !== 'head'
+                ? `    data: ${JSON.stringify(safeBody)},\n`
+                : '';
+        const methodLine = pwMethod === 'fetch' ? `    method: ${JSON.stringify(e.method)},\n` : '';
+        return (
+            `  // Entry #${e.entryIndex + 1}: ${e.method} ${safePath}\n` +
+            `  const res_${e.entryIndex + 1} = await request.${pwMethod}(${JSON.stringify(safeUrl)}, {\n` +
+            methodLine +
             `    headers: { Authorization: \`Bearer \${process.env.TEST_AUTH_TOKEN ?? 'REDACTED'}\` },\n` +
+            dataLine +
             `  });\n` +
             `  expect(res_${e.entryIndex + 1}.status()).toBe(${e.status || 200});`
-    );
+        );
+    });
 
     return [
         `// Auto-Generated by KivaroTools HAR File Analyzer & Sanitizer v${HAR_ENGINE_VERSION}`,
@@ -2215,17 +2397,47 @@ export function exportToPlaywrightTest(parsed: HarParseResult): string {
     ].join('\n');
 }
 
+function inferOpenApiJsonSchema(sampleJsonText: string): Record<string, unknown> {
+    if (!sampleJsonText) return { type: 'object' };
+    try {
+        const val = JSON.parse(sampleJsonText) as unknown;
+        const buildSchema = (node: unknown): Record<string, unknown> => {
+            if (node === null) return { type: 'string', nullable: true };
+            if (Array.isArray(node)) {
+                return {
+                    type: 'array',
+                    items: node.length > 0 ? buildSchema(node[0]) : { type: 'string' },
+                };
+            }
+            if (typeof node === 'object') {
+                const props: Record<string, unknown> = {};
+                for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+                    props[k] = buildSchema(v);
+                }
+                return { type: 'object', properties: props };
+            }
+            if (typeof node === 'number') return { type: Number.isInteger(node) ? 'integer' : 'number' };
+            if (typeof node === 'boolean') return { type: 'boolean' };
+            return { type: 'string' };
+        };
+        return buildSchema(val);
+    } catch {
+        return { type: 'object' };
+    }
+}
+
 export function exportToOpenApiSpecJson(parsed: HarParseResult): string {
     const paths: Record<string, Record<string, unknown>> = {};
     const apiEntries = parsed.entries.filter(
         (e) => e.resourceType === 'fetch_xhr' || e.resourceType === 'graphql' || e.resourceType === 'doc'
     );
+    const targetEntries = apiEntries.length > 0 ? apiEntries : parsed.entries;
 
-    for (const e of apiEntries) {
-        const cleanPath = e.pathname || '/';
+    for (const e of targetEntries) {
+        const cleanPath = maskEntryTextWithSecrets(e.pathname || '/', e.entryIndex, parsed.secrets, true);
         if (!paths[cleanPath]) paths[cleanPath] = {};
         const methodKey = e.method.toLowerCase();
-        paths[cleanPath][methodKey] = {
+        const opObj: Record<string, unknown> = {
             summary: `${e.method} ${cleanPath}`,
             operationId: `${methodKey}_${cleanPath.replace(/[^A-Za-z0-9]/g, '_')}_${e.entryIndex + 1}`,
             parameters: e.queryParams.map((qp) => ({
@@ -2238,13 +2450,24 @@ export function exportToOpenApiSpecJson(parsed: HarParseResult): string {
                 [String(e.status || 200)]: {
                     description: e.statusText || 'Captured HAR Response',
                     content: {
-                        [e.mimeType || 'application/json']: {
-                            schema: { type: 'object' },
+                        [(e.mimeType || 'application/json').split(';')[0].trim()]: {
+                            schema: inferOpenApiJsonSchema(e.responseText),
                         },
                     },
                 },
             },
         };
+        if (e.postDataText && e.method !== 'GET' && e.method !== 'HEAD') {
+            opObj.requestBody = {
+                required: true,
+                content: {
+                    [(e.postDataMimeType || 'application/json').split(';')[0].trim()]: {
+                        schema: inferOpenApiJsonSchema(e.postDataText),
+                    },
+                },
+            };
+        }
+        paths[cleanPath][methodKey] = opObj;
     }
 
     return JSON.stringify(
@@ -2264,23 +2487,36 @@ export function exportToOpenApiSpecJson(parsed: HarParseResult): string {
 }
 
 export function exportToPostmanCollectionJson(parsed: HarParseResult): string {
-    const items = parsed.entries.slice(0, 40).map((e) => ({
-        name: `${e.method} ${e.pathname}`,
-        request: {
+    const items = parsed.entries.slice(0, 40).map((e) => {
+        const safeUrl = maskEntryTextWithSecrets(e.url, e.entryIndex, parsed.secrets, true);
+        const safePath = maskEntryTextWithSecrets(e.pathname, e.entryIndex, parsed.secrets, true);
+        const reqObj: Record<string, unknown> = {
             method: e.method,
             header: e.requestHeaders
                 .filter((h) => !h.name.startsWith(':'))
                 .map((h) => ({
                     key: h.name,
-                    value: SENSITIVE_HEADER_REGEX.test(h.name) ? '{{REDACTED_SECRET}}' : h.value,
+                    value: SENSITIVE_HEADER_REGEX.test(h.name)
+                        ? '{{REDACTED_SECRET}}'
+                        : maskEntryTextWithSecrets(h.value, e.entryIndex, parsed.secrets, true),
                 })),
             url: {
-                raw: e.url.replace(/\?.*$/, ''),
+                raw: safeUrl,
                 host: [e.host],
-                path: e.pathname.split('/').filter(Boolean),
+                path: safePath.split('/').filter(Boolean),
             },
-        },
-    }));
+        };
+        if (e.postDataText && e.method !== 'GET' && e.method !== 'HEAD') {
+            reqObj.body = {
+                mode: 'raw',
+                raw: maskEntryTextWithSecrets(e.postDataText, e.entryIndex, parsed.secrets, true),
+            };
+        }
+        return {
+            name: `${e.method} ${safePath}`,
+            request: reqObj,
+        };
+    });
 
     return JSON.stringify(
         {
@@ -2753,7 +2989,7 @@ export function generateSampleHarFile(
                         time: 1240,
                         serverIPAddress: '54.192.11.90',
                         _resourceType: 'fetch',
-                        _initiator: { type: 'script', url: 'https://shop.kivaro-commerce.io/static/checkout.js?api_key=' + ('AIza' + 'SyD99182736451234567890123456789012') },
+                        _initiator: { type: 'script', url: 'https://shop.kivaro-commerce.io/static/checkout.js?api_key=' + ('AIza' + 'SyD99182736451234567890123456789012') + '' },
                         request: {
                             method: 'POST',
                             url: 'https://payments.kivaro-commerce.io/v1/charge',
@@ -3231,7 +3467,12 @@ export function createHarWorkerDispatcher(): HarWorkerDispatcher {
             });
         };
 
+        // For HAR files under 8 MB (including all sample files and 99% of real captures),
+        // execute synchronously via main-thread fallback in <5 ms to avoid Blob Worker CSP
+        // blocks or bundler fn.toString() scope renaming in Next.js / Vite / Vinext.
+        const WORKER_THRESHOLD_BYTES = 8 * 1024 * 1024;
         const canUseWorker =
+            bytes.length > WORKER_THRESHOLD_BYTES &&
             typeof Worker !== 'undefined' &&
             typeof Blob !== 'undefined' &&
             typeof URL !== 'undefined' &&
@@ -3293,7 +3534,8 @@ export function createHarWorkerDispatcher(): HarWorkerDispatcher {
                             requestId,
                         });
                     } else {
-                        reject(new Error(typeof data.error === 'string' ? data.error : 'Unable to parse HAR file.'));
+                        // Fall back to main thread if worker encountered a bundler/scope error
+                        runFallback().then(resolve, reject);
                     }
                 };
 

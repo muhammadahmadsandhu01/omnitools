@@ -1533,7 +1533,8 @@ Row #2:         2026-10-08 | [TRANSACTION ROW REDACTED]
                         <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                             HAR File Analyzer, Waterfall Viewer &amp; Sanitizer →
                         </div>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-1 text
+                        -xs text-slate-500 dark:text-slate-400">
                             Inspect 7-phase HTTP waterfalls, decode JWT &amp; SAML 2.0 assertions, scrub secrets across 14 surfaces, and export to k6, Playwright &amp; OpenAPI 3.1.
                         </p>
                     </Link>
