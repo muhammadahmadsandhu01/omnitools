@@ -33,6 +33,7 @@
     "start:vinext": "vite preview",
     "deploy:vinext": "vinext-cloudflare deploy",
     "test:pdf-scrubber": "tsx scripts/test-pdf-scrubber.ts",
+    "test:har": "tsx scripts/test-har-analyzer-2000-suite.ts",
     "typescript": "tsc --noEmit"
   },
   "dependencies": {
