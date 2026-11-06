@@ -113,11 +113,11 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
             : resolvedSlug === 'parquet-viewer' ||
-              resolvedSlug === 'har-analyzer' ||
-              resolvedSlug === 'llms-txt-generator' ||
-              category === 'seo'
+              resolvedSlug === 'har-analyzer'
               ? 'developer'
-              : category;
+              : resolvedSlug === 'llms-txt-generator'
+                ? 'seo'
+                : category;
 
   return { resolvedCategory, resolvedSlug };
 }
