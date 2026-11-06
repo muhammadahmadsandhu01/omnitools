@@ -34,6 +34,7 @@ import {
 import {
     LLMS_ENGINE_VERSION,
     applyGeoPreset,
+    humanizeUrlSlugToTitleAndDescription,
     parseSitemapXmlOrUrlList,
     convertHtmlToCleanMarkdown,
     parseExistingLlmsTxt,
@@ -247,9 +248,16 @@ export default function LlmsTxtGenerator() {
         | 'certificate_json'
     >('llms_txt');
     const [copiedExport, setCopiedExport] = useState<boolean>(false);
+    const [recentlyAddedLinkId, setRecentlyAddedLinkId] = useState<string | null>(null);
+    const [linkActionNotice, setLinkActionNotice] = useState<string | null>(null);
+    const [sitemapActionNotice, setSitemapActionNotice] = useState<string | null>(null);
+    const [htmlCompilerNotice, setHtmlCompilerNotice] = useState<string | null>(null);
+    const [robotsImportNotice, setRobotsImportNotice] = useState<string | null>(null);
+    const [llmsValidateNotice, setLlmsValidateNotice] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const workbenchRef = useRef<HTMLDivElement | null>(null);
+    const linksListRef = useRef<HTMLDivElement | null>(null);
 
     // Compile all 10 deliverables, token budgets, and 12-point linter results synchronously in memory
     const compiled = useMemo(() => compileAllGeoDeliverables(workspace), [workspace]);
@@ -357,14 +365,16 @@ export default function LlmsTxtGenerator() {
                     deprecatedTokensDetected: parsedRobots.deprecatedTokensDetected,
                 }));
                 setActiveTab('crawler_matrix');
+                setRobotsImportNotice(`Imported "${file.name}" into the 45-Bot AI Crawler Matrix.`);
                 setStatusBanner(`Imported "${file.name}" into the 45-Bot AI Crawler Matrix.`);
-            } else if (lowerName.endsWith('.xml') || /<(?:urlset|sitemapindex|rss)\b/i.test(text)) {
+            } else if (lowerName.endsWith('.xml') || /<(?:urlset|sitemapindex|rss|feed)\b/i.test(text)) {
                 const extractedLinks = parseSitemapXmlOrUrlList(text, workspace.siteUrl, workspace.projectName);
                 if (extractedLinks.length === 0) {
                     setErrorMessage('No valid <loc> URLs found in the uploaded XML sitemap.');
                 } else {
                     setWorkspace((prev) => ({ ...prev, links: extractedLinks }));
                     setActiveTab('llms_builder');
+                    setSitemapActionNotice(`Imported ${extractedLinks.length} URLs from "${file.name}" into Curated Links!`);
                     setStatusBanner(
                         `Imported ${extractedLinks.length} URLs from "${file.name}" and auto-classified them into H2 sections!`
                     );
@@ -372,21 +382,32 @@ export default function LlmsTxtGenerator() {
             } else if (lowerName.endsWith('.html') || lowerName.endsWith('.htm') || /<html\b/i.test(text)) {
                 setHtmlSourceInput(text);
                 setActiveTab('full_txt_compiler');
+                setHtmlCompilerNotice(`Loaded HTML document "${file.name}" into the HTML-to-Markdown Compiler.`);
                 setStatusBanner(`Loaded HTML document "${file.name}" into the HTML-to-Markdown llms-full.txt Compiler.`);
             } else {
                 const parsedLlms = parseExistingLlmsTxt(text, workspace.siteUrl);
-                setWorkspace((prev) => ({
-                    ...prev,
-                    projectName: parsedLlms.projectName || prev.projectName,
-                    summaryBlockquote: parsedLlms.summaryBlockquote || prev.summaryBlockquote,
-                    overviewParagraphs:
-                        parsedLlms.overviewParagraphs.length > 0 ? parsedLlms.overviewParagraphs : prev.overviewParagraphs,
-                    links: parsedLlms.links.length > 0 ? parsedLlms.links : prev.links,
-                }));
-                setActiveTab('llms_builder');
-                setStatusBanner(
-                    `Imported "${file.name}" (${parsedLlms.links.length} links parsed into the llms.txt Visual Builder).`
-                );
+                if (parsedLlms.links.length === 0 && !text.trim().startsWith('#')) {
+                    setErrorMessage(
+                        `Could not find valid llms.txt Markdown links or XML <loc> URLs in "${file.name}". Please upload a sitemap.xml, llms.txt, robots.txt, or HTML file.`
+                    );
+                } else {
+                    setWorkspace((prev) => ({
+                        ...prev,
+                        projectName:
+                            parsedLlms.projectName && parsedLlms.projectName !== 'Untitled Project'
+                                ? parsedLlms.projectName
+                                : prev.projectName,
+                        summaryBlockquote: parsedLlms.summaryBlockquote || prev.summaryBlockquote,
+                        overviewParagraphs:
+                            parsedLlms.overviewParagraphs.length > 0 ? parsedLlms.overviewParagraphs : prev.overviewParagraphs,
+                        links: parsedLlms.links.length > 0 ? parsedLlms.links : prev.links,
+                    }));
+                    setActiveTab('llms_builder');
+                    setLinkActionNotice(`Imported "${file.name}" (${parsedLlms.links.length} links parsed).`);
+                    setStatusBanner(
+                        `Imported "${file.name}" (${parsedLlms.links.length} links parsed into the llms.txt Visual Builder).`
+                    );
+                }
             }
         } catch (err: unknown) {
             setErrorMessage(err instanceof Error ? err.message : 'Unable to read uploaded file.');
@@ -395,49 +416,100 @@ export default function LlmsTxtGenerator() {
     };
 
     const handleImportSitemapOrUrls = (appendMode: boolean) => {
-        if (!sitemapInputText.trim()) return;
         setErrorMessage(null);
-        const extracted = parseSitemapXmlOrUrlList(sitemapInputText, workspace.siteUrl, workspace.projectName);
+        const sourceText = sitemapInputText.trim() || SAMPLE_SITEMAP_XML_SNIPPET;
+        const usedDemo = !sitemapInputText.trim();
+        const extracted = parseSitemapXmlOrUrlList(sourceText, workspace.siteUrl, workspace.projectName);
         if (extracted.length === 0) {
+            setSitemapActionNotice('No valid URLs or XML <loc> entries found in the pasted text.');
             setErrorMessage('No valid URLs or XML <loc> entries found in the pasted text.');
             return;
         }
-        setWorkspace((prev) => ({
-            ...prev,
-            links: appendMode ? [...prev.links, ...extracted] : extracted,
-        }));
+        setWorkspace((prev) => {
+            if (!appendMode) {
+                return { ...prev, links: extracted };
+            }
+            const existingUrls = new Set(prev.links.map((l) => l.url.trim().replace(/\/+$/, '').toLowerCase()));
+            const uniqueNew = extracted.filter((l) => !existingUrls.has(l.url.trim().replace(/\/+$/, '').toLowerCase()));
+            return {
+                ...prev,
+                links: [...uniqueNew, ...prev.links],
+            };
+        });
         setSitemapInputText('');
-        setStatusBanner(
-            `${appendMode ? 'Appended' : 'Imported'} ${extracted.length} URL(s) and auto-classified into H2 sections!`
-        );
+        if (extracted.length > 0) {
+            setRecentlyAddedLinkId(extracted[0].id);
+            linksListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        const msg = usedDemo
+            ? `Loaded Demo sitemap.xml and ${appendMode ? 'prepended' : 'imported'} ${extracted.length} URL(s) into Curated H2 Section Links!`
+            : `${appendMode ? 'Prepended' : 'Replaced with'} ${extracted.length} URL(s) and auto-classified into H2 sections!`;
+        setSitemapActionNotice(msg);
+        setLinkActionNotice(msg);
+        setStatusBanner(msg);
     };
 
     const handleAddManualLink = () => {
-        if (!newLinkUrl.trim()) return;
-        const cleanUrl = newLinkUrl.trim();
+        setErrorMessage(null);
+        const cleanBase = (workspace.siteUrl || 'https://docs.example.com').trim().replace(/\/+$/, '');
+        const rawTitle = newLinkTitle.trim();
+        const rawUrl = newLinkUrl.trim();
+        const rawDesc = newLinkDesc.trim();
+
+        let resolvedUrl = rawUrl;
+        if (!resolvedUrl) {
+            if (rawTitle) {
+                const slug = rawTitle
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '') || `page-${workspace.links.length + 1}`;
+                resolvedUrl = `${cleanBase}/docs/${slug}`;
+            } else {
+                resolvedUrl = `${cleanBase}/docs/endpoint-guide-${workspace.links.length + 1}`;
+            }
+        } else if (resolvedUrl.startsWith('/')) {
+            resolvedUrl = `${cleanBase}${resolvedUrl}`;
+        } else if (!/^https?:\/\//i.test(resolvedUrl)) {
+            resolvedUrl = `https://${resolvedUrl}`;
+        }
+
+        const inferred = humanizeUrlSlugToTitleAndDescription(resolvedUrl, workspace.projectName || 'Platform');
+        const finalTitle = rawTitle || inferred.title || `Documentation Page #${workspace.links.length + 1}`;
+        const finalDesc = rawDesc || inferred.description || `Technical reference and implementation details for ${finalTitle}.`;
+        const finalSection = newLinkSection || inferred.section || 'Core Documentation';
+
+        const newItemId = `link_manual_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         const newItem: LlmsLinkItem = {
-            id: `link_manual_${Date.now()}`,
-            title: newLinkTitle.trim() || 'Documentation Page',
-            url: cleanUrl,
-            description: newLinkDesc.trim() || 'Technical reference and usage documentation.',
-            section: newLinkSection,
+            id: newItemId,
+            title: finalTitle,
+            url: resolvedUrl,
+            description: finalDesc,
+            section: finalSection,
             includedInLlmsTxt: true,
-            includedInFullTxt: newLinkSection.toLowerCase() !== 'optional',
-            fullMarkdownContent: `### ${newLinkTitle.trim() || 'Documentation Page'}\n\nSource: ${cleanUrl}\n\n${newLinkDesc.trim() || 'Technical reference and usage documentation.'
-                }`,
-            priorityScore: 0.8,
+            includedInFullTxt: finalSection.toLowerCase() !== 'optional',
+            fullMarkdownContent: `### ${finalTitle}\n\nSource: ${resolvedUrl}\n\n${finalDesc}`,
+            priorityScore: finalSection.toLowerCase() === 'optional' ? 0.3 : 0.85,
+            lastModified: new Date().toISOString().slice(0, 10),
         };
-        setWorkspace((prev) => ({ ...prev, links: [...prev.links, newItem] }));
+
+        // Prepend at #1 so the user immediately sees the newly added card at the top of the list!
+        setWorkspace((prev) => ({ ...prev, links: [newItem, ...prev.links] }));
+        setRecentlyAddedLinkId(newItemId);
         setNewLinkTitle('');
         setNewLinkUrl('');
         setNewLinkDesc('');
-        setStatusBanner(`Added "${newItem.title}" under ## ${newItem.section}.`);
+        linksListRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+
+        const msg = `Added "${newItem.title}" (${newItem.url}) at #1 under ## ${newItem.section}!`;
+        setLinkActionNotice(msg);
+        setStatusBanner(msg);
     };
 
     const handleAppendConvertedHtmlToFullTxt = () => {
         const item = convertedHtmlPreview;
+        const newId = `link_html_${Date.now()}`;
         const newLink: LlmsLinkItem = {
-            id: `link_html_${Date.now()}`,
+            id: newId,
             title: item.title,
             url: item.url,
             description: item.description,
@@ -448,10 +520,12 @@ export default function LlmsTxtGenerator() {
             priorityScore: 0.9,
             lastModified: new Date().toISOString().slice(0, 10),
         };
-        setWorkspace((prev) => ({ ...prev, links: [...prev.links, newLink] }));
-        setStatusBanner(
-            `Extracted "${item.title}" (${item.estimatedTokens} tokens) and added to llms.txt & llms-full.txt!`
-        );
+        setWorkspace((prev) => ({ ...prev, links: [newLink, ...prev.links] }));
+        setRecentlyAddedLinkId(newId);
+        const msg = `Added "${item.title}" (~${item.estimatedTokens} tokens) at #1 in llms.txt & llms-full.txt!`;
+        setHtmlCompilerNotice(msg);
+        setLinkActionNotice(msg);
+        setStatusBanner(msg);
     };
 
     const triggerDownload = (content: Uint8Array | string, fileName: string, mimeType: string) => {
@@ -955,18 +1029,30 @@ export default function LlmsTxtGenerator() {
                                 />
                             </div>
                             <div className="text-xs">
-                                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                                    Factual Overview Paragraph (Optional Context Before H2 Sections)
-                                </label>
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                    <label className="block font-semibold text-slate-700 dark:text-slate-300">
+                                        Factual Overview Paragraph (Optional Context Before H2 Sections)
+                                    </label>
+                                    {workspace.overviewParagraphs.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setWorkspace((p) => ({ ...p, overviewParagraphs: [] }))}
+                                            className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline"
+                                        >
+                                            Clear Overview
+                                        </button>
+                                    )}
+                                </div>
                                 <textarea
                                     rows={2}
                                     value={workspace.overviewParagraphs.join('\n\n')}
                                     onChange={(e) =>
                                         setWorkspace((p) => ({
                                             ...p,
-                                            overviewParagraphs: e.target.value.split(/\n{2,}/).filter(Boolean),
+                                            overviewParagraphs: e.target.value ? e.target.value.split(/\n{2,}/) : [],
                                         }))
                                     }
+                                    placeholder="Optional 1–2 paragraph technical overview placed before your ## H2 link sections..."
                                     className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800"
                                 />
                             </div>
@@ -994,77 +1080,187 @@ export default function LlmsTxtGenerator() {
                                 placeholder="Paste raw sitemap.xml (<url><loc>...</loc></url>), RSS XML, or a newline-separated list of URLs..."
                                 className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-[11px]"
                             />
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 <button
                                     type="button"
                                     onClick={() => handleImportSitemapOrUrls(true)}
-                                    className="px-3 py-1.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white"
+                                    className="px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-xs transition"
                                 >
                                     + Append URLs to Curated List
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleImportSitemapOrUrls(false)}
-                                    className="px-3 py-1.5 rounded-xl font-bold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
+                                    className="px-3.5 py-1.5 rounded-xl font-bold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition"
                                 >
                                     Replace Existing Links
                                 </button>
+                                {!sitemapInputText.trim() && (
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                        (Clicking with an empty box automatically loads the 4-URL Demo Sitemap)
+                                    </span>
+                                )}
                             </div>
+                            {sitemapActionNotice && (
+                                <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-2 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2">
+                                    <span>✓ {sitemapActionNotice}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSitemapActionNotice(null)}
+                                        className="text-emerald-700 dark:text-emerald-300 hover:underline shrink-0"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Add New Link & Curated Links List */}
                         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-sm space-y-3 text-xs">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Curated ## H2 Section Links ({workspace.links.length})
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
-                                <input
-                                    type="text"
-                                    value={newLinkTitle}
-                                    onChange={(e) => setNewLinkTitle(e.target.value)}
-                                    placeholder="Link Title (e.g. REST API Auth)"
-                                    className="sm:col-span-3 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                                />
-                                <input
-                                    type="text"
-                                    value={newLinkUrl}
-                                    onChange={(e) => setNewLinkUrl(e.target.value)}
-                                    placeholder="https://docs.example.com/api"
-                                    className="sm:col-span-4 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
-                                />
-                                <select
-                                    value={newLinkSection}
-                                    onChange={(e) => setNewLinkSection(e.target.value)}
-                                    className="sm:col-span-3 px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                                >
-                                    {SECTION_OPTIONS.map((sec) => (
-                                        <option key={sec} value={sec}>
-                                            ## {sec}
-                                        </option>
-                                    ))}
-                                </select>
-                                <button
-                                    type="button"
-                                    onClick={handleAddManualLink}
-                                    className="sm:col-span-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold inline-flex items-center justify-center gap-1"
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                    <span>Add</span>
-                                </button>
-                                <input
-                                    type="text"
-                                    value={newLinkDesc}
-                                    onChange={(e) => setNewLinkDesc(e.target.value)}
-                                    placeholder="One-line factual description of what this page answers..."
-                                    className="sm:col-span-12 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                                />
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Curated ## H2 Section Links ({workspace.links.length})
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setWorkspace((p) => ({
+                                                ...p,
+                                                links: p.links.map((l) => ({ ...l, includedInLlmsTxt: true })),
+                                            }));
+                                            setLinkActionNotice('Enabled all links for llms.txt!');
+                                        }}
+                                        className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                                    >
+                                        Select All llms.txt
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setWorkspace((p) => ({
+                                                ...p,
+                                                links: p.links.map((l) => ({ ...l, includedInFullTxt: l.section.toLowerCase() !== 'optional' })),
+                                            }));
+                                            setLinkActionNotice('Enabled all primary section links for llms-full.txt!');
+                                        }}
+                                        className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                                    >
+                                        Select Primary full.txt
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="max-h-[420px] overflow-y-auto space-y-2 pr-1">
+                            {/* Clean 2-Row Add New Link Form (No Truncated Placeholders + Enter Key Support) */}
+                            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2.5">
+                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                                    <div className="sm:col-span-5">
+                                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Link Title (Optional — auto-inferred if blank)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newLinkTitle}
+                                            onChange={(e) => setNewLinkTitle(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddManualLink();
+                                                }
+                                            }}
+                                            placeholder="e.g. REST API v2 Authentication"
+                                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-7">
+                                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Target Page URL (Full URL or /path — auto-generated if blank)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newLinkUrl}
+                                            onChange={(e) => setNewLinkUrl(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddManualLink();
+                                                }
+                                            }}
+                                            placeholder="https://docs.acmecloud.dev/api/webhooks or /docs/webhooks"
+                                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+                                    <div className="sm:col-span-6">
+                                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            One-Line Factual Description (Optional — auto-generated if blank)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newLinkDesc}
+                                            onChange={(e) => setNewLinkDesc(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddManualLink();
+                                                }
+                                            }}
+                                            placeholder="Concise summary of what this documentation page answers..."
+                                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                                        />
+                                    </div>
+                                    <div className="sm:col-span-4">
+                                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                            Target ## H2 Section
+                                        </label>
+                                        <select
+                                            value={newLinkSection}
+                                            onChange={(e) => setNewLinkSection(e.target.value)}
+                                            className="w-full px-2.5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-semibold"
+                                        >
+                                            {SECTION_OPTIONS.map((sec) => (
+                                                <option key={sec} value={sec}>
+                                                    ## {sec}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="sm:col-span-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleAddManualLink}
+                                            className="w-full px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] text-white font-bold inline-flex items-center justify-center gap-1 shadow-xs transition cursor-pointer"
+                                        >
+                                            <Plus className="w-4 h-4 shrink-0" />
+                                            <span>Add Link</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {linkActionNotice && (
+                                    <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2">
+                                        <span>✓ {linkActionNotice}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLinkActionNotice(null)}
+                                            className="text-emerald-700 dark:text-emerald-300 hover:underline shrink-0"
+                                        >
+                                            Dismiss
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div ref={linksListRef} className="max-h-[460px] overflow-y-auto space-y-2 pr-1">
                                 {workspace.links.map((link, idx) => (
                                     <div
                                         key={link.id}
-                                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950 space-y-2"
+                                        className={`p-3 rounded-xl border transition space-y-2 ${recentlyAddedLinkId === link.id
+                                                ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/30 ring-2 ring-emerald-500/30'
+                                                : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950'
+                                            }`}
                                     >
                                         <div className="space-y-2">
                                             {/* Row 1: Link Index + Editable Title */}
@@ -1387,14 +1583,28 @@ export default function LlmsTxtGenerator() {
                                         type="text"
                                         value={newDisallowPath}
                                         onChange={(e) => setNewDisallowPath(e.target.value)}
-                                        placeholder="/admin/ or /api/internal/"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                const clean = newDisallowPath.trim();
+                                                if (!clean) return;
+                                                const formatted = clean.startsWith('/') ? clean : `/${clean}`;
+                                                if (!workspace.globalDisallowPaths.includes(formatted)) {
+                                                    setWorkspace((p) => ({
+                                                        ...p,
+                                                        globalDisallowPaths: [...p.globalDisallowPaths, formatted],
+                                                    }));
+                                                }
+                                                setNewDisallowPath('');
+                                            }
+                                        }}
+                                        placeholder="/admin/ or /api/internal/ (Press Enter or click + Add Path)"
                                         className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const clean = newDisallowPath.trim();
-                                            if (!clean) return;
+                                            const clean = newDisallowPath.trim() || `/private-route-${workspace.globalDisallowPaths.length + 1}/`;
                                             const formatted = clean.startsWith('/') ? clean : `/${clean}`;
                                             if (!workspace.globalDisallowPaths.includes(formatted)) {
                                                 setWorkspace((p) => ({
@@ -1403,8 +1613,9 @@ export default function LlmsTxtGenerator() {
                                                 }));
                                             }
                                             setNewDisallowPath('');
+                                            setStatusBanner(`Added global Disallow path "${formatted}" to robots.txt!`);
                                         }}
-                                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-bold"
+                                        className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer"
                                     >
                                         + Add Path
                                     </button>
@@ -1662,7 +1873,10 @@ export default function LlmsTxtGenerator() {
                                                             type="text"
                                                             value={bot.customAllowPaths.join(', ')}
                                                             onChange={(e) => {
-                                                                const vals = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                                                                const rawParts = e.target.value.split(',');
+                                                                const vals = rawParts.map((s, idx) =>
+                                                                    idx < rawParts.length - 1 ? s.trim() : s.replace(/^\s+/, '')
+                                                                );
                                                                 setWorkspace((p) => ({
                                                                     ...p,
                                                                     bots: p.bots.map((x) =>
@@ -1677,7 +1891,10 @@ export default function LlmsTxtGenerator() {
                                                             type="text"
                                                             value={bot.customDisallowPaths.join(', ')}
                                                             onChange={(e) => {
-                                                                const vals = e.target.value.split(',').map((s) => s.trim()).filter(Boolean);
+                                                                const rawParts = e.target.value.split(',');
+                                                                const vals = rawParts.map((s, idx) =>
+                                                                    idx < rawParts.length - 1 ? s.trim() : s.replace(/^\s+/, '')
+                                                                );
                                                                 setWorkspace((p) => ({
                                                                     ...p,
                                                                     bots: p.bots.map((x) =>
@@ -1731,9 +1948,22 @@ export default function LlmsTxtGenerator() {
 
                             {/* Import Existing robots.txt to Audit */}
                             <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-                                <label className="block font-bold text-slate-700 dark:text-slate-300">
-                                    Paste Existing robots.txt to Audit &amp; Import Rules:
-                                </label>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <label className="block font-bold text-slate-700 dark:text-slate-300">
+                                        Paste Existing robots.txt to Audit &amp; Import Rules:
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setImportRobotsText(
+                                                'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.acmecloud.dev/sitemap.xml'
+                                            )
+                                        }
+                                        className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                    >
+                                        Load Demo robots.txt
+                                    </button>
+                                </div>
                                 <textarea
                                     rows={3}
                                     value={importRobotsText}
@@ -1744,8 +1974,10 @@ export default function LlmsTxtGenerator() {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        if (!importRobotsText.trim()) return;
-                                        const parsedRob = parseExistingRobotsTxt(importRobotsText, workspace.bots);
+                                        const rawToParse =
+                                            importRobotsText.trim() ||
+                                            'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.acmecloud.dev/sitemap.xml';
+                                        const parsedRob = parseExistingRobotsTxt(rawToParse, workspace.bots);
                                         setWorkspace((p) => ({
                                             ...p,
                                             bots: parsedRob.updatedBots,
@@ -1754,12 +1986,19 @@ export default function LlmsTxtGenerator() {
                                             deprecatedTokensDetected: parsedRob.deprecatedTokensDetected,
                                         }));
                                         setImportRobotsText('');
-                                        setStatusBanner('Imported existing robots.txt rules and audited deprecated tokens!');
+                                        const msg = `Audited robots.txt (${parsedRob.globalDisallowPaths.length} global Disallow path(s), ${parsedRob.deprecatedTokensDetected.length} deprecated token(s) flagged)!`;
+                                        setRobotsImportNotice(msg);
+                                        setStatusBanner(msg);
                                     }}
-                                    className="px-3 py-1.5 rounded-xl font-bold bg-indigo-600 text-white"
+                                    className="px-3.5 py-1.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer"
                                 >
                                     Parse &amp; Audit Existing robots.txt
                                 </button>
+                                {robotsImportNotice && (
+                                    <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">
+                                        ✓ {robotsImportNotice}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -1842,9 +2081,22 @@ export default function LlmsTxtGenerator() {
 
                         {/* Paste Existing llms.txt to Validate */}
                         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
-                            <label className="block font-bold text-slate-700 dark:text-slate-300">
-                                Paste Existing llms.txt Content to Validate &amp; Repair:
-                            </label>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <label className="block font-bold text-slate-700 dark:text-slate-300">
+                                    Paste Existing llms.txt Content to Validate &amp; Repair:
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setImportLlmsText(
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.'
+                                        )
+                                    }
+                                    className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                >
+                                    Load Demo Broken llms.txt
+                                </button>
+                            </div>
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <textarea
                                     rows={2}
@@ -1856,8 +2108,10 @@ export default function LlmsTxtGenerator() {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        if (!importLlmsText.trim()) return;
-                                        const parsed = parseExistingLlmsTxt(importLlmsText, workspace.siteUrl);
+                                        const rawToValidate =
+                                            importLlmsText.trim() ||
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.';
+                                        const parsed = parseExistingLlmsTxt(rawToValidate, workspace.siteUrl);
                                         setWorkspace((p) => ({
                                             ...p,
                                             projectName: parsed.projectName,
@@ -1866,13 +2120,20 @@ export default function LlmsTxtGenerator() {
                                             links: parsed.links.length > 0 ? parsed.links : p.links,
                                         }));
                                         setImportLlmsText('');
-                                        setStatusBanner(`Loaded pasted llms.txt (${parsed.links.length} links) into Validator!`);
+                                        const msg = `Loaded llms.txt (${parsed.links.length} link(s)) into 12-Point Linter!`;
+                                        setLlmsValidateNotice(msg);
+                                        setStatusBanner(msg);
                                     }}
-                                    className="px-4 py-2 rounded-xl font-bold bg-indigo-600 text-white shrink-0"
+                                    className="px-4 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shrink-0 cursor-pointer"
                                 >
                                     Load &amp; Validate llms.txt
                                 </button>
                             </div>
+                            {llmsValidateNotice && (
+                                <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200">
+                                    ✓ {llmsValidateNotice}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -2003,10 +2264,22 @@ export default function LlmsTxtGenerator() {
                         <button
                             type="button"
                             onClick={handleAppendConvertedHtmlToFullTxt}
-                            className="w-full py-2.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+                            className="w-full py-2.5 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition cursor-pointer"
                         >
                             + Add Extracted Markdown Page to llms.txt &amp; llms-full.txt Bundle
                         </button>
+                        {htmlCompilerNotice && (
+                            <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2">
+                                <span>✓ {htmlCompilerNotice}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('llms_builder')}
+                                    className="text-indigo-600 dark:text-indigo-400 underline font-bold shrink-0"
+                                >
+                                    View in Tab 1 →
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3 text-xs">

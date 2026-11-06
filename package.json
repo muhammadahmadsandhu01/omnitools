@@ -34,6 +34,7 @@
     "deploy:vinext": "vinext-cloudflare deploy",
     "test:pdf-scrubber": "tsx scripts/test-pdf-scrubber.ts",
     "test:har": "tsx scripts/test-har-analyzer-2000-suite.ts",
+    "test:llms-txt": "tsx scripts/test-llms-txt-generator-2000-suite.ts",
     "typescript": "tsc --noEmit"
   },
   "dependencies": {

@@ -895,7 +895,7 @@ export function applyGeoPreset(
 export function classifyUrlIntoLlmsSection(url: string): LlmsSectionCategory {
     // Strip protocol + hostname so subdomains like "https://docs.example.com/pricing" do not false-match "/docs"
     const pathOnly = url.replace(/^https?:\/\/[^/]+/i, '').toLowerCase();
-    if (/\/(privacy|terms|legal|security|compliance|changelog|release-notes|careers|press|status)\b/.test(pathOnly)) {
+    if (/\/(privacy|terms|legal|security|compliance|changelog|releases|release-notes|archive|deprecated|careers|press|status)\b/.test(pathOnly)) {
         return 'Optional';
     }
     if (/\/(api|sdk|reference|graphql|openapi|swagger|endpoints|webhook|cli)\b/.test(pathOnly)) {
@@ -1046,8 +1046,12 @@ export function parseSitemapXmlOrUrlList(
             continue;
         }
 
-        // Check bare URL on the line
-        const urlMatch = trimmed.match(/(https?:\/\/[^\s,;"'<>]+|^\/[A-Za-z0-9_./-]+)/i);
+        // Ignore JS/TS comment lines or import statements
+        if (/^(?:\/\/|\/\*|\*|import\s+|export\s+|from\s+)/i.test(trimmed)) continue;
+
+        // Check bare https:// URL or clean root-relative path on the line
+        const urlMatch = trimmed.match(/(https?:\/\/[^\s,;"'<>\)\]]+|^\/[A-Za-z0-9_./-]+)$/i) ||
+            trimmed.match(/(https?:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[^\s,;"'<>\)\]]*)/i);
         if (urlMatch) {
             registerUrl(urlMatch[1]);
         }
@@ -1250,12 +1254,25 @@ export function parseExistingLlmsTxt(rawMarkdown: string, fallbackSiteUrl = 'htt
             continue;
         }
 
-        if (!seenH2 && !line.startsWith('#')) {
+        // Guard against source code lines (e.g., if a user accidentally uploads a .ts/.js/.json/.xml file as llms.txt)
+        const looksLikeSourceCode =
+            /^(?:import\s+|export\s+|const\s+|let\s+|var\s+|function\s+|interface\s+|type\s+|\/\/|\/\*|\*\s|\*\/|\{|\}|\};|\[|\];|<\?xml|<urlset|<sitemapindex)/i.test(
+                line
+            ) || /[;{}]$/.test(line);
+
+        if (!seenH2 && !line.startsWith('#') && !looksLikeSourceCode && overviewParagraphs.length < 6) {
             overviewParagraphs.push(line);
         }
     }
 
-    void fallbackSiteUrl;
+    // Fallback: if 0 Markdown links were found in rawMarkdown, attempt URL/sitemap extraction
+    if (links.length === 0) {
+        const fallbackExtracted = parseSitemapXmlOrUrlList(rawMarkdown, fallbackSiteUrl, projectName || 'Documentation');
+        if (fallbackExtracted.length > 0) {
+            links.push(...fallbackExtracted);
+        }
+    }
+
     return {
         projectName: projectName || 'Untitled Project',
         summaryBlockquote: blockquoteLines.join(' '),
