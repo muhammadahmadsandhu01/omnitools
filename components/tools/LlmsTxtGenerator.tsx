@@ -580,7 +580,7 @@ export default function LlmsTxtGenerator() {
                     {/* Live Loaded Output Preview Bar */}
                     <div className="mt-3 rounded-xl border border-indigo-200 dark:border-indigo-900/70 bg-indigo-50/70 dark:bg-indigo-950/40 p-3 space-y-2 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
                                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 <span className="font-bold text-slate-900 dark:text-white truncate">
                                     Active Project:{' '}
@@ -1066,9 +1066,12 @@ export default function LlmsTxtGenerator() {
                                         key={link.id}
                                         className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950 space-y-2"
                                     >
-                                        <div className="flex flex-wrap items-center justify-between gap-2">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span className="font-mono text-[11px] text-slate-400">#{idx + 1}</span>
+                                        <div className="space-y-2">
+                                            {/* Row 1: Link Index + Editable Title */}
+                                            <div className="flex items-center gap-2 w-full min-w-0">
+                                                <span className="font-mono text-[11px] font-bold px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-300 shrink-0">
+                                                    #{idx + 1}
+                                                </span>
                                                 <input
                                                     type="text"
                                                     value={link.title}
@@ -1079,10 +1082,12 @@ export default function LlmsTxtGenerator() {
                                                             links: p.links.map((x) => (x.id === link.id ? { ...x, title: val } : x)),
                                                         }));
                                                     }}
-                                                    className="font-bold text-slate-900 dark:text-white bg-transparent border-b border-transparent focus:border-indigo-500 outline-none"
+                                                    className="w-full min-w-0 flex-1 font-bold text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800 focus:border-indigo-500 outline-none"
                                                 />
                                             </div>
-                                            <div className="flex items-center gap-2">
+
+                                            {/* Row 2: Mobile-Responsive Controls Bar (Section Dropdown + Checkboxes + Up/Down + Delete) */}
+                                            <div className="flex flex-wrap items-center justify-between gap-2 w-full pt-0.5">
                                                 <select
                                                     value={link.section}
                                                     onChange={(e) => {
@@ -1092,7 +1097,7 @@ export default function LlmsTxtGenerator() {
                                                             links: p.links.map((x) => (x.id === link.id ? { ...x, section: val } : x)),
                                                         }));
                                                     }}
-                                                    className="px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold border border-indigo-200 dark:border-indigo-800"
+                                                    className="w-full sm:w-auto px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold border border-indigo-200 dark:border-indigo-800"
                                                 >
                                                     {SECTION_OPTIONS.map((sec) => (
                                                         <option key={sec} value={sec}>
@@ -1100,87 +1105,97 @@ export default function LlmsTxtGenerator() {
                                                         </option>
                                                     ))}
                                                 </select>
-                                                <label className="inline-flex items-center gap-1 text-[11px] cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={link.includedInLlmsTxt}
-                                                        onChange={(e) => {
-                                                            const checked = e.target.checked;
-                                                            setWorkspace((p) => ({
-                                                                ...p,
-                                                                links: p.links.map((x) =>
-                                                                    x.id === link.id ? { ...x, includedInLlmsTxt: checked } : x
-                                                                ),
-                                                            }));
-                                                        }}
-                                                    />
-                                                    <span>llms.txt</span>
-                                                </label>
-                                                <label className="inline-flex items-center gap-1 text-[11px] cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={link.includedInFullTxt}
-                                                        onChange={(e) => {
-                                                            const checked = e.target.checked;
-                                                            setWorkspace((p) => ({
-                                                                ...p,
-                                                                links: p.links.map((x) =>
-                                                                    x.id === link.id ? { ...x, includedInFullTxt: checked } : x
-                                                                ),
-                                                            }));
-                                                        }}
-                                                    />
-                                                    <span>full.txt</span>
-                                                </label>
-                                                <button
-                                                    type="button"
-                                                    disabled={idx === 0}
-                                                    title="Move link up"
-                                                    onClick={() =>
-                                                        setWorkspace((p) => {
-                                                            if (idx === 0) return p;
-                                                            const next = [...p.links];
-                                                            const tmp = next[idx - 1];
-                                                            next[idx - 1] = next[idx];
-                                                            next[idx] = tmp;
-                                                            return { ...p, links: next };
-                                                        })
-                                                    }
-                                                    className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 font-bold"
-                                                >
-                                                    ↑
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    disabled={idx === workspace.links.length - 1}
-                                                    title="Move link down"
-                                                    onClick={() =>
-                                                        setWorkspace((p) => {
-                                                            if (idx >= p.links.length - 1) return p;
-                                                            const next = [...p.links];
-                                                            const tmp = next[idx + 1];
-                                                            next[idx + 1] = next[idx];
-                                                            next[idx] = tmp;
-                                                            return { ...p, links: next };
-                                                        })
-                                                    }
-                                                    className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 disabled:opacity-40 font-bold"
-                                                >
-                                                    ↓
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    title="Delete link"
-                                                    onClick={() =>
-                                                        setWorkspace((p) => ({
-                                                            ...p,
-                                                            links: p.links.filter((x) => x.id !== link.id),
-                                                        }))
-                                                    }
-                                                    className="text-rose-500 hover:text-rose-600"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
+
+                                                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-medium cursor-pointer shrink-0">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={link.includedInLlmsTxt}
+                                                                onChange={(e) => {
+                                                                    const checked = e.target.checked;
+                                                                    setWorkspace((p) => ({
+                                                                        ...p,
+                                                                        links: p.links.map((x) =>
+                                                                            x.id === link.id ? { ...x, includedInLlmsTxt: checked } : x
+                                                                        ),
+                                                                    }));
+                                                                }}
+                                                                className="rounded text-indigo-600"
+                                                            />
+                                                            <span>llms.txt</span>
+                                                        </label>
+                                                        <label className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-medium cursor-pointer shrink-0">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={link.includedInFullTxt}
+                                                                onChange={(e) => {
+                                                                    const checked = e.target.checked;
+                                                                    setWorkspace((p) => ({
+                                                                        ...p,
+                                                                        links: p.links.map((x) =>
+                                                                            x.id === link.id ? { ...x, includedInFullTxt: checked } : x
+                                                                        ),
+                                                                    }));
+                                                                }}
+                                                                className="rounded text-indigo-600"
+                                                            />
+                                                            <span>full.txt</span>
+                                                        </label>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1 shrink-0">
+                                                        <button
+                                                            type="button"
+                                                            disabled={idx === 0}
+                                                            title="Move link up"
+                                                            onClick={() =>
+                                                                setWorkspace((p) => {
+                                                                    if (idx === 0) return p;
+                                                                    const next = [...p.links];
+                                                                    const tmp = next[idx - 1];
+                                                                    next[idx - 1] = next[idx];
+                                                                    next[idx] = tmp;
+                                                                    return { ...p, links: next };
+                                                                })
+                                                            }
+                                                            className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-40 font-bold text-xs"
+                                                        >
+                                                            ↑
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={idx === workspace.links.length - 1}
+                                                            title="Move link down"
+                                                            onClick={() =>
+                                                                setWorkspace((p) => {
+                                                                    if (idx >= p.links.length - 1) return p;
+                                                                    const next = [...p.links];
+                                                                    const tmp = next[idx + 1];
+                                                                    next[idx + 1] = next[idx];
+                                                                    next[idx] = tmp;
+                                                                    return { ...p, links: next };
+                                                                })
+                                                            }
+                                                            className="px-2 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-40 font-bold text-xs"
+                                                        >
+                                                            ↓
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            title="Delete link"
+                                                            onClick={() =>
+                                                                setWorkspace((p) => ({
+                                                                    ...p,
+                                                                    links: p.links.filter((x) => x.id !== link.id),
+                                                                }))
+                                                            }
+                                                            className="inline-flex items-center justify-center p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 border border-rose-200 dark:border-rose-800"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <input
@@ -1367,7 +1382,7 @@ export default function LlmsTxtGenerator() {
                                 <label className="block font-bold text-slate-700 dark:text-slate-300">
                                     Global Protected Disallow Paths (Applied to User-agent: * and Inherited by Allowed AI Bots):
                                 </label>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                     <input
                                         type="text"
                                         value={newDisallowPath}
@@ -1578,8 +1593,8 @@ export default function LlmsTxtGenerator() {
                                                 </p>
                                             </div>
 
-                                            <div className="flex flex-col items-end gap-1.5 shrink-0">
-                                                <div className="flex items-center gap-1">
+                                            <div className="flex flex-col items-start sm:items-end gap-1.5 w-full sm:w-auto shrink-0">
+                                                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
                                                     <button
                                                         type="button"
                                                         onClick={() =>
