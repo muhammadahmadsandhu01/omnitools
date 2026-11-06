@@ -1538,6 +1538,18 @@ Row #2:         2026-10-08 | [TRANSACTION ROW REDACTED]
                             Inspect 7-phase HTTP waterfalls, decode JWT &amp; SAML 2.0 assertions, scrub secrets across 14 surfaces, and export to k6, Playwright &amp; OpenAPI 3.1.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/developer/llms-txt-generator"
+                        className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
+                    >
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+                            llms.txt, llms-full.txt &amp; AI Crawler (robots.txt) Studio →
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Build llmstxt.org v2 compliant llms.txt &amp; llms-full.txt indexes, configure 45 AI crawler bots, fix RFC 9309 leaks, and export W3C tdmrep.json locally.
+                        </p>
+                    </Link>
                 </div>
             </section>
         </article>

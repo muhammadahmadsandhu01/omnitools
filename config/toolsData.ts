@@ -1941,6 +1941,73 @@ export const tools: Tool[] = [
   },
 
   {
+    id: 'llms-txt-generator',
+    name: 'llms.txt & AI Crawler (robots.txt) Generator',
+    slug: 'llms-txt-generator',
+    categoryId: 'seo',
+    status: 'published',
+    description:
+      'Generate llmstxt.org v2 compliant llms.txt, llms-full.txt, llms-ctx.txt, and RFC 9309 AI crawler robots.txt rules with 45 verified AI bots, sitemap.xml ingestion, BPE token budgeting, and 12-point GEO linting — 100% client-side.',
+    seoTitle: 'Free llms.txt & AI Crawler robots.txt Generator | GEO',
+    seoDescription:
+      'Create llmstxt.org v2 compliant llms.txt, llms-full.txt, W3C tdmrep.json, and AI crawler robots.txt files in your browser. Control 45 AI bots (OAI-SearchBot, GPTBot, ClaudeBot, PerplexityBot), convert sitemaps and HTML to Markdown, and fix RFC 9309 leaks with zero server uploads.',
+    isPopular: true,
+    keywords: [
+      'llms.txt generator',
+      'free llms.txt generator online',
+      'ai crawler robots.txt generator',
+      'llms-full.txt generator',
+      'llmstxt.org v2 validator',
+      'generative engine optimization tool',
+      'geo llms.txt builder',
+      'sitemap.xml to llms.txt converter',
+      'html to llms-full.txt markdown',
+      'block gptbot allow oai-searchbot',
+      'block claudebot allow claude-searchbot',
+      'perplexitybot robots.txt rules',
+      'google-extended robots.txt generator',
+      'applebot-extended opt out rules',
+      'deepseekbot robots.txt block',
+      'ccbot common crawl block rules',
+      'bytespider robots.txt disallow',
+      'rfc 9309 robots.txt inheritance validator',
+      'ietf aipref content-usage generator',
+      'w3c tdmrep.json generator',
+      'eu dsm article 4 ai opt out',
+      'ai.txt generator for websites',
+      'x-robots-tag noai noimageai header',
+      'nextjs app router llms.txt route.ts',
+      'nextjs metadataroute.robots generator',
+      'llm context window token calculator',
+      'cursor windsurf docs llms.txt builder',
+      'client-side llms.txt linter',
+      'ai search citation optimization tool',
+      'chatgpt search visibility robots.txt',
+      'claude search citation allowlist',
+      'zero-upload geo governance studio'
+    ],
+    featureList: [
+      '100% Client-Side Browser Execution (Zero Server Uploads, Zero CORS Proxy Leaks, Instant Offline-Capable Processing)',
+      '45-Bot Verified 2026 AI Crawler Directory Across 5 Taxonomic Roles (Search Citation vs. User Fetcher vs. Model Training vs. Opt-Out vs. Bulk Scraper)',
+      '6 1-Click GEO Strategy Presets (GEO Max Visibility, Open-Source Max Reach, Strict Copyright Shield, E-Commerce Funnel Guard, EU DSM & IETF AIPREF, Total AI Lockdown)',
+      '4-Way Zero-CORS Ingestion: Sitemap XML / RSS 2.0 Parser (Up to 5,000 URLs), HTML DOM-to-Markdown Converter, Existing llms.txt Importer & robots.txt Importer',
+      '12-Point llmstxt.org v2 & RFC 9309 §2.2.1 Cross-File Linter with 1-Click Deterministic Auto-Fixer',
+      'Multi-Model BPE Token Budget & Context Window Calculator (GPT-4o / o3-mini 128K, Claude 4 Sonnet 200K, Gemini 2.5 Pro 1M, DeepSeek R1 / V3 128K)',
+      'Synchronized IETF AIPREF Content-Usage Directives (train-ai=n, ai=y) & W3C /.well-known/tdmrep.json Rights Reservation Generator',
+      '10-Format Export Suite: llms.txt, llms-full.txt, llms-ctx.txt, robots.txt, ai.txt, tdmrep.json, Next.js route.ts/robots.ts, Cloudflare/Nginx Headers, CWE-1236 Guarded .xlsx/.csv & SHA-256 Certificate .json',
+      '3 Instant 1-Click Sample Projects (AcmeCloud Developer Docs, LuxeCart E-Commerce Linter Demo, QuantumDigest Research Publisher)'
+    ],
+    relatedToolSlugs: [
+      'har-analyzer',
+      'parquet-viewer',
+      'text-case-converter',
+      'text-analyzer',
+      'regex-tester',
+      'qr-generator'
+    ]
+  },
+
+  {
     id: 'text-analyzer',
     name: 'Word Counter, Readability Auditor & Grammar Writing Coach',
     slug: 'text-analyzer',

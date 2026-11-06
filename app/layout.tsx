@@ -65,6 +65,17 @@ export const metadata: Metadata = {
     'word counter readability grammar checker',
     'text case converter',
     'meta tag open graph generator',
+    'llms.txt generator',
+    'ai crawler robots.txt generator',
+    'llms-full.txt generator',
+    'llms.txt & ai crawler generator',
+    'har file analyzer',
+    'har file analyzer and viewer online free',
+    'har file scrubber',
+    'pdf scrubber',
+    'parquet, avro & feather viewer',
+    'parquet, avro & feather inspector',
+    'parquet, avro & feather converter'
   ],
 
   authors: [

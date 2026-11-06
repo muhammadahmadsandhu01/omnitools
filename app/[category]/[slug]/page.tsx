@@ -86,7 +86,13 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                 slug === 'har-to-openapi' ||
                                 slug === 'saml-har-analyzer'
                                 ? 'har-analyzer'
-                                : slug;
+                                : slug === 'llms-txt-validator' ||
+                                  slug === 'llms-full-txt-generator' ||
+                                  slug === 'ai-robots-txt-generator' ||
+                                  slug === 'ai-crawler-generator' ||
+                                  slug === 'tdmrep-generator'
+                                  ? 'llms-txt-generator'
+                                  : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -107,7 +113,9 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
             : resolvedSlug === 'parquet-viewer' ||
-              resolvedSlug === 'har-analyzer'
+              resolvedSlug === 'har-analyzer' ||
+              resolvedSlug === 'llms-txt-generator' ||
+              category === 'seo'
               ? 'developer'
               : category;
 

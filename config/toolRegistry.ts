@@ -33,6 +33,7 @@ import PdfCompressor from '@/components/tools/PdfCompressor';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
 import ImageCompressor from '@/components/tools/ImageCompressor';
 import QrGenerator from '@/components/tools/QrGenerator';
+import LlmsTxtGenerator from '@/components/tools/LlmsTxtGenerator';
 import TextAnalyzer from '@/components/tools/TextAnalyzer';
 import TextCaseConverter from '@/components/tools/TextCaseConverter';
 import MetaGenerator from '@/components/tools/MetaGenerator';
@@ -70,6 +71,7 @@ import PdfCompressorSeo from '@/components/seo/PdfCompressorSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
 import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
 import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
+import LlmsTxtGeneratorSeo from '@/components/seo/LlmsTxtGeneratorSeo';
 import TextAnalyzerSeo from '@/components/seo/TextAnalyzerSeo';
 import TextCaseConverterSeo from '@/components/seo/TextCaseConverterSeo';
 import MetaGeneratorSeo from '@/components/seo/MetaGeneratorSeo';
@@ -157,6 +159,12 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'meta-generator': MetaGenerator,
   'meta-tags-generator': MetaGenerator, // Alias
   'open-graph-generator': MetaGenerator, // Alias
+  'llms-txt-generator': LlmsTxtGenerator,
+  'llms-txt-validator': LlmsTxtGenerator,
+  'llms-full-txt-generator': LlmsTxtGenerator,
+  'ai-robots-txt-generator': LlmsTxtGenerator,
+  'ai-crawler-generator': LlmsTxtGenerator,
+  'tdmrep-generator': LlmsTxtGenerator,
 };
 
 /**
@@ -243,6 +251,12 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'meta-generator': MetaGeneratorSeo,
   'meta-tags-generator': MetaGeneratorSeo, // Alias
   'open-graph-generator': MetaGeneratorSeo, // Alias
+  'llms-txt-generator': LlmsTxtGeneratorSeo,
+  'llms-txt-validator': LlmsTxtGeneratorSeo,
+  'llms-full-txt-generator': LlmsTxtGeneratorSeo,
+  'ai-robots-txt-generator': LlmsTxtGeneratorSeo,
+  'ai-crawler-generator': LlmsTxtGeneratorSeo,
+  'tdmrep-generator': LlmsTxtGeneratorSeo,
 };
 
 /**
