@@ -95,7 +95,7 @@ export const OPENAPI_TO_TYPESCRIPT_FAQS: FaqItem[] = [
     {
         question: 'What is included in the 3-Sheet Excel (.xlsx) Contract Inventory export?',
         answer:
-            'Clicking ".XLSX" in the Output Window header generates a standards-compliant OpenXML workbook locally in your browser with three worksheets: Sheet 1 (API_Endpoints_Inventory), Sheet 2 (Component_Schemas_Graph), and Sheet 3 (OpenAPI_Linter_Audit). Every cell is sanitized against CWE-1236 spreadsheet formula injection.',
+            'Clicking ".XLSX" in the Output Window header generates a standards-compliant OpenXML workbook locally in your browser with three worksheets: Sheet 1 (API_Endpoints), Sheet 2 (Component_Schemas), and Sheet 3 (Spec_Lint_Audit). Every cell is sanitized against CWE-1236 spreadsheet formula injection.',
     },
 ];
 
@@ -1009,7 +1009,7 @@ export function mockGetCustomerByIdHandler(overrideResponse?: unknown) {
                                     '7',
                                     'openapi-contract-inventory.xlsx',
                                     'Microsoft Excel / Google Sheets (.xlsx)',
-                                    '3-sheet OpenXML workbook (API_Endpoints_Inventory, Component_Schemas_Graph, OpenAPI_Linter_Audit) with CWE-1236 formula protection.',
+                                    '3-sheet OpenXML workbook (API_Endpoints, Component_Schemas, Spec_Lint_Audit) with CWE-1236 formula protection.',
                                 ],
                                 [
                                     '8',

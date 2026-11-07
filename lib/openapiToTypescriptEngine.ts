@@ -711,8 +711,17 @@ function normalizeSchemaObject(
         maxLength: typeof s.maxLength === 'number' ? s.maxLength : undefined,
         minimum: typeof s.minimum === 'number' ? s.minimum : undefined,
         maximum: typeof s.maximum === 'number' ? s.maximum : undefined,
-        exclusiveMinimum: typeof s.exclusiveMinimum === 'number' ? s.exclusiveMinimum : undefined,
-        exclusiveMaximum: typeof s.exclusiveMaximum === 'number' ? s.exclusiveMaximum : undefined,
+        // OpenAPI 3.1: exclusiveMinimum/Maximum are numbers; OpenAPI 3.0: they are booleans (minimum is then the exclusive bound)
+        exclusiveMinimum: typeof s.exclusiveMinimum === 'number'
+            ? s.exclusiveMinimum
+            : typeof s.exclusiveMinimum === 'boolean' && s.exclusiveMinimum && typeof s.minimum === 'number'
+                ? s.minimum
+                : undefined,
+        exclusiveMaximum: typeof s.exclusiveMaximum === 'number'
+            ? s.exclusiveMaximum
+            : typeof s.exclusiveMaximum === 'boolean' && s.exclusiveMaximum && typeof s.maximum === 'number'
+                ? s.maximum
+                : undefined,
         multipleOf: typeof s.multipleOf === 'number' ? s.multipleOf : undefined,
         minItems: typeof s.minItems === 'number' ? s.minItems : undefined,
         maxItems: typeof s.maxItems === 'number' ? s.maxItems : undefined,
@@ -1253,6 +1262,7 @@ export function renderZodSchemaExpr(
         let a = `z.array(${itemSchema})`;
         if (node.minItems !== undefined) a += `.min(${node.minItems})`;
         if (node.maxItems !== undefined) a += `.max(${node.maxItems})`;
+        if (node.uniqueItems) a += `.refine((arr) => new Set(arr.map((v) => JSON.stringify(v))).size === arr.length, { message: 'Array items must be unique' })`;
         return applyNullability(a);
     }
 
@@ -1470,8 +1480,8 @@ export function generateRealisticMockValue(
 
     if (node.refTarget) {
         if (visitedRefs.has(node.refTarget)) {
-            // Stop circular expansion gracefully
-            return [];
+            // Stop circular expansion gracefully — return null (not []) for circular object refs
+            return null;
         }
         const target = schemaMap.get(node.refTarget);
         if (!target) return { id: `${node.refTarget.toLowerCase()}_01` };
@@ -1508,8 +1518,12 @@ export function generateRealisticMockValue(
     if (node.type === 'union') {
         const branches = node.oneOf || node.anyOf || [];
         if (branches.length === 0) return null;
+        const unionRand = createSeededGenerator(
+            config.mockSeed + fieldNameHint.split('').reduce((a, c) => a + c.charCodeAt(0), 0) + depth * 31
+        );
+        const branchIdx = Math.floor(unionRand() * branches.length);
         return generateRealisticMockValue(
-            branches[0],
+            branches[branchIdx],
             schemaMap,
             config,
             fieldNameHint,
@@ -1564,7 +1578,7 @@ export function generateRealisticMockValue(
     }
 
     if (node.type === 'boolean') {
-        return true;
+        return rand() > 0.5;
     }
 
     if (node.type === 'array') {
