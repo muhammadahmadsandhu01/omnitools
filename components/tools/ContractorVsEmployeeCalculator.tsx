@@ -31,6 +31,7 @@ import {
     CONTRACTOR_VS_EMPLOYEE_ENGINE_VERSION,
     ISO_4217_CURRENCIES,
     getIsoCurrencyByCode,
+    computeCrossRate,
     JURISDICTION_CATALOG,
     compileContractorVsEmployeeReport,
     applySafeHarborClassificationFixes,
@@ -92,8 +93,9 @@ export default function ContractorVsEmployeeCalculator() {
     );
 
     const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<DeepDiveTab>('three_way_waterfall');
+    const [canonicalAnnualGross, setCanonicalAnnualGross] = useState<number | null>(null);
     const [exportCodeFormat, setExportCodeFormat] = useState<
-        'negotiation_txt' | 'markdown_dossier' | 'certificate_json' | 'svg_chart'
+        'negotiation_txt' | 'markdown_dossier' | 'certificate_json' | 'contract_clauses_txt' | 'svg_chart'
     >('negotiation_txt');
     const [copiedNegotiation, setCopiedNegotiation] = useState<boolean>(false);
     const [copiedShareLink, setCopiedShareLink] = useState<boolean>(false);
@@ -249,6 +251,7 @@ export default function ContractorVsEmployeeCalculator() {
     const activeExportText = useMemo(() => {
         if (exportCodeFormat === 'negotiation_txt') return report.recruiterNegotiationBriefText;
         if (exportCodeFormat === 'markdown_dossier') return report.markdownTaxAndKidReport;
+        if (exportCodeFormat === 'contract_clauses_txt') return report.contractualAddendumClausesText;
         if (exportCodeFormat === 'svg_chart') return report.svgWaterfallChart;
         return report.auditCertificateJson;
     }, [exportCodeFormat, report]);
@@ -313,21 +316,31 @@ export default function ContractorVsEmployeeCalculator() {
                             </div>
                         </div>
 
-                        {/* WORLDWIDE ISO 4217 CURRENCY SELECTOR (ALL 160 ACTIVE CURRENCIES — MATCHING MORTGAGE & EMI CALCULATORS) */}
-                        <div className="space-y-1.5 min-w-0">
-                            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                                Select Currency (All {ISO_4217_CURRENCIES.length} Active ISO 4217 Global Currencies)
-                            </label>
+                        {/* WORLDWIDE ISO 4217 CURRENCY SELECTOR & LIVE FX CONVERSION LAYER (153 ACTIVE ISO CURRENCIES) */}
+                        <div className="space-y-2 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                    Display Currency ({ISO_4217_CURRENCIES.length} Active ISO 4217 Currencies)
+                                </label>
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                    Statutory Tax Base: {report.statutoryCurrencyCode} ({report.statutoryCurrencySymbol})
+                                </span>
+                            </div>
                             <select
                                 value={report.activeCurrency.code}
                                 onChange={(e) => {
                                     const chosen = getIsoCurrencyByCode(e.target.value);
+                                    const statCode = JURISDICTION_CATALOG[inputs.jurisdiction].currencyCode;
+                                    const autoFx = computeCrossRate(statCode, chosen.code);
                                     setInputs((prev) => ({
                                         ...prev,
                                         currencyCode: chosen.code,
+                                        fxConversionRate: autoFx,
                                     }));
                                     setStatusNotice(
-                                        `Switched active display currency to ${chosen.name} (${chosen.code}) — ${chosen.symbol} (${chosen.decimals} decimals).`
+                                        chosen.code === statCode
+                                            ? `Display currency locked to statutory currency ${chosen.code} (${chosen.symbol}).`
+                                            : `Converting statutory ${statCode} outputs to ${chosen.name} (${chosen.code}) at 1 ${statCode} = ${autoFx} ${chosen.code}.`
                                     );
                                 }}
                                 className="w-full min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -338,9 +351,47 @@ export default function ContractorVsEmployeeCalculator() {
                                     </option>
                                 ))}
                             </select>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                Supports all 160 active ISO 4217 currencies worldwide ({report.activeCurrency.name} • {report.activeCurrency.symbol}).
-                            </p>
+
+                            {inputs.jurisdiction !== 'GLOBAL_CUSTOM' &&
+                                report.activeCurrency.code !== report.statutoryCurrencyCode && (
+                                    <div className="rounded-xl border border-amber-200 dark:border-amber-900/70 bg-amber-50/70 dark:bg-amber-950/30 p-2.5 space-y-1.5 text-[11px]">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <span className="font-bold text-amber-900 dark:text-amber-200">
+                                                FX Conversion Active: 1 {report.statutoryCurrencyCode} ={' '}
+                                                {report.appliedFxRateDisplayPerStatutory} {report.activeCurrency.code}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        currencyCode: report.statutoryCurrencyCode,
+                                                        fxConversionRate: 1.0,
+                                                    }))
+                                                }
+                                                className="px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-950 dark:text-amber-100 font-bold cursor-pointer"
+                                            >
+                                                Lock to {report.statutoryCurrencyCode}
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-slate-600 dark:text-slate-400 shrink-0">Custom FX Rate:</span>
+                                            <input
+                                                type="number"
+                                                min={0.00001}
+                                                step="any"
+                                                value={inputs.fxConversionRate ?? report.appliedFxRateDisplayPerStatutory}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        fxConversionRate: Math.max(0.00001, Number(e.target.value) || 1),
+                                                    }))
+                                                }
+                                                className="w-full min-w-0 px-2 py-1 rounded border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 font-mono text-xs font-bold"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                         </div>
 
                         {/* TAX JURISDICTION & STATUTORY REGIME SELECTOR (8 BUILT-IN COUNTRIES + GLOBAL CUSTOM COUNTRY ENGINE) */}
@@ -519,8 +570,23 @@ export default function ContractorVsEmployeeCalculator() {
 
                             <div className="min-w-0">
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">
-                                    Filing Status
+                                    Tax Year &amp; Filing Status
                                 </label>
+                                <div className="flex gap-1.5 mb-1.5">
+                                    {(['2026', '2025'] as const).map((yr) => (
+                                        <button
+                                            key={yr}
+                                            type="button"
+                                            onClick={() => setInputs((prev) => ({ ...prev, taxYear: yr }))}
+                                            className={`flex-1 py-1 rounded-lg text-xs font-bold border cursor-pointer ${(inputs.taxYear || '2026') === yr
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                }`}
+                                        >
+                                            {yr} Tax Year
+                                        </button>
+                                    ))}
+                                </div>
                                 <select
                                     value={inputs.filingStatus}
                                     onChange={(e) =>
@@ -595,15 +661,25 @@ export default function ContractorVsEmployeeCalculator() {
                                             key={item.mode}
                                             type="button"
                                             onClick={() => {
-                                                const curAnnual = report.contractorAnnualGrossRevenue;
+                                                const baseStatAnnual =
+                                                    canonicalAnnualGross !== null
+                                                        ? canonicalAnnualGross
+                                                        : inputs.contractorRateMode === 'HOURLY'
+                                                            ? inputs.contractorRateInput * report.totalBillableHoursPerYear
+                                                            : inputs.contractorRateMode === 'DAILY'
+                                                                ? inputs.contractorRateInput * report.totalBillableDaysPerYear
+                                                                : inputs.contractorRateMode === 'MONTHLY'
+                                                                    ? inputs.contractorRateInput * 12
+                                                                    : inputs.contractorRateInput;
+                                                setCanonicalAnnualGross(baseStatAnnual);
                                                 const nextVal =
                                                     item.mode === 'HOURLY'
-                                                        ? Number((curAnnual / report.totalBillableHoursPerYear).toFixed(2))
+                                                        ? Number((baseStatAnnual / report.totalBillableHoursPerYear).toFixed(4))
                                                         : item.mode === 'DAILY'
-                                                            ? Number((curAnnual / report.totalBillableDaysPerYear).toFixed(2))
+                                                            ? Number((baseStatAnnual / report.totalBillableDaysPerYear).toFixed(4))
                                                             : item.mode === 'MONTHLY'
-                                                                ? Math.round(curAnnual / 12)
-                                                                : Math.round(curAnnual);
+                                                                ? Number((baseStatAnnual / 12).toFixed(2))
+                                                                : Number(baseStatAnnual.toFixed(2));
                                                 setInputs((prev) => ({
                                                     ...prev,
                                                     contractorRateMode: item.mode,
@@ -636,12 +712,13 @@ export default function ContractorVsEmployeeCalculator() {
                                         min={0}
                                         step="any"
                                         value={inputs.contractorRateInput}
-                                        onChange={(e) =>
+                                        onChange={(e) => {
+                                            setCanonicalAnnualGross(null);
                                             setInputs((prev) => ({
                                                 ...prev,
                                                 contractorRateInput: Math.max(0, Number(e.target.value) || 0),
-                                            }))
-                                        }
+                                            }));
+                                        }}
                                         className="w-full min-w-0 bg-transparent text-right font-mono text-xs sm:text-sm font-bold text-slate-900 dark:text-white outline-none"
                                     />
                                 </div>
@@ -898,6 +975,141 @@ export default function ContractorVsEmployeeCalculator() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Country-Specific Statutory Eligibility & Reasonable Salary Controls */}
+                                {inputs.jurisdiction === 'US' && (
+                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                                S-Corp Reasonable Salary Override ($/yr, 0 = Use % Slider):
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min={0}
+                                                placeholder="0 (Use % Split)"
+                                                value={inputs.usScorpReasonableSalaryOverride ?? 0}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        usScorpReasonableSalaryOverride: Math.max(0, Number(e.target.value) || 0),
+                                                    }))
+                                                }
+                                                className="w-32 px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs font-bold"
+                                            />
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={Boolean(inputs.usIsSpecifiedServiceTradeOrBusinessSstb)}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        usIsSpecifiedServiceTradeOrBusinessSstb: e.target.checked,
+                                                    }))
+                                                }
+                                                className="w-3.5 h-3.5 accent-blue-600 rounded"
+                                            />
+                                            <span className="text-[11px] text-slate-700 dark:text-slate-300">
+                                                Specified Service Trade or Business (SSTB — Consulting/Law/Health/Finance QBI Phase-Out)
+                                            </span>
+                                        </label>
+                                    </div>
+                                )}
+
+                                {inputs.jurisdiction === 'UK' && (
+                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                                Outside IR35 Director Salary Strategy:
+                                            </span>
+                                            <select
+                                                value={inputs.ukDirectorSalaryStrategy || 'PERSONAL_ALLOWANCE_12570'}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        ukDirectorSalaryStrategy: e.target.value as 'NI_THRESHOLD_5000' | 'PERSONAL_ALLOWANCE_12570',
+                                                    }))
+                                                }
+                                                className="px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold"
+                                            >
+                                                <option value="PERSONAL_ALLOWANCE_12570">£12,570 (Personal Allowance)</option>
+                                                <option value="NI_THRESHOLD_5000">£5,000 (NI Secondary Threshold)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {inputs.jurisdiction === 'IN' && (
+                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+                                        <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                            India Section 44ADA Statutory Eligibility Conditions:
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={inputs.indiaIsEligibleProfession44ADA !== false}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        indiaIsEligibleProfession44ADA: e.target.checked,
+                                                    }))
+                                                }
+                                                className="w-3.5 h-3.5 accent-blue-600 rounded"
+                                            />
+                                            <span className="text-[11px]">Notified Profession u/s 44AA(1) (IT, Engineering, Design, Law, Medical, Consulting)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={inputs.indiaHas95PercentDigitalReceipts !== false}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        indiaHas95PercentDigitalReceipts: e.target.checked,
+                                                    }))
+                                                }
+                                                className="w-3.5 h-3.5 accent-blue-600 rounded"
+                                            />
+                                            <span className="text-[11px]">&gt;=95% Digital Bank Receipts (Unlocks ₹75 Lakh 44ADA limit vs. ₹50 Lakh)</span>
+                                        </label>
+                                    </div>
+                                )}
+
+                                {inputs.jurisdiction === 'PK' && (
+                                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
+                                        <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                                            Pakistan FBR Section 154A (0.25% / 1.0%) Statutory Conditions:
+                                        </div>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={inputs.pakistanHasValidPsebCertificate !== false}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        pakistanHasValidPsebCertificate: e.target.checked,
+                                                    }))
+                                                }
+                                                className="w-3.5 h-3.5 accent-blue-600 rounded"
+                                            />
+                                            <span className="text-[11px]">Active PSEB Freelancer / Company Registration (Required for 0.25% Rate)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={inputs.pakistanHasValidPrcCode9186 !== false}
+                                                onChange={(e) =>
+                                                    setInputs((prev) => ({
+                                                        ...prev,
+                                                        pakistanHasValidPrcCode9186: e.target.checked,
+                                                    }))
+                                                }
+                                                className="w-3.5 h-3.5 accent-blue-600 rounded"
+                                            />
+                                            <span className="text-[11px]">Foreign IT Export Remittance via Banking Channels (PRC Purpose Code 9186)</span>
+                                        </label>
+                                    </div>
+                                )}
 
                                 {/* S-Corp / Ltd Co Reasonable Salary % Split Slider */}
                                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1">
@@ -1210,23 +1422,32 @@ export default function ContractorVsEmployeeCalculator() {
                                 </span>
                                 <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180 shrink-0" />
                             </summary>
-                            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-1.5 text-slate-600 dark:text-slate-400 leading-relaxed">
-                                <p>
-                                    • <strong>Active Statutory Basis:</strong> {meta.name} ({meta.taxYearLabel}).
+                            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5 text-slate-600 dark:text-slate-400 leading-relaxed">
+                                <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                                    <table className="w-full text-left border-collapse text-[11px]">
+                                        <thead className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                                            <tr>
+                                                <th className="py-1.5 px-2.5">Step</th>
+                                                <th className="py-1.5 px-2.5">Calculation Stage &amp; Rule Applied</th>
+                                                <th className="py-1.5 px-2.5">Computed Statutory Output</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800 font-mono">
+                                            {report.calculationAssumptionsAuditTrail.map((st) => (
+                                                <tr key={st.stepNumber}>
+                                                    <td className="py-1.5 px-2.5 font-bold text-blue-600">#{st.stepNumber}</td>
+                                                    <td className="py-1.5 px-2.5 font-sans">
+                                                        <strong className="text-slate-900 dark:text-white">{st.category}:</strong> {st.label} ({st.formulaOrRule})
+                                                    </td>
+                                                    <td className="py-1.5 px-2.5 text-slate-800 dark:text-slate-200">{st.statutoryAmountFormatted}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="text-[11px] text-slate-500">
+                                    <strong>Important Estimation Disclosure:</strong> Calculations represent statutory tax and cash-flow estimates based on your selected parameters and tax year ({inputs.taxYear || '2026'}). Consult a qualified CPA, chartered accountant, or employment attorney for formal tax filings or legal status determinations.
                                 </p>
-                                <p>
-                                    • <strong>Reverse Break-Even Rate Solver:</strong> Uses a 48-iteration binary search solver to find the exact contractor gross revenue where after-tax net cash matches 100% of Full-Time Net Cash + Employer Health Subsidy + Employer Retirement Match.
-                                </p>
-                                {inputs.jurisdiction === 'US' && (
-                                    <p>
-                                        • <strong>US IRS Schedule SE &amp; QBI 199A:</strong> Applies the 92.35% Schedule SE multiplier, 12.4% Social Security up to the $184,500 wage base, 2.9% Medicare + 0.9% Additional Medicare (&gt;$200k Single / $250k MFJ), 50% above-the-line SE tax deduction, and 20% Section 199A QBI deduction.
-                                    </p>
-                                )}
-                                {inputs.jurisdiction === 'UK' && (
-                                    <p>
-                                        • <strong>UK HMRC Inside/Outside IR35 KID:</strong> Deducts Umbrella Margin, 15% Employer Class 1 NI (above £5,000), and 0.5% Apprenticeship Levy from the assignment rate before PAYE Income Tax and Employee NI. Outside IR35 models £12,570 salary + Corporation Tax (19%–25% marginal relief) + Dividend Tax.
-                                    </p>
-                                )}
                             </div>
                         </details>
                     </div>
@@ -1255,13 +1476,13 @@ export default function ContractorVsEmployeeCalculator() {
                     },
                     {
                         id: 'classification_ir35' as const,
-                        label: '3. 12-Point IR35 / IRS Classification Audit',
+                        label: '3. Worker Classification Risk Assessment',
                         badge: `${report.classificationComplianceScore}/100`,
                         icon: ShieldCheck,
                     },
                     {
                         id: 'employer_eor_cost' as const,
-                        label: '4. Employer Cost & EOR (Deel/Remote/Oyster)',
+                        label: '4. Employer Cost & EOR Estimator',
                         badge: 'CFO View',
                         icon: Building2,
                     },
@@ -1734,7 +1955,7 @@ export default function ContractorVsEmployeeCalculator() {
                                     >
                                         <Wrench className="w-3.5 h-3.5" />
                                         <span>
-                                            1-Click Apply Safe-Harbor Clauses ({report.classificationLintIssues.length})
+                                            Apply Suggested Assessment Answers ({report.classificationLintIssues.length})
                                         </span>
                                     </button>
                                 )}
@@ -1949,8 +2170,9 @@ export default function ContractorVsEmployeeCalculator() {
                             {[
                                 { id: 'negotiation_txt' as const, label: '1. Recruiter Negotiation Script (.txt)' },
                                 { id: 'markdown_dossier' as const, label: '2. Full Tax & KID Dossier (.md)' },
-                                { id: 'certificate_json' as const, label: '3. SHA-256 Compliance Certificate (.json)' },
-                                { id: 'svg_chart' as const, label: '4. Vector Comparison Chart (.svg)' },
+                                { id: 'certificate_json' as const, label: '3. SHA-256 Scenario Fingerprint (.json)' },
+                                { id: 'contract_clauses_txt' as const, label: '4. Safe-Harbor SOW Addendum Clauses (.txt)' },
+                                { id: 'svg_chart' as const, label: '5. Vector Comparison Chart (.svg)' },
                             ].map((item) => (
                                 <button
                                     key={item.id}
@@ -1985,7 +2207,8 @@ export default function ContractorVsEmployeeCalculator() {
                                     const extMap: Record<typeof exportCodeFormat, string> = {
                                         negotiation_txt: 'contractor_rate_negotiation_brief.txt',
                                         markdown_dossier: 'contractor_vs_employee_tax_dossier.md',
-                                        certificate_json: 'ir35_1099_compliance_certificate.json',
+                                        certificate_json: 'scenario_sha256_data_fingerprint.json',
+                                        contract_clauses_txt: 'independent_contractor_sow_addendum_clauses.txt',
                                         svg_chart: 'contractor_vs_employee_chart.svg',
                                     };
                                     triggerDownload(activeExportText, extMap[exportCodeFormat], 'text/plain;charset=utf-8');

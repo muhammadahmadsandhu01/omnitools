@@ -24,27 +24,27 @@ export const SAAS_BURN_RATE_CALCULATOR_FAQS: FaqItem[] = [
     {
         question: 'What is the difference between Gross Burn Rate and Net Burn Rate?',
         answer:
-            'Gross Burn Rate is the total amount of cash your business spends every month across all operating expenses (payroll, marketing, software, rent, planned hires, and cost of goods sold) before accounting for revenue. Net Burn Rate is the actual cash your bank account loses each month after subtracting Monthly Recurring Revenue (Net Burn = Total Monthly Expenses − Monthly Revenue). Runway is always calculated using Net Burn.',
+            'Gross Burn Rate is the total amount of cash your business spends every month across operating expenses (payroll, marketing, software, rent, planned hires, and cost of goods sold) before accounting for revenue. Net Burn Rate is the monthly cash deficit after subtracting Monthly Recurring Revenue (Net Burn = Total Gross Burn − Monthly Revenue) when expenses exceed revenue.',
     },
     {
         question: 'How is startup cash runway calculated (Static vs. Dynamic Runway)?',
         answer:
-            'Static Runway divides your current cash balance by today’s monthly Net Burn (Runway = Cash Balance ÷ Net Burn), assuming your revenue and expenses never change. Dynamic Runway forecasts your cash balance month by month over 60 months by compounding your monthly revenue growth rate, monthly expense growth rate, planned hires, and upcoming funding rounds to find the exact month and calendar date when cash reaches zero.',
+            'Static Runway divides your current cash balance by Month-1 Net Burn (Cash Balance ÷ Net Burn), assuming zero future revenue or expense growth (displayed up to 60+ months, with the uncapped figure shown when above 60 months). Dynamic Runway simulates your cash flow month by month over a 60-month horizon by compounding your modeled monthly revenue growth rate, expense growth rate, planned hires, and scheduled funding rounds, estimating the zero-cash crossing to one decimal month.',
     },
     {
-        question: 'What does Paul Graham’s "Default Alive vs. Default Dead" mean?',
+        question: 'How does the calculator’s Default Alive vs. Default Dead trajectory test work?',
         answer:
-            'Coined by Y Combinator co-founder Paul Graham, Default Alive means that at your current monthly revenue growth rate and expense growth rate, your company will reach cash-flow profitability (revenue ≥ expenses) before your bank balance runs out of money. Default Dead means your cash will hit zero before revenue catches up to expenses—requiring either an immediate expense reduction, faster revenue growth, or an external funding round.',
+            'Inspired by Paul Graham’s "Default Alive or Default Dead?" framework, the calculator’s Default Alive trajectory test checks whether your modeled monthly recurring revenue overtakes total monthly gross burn within the 60-month projection before your cash balance reaches zero. If revenue crosses expenses while cash remains positive, the trajectory is labeled Default Alive; otherwise it is labeled Default Dead.',
     },
     {
-        question: 'When should a startup start fundraising based on its cash runway?',
+        question: 'How is the Raise-By indicator calculated from projected cash runway?',
         answer:
-            'Because a typical Seed, Series A, or Series B fundraising round takes 4 to 6 months from initial investor pitches to cash in the bank, founders should start raising at least 6 months before their projected Zero-Cash Date (ideally with 12 to 18 months of runway remaining). Our calculator automatically computes your Recommended Raise-By Date by subtracting a 6-month buffer from your dynamic runway.',
+            'Fundraising can take several months from initial investor conversations to closing, so founders typically plan well ahead of their projected zero-cash date. The calculator uses a configurable six-month planning buffer (Projected Dynamic Runway minus 6 months) for its Raise-By indicator.',
     },
     {
-        question: 'What is the Burn Multiple and what is a good benchmark for SaaS startups?',
+        question: 'How does the calculator compute the Modeled Burn Multiple?',
         answer:
-            'Popularized by David Sacks (Craft Ventures), the Burn Multiple measures how much cash a SaaS company burns to generate each new dollar of Annual Recurring Revenue (Burn Multiple = Annualized Net Burn ÷ Annualized Net New ARR). A Burn Multiple under 1.0x is considered Elite, 1.0x to 1.5x is Great, 1.5x to 2.0x is Good, and above 2.0x indicates high capital burn relative to growth.',
+            'Based on the Burn Multiple framework popularized by David Sacks, the calculator computes a Modeled Burn Multiple by dividing Annualized Month-1 Net Burn by Annualized Forward Net New ARR (derived from your current MRR and modeled monthly growth rate). In historical accounting, Burn Multiple is also measured over trailing quarterly or annual financial periods. A lower multiple indicates higher capital efficiency.',
     },
     {
         question: 'Are my financial numbers or cap table data uploaded to any server?',
@@ -52,34 +52,34 @@ export const SAAS_BURN_RATE_CALCULATOR_FAQS: FaqItem[] = [
             'No. Your cash balances, monthly revenue, operating expenses, hiring plans, and cap table inputs are processed locally in your browser and are not uploaded to KivaroTools servers. The website may still load general analytics or other third-party website resources.',
     },
     {
-        question: 'What is the difference between a Post-Money SAFE and a Pre-Money SAFE?',
+        question: 'How are multiple Post-Money SAFEs vs. Pre-Money SAFEs modeled?',
         answer:
-            'Under a Y Combinator Post-Money SAFE, the investor locks in a fixed ownership percentage of the company prior to the next priced funding round equal to Investment Amount ÷ Post-Money Valuation Cap. Multiple Post-Money SAFEs stack on top of each other and dilute the founders rather than diluting one another. Under a Pre-Money SAFE, the valuation cap excludes converting SAFEs, meaning multiple SAFE investors dilute each other alongside the founders.',
+            'Under the Y Combinator Post-Money SAFE v1.1 structure, each Post-Money SAFE converting on its valuation cap locks a fixed pre-round ownership percentage of the post-SAFE company capitalization equal to Investment Amount ÷ Post-Money Valuation Cap, before new Series A investment and option pool expansion dilute all existing holders proportionally. Multiple Post-Money SAFEs stack additively (`∑ [Investment ÷ Cap]`) rather than diluting one another. Pre-Money SAFEs divide their cap by the initial pre-SAFE share count.',
     },
     {
-        question: 'What is the Series A "Option Pool Shuffle" (Pre-Money vs. Post-Money Pool)?',
+        question: 'How does the Convertible Note conversion model work?',
         answer:
-            'When Series A investors require a startup to create or expand its unissued employee option pool (for example, to 10% or 15% of post-round shares), standard venture term sheets carve that option pool top-up out of the Pre-Money Valuation ("Pre-Money Shuffle"). This lowers the effective share price of the round so that existing founders and converting SAFE holders absorb 100% of the option pool dilution. Switching to "Post-Money Shared" shares the option pool dilution across both existing shareholders and new Series A investors.',
+            'The calculator models convertible notes using a simple-interest accrual formula (`Converting Principal = Principal × [1 + Annual Interest Rate × Months ÷ 12]`) and converts the note at the lowest of the Valuation Cap price, the Discounted Round price, or the Priced Round share price. Real-world convertible note agreements may include specific day-count conventions, qualified financing thresholds, or custom accrued-interest provisions.',
     },
     {
-        question: 'How do Convertible Notes with interest convert into shares at a priced round?',
+        question: 'What is the difference between Pre-Money Option Pool Carve-Out and Post-Money Shared mode?',
         answer:
-            'Unlike a SAFE (which bears 0% interest), a Convertible Note is a debt instrument that accrues interest over time. At the priced funding round, the converting principal equals Investment Amount × (1 + Annual Interest Rate × Months ÷ 12). The note then converts into shares using whichever price is lowest for the investor: the Valuation Cap price, the Discounted Round price, or the standard Round Share Price.',
+            'A common pre-money option-pool structure requires the unissued employee option pool (ESOP) to reach a target post-closing percentage (such as 10% or 15%) where the newly created top-up shares are included in the pre-money share count used to price the round—meaning existing founders and converting SAFE holders absorb the pool expansion dilution. Switching to "Post-Money Shared" models an alternative structure where option pool expansion dilutes both existing holders and new round investors proportionally.',
     },
     {
-        question: 'How does the 1-Click Breakeven & Target Runway Solver work?',
+        question: 'How does the Breakeven & Target Runway Solver calculate cost-cut and growth targets?',
         answer:
-            'When your startup trajectory is Default Dead or below your target runway (e.g., 24 months), the engine runs a 28-iteration binary search across the 60-month cash flow model to find (1) the exact dollar amount of monthly operating expenses to cut today, or (2) the exact monthly revenue growth rate required to reach cash-flow profitability before running out of cash.',
+            'When a modeled trajectory is Default Dead or below your target runway, the engine runs a 28-iteration binary search across the 60-month cash flow simulation to find the minimum modeled monthly expense reduction (rounded up to the nearest dollar) or monthly revenue growth rate (to one decimal place) needed to achieve operational breakeven under your current assumptions.',
     },
     {
-        question: 'What is the difference between 1x Non-Participating and Participating Preferred in an M&A exit?',
+        question: 'What assumptions are used in the Scenario-Based M&A Exit Waterfall?',
         answer:
-            'In a company sale (M&A exit), 1x Non-Participating Preferred investors choose either to take their 1x invested capital back OR convert their preferred shares into common stock to receive their pro-rata ownership percentage—whichever pays more. Under Participating Preferred ("Double Dip"), investors take their 1x–2x liquidation preference first and then also take their pro-rata percentage of the remaining exit proceeds alongside founders.',
+            'The M&A Exit Waterfall is a scenario-based modeling tool that lets you compare 1x or 2x Non-Participating vs. Participating Preferred payouts, choose whether converted SAFEs carry a 1x shadow preferred claim or convert to common, and toggle between tiered seniority (Series A senior to SAFE/Seed) and pari passu (equal tier) preferences. Actual exit distributions depend on a company’s specific charter, closing adjustments, and transaction agreements.',
     },
     {
-        question: 'Can I export my 60-month runway schedule and pro-forma cap table to Excel (.xlsx)?',
+        question: 'Can I export the 60-month runway schedule and modeled cap table to Excel (.xlsx)?',
         answer:
-            'Yes. Clicking "Export 3-Sheet Excel (.xlsx)" generates a native multi-tab OpenXML workbook containing Sheet 1 (Runway_Schedule_60m), Sheet 2 (Cap_Table_Dilution), and Sheet 3 (Exit_Payout_Comparison) directly in your browser with CWE-1236 spreadsheet formula protection.',
+            'Yes. Clicking "Export 3-Sheet Excel (.xlsx)" builds a multi-tab OpenXML workbook in your browser containing Sheet 1 (Runway_Schedule_60m), Sheet 2 (Cap_Table_Dilution), and Sheet 3 (Exit_Payout_Comparison) with automatic CWE-1236 formula-prefix sanitization.',
     },
 ];
 
@@ -89,24 +89,24 @@ export default function SaasBurnRateCalculatorSeo() {
         '@type': 'SoftwareApplication',
         name: 'SaaS Burn Rate, Runway & Equity Dilution Calculator',
         applicationCategory: 'FinanceApplication',
-        operatingSystem: 'All (100% Client-Side Browser Execution)',
+        operatingSystem: 'All (Client-Side Browser Execution)',
         offers: {
             '@type': 'Offer',
             price: '0',
             priceCurrency: 'USD',
         },
         description:
-            'Calculate startup gross and net burn rate, static vs. dynamic 60-month cash runway, Paul Graham Default Alive/Dead breakeven, David Sacks Burn Multiple, Pre/Post-Money SAFE conversion, Option Pool Shuffle dilution, and M&A exit payouts in your browser.',
+            'Scenario-based startup finance and cap-table modeling calculator for gross and net burn rate, static vs. 60-month dynamic cash runway, Default Alive breakeven analysis, modeled Burn Multiple, Pre/Post-Money SAFE conversion, option-pool dilution, and M&A exit waterfall scenarios.',
         featureList: [
-            'Gross Burn Rate, Net Burn Rate & Static vs. 60-Month Dynamic Compounding Cash Runway',
-            'Paul Graham Default Alive vs. Default Dead Trajectory Check & Recommended Raise-By Date',
-            'David Sacks Burn Multiple (Annualized Net Burn ÷ Net New ARR) & Capital Efficiency Rating',
-            '1-Click Target Runway & Default Alive Breakeven Solver (Required Cost Cut or Revenue Growth %)',
-            'Headcount Hiring Plan Builder & Scheduled Equity Round Cash Injection',
-            'Pre-Money & Post-Money SAFE + Convertible Note Cap Table Dilution Calculator',
-            'Series A Option Pool Shuffle (Pre-Money Carve-Out vs. Post-Money Shared) Comparison',
-            'M&A Exit Payout Waterfall (1x–2x Non-Participating vs. Participating Preferred)',
-            '3-Scenario Comparison Matrix (Conservative, Base Case, Optimistic) & 3-Sheet Excel (.xlsx) Export',
+            'Gross Burn Rate, Net Burn Rate & Static vs. 60-Month Dynamic Compounding Cash Runway Simulation',
+            'Default Alive Trajectory Check, Projected Zero-Cash Date & Configurable 6-Month Raise-By Indicator',
+            'Modeled Burn Multiple (Annualized Net Burn ÷ Annualized Forward Net New ARR)',
+            'Binary-Search Target Runway & Breakeven Solver (Calculated Monthly Cost Cut or Revenue Growth %)',
+            'Headcount Hiring Plan Builder & Scheduled Funding Round Cash Flow Integration',
+            'Additive YC Post-Money SAFE, Pre-Money SAFE & Simple-Interest Convertible Note Dilution Modeling',
+            'Pre-Money Option Pool Carve-Out vs. Post-Money Shared Pool Dilution Comparison',
+            'Scenario-Based M&A Exit Waterfall (1x–2x Non-Participating vs. Participating, Seniority & SAFE Treatment)',
+            'Built-In 5-Point Conservation Verification Layer + 3-Sheet Excel (.xlsx) & CSV Export',
         ],
     };
 
@@ -126,9 +126,9 @@ export default function SaasBurnRateCalculatorSeo() {
     const jsonLdHowTo = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: 'How to Calculate Startup Burn Rate, Cash Runway, and SAFE Equity Dilution',
+        name: 'How to Model Startup Burn Rate, Cash Runway, and SAFE Equity Dilution',
         description:
-            'Step-by-step guide to forecasting your startup cash runway, determining whether you are Default Alive or Default Dead, and modeling SAFE and Series A founder dilution.',
+            'Step-by-step guide to projecting your startup cash runway, testing Default Alive breakeven assumptions, and modeling SAFE and Series A founder dilution.',
         step: [
             {
                 '@type': 'HowToStep',
@@ -139,20 +139,20 @@ export default function SaasBurnRateCalculatorSeo() {
             {
                 '@type': 'HowToStep',
                 position: 2,
-                name: 'Review Cash Runway, Default Alive Status & Burn Multiple',
-                text: 'Check the right-hand summary card for your Dynamic Cash Runway, Zero-Cash or Breakeven Date, Recommended Raise-By Date, and David Sacks Burn Multiple.',
+                name: 'Review Projected Cash Runway, Default Alive Status & Modeled Burn Multiple',
+                text: 'Check the right-hand summary card for your 60-month Dynamic Cash Runway, Projected Zero-Cash or Breakeven Date, Raise-By Indicator, and Modeled Burn Multiple.',
             },
             {
                 '@type': 'HowToStep',
                 position: 3,
                 name: 'Model SAFE Notes, Next Funding Round & Option Pool Dilution',
-                text: 'Open the Cap Table & SAFE Dilution tab below to add Pre-Money or Post-Money SAFEs, Convertible Notes, and Series A valuation terms to see exact post-round founder ownership.',
+                text: 'Open the Cap Table & SAFE Dilution tab below to add Pre-Money or Post-Money SAFEs, Convertible Notes, and Series A valuation terms to see modeled post-round founder ownership.',
             },
             {
                 '@type': 'HowToStep',
                 position: 4,
                 name: 'Compare 3 Scenarios & Export Your 3-Sheet Excel (.xlsx) Model',
-                text: 'Compare Conservative, Base, and Optimistic trajectories, inspect M&A exit payouts across valuations from $10M to $500M, and download the 3-sheet Excel (.xlsx) or CSV schedule.',
+                text: 'Compare Conservative, Base, and Optimistic trajectories, inspect scenario-based M&A exit payouts across valuations from $10M to $500M, and download the 3-sheet Excel (.xlsx) or CSV schedule.',
             },
         ],
     };
@@ -184,7 +184,7 @@ export default function SaasBurnRateCalculatorSeo() {
                         id="saas-burn-rate-architecture-overview"
                         className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white"
                     >
-                        SaaS Burn Rate, Cash Runway &amp; Equity Dilution Calculator
+                        Scenario-Based SaaS Burn Rate, Cash Runway &amp; Equity Dilution Calculator
                     </h2>
                     <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
                         <Sparkles className="h-3.5 w-3.5" />
@@ -193,14 +193,14 @@ export default function SaasBurnRateCalculatorSeo() {
                 </div>
 
                 <p className="mt-4 w-full text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-300 break-words">
-                    Most online startup calculators only solve half of a founder’s problem: basic burn rate calculators
+                    Most online startup calculators separate cash management from fundraising: basic burn-rate tools
                     divide current cash by static monthly spend while ignoring compounding revenue growth, planned
-                    hires, and upcoming funding rounds; standalone SAFE calculators show equity dilution without
-                    connecting that fundraise to your actual cash runway. Our{' '}
-                    <strong>SaaS Burn Rate, Runway &amp; Dilution Simulator</strong> combines a{' '}
-                    <strong>60-month dynamic cash flow forecaster</strong> with a{' '}
-                    <strong>pro-forma SAFE, Convertible Note, Option Pool Shuffle, and M&amp;A Exit Payout calculator</strong>{' '}
-                    in one streamlined workspace.
+                    hires, and scheduled funding rounds; standalone cap-table calculators model SAFE dilution without
+                    connecting that capital injection to your operational runway. Our{' '}
+                    <strong>SaaS Burn Rate, Runway &amp; Dilution Calculator</strong> combines a{' '}
+                    <strong>60-month dynamic cash flow simulation</strong> with{' '}
+                    <strong>scenario-based Pre/Post-Money SAFE, Convertible Note, Option Pool, and M&amp;A Exit Waterfall modeling</strong>{' '}
+                    in one streamlined browser workspace.
                 </p>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -210,8 +210,8 @@ export default function SaasBurnRateCalculatorSeo() {
                             <span>Static &amp; Dynamic Runway</span>
                         </div>
                         <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                            Compares zero-growth Static Runway against 60-month compounding Dynamic Runway with exact
-                            Zero-Cash Date, Breakeven Date, and 6-month Raise-By alerts.
+                            Compares zero-growth Static Runway against a 60-month compounding Dynamic Runway simulation
+                            with projected Zero-Cash Date, Breakeven Date, and a 6-month Raise-By planning indicator.
                         </p>
                     </div>
 
@@ -221,8 +221,8 @@ export default function SaasBurnRateCalculatorSeo() {
                             <span>Default Alive &amp; Burn Multiple</span>
                         </div>
                         <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                            Evaluates Paul Graham’s Default Alive test and David Sacks’ Burn Multiple (Net Burn ÷ Net
-                            New ARR), with a 1-click solver for required cost cuts or growth.
+                            Evaluates the calculator’s Default Alive trajectory test and Modeled Burn Multiple (Net Burn
+                            ÷ Forward Net New ARR), with a binary-search solver for cost-cut or growth targets.
                         </p>
                     </div>
 
@@ -232,19 +232,19 @@ export default function SaasBurnRateCalculatorSeo() {
                             <span>SAFE &amp; Option Pool Dilution</span>
                         </div>
                         <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                            Models stacked Post-Money and Pre-Money SAFEs, Convertible Notes with accrued interest, and
-                            Pre-Money vs. Post-Money Option Pool Shuffles.
+                            Models additive Post-Money SAFEs, Pre-Money SAFEs, simple-interest Convertible Notes, and
+                            Pre-Money Carve-Out vs. Post-Money Shared option pool structures.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-800/40 min-w-0">
                         <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
                             <DollarSign className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                            <span>M&amp;A Exit Payout Waterfall</span>
+                            <span>Scenario M&amp;A Waterfall</span>
                         </div>
                         <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                            Calculates exact founder, investor, and employee option pool payouts across $10M to $500M
-                            exits under 1x–2x Non-Participating or Participating Preferred terms.
+                            Models founder, investor, and option-pool distributions across $10M to $500M exit scenarios
+                            with configurable liquidation multiples, participation, seniority, and SAFE treatment.
                         </p>
                     </div>
                 </div>
@@ -263,12 +263,12 @@ export default function SaasBurnRateCalculatorSeo() {
                         id="saas-burn-rate-working-structure"
                         className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
                     >
-                        Complete Working Structure: How the Burn Rate, Runway &amp; Dilution Engine Works
+                        Complete Working Structure: How the 6-Domain Financial &amp; Cap Table Engine Works
                     </h2>
                 </div>
                 <p className="w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-                    Every calculation in <code>lib/saasBurnRateEngine.ts</code> follows standard SaaS accounting and
-                    venture capital cap table formulas:
+                    <code>lib/saasBurnRateEngine.ts</code> is organized into modular calculation domains verified by
+                    automated conservation checks:
                 </p>
 
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -277,51 +277,50 @@ export default function SaasBurnRateCalculatorSeo() {
                             1. Gross Burn, Net Burn &amp; Static vs. Dynamic Runway
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                            <code>COGS = MRR × (1 − Gross Margin %)</code> and{' '}
                             <code>Gross Burn = Base Operating Expenses + Planned Hires + COGS</code>.{' '}
                             <code>Net Burn = max(0, Gross Burn − Monthly Revenue)</code>. Static Runway divides{' '}
-                            <code>Current Cash ÷ Net Burn</code>. Dynamic Runway simulates each month <code>t = 1..60</code>{' '}
-                            with compounding revenue growth <code>MRR_t = MRR_(t-1) × (1 + g_rev)</code> and expense
-                            growth <code>Exp_t = Exp_(t-1) × (1 + g_exp)</code>, interpolating the exact fractional
-                            month when cash reaches zero.
+                            <code>Current Cash ÷ Month-1 Net Burn</code> (reporting both the uncapped figure and a 60m
+                            display cap). Dynamic Runway simulates each month <code>t = 1..60</code> with compounding
+                            revenue and expense growth, estimating the zero-cash crossing to one decimal month.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            2. David Sacks Burn Multiple &amp; Default Alive Breakeven Solver
+                            2. Modeled Burn Multiple &amp; Default Alive Solver
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            <code>Burn Multiple = Annualized Net Burn ÷ Annualized Net New ARR</code>. If your monthly
-                            recurring revenue crosses total monthly gross burn before your cash balance hits zero, your
-                            startup is classified as <strong>Default Alive</strong>. If Default Dead, a 28-iteration
-                            binary search solves for the exact monthly cost cut or monthly growth rate needed to reach
-                            profitability before running out of cash.
+                            <code>Modeled Burn Multiple = Annualized Month-1 Net Burn ÷ Annualized Forward Net New ARR</code>.
+                            If monthly recurring revenue overtakes total monthly gross burn before cash reaches zero,
+                            the trajectory is classified as <strong>Default Alive</strong>. When Default Dead, a
+                            28-iteration binary search finds the minimum modeled monthly expense reduction or revenue
+                            growth rate needed within solver tolerance.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            3. Pre-Money vs. Post-Money SAFE &amp; Option Pool Shuffle Math
+                            3. Additive Post-Money SAFE, Note &amp; Option Pool Mechanics
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            A YC Post-Money SAFE locks ownership prior to the priced round at{' '}
-                            <code>Investment ÷ Valuation Cap</code>. When a priced round (e.g., Series A) includes a
-                            Pre-Money Option Pool Carve-Out, the round share price is{' '}
-                            <code>Pre-Money Valuation ÷ (Existing Shares + Converted SAFE Shares + Option Pool Top-Up)</code>,
-                            so new investors receive exactly <code>New Investment ÷ Post-Money Valuation</code>.
+                            Each YC Post-Money SAFE converting on its cap locks an ownership fraction{' '}
+                            <code>α_i = Investment_i ÷ PostMoneyCap_i</code> of the post-SAFE capitalization, solved in
+                            closed form via <code>S_post_safe = (InitialShares + PreMoneyNoteShares) ÷ (1 − ∑ α_i)</code>.
+                            Under a Pre-Money Option Pool Carve-Out, the new round share price is{' '}
+                            <code>Pre-Money Valuation ÷ (S_post_safe + OptionPoolTopUpShares)</code>.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            4. Per-Class Liquidation Preference &amp; M&amp;A Exit Waterfall
+                            4. Scenario-Based M&amp;A Exit Waterfall &amp; Conservation Layer
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Under <strong>1x Non-Participating Preferred</strong>, each preferred investor class
-                            independently compares its <code>Invested Capital × Multiple</code> against its as-converted
-                            common share of the exit and voluntarily converts to common stock once the exit valuation
-                            exceeds its conversion breakpoint. Under <strong>Participating Preferred</strong>, investors
-                            receive their preference first and also share pro-rata in the remaining proceeds.
+                            Models 1x or 2x Non-Participating vs. Participating Preferred payouts across two selectable
+                            seniority modes (Series A Senior to SAFE vs. Pari Passu) and two SAFE liquidation treatments
+                            (1x Shadow Preferred vs. Convert to Common), while verifying that total distributed proceeds
+                            reconcile with the exit valuation.
                         </p>
                     </div>
                 </div>
@@ -342,7 +341,7 @@ export default function SaasBurnRateCalculatorSeo() {
                         Complete Step-by-Step Guide: How to Use the Burn Rate, Runway &amp; Dilution Calculator
                     </h2>
                     <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
-                        Follow these four steps to forecast your cash runway, plan headcount hires, and model equity
+                        Follow these four steps to project your cash runway, plan headcount hires, and model equity
                         dilution across funding rounds:
                     </p>
                 </div>
@@ -367,12 +366,12 @@ export default function SaasBurnRateCalculatorSeo() {
                             Step 2 • Hiring &amp; Breakeven
                         </span>
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            Add Planned Hires &amp; Check Default Alive
+                            Add Planned Hires &amp; Test Default Alive
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Expand the Hiring Plan drawer to schedule future roles by start month. If your startup is
+                            Expand the Hiring Plan drawer to schedule future roles by start month. If your trajectory is
                             Default Dead, click &ldquo;Apply Cost Cut&rdquo; or &ldquo;Apply Growth&rdquo; on the
-                            right-hand solver bar to see what flips your trajectory to Default Alive.
+                            right-hand solver bar to test what flips the model to Default Alive.
                         </p>
                     </div>
 
@@ -398,15 +397,16 @@ export default function SaasBurnRateCalculatorSeo() {
                             Compare 3 Scenarios &amp; Export 3-Sheet .xlsx
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Inspect Conservative, Base, and Optimistic trajectories, review M&amp;A exit payouts from
-                            $10M to $500M, and download the 3-sheet Excel (<code>.xlsx</code>) or CSV schedule.
+                            Inspect Conservative, Base, and Optimistic trajectories, review scenario-based M&amp;A exit
+                            payouts from $10M to $500M, and download the 3-sheet Excel (<code>.xlsx</code>) or CSV
+                            schedule.
                         </p>
                     </div>
                 </div>
             </section>
 
             {/* ============================================================================
-          SECTION 3: REAL PRACTICAL EXAMPLES (WORKED STARTUP SCENARIOS)
+          SECTION 3: REAL PRACTICAL EXAMPLES (RECONCILED WITH ENGINE V4.0.0)
           ============================================================================ */}
             <section
                 aria-labelledby="saas-burn-rate-real-examples"
@@ -418,39 +418,46 @@ export default function SaasBurnRateCalculatorSeo() {
                         id="saas-burn-rate-real-examples"
                         className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
                     >
-                        Practical Examples: Static vs. Dynamic Runway &amp; Series A Dilution
+                        Reconciled Examples: Static vs. Dynamic Runway &amp; Stacked Post-Money SAFE Dilution
                     </h2>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            Example 1: Why Static Runway Understates Growth (Default Alive Check)
+                            Example 1: Static vs. Dynamic Runway (Preset #1: Seed SaaS)
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            A Seed SaaS startup has <strong>$1,500,000 in cash</strong>, <strong>$45,000 MRR</strong>{' '}
-                            growing at <strong>8.5%/month</strong>, and <strong>$95,000 in monthly expenses</strong>.
-                            Including 18% COGS ($8,100), Month 1 Gross Burn is $103,100 and Net Burn is $58,100/mo. A
-                            simple static division suggests <code>$1.5M ÷ $58.1K = 25.8 months</code> of runway.
-                            However, because MRR compounds at 8.5%/mo, revenue overtakes total expenses in{' '}
-                            <strong>Month 16</strong> while the company still has over <strong>$1,050,000</strong> in
-                            the bank—making the startup <strong>Default Alive</strong> with 60+ months of runway.
+                            In Preset #1, the company starts with <strong>$1,500,000 in cash</strong>,{' '}
+                            <strong>$45,000 MRR</strong> growing at <strong>8.5%/month</strong>,{' '}
+                            <strong>82% Gross Margin</strong> ($8,100 Month-1 COGS), and{' '}
+                            <strong>$95,000 in base monthly operating expenses</strong> (plus two planned hires in Month
+                            4 and Month 8). Month-1 Gross Burn is <code>$103,100</code> and Month-1 Net Burn is{' '}
+                            <code>$58,100</code>, giving a zero-growth <strong>Static Runway of 25.8 months</strong>.
+                            When simulated dynamically with compounding revenue growth and a scheduled Month-15 funding
+                            round, revenue overtakes total gross burn in <strong>Month 16</strong>, making the trajectory{' '}
+                            <strong>Default Alive</strong>.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/30 space-y-2">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            Example 2: Stacked Post-Money SAFEs Converting into a Series A Round
+                            Example 2: Stacked Post-Money SAFEs + Series A Pre-Money Option Pool (Preset #1)
                         </h3>
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Founders start with <strong>90% ownership</strong> (9,000,000 shares) and a{' '}
-                            <strong>10% option pool</strong> (1,000,000 shares). They raise two Post-Money SAFEs:{' '}
-                            <strong>$500K at a $10M Cap (5.0%)</strong> and <strong>$1M at a $15M Cap (6.67%)</strong>,
-                            locking <code>11.67%</code> of pre-Series A shares. When raising a{' '}
-                            <strong>$7M Series A at a $28M Pre-Money Valuation ($35M Post-Money)</strong> with a 10%
-                            post-round option pool carved out pre-money, Series A investors receive{' '}
-                            <code>$7M ÷ $35M = 20.0%</code>, the option pool holds <code>10.0%</code>, SAFE holders
-                            convert to <code>~8.9%</code>, and Founders retain <strong>~61.1% ownership</strong>.
+                            Founders start with <strong>9,000,000 shares (90.00%)</strong> and an existing option pool
+                            of <strong>1,000,000 shares (10.00%)</strong>. Two Post-Money SAFEs convert:{' '}
+                            <strong>SAFE #1 ($500K @ $10M Cap = 5.00% Post-SAFE lock → 566,038 shares)</strong> and{' '}
+                            <strong>SAFE #2 ($1M @ $15M Cap = 6.67% Post-SAFE lock → 754,717 shares)</strong>, totaling{' '}
+                            <code>11.67%</code> Post-SAFE ownership (<code>11,320,755</code> Post-SAFE shares, where
+                            Founders hold <code>79.50%</code>). In a <strong>$7M Series A at $28M Pre-Money ($35M Post-Money)</strong>{' '}
+                            with a <strong>10.00% post-round option pool</strong> carved out pre-money (
+                            <code>+474,394</code> pool top-up shares at <code>$2.3739/share</code>), Post-Round Total
+                            Shares reach <code>14,743,936</code>: Series A Investors hold <strong>20.00%</strong> (
+                            <code>2,948,787</code> sh), the Option Pool holds <strong>10.00%</strong> (
+                            <code>1,474,394</code> sh), SAFE #1 holds <strong>3.84%</strong>, SAFE #2 holds{' '}
+                            <strong>5.12%</strong> (combined SAFEs <strong>8.96%</strong>), and Founders retain{' '}
+                            <strong>61.04%</strong> (<code>9,000,000</code> sh).
                         </p>
                     </div>
                 </div>
@@ -467,14 +474,14 @@ export default function SaasBurnRateCalculatorSeo() {
                     id="saas-burn-rate-benchmark-matrix"
                     className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
                 >
-                    Startup Financial &amp; Equity Dilution Benchmarks by Stage
+                    Startup Financial &amp; Equity Dilution Reference Benchmarks by Stage
                 </h2>
                 <div className="w-full mt-4 overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800">
                     <table className="min-w-[720px] w-full text-left text-xs text-slate-700 dark:text-slate-300 border-collapse">
                         <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white">
                             <tr>
                                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Metric</th>
-                                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Formula</th>
+                                <th className="p-3 border-b border-slate-200 dark:border-slate-800">Modeled Formula</th>
                                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Strong / Healthy Target</th>
                                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">Acceptable Range</th>
                                 <th className="p-3 border-b border-slate-200 dark:border-slate-800">High Risk Zone</th>
@@ -489,7 +496,7 @@ export default function SaasBurnRateCalculatorSeo() {
                                 <td className="p-3 text-rose-600 dark:text-rose-400">&lt; 6 – 9 Months</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">David Sacks Burn Multiple</td>
+                                <td className="p-3 font-bold">Modeled Burn Multiple</td>
                                 <td className="p-3 font-mono">Annualized Net Burn ÷ Net New ARR</td>
                                 <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">&lt; 1.0x – 1.5x</td>
                                 <td className="p-3">1.5x – 2.0x</td>
@@ -503,8 +510,8 @@ export default function SaasBurnRateCalculatorSeo() {
                                 <td className="p-3 text-rose-600 dark:text-rose-400">&lt; 55%</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">Seed SAFE Dilution</td>
-                                <td className="p-3 font-mono">∑ (SAFE Investment ÷ Cap)</td>
+                                <td className="p-3 font-bold">Pre-Series A SAFE Lock</td>
+                                <td className="p-3 font-mono">∑ (SAFE Investment ÷ Post-Money Cap)</td>
                                 <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">10% – 15%</td>
                                 <td className="p-3">15% – 22%</td>
                                 <td className="p-3 text-rose-600 dark:text-rose-400">&gt; 30%</td>
@@ -561,15 +568,15 @@ export default function SaasBurnRateCalculatorSeo() {
                             <tr>
                                 <td className="p-3 font-bold">Static vs. 60-Month Compounding Runway</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ Both Static &amp; 60m Dynamic Forecast
+                                    ✓ Uncapped Static &amp; 60m Dynamic Simulation
                                 </td>
                                 <td className="p-3">Static Division Only (Cash ÷ Burn)</td>
                                 <td className="p-3 text-rose-500">✕ No Cash Runway Modeling</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">Default Alive Test &amp; 1-Click Breakeven Solver</td>
+                                <td className="p-3 font-bold">Default Alive Test &amp; Breakeven Solver</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ Solves Required Cost Cut &amp; Growth %
+                                    ✓ Calculates Cost-Cut &amp; Growth Targets
                                 </td>
                                 <td className="p-3">Manual Trial &amp; Error</td>
                                 <td className="p-3 text-rose-500">✕ Not Supported</td>
@@ -577,31 +584,31 @@ export default function SaasBurnRateCalculatorSeo() {
                             <tr>
                                 <td className="p-3 font-bold">Headcount Hiring Plan &amp; Funding Round Sync</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ Injects Funding Cash in Exact Closing Month
+                                    ✓ Injects Funding Cash in Closing Month
                                 </td>
                                 <td className="p-3 text-rose-500">✕ Disconnected from Fundraising</td>
                                 <td className="p-3 text-rose-500">✕ Disconnected from Cash Burn</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">Pre/Post-Money SAFEs, Notes &amp; Pool Shuffle</td>
+                                <td className="p-3 font-bold">Additive Post-Money SAFEs, Notes &amp; Pool Shuffle</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ Full Cap Table + Option Pool Toggle
+                                    ✓ Closed-Form SAFE Lock + Option Pool Toggle
                                 </td>
                                 <td className="p-3 text-rose-500">✕ No Equity or Dilution</td>
                                 <td className="p-3">Yes (Static Cap Table Only)</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">M&amp;A Exit Payouts (1x–2x Non-Part vs. Part)</td>
+                                <td className="p-3 font-bold">Scenario M&amp;A Waterfall &amp; Seniority Controls</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ $10M to $500M Exit Waterfall Table
+                                    ✓ Senior vs. Pari Passu + SAFE Treatment
                                 </td>
                                 <td className="p-3 text-rose-500">✕ Not Supported</td>
                                 <td className="p-3 text-rose-500">✕ Usually Requires Separate Tool</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold">3-Sheet Native Excel (.xlsx) &amp; CSV Export</td>
+                                <td className="p-3 font-bold">5-Point Conservation Checks + 3-Sheet .xlsx</td>
                                 <td className="p-3 bg-blue-50/40 dark:bg-blue-950/20 font-bold text-emerald-600 dark:text-emerald-400">
-                                    ✓ Instant Local Download (No Signup)
+                                    ✓ Automated Invariant Verification + .xlsx
                                 </td>
                                 <td className="p-3 text-rose-500">✕ Email Gate or None</td>
                                 <td className="p-3">Basic CSV or Print Only</td>
@@ -641,7 +648,7 @@ export default function SaasBurnRateCalculatorSeo() {
                                 <td className="p-3 font-bold">Export 3-Sheet Excel (.xlsx)</td>
                                 <td className="p-3 font-mono">saas_burn_runway_captable_model.xlsx</td>
                                 <td className="p-3">
-                                    Native OpenXML workbook with 3 tabs: <code>Runway_Schedule_60m</code>,{' '}
+                                    OpenXML workbook with 3 tabs: <code>Runway_Schedule_60m</code>,{' '}
                                     <code>Cap_Table_Dilution</code>, and <code>Exit_Payout_Comparison</code>.
                                 </td>
                             </tr>
@@ -654,11 +661,19 @@ export default function SaasBurnRateCalculatorSeo() {
                                 </td>
                             </tr>
                             <tr>
+                                <td className="p-3 font-bold">Export Cap Table CSV</td>
+                                <td className="p-3 font-mono">saas_cap_table_dilution.csv</td>
+                                <td className="p-3">
+                                    Pre-round, Post-SAFE, and Post-Round share counts, ownership percentages, conversion
+                                    basis, and scenario exit payouts.
+                                </td>
+                            </tr>
+                            <tr>
                                 <td className="p-3 font-bold">Share Scenario Link</td>
                                 <td className="p-3 font-mono">?preset=...&amp;cash=...&amp;mrr=...</td>
                                 <td className="p-3">
                                     Copies a direct URL with your active cash, revenue, expense, growth, and valuation
-                                    parameters to share with co-founders or investors.
+                                    parameters to share with co-founders or advisors.
                                 </td>
                             </tr>
                         </tbody>
@@ -686,44 +701,44 @@ export default function SaasBurnRateCalculatorSeo() {
                             <span>1. Using Flat Expenses While Planning New Hires</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Founders often divide current cash by today’s net burn without accounting for 2–3% monthly
-                            expense creep or upcoming engineering and sales hires—overstating actual cash runway by 3 to
-                            5 months.
+                            Founders often divide current cash by today’s net burn without accounting for monthly
+                            expense creep or upcoming engineering and sales hires—overstating actual cash runway by
+                            several months.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>2. Stacking Too Many Post-Money SAFEs Before Series A</span>
+                            <span>2. Stacking Multiple Post-Money SAFEs Without Tracking Dilution</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Because each YC Post-Money SAFE locks a fixed percentage of pre-Series A equity (Investment ÷
-                            Cap), raising multiple bridge SAFEs can easily give away 25%–35% of the company before
-                            Series A investors even arrive.
+                            Because each YC Post-Money SAFE locks an additive percentage of pre-Series A equity
+                            (Investment ÷ Cap), raising multiple bridge SAFEs can commit 25%–35% of the company before
+                            Series A investors arrive.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>3. Overlooking the Pre-Money Option Pool Shuffle</span>
+                            <span>3. Overlooking Pre-Money Option Pool Carve-Outs</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            When a term sheet specifies a 15% post-round option pool carved out pre-money, the entire
-                            option pool expansion dilutes existing founders and SAFE holders rather than the new
-                            investors.
+                            When a term sheet specifies a 15% post-round option pool carved out pre-money, the option
+                            pool expansion reduces the effective share price and dilutes existing founders and SAFE
+                            holders rather than the new investors.
                         </p>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>4. Waiting Until Under 6 Months of Runway to Raise</span>
+                            <span>4. Starting a Fundraise Too Close to the Zero-Cash Date</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Institutional fundraising rounds typically take 4 to 6 months to close. Starting a raise
-                            with fewer than 6 months of cash left puts founders in a weak negotiating position.
+                            Venture fundraising often takes several months from first pitch to closing. Planning at
+                            least 6 months ahead of your projected zero-cash date preserves negotiating leverage.
                         </p>
                     </div>
 
@@ -733,7 +748,7 @@ export default function SaasBurnRateCalculatorSeo() {
                             <span>5. Ignoring Gross Margin (COGS) in Burn Calculations</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Every new dollar of SaaS MRR carries hosting, payment processing, and customer support COGS
+                            Every new dollar of SaaS MRR carries hosting, payment processing, and support COGS
                             (typically 15%–25% of revenue). Always factor Gross Margin % into your breakeven projection.
                         </p>
                     </div>
@@ -741,12 +756,12 @@ export default function SaasBurnRateCalculatorSeo() {
                     <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-800/30 space-y-2 min-w-0">
                         <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>6. Accepting Participating Preferred (&ldquo;Double Dip&rdquo;) Terms</span>
+                            <span>6. Not Modeling Liquidation Preference Seniority &amp; Participation</span>
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Unlike standard 1x Non-Participating preferred stock, Participating Preferred investors take
-                            their liquidation preference first and then still take their ownership percentage of the
-                            remaining exit proceeds.
+                            In modest M&amp;A exits, whether preferred shares are 1x Non-Participating or Participating
+                            (&ldquo;Double Dip&rdquo;) and whether SAFEs carry a 1x shadow preference materially changes
+                            common shareholder payouts.
                         </p>
                     </div>
                 </div>
@@ -777,8 +792,8 @@ export default function SaasBurnRateCalculatorSeo() {
                             <li>saas burn rate and runway calculator</li>
                             <li>startup cash runway calculator online</li>
                             <li>gross burn vs net burn rate calculator</li>
-                            <li>paul graham default alive or default dead calculator</li>
-                            <li>david sacks burn multiple calculator</li>
+                            <li>default alive or default dead trajectory calculator</li>
+                            <li>modeled burn multiple calculator</li>
                             <li>startup zero cash date and breakeven calculator</li>
                             <li>startup hiring plan and runway extension calculator</li>
                         </ul>
@@ -792,7 +807,7 @@ export default function SaasBurnRateCalculatorSeo() {
                             <li>yc post-money safe dilution calculator</li>
                             <li>pre-money vs post-money safe calculator</li>
                             <li>series a option pool shuffle calculator</li>
-                            <li>convertible note interest conversion calculator</li>
+                            <li>convertible note interest dilution simulator</li>
                             <li>founder equity dilution across funding rounds</li>
                             <li>pre-money and post-money valuation calculator</li>
                             <li>pro forma cap table excel (.xlsx) generator</li>
@@ -801,15 +816,15 @@ export default function SaasBurnRateCalculatorSeo() {
 
                     <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
                         <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-                            M&amp;A Exit Payouts &amp; Scenario Planning
+                            M&amp;A Exit Waterfall &amp; Scenario Planning
                         </h3>
                         <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
-                            <li>startup exit waterfall calculator</li>
+                            <li>startup exit waterfall scenario calculator</li>
                             <li>1x non-participating vs participating preferred</li>
-                            <li>founder payout at exit calculator</li>
+                            <li>founder payout at exit simulator</li>
                             <li>investor moic return multiple calculator</li>
                             <li>3-scenario startup cash flow comparison</li>
-                            <li>target runway monthly expense reduction calculator</li>
+                            <li>target runway monthly expense reduction solver</li>
                             <li>60-month saas cash flow csv and xlsx export</li>
                         </ul>
                     </div>

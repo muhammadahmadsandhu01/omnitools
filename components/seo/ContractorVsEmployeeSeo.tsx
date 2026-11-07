@@ -26,12 +26,12 @@ export const CONTRACTOR_VS_EMPLOYEE_FAQS: FaqItem[] = [
     {
         question: 'How do I accurately convert a W-2 full-time salary to an equivalent 1099 contractor hourly rate?',
         answer:
-            'Multiplying a W-2 salary by 1.30 is only a rough rule of thumb. To calculate the exact break-even hourly rate, you must account for the employer half of FICA (15.3% SECA tax applied to 92.35% of Schedule C net profit up to the $184,500 Social Security wage base, plus uncapped 2.9% Medicare and 0.9% Additional Medicare above $200k/$250k), unpaid vacation and public holidays (e.g., 46–48 billable weeks instead of 52), self-funded health insurance, lost employer 401(k) match, and deductible business overhead—offset by the 50% above-the-line SE tax deduction (Form 1040 Schedule 1 Line 15) and the 20% Section 199A QBI deduction. KivaroTools runs a 48-iteration binary-search solver to compute the exact break-even hourly and daily rate down to the cent.',
+            'Multiplying a W-2 salary by 1.30 is only a rough rule of thumb. To calculate the exact break-even hourly rate, you must account for the employer half of FICA (15.3% SECA tax applied to 92.35% of Schedule C net profit up to the $184,500 Social Security wage base, plus uncapped 2.9% Medicare and 0.9% Additional Medicare above $200k/$250k), unpaid vacation and public holidays (e.g., 46–48 billable weeks instead of 52), self-funded health insurance, lost employer 401(k) match, and deductible business overhead—offset by the 50% above-the-line SE tax deduction (Form 1040 Schedule 1 Line 15) and the 20% Section 199A QBI deduction. KivaroTools runs a 54-iteration binary-search solver to compute the break-even hourly and daily rate with two-decimal precision.',
     },
     {
         question: 'Are my salary, contract rates, or tax scenarios uploaded to any external server?',
         answer:
-            'No. Every statutory tax calculation, 3-way entity comparison, 48-iteration reverse break-even solver, 12-point IR35/IRS classification audit, and Excel/CSV export executes 100% locally inside your browser memory. Your compensation data is never uploaded to KivaroTools servers.',
+            'No. Every statutory tax calculation, 3-way entity comparison, 54-iteration reverse break-even solver, 12-point IR35/IRS classification audit, and Excel/CSV export executes 100% locally inside your browser memory. Your compensation data is never uploaded to KivaroTools servers.',
     },
     {
         question: 'Why does a UK Inside IR35 contract pay significantly less than a Permanent PAYE salary at the same gross rate?',
@@ -49,9 +49,9 @@ export const CONTRACTOR_VS_EMPLOYEE_FAQS: FaqItem[] = [
             'Directors of UK Limited Companies operating genuinely Outside IR35 typically draw a tax-efficient director salary of £12,570 (absorbing the full UK Personal Allowance) and extract remaining post-tax company profits as dividends. Company profits are subject to Corporation Tax (19% Small Profits Rate up to £50,000, 25% Main Rate above £250,000, with marginal relief at an effective 26.5% rate between £50,000 and £250,000), and dividends above the £500 allowance are taxed at dividend rates (10.75% basic, 33.75% higher, 39.35% additional) with zero Employee or Employer National Insurance on the dividend portion.',
     },
     {
-        question: 'How does the calculator support all 153+ active ISO 4217 currencies worldwide?',
+        question: 'How does the calculator support all 153 active ISO 4217 currencies worldwide?',
         answer:
-            'In the left input panel, the Select Currency dropdown includes all 153+ active ISO 4217 global currencies (USD, EUR, GBP, CAD, AUD, CHF, JPY, SGD, AED, INR, PKR, SAR, CNY, HKD, NZD, BRL, MXN, PLN, SEK, NOK, DKK, TRY, ZAR, NGN, KES, QAR, KWD, BHD, OMR, MYR, THB, IDR, PHP, VND, KRW, and more) with official currency symbols and 0, 2, or 3 decimal precision metadata. You can pair any ISO 4217 currency with our 8 built-in statutory country engines or select the Global Custom Country Regime to enter your country’s exact income, social security, corporate, and dividend tax rates.',
+            'In the left input panel, the Select Currency dropdown includes all 153 active ISO 4217 global currencies (USD, EUR, GBP, CAD, AUD, CHF, JPY, SGD, AED, INR, PKR, SAR, CNY, HKD, NZD, BRL, MXN, PLN, SEK, NOK, DKK, TRY, ZAR, NGN, KES, QAR, KWD, BHD, OMR, MYR, THB, IDR, PHP, VND, KRW, and more) with official currency symbols and 0, 2, or 3 decimal precision metadata. You can pair any ISO 4217 currency with our 8 built-in statutory country engines or select the Global Custom Country Regime to enter your country’s exact income, social security, corporate, and dividend tax rates.',
     },
     {
         question: 'How does Section 44ADA presumptive taxation work for Indian software engineers and consultants?',
@@ -130,7 +130,7 @@ export default function ContractorVsEmployeeSeo() {
                 '@type': 'HowToStep',
                 position: 1,
                 name: 'Select Your ISO 4217 Currency & Statutory Tax Jurisdiction',
-                text: 'Choose from all 153+ active ISO 4217 currencies and select a statutory tax jurisdiction (United States, United Kingdom, Canada, Australia, Germany, India, Pakistan, UAE, or Global Custom Country Regime) or load a 1-click Quick Scenario Preset.',
+                text: 'Choose from all 153 active ISO 4217 currencies and select a statutory tax jurisdiction (United States, United Kingdom, Canada, Australia, Germany, India, Pakistan, UAE, or Global Custom Country Regime) or load a 1-click Quick Scenario Preset.',
             },
             {
                 '@type': 'HowToStep',
@@ -148,7 +148,7 @@ export default function ContractorVsEmployeeSeo() {
                 '@type': 'HowToStep',
                 position: 4,
                 name: 'Audit Worker Classification (IR35/IRS) & Export Deliverables',
-                text: 'Run the 12-Point Classification Linter in Tab 3, apply 1-click safe-harbor contract clauses, copy the Recruiter Negotiation Script in Tab 2, and export CWE-1236 safe Excel (.xlsx), CSV, or SHA-256 Audit Certificates in Tab 5.',
+                text: 'Run the 12-Point Classification Linter in Tab 3, apply suggested assessment answers and downloadable SOW addendum clauses, copy the Recruiter Negotiation Script in Tab 2, and export CWE-1236 safe Excel (.xlsx), CSV, or SHA-256 Scenario Data Fingerprints in Tab 5.',
             },
         ],
     };
@@ -198,7 +198,7 @@ export default function ContractorVsEmployeeSeo() {
                     </h2>
                     <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 shrink-0">
                         <Sparkles className="h-3.5 w-3.5" />
-                        153+ ISO Currencies • 3-Way Entity Engine
+                        153 ISO Currencies • 3-Way Entity Engine
                     </span>
                 </div>
 
@@ -206,7 +206,7 @@ export default function ContractorVsEmployeeSeo() {
                     Compare <strong>Full-Time Employment (W-2 / PAYE / T4 / PAYG / Salaried)</strong>,{' '}
                     <strong>Standard Independent Contracting (1099 Schedule C / Inside IR35 Umbrella / T2125 Sole Prop / ABN)</strong>, and{' '}
                     <strong>Tax-Optimized Corporate &amp; Presumptive Regimes (US Form 1120-S S-Corp, UK Outside IR35 Limited Company, Canadian CCPC, Australian Pty Ltd, Indian Section 44ADA, and Pakistani FBR Section 154A 0.25% PSEB IT Export)</strong>{' '}
-                    side-by-side across all <strong>153+ active ISO 4217 global currencies</strong>. Solve for your exact after-tax{' '}
+                    side-by-side across all <strong>153 active ISO 4217 global currencies</strong>. Solve for your exact after-tax{' '}
                     <strong>Break-Even Hourly &amp; Daily Rate</strong>, audit your contract against{' '}
                     <strong>12-point IRS, DOL, and HMRC CEST (IR35) misclassification rules</strong>, and benchmark{' '}
                     <strong>Direct Hiring vs. Global EOR (Deel / Remote / Oyster)</strong> costs 100% locally in your browser.
@@ -214,15 +214,13 @@ export default function ContractorVsEmployeeSeo() {
 
                 <blockquote className="p-4 my-6 bg-blue-50/80 border-l-4 border-blue-600 rounded-r-xl dark:bg-slate-800/80 not-italic">
                     <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 m-0 leading-relaxed">
-                        <strong>100% Local Browser Execution &amp; Privacy Guarantee:</strong> All salary parameters, hourly/daily
-                        contract rates, S-Corp/IR35 tax splits, and classification audits run strictly inside your browser memory.
-                        Zero compensation figures or financial exports are ever transmitted to external servers.
+                        <strong>Local Browser Calculation &amp; Privacy Disclosure:</strong> Your entered salary figures, hourly/daily contract rates, S-Corp/IR35 tax splits, and risk assessment answers are calculated locally in your browser and are not uploaded to KivaroTools servers. The website may still load general analytics or standard web resources.
                     </p>
                 </blockquote>
 
                 <div className="space-y-4 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400">
                     <p>
-                        A $100/hour ($200,000/year) independent contractor offer and a $160,000/year W-2 or PAYE full-time salary
+                        A $100/hour ($200,000/year) independent contractor offer and a $153,000/year W-2 or PAYE full-time salary
                         look deceptively different on paper. When you work as an independent contractor, you lose employer-subsidized
                         health insurance, employer retirement matching (401(k), UK Employer Pension, 12% Australian Superannuation,
                         Indian EPF), and 25 to 33 days of paid vacation, public holidays, and sick leave—while absorbing both the
@@ -259,7 +257,7 @@ export default function ContractorVsEmployeeSeo() {
                             <DollarSign className="h-5 w-5" />
                         </div>
                         <h3 className="mt-3 text-base font-bold text-slate-900 dark:text-white">
-                            48-Iteration Reverse Break-Even Solver
+                            54-Iteration Reverse Break-Even Solver
                         </h3>
                         <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                             Solves for the exact Hourly, Daily, Monthly, and Annual contractor rate required to match 100% of your
@@ -276,7 +274,7 @@ export default function ContractorVsEmployeeSeo() {
                         </h3>
                         <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                             Audits Right of Substitution, Supervision/Direction/Control (SDC), Mutuality of Obligation (MOO), and
-                            Financial Risk, and applies 1-click safe-harbor contract clauses.
+                            Financial Risk, and applies suggested assessment answers and downloadable SOW addendum clauses.
                         </p>
                     </div>
                 </div>
@@ -338,7 +336,7 @@ export default function ContractorVsEmployeeSeo() {
                             Binary-Search Break-Even Solver
                         </h3>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                            Runs 48 binary-search iterations through the non-linear progressive tax engine to find the exact gross
+                            Runs 54 binary-search iterations through the non-linear progressive tax engine to find the exact gross
                             revenue matching Full-Time Cash + Benefits.
                         </p>
                     </div>
@@ -454,7 +452,7 @@ B. Outside IR35 Limited Company (£12,570 Salary + Dividends):
                         id="contractor-vs-employee-country-matrix"
                         className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
                     >
-                        Technical Reference: 8 Built-In Statutory Jurisdictions + 153+ ISO 4217 Global Custom Engine
+                        Technical Reference: 8 Built-In Statutory Jurisdictions + 153 ISO 4217 Global Custom Engine
                     </h2>
                 </div>
                 <p className="mt-2 w-full text-sm text-slate-600 dark:text-slate-400 leading-relaxed break-words">
@@ -530,7 +528,7 @@ B. Outside IR35 Limited Company (£12,570 Salary + Dividends):
                                 <td className="p-3 border border-slate-200 dark:border-slate-700">UAE MOHRE Labor Contract vs. Independent Trade License</td>
                             </tr>
                             <tr>
-                                <td className="p-3 font-bold border border-slate-200 dark:border-slate-700">Global Custom (153+ ISO)</td>
+                                <td className="p-3 font-bold border border-slate-200 dark:border-slate-700">Global Custom (153 ISO)</td>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700">Custom Employee Income Tax % + Employee Social Security %</td>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700">Custom Freelancer Tax % + Self-Employed Social Security %</td>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700">Custom Corporate Tax % + Dividend Withholding Tax %</td>
@@ -632,7 +630,7 @@ B. Outside IR35 Limited Company (£12,570 Salary + Dividends):
                                     Global Currencies &amp; Jurisdictions
                                 </th>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-bold">
-                                    153+ ISO 4217 Currencies + 8 Built-In Countries + Custom Engine
+                                    153 ISO 4217 Currencies + 8 Built-In Countries + Custom Engine
                                 </td>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-rose-600">US USD only</td>
                                 <td className="p-3 border border-slate-200 dark:border-slate-700 text-rose-600">UK GBP only</td>
@@ -763,7 +761,7 @@ B. Outside IR35 Limited Company (£12,570 Salary + Dividends):
                             <strong>Pitfall:</strong> Contracts requiring personal service and fixed 9-to-5 attendance fail HMRC CEST
                             and IRS Common Law audits even if both parties label the relationship &ldquo;independent contractor&rdquo;.
                             <br />
-                            <strong>Fix:</strong> Run the 12-Point Audit in Tab 3 and click <strong>1-Click Apply Safe-Harbor Clauses</strong>.
+                            <strong>Fix:</strong> Run the 12-Point Audit in Tab 3 and click <strong>Apply Suggested Assessment Answers</strong>.
                         </p>
                     </div>
 
@@ -852,7 +850,7 @@ B. Outside IR35 Limited Company (£12,570 Salary + Dividends):
                             <li>worker misclassification penalty risk estimator</li>
                             <li>safe-harbor independent contractor agreement clauses</li>
                             <li>export contractor vs employee comparison to excel xlsx</li>
-                            <li>sha-256 worker classification compliance certificate</li>
+                            <li>sha-256 scenario data fingerprint</li>
                         </ul>
                     </div>
                 </div>

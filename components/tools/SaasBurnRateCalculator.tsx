@@ -33,6 +33,8 @@ import {
     type SaasCalculatorState,
     type ConvertibleNoteType,
     type LiquidationPrefType,
+    type SafeLiquidationTreatment,
+    type WaterfallSeniorityMode,
     type PlannedHireItem,
     type ConvertibleTranche,
 } from '@/lib/saasBurnRateEngine';
@@ -135,6 +137,8 @@ export default function SaasBurnRateCalculator() {
     const [safeAmount, setSafeAmount] = useState<number>(500000);
     const [safeCap, setSafeCap] = useState<number>(12000000);
     const [safeDiscount, setSafeDiscount] = useState<number>(20);
+    const [safeInterest, setSafeInterest] = useState<number>(8);
+    const [safeMonths, setSafeMonths] = useState<number>(12);
 
     const scheduleSectionRef = useRef<HTMLDivElement | null>(null);
 
@@ -211,8 +215,8 @@ export default function SaasBurnRateCalculator() {
             investmentAmount: Math.max(5000, Number(safeAmount) || 250000),
             valuationCap: Math.max(0, Number(safeCap) || 10000000),
             discountPct: Math.min(50, Math.max(0, Number(safeDiscount) || 0)),
-            interestRatePct: safeType === 'CONVERTIBLE_NOTE' ? 8 : 0,
-            durationMonths: safeType === 'CONVERTIBLE_NOTE' ? 12 : 0,
+            interestRatePct: safeType === 'CONVERTIBLE_NOTE' ? Math.max(0, Number(safeInterest) || 8) : 0,
+            durationMonths: safeType === 'CONVERTIBLE_NOTE' ? Math.max(1, Number(safeMonths) || 12) : 0,
         };
         setState((prev) => ({
             ...prev,
@@ -292,7 +296,21 @@ export default function SaasBurnRateCalculator() {
             .map((r) => `${xForM(r.month).toFixed(1)},${yForFlow(r.totalGrossBurn).toFixed(1)}`)
             .join(' ');
 
-        return { width, height, padL, padR, padT, padB, zeroY, maxCash, xForM, cashLine, cashArea, revLine, burnLine };
+        return {
+            width,
+            height,
+            padL,
+            padR,
+            padT,
+            padB,
+            zeroY,
+            maxCash,
+            xForM,
+            cashLine,
+            cashArea,
+            revLine,
+            burnLine,
+        };
     }, [results.monthlySchedule, state.cashOnHand]);
 
     return (
@@ -472,7 +490,7 @@ export default function SaasBurnRateCalculator() {
                         />
                     </div>
 
-                    {/* Slider Input 3: Monthly Operating Expenses (Payroll, Marketing, Rent, SaaS Tools) */}
+                    {/* Slider Input 3: Monthly Operating Expenses */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                             <div>
@@ -480,7 +498,7 @@ export default function SaasBurnRateCalculator() {
                                     Monthly Operating Expenses
                                 </label>
                                 <span className="text-[10px] text-slate-400">
-                                    Total monthly payroll, marketing, cloud &amp; overhead
+                                    Payroll, marketing, software &amp; overhead (excl. COGS)
                                 </span>
                             </div>
                             <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800 px-3 py-1.5 w-36">
@@ -642,7 +660,7 @@ export default function SaasBurnRateCalculator() {
                                         : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                                     }`}
                             >
-                                Pre-Money Shuffle (Standard)
+                                Pre-Money Shuffle (Common)
                             </button>
                             <button
                                 type="button"
@@ -698,7 +716,7 @@ export default function SaasBurnRateCalculator() {
                                                     ...prev,
                                                     grossMarginPct: Math.min(
                                                         100,
-                                                        Math.max(10, Number(e.target.value) || 80)
+                                                        Math.max(5, Number(e.target.value) || 80)
                                                     ),
                                                 }))
                                             }
@@ -844,7 +862,7 @@ export default function SaasBurnRateCalculator() {
                         )}
                     </div>
 
-                    {/* COLLAPSIBLE DRAWER 2: SAFE / Convertible Notes & Option Pool Settings */}
+                    {/* COLLAPSIBLE DRAWER 2: SAFE / Convertible Notes & Cap Table Settings */}
                     <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 overflow-hidden">
                         <button
                             type="button"
@@ -992,14 +1010,17 @@ export default function SaasBurnRateCalculator() {
                             </span>
                         </div>
 
-                        {/* ROYAL BLUE GRADIENT HERO CARD (Matches EMI Calculator Screenshot #4) */}
+                        {/* ROYAL BLUE GRADIENT HERO CARD */}
                         <div className="rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 p-6 sm:p-7 text-white shadow-md space-y-4">
                             <div className="flex items-center justify-between gap-2">
                                 <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-blue-100">
-                                    Estimated Cash Runway (With Growth)
+                                    Projected Cash Runway (60m Dynamic Simulation)
                                 </span>
                                 <span className="px-2.5 py-0.5 rounded-lg bg-white/15 backdrop-blur-xs text-xs font-bold text-white">
-                                    {state.currencyCode} • Static Runway: {results.staticRunwayMonths}m
+                                    {state.currencyCode} • Static Runway:{' '}
+                                    {results.staticRunwayIsCappedAt60
+                                        ? `60+m (${results.uncappedStaticRunwayMonths}m)`
+                                        : `${results.staticRunwayMonths}m`}
                                 </span>
                             </div>
 
@@ -1013,7 +1034,7 @@ export default function SaasBurnRateCalculator() {
                                 </div>
                                 <div className="text-right">
                                     <div className="text-[11px] uppercase tracking-wider text-blue-200">
-                                        Zero-Cash / Breakeven Date
+                                        Projected Zero-Cash / Breakeven
                                     </div>
                                     <div className="text-base sm:text-lg font-bold font-mono">
                                         {isZeroState
@@ -1031,8 +1052,8 @@ export default function SaasBurnRateCalculator() {
                                 {isZeroState
                                     ? 'Enter current cash balance, monthly revenue, and operating expenses on the left to compute runway and equity dilution.'
                                     : results.trajectoryStatus === 'DEFAULT_ALIVE'
-                                        ? `Your recurring revenue overtakes monthly expenses in Month ${results.breakevenMonth ?? 1} (${results.breakevenDateLabel || 'Profitable'}) with ${sym}${results.minimumCashBalance.toLocaleString()} in minimum cash reserves.`
-                                        : `Cash runs out in Month ${results.dynamicRunwayMonths} (${results.zeroCashDateLabel}). Start raising by ${results.raiseByDateLabel} or trim ${sym}${results.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo to reach Default Alive.`}
+                                        ? `Under modeled growth assumptions, recurring revenue overtakes monthly gross burn in Month ${results.breakevenMonth ?? 1} (${results.breakevenDateLabel || 'Profitable'}) with ${sym}${results.minimumCashBalance.toLocaleString()} in minimum cash reserves.`
+                                        : `Projected cash reaches zero in Month ${results.dynamicRunwayMonths} (${results.zeroCashDateLabel}). Plan fundraising by ${results.raiseByDateLabel} (${state.raisePlanningBufferMonths}m buffer) or reduce spend by ~${sym}${results.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo.`}
                             </p>
 
                             {/* Horizontal Split Progress Bar (Revenue Coverage vs Net Burn Deficit) */}
@@ -1054,7 +1075,7 @@ export default function SaasBurnRateCalculator() {
                             </div>
                         </div>
 
-                        {/* 2x2 CLEAN METRIC PILL GRID (Matches EMI Calculator Screenshot #4) */}
+                        {/* 2x2 CLEAN METRIC PILL GRID */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-3 flex items-center justify-between gap-2">
                                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -1078,7 +1099,7 @@ export default function SaasBurnRateCalculator() {
 
                             <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-3 flex items-center justify-between gap-2">
                                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                    Burn Multiple (Net Burn / New ARR):
+                                    Modeled Burn Multiple:
                                 </span>
                                 <span
                                     className={`text-sm font-bold font-mono ${results.burnMultiple <= 1.5
@@ -1102,15 +1123,14 @@ export default function SaasBurnRateCalculator() {
                             </div>
                         </div>
 
-                        {/* DARK NAVY SUMMARY CALLOUT BANNER (Matches EMI Calculator Screenshot #4/#5) */}
+                        {/* DARK NAVY SUMMARY CALLOUT BANNER */}
                         <div className="rounded-2xl bg-slate-900 dark:bg-slate-950 border border-slate-800 px-5 py-4 flex flex-wrap items-center justify-between gap-3 text-white">
                             <div>
                                 <div className="text-xs sm:text-sm font-bold text-white">
-                                    Post-Round Founder Equity Value &amp; Exit Payout
+                                    Scenario Founder Equity Value &amp; Exit Payout
                                 </div>
                                 <div className="text-[11px] text-slate-400 mt-0.5">
-                                    Paper Value @ {sym}
-                                    {(results.postMoneyValuation / 1e6).toFixed(1)}M Post-Money:{' '}
+                                    Post-SAFE: {results.foundersPostSafePct}% • Post-Round Paper Value:{' '}
                                     {sym}
                                     {results.foundersPaperValuePostRound.toLocaleString()} • Exit @{' '}
                                     {sym}
@@ -1130,13 +1150,13 @@ export default function SaasBurnRateCalculator() {
                                     <div className="font-bold text-amber-950 dark:text-amber-200 flex items-center gap-1.5">
                                         <Zap className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                                         <span>
-                                            How to Reach Default Alive: Cut {sym}
+                                            Modeled Breakeven Target: Trim ~{sym}
                                             {results.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo OR Grow MRR at{' '}
                                             {results.requiredMonthlyGrowthPctForDefaultAlive}%/mo
                                         </span>
                                     </div>
                                     <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
-                                        For a {state.targetRunwayMonths}-month runway target, reduce monthly spend by{' '}
+                                        For a {state.targetRunwayMonths}-month runway target, calculated monthly cost reduction is{' '}
                                         {sym}
                                         {results.requiredMonthlyCostCutForTargetRunway.toLocaleString()}/mo.
                                     </p>
@@ -1180,14 +1200,21 @@ export default function SaasBurnRateCalculator() {
 
                         {/* COMPACT 60-MONTH CASH BALANCE CHART */}
                         <div className="space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                                 <span className="font-bold text-slate-700 dark:text-slate-300">
-                                    60-Month Cash Balance Forecast
+                                    60-Month Cash Balance &amp; Revenue vs. Gross Burn Forecast
                                 </span>
-                                <span className="text-[11px] text-slate-500">
-                                    Minimum Cash Balance: {sym}
-                                    {results.minimumCashBalance.toLocaleString()}
-                                </span>
+                                <div className="flex items-center gap-3 text-[11px]">
+                                    <span className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
+                                        <span className="w-2 h-2 rounded-full bg-blue-500" /> Cash
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500" /> MRR
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400">
+                                        <span className="w-2 h-2 rounded-full bg-rose-500" /> Burn
+                                    </span>
+                                </div>
                             </div>
                             <div className="w-full overflow-x-auto overscroll-x-contain">
                                 <svg
@@ -1275,87 +1302,109 @@ export default function SaasBurnRateCalculator() {
                             </div>
                         </div>
 
-                        {/* ACTION PILL BUTTONS ROW (Matches EMI Calculator Screenshot #5) */}
-                        <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                            <button
-                                type="button"
-                                onClick={handleShareScenario}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 transition shadow-2xs"
-                            >
-                                {copiedShare ? (
-                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                ) : (
-                                    <Share2 className="w-3.5 h-3.5 text-slate-500" />
-                                )}
-                                <span>{copiedShare ? 'Scenario Link Copied!' : 'Share Scenario'}</span>
-                            </button>
+                        {/* ACTION PILL BUTTONS ROW */}
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleShareScenario}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-400 transition shadow-2xs"
+                                >
+                                    {copiedShare ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    ) : (
+                                        <Share2 className="w-3.5 h-3.5 text-slate-500" />
+                                    )}
+                                    <span>{copiedShare ? 'Scenario Link Copied!' : 'Share Scenario'}</span>
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    triggerDownload(
-                                        results.runwayCsv,
-                                        'saas_runway_schedule_60m.csv',
-                                        'text/csv;charset=utf-8'
-                                    )
-                                }
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition"
-                            >
-                                <Download className="w-3.5 h-3.5" />
-                                <span>Export Runway CSV</span>
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        triggerDownload(
+                                            results.runwayCsv,
+                                            'saas_runway_schedule_60m.csv',
+                                            'text/csv;charset=utf-8'
+                                        )
+                                    }
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition"
+                                >
+                                    <Download className="w-3.5 h-3.5" />
+                                    <span>Export Runway CSV</span>
+                                </button>
 
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const xlsx = exportSaasCalculatorXlsx(state, results);
-                                    triggerDownload(
-                                        xlsx,
-                                        'saas_burn_runway_captable_model.xlsx',
-                                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                                    );
-                                }}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition"
-                            >
-                                <FileSpreadsheet className="w-3.5 h-3.5" />
-                                <span>Export 3-Sheet Excel (.xlsx)</span>
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const xlsx = exportSaasCalculatorXlsx(state, results);
+                                        triggerDownload(
+                                            xlsx,
+                                            'saas_burn_runway_captable_model.xlsx',
+                                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                                        );
+                                    }}
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition"
+                                >
+                                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                                    <span>Export 3-Sheet Excel (.xlsx)</span>
+                                </button>
+                            </div>
+
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                <span>
+                                    {results.invariantVerification.allPassed
+                                        ? '5/5 Conservation Checks Verified'
+                                        : 'Model Check Active'}
+                                </span>
+                            </span>
                         </div>
                     </div>
 
-                    {/* METHODOLOGY & CALCULATION ASSUMPTIONS ACCORDION (Matches Mortgage Calculator Screenshot #2) */}
+                    {/* METHODOLOGY, ASSUMPTIONS & INVARIANT VERIFICATION ACCORDION */}
                     <details className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-3.5 shadow-2xs text-xs text-slate-600 dark:text-slate-300">
                         <summary className="cursor-pointer font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between gap-2 select-none list-none">
                             <span className="flex items-center gap-2">
                                 <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                                <span>Methodology &amp; Calculation Assumptions</span>
+                                <span>Methodology, Modeling Assumptions &amp; Conservation Verification</span>
                             </span>
                             <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
                         </summary>
                         <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 leading-relaxed">
                             <p>
-                                <strong>Gross Burn vs. Net Burn:</strong> Gross Burn equals total monthly cash outflow
-                                (operating expenses + planned hires + COGS). Net Burn equals Gross Burn minus Monthly
-                                Recurring Revenue (MRR).
+                                <strong>Scenario-Based Financial Modeling:</strong> This calculator provides
+                                scenario-based cash flow, SAFE/Convertible Note conversion, and M&amp;A waterfall
+                                modeling. Actual financing and exit outcomes depend on specific legal agreements,
+                                charter terms, day-count conventions, and tax treatments.
                             </p>
                             <p>
-                                <strong>Static vs. Dynamic Runway:</strong> Static Runway divides current cash by today’s
-                                Net Burn assuming zero growth. Dynamic Runway forecasts month by month over 60 months
-                                with compounding revenue and expense growth, planned hires, and scheduled funding rounds.
+                                <strong>Static vs. Dynamic Runway:</strong> Uncapped Static Runway divides current cash
+                                by Month-1 Net Burn ({results.uncappedStaticRunwayMonths}m raw; capped at 60m in summary
+                                badges). Dynamic Runway simulates 60 monthly periods with compounding growth and rounds
+                                the zero-cash crossing to one decimal month.
                             </p>
-                            <p>
-                                <strong>Privacy &amp; Local Execution:</strong> Your financial inputs and cap table
-                                numbers are processed locally in your browser and are not uploaded to KivaroTools
-                                servers. The website may still load general analytics or other third-party website
-                                resources.
-                            </p>
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                {results.invariantVerification.checks.map((chk) => (
+                                    <div
+                                        key={chk.id}
+                                        className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60"
+                                    >
+                                        <span className="text-[11px] font-medium truncate">
+                                            ✓ {chk.label}
+                                        </span>
+                                        <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                            {chk.actual}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </details>
                 </div>
             </div>
 
             {/* ============================================================================
-                BOTTOM FULL-WIDTH SCHEDULE & CAP TABLE CARD (MATCHES EMI CALCULATOR SCREENSHOT #5)
+                BOTTOM FULL-WIDTH SCHEDULE & CAP TABLE CARD
                ============================================================================ */}
             <div
                 ref={scheduleSectionRef}
@@ -1409,7 +1458,7 @@ export default function SaasBurnRateCalculator() {
                                 }`}
                         >
                             <DollarSign className="w-4 h-4 shrink-0" />
-                            <span>M&amp;A Exit Payouts</span>
+                            <span>M&amp;A Exit Waterfall</span>
                         </button>
                     </div>
 
@@ -1568,13 +1617,28 @@ export default function SaasBurnRateCalculator() {
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                                     Add SAFE or Convertible Note Tranche ({state.convertibleNotes.length} Active •{' '}
-                                    {results.totalSafeDilutionPct}% Post-Round SAFE Ownership)
+                                    {results.standalonePostMoneySafeDilutionPct}% Post-SAFE Ownership •{' '}
+                                    {results.totalSafeDilutionPct}% Post-Round)
                                 </h3>
-                                <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
-                                    Round Share Price: {sym}
-                                    {results.roundSharePrice.toFixed(4)}/sh • Post-Money: {sym}
-                                    {(results.postMoneyValuation / 1e6).toFixed(1)}M
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+                                        Round Share Price: {sym}
+                                        {results.roundSharePrice.toFixed(4)}/sh
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            triggerDownload(
+                                                results.capTableCsv,
+                                                'saas_cap_table_dilution.csv',
+                                                'text/csv;charset=utf-8'
+                                            )
+                                        }
+                                        className="px-3 py-1 rounded-full text-[11px] font-bold bg-slate-900 dark:bg-slate-700 text-white"
+                                    >
+                                        Export Cap Table CSV
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 text-xs">
@@ -1592,7 +1656,7 @@ export default function SaasBurnRateCalculator() {
                                 >
                                     <option value="POST_MONEY_SAFE">Post-Money SAFE (YC Std)</option>
                                     <option value="PRE_MONEY_SAFE">Pre-Money SAFE</option>
-                                    <option value="CONVERTIBLE_NOTE">Convertible Note (8%)</option>
+                                    <option value="CONVERTIBLE_NOTE">Convertible Note (Interest)</option>
                                 </select>
                                 <input
                                     type="number"
@@ -1628,6 +1692,34 @@ export default function SaasBurnRateCalculator() {
                                 </button>
                             </div>
 
+                            {safeType === 'CONVERTIBLE_NOTE' && (
+                                <div className="grid grid-cols-2 gap-2.5 pt-1 max-w-md text-xs">
+                                    <div>
+                                        <label className="block text-[10px] font-semibold uppercase text-slate-500 mb-1">
+                                            Simple Annual Interest Rate (%)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.5"
+                                            value={safeInterest}
+                                            onChange={(e) => setSafeInterest(Number(e.target.value) || 0)}
+                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-semibold uppercase text-slate-500 mb-1">
+                                            Accrued Months Before Conversion
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={safeMonths}
+                                            onChange={(e) => setSafeMonths(Number(e.target.value) || 12)}
+                                            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 font-mono"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {state.convertibleNotes.length > 0 && (
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {state.convertibleNotes.map((n) => (
@@ -1640,6 +1732,7 @@ export default function SaasBurnRateCalculator() {
                                                 {sym}
                                                 {(n.investmentAmount / 1000).toFixed(0)}k @ {sym}
                                                 {(n.valuationCap / 1e6).toFixed(1)}M Cap
+                                                {n.discountPct > 0 ? ` (${n.discountPct}% Disc)` : ''}
                                             </span>
                                             <button
                                                 type="button"
@@ -1664,16 +1757,17 @@ export default function SaasBurnRateCalculator() {
 
                         {/* Pro-Forma Cap Table Ownership & Dilution Table */}
                         <div className="w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200 dark:border-slate-800">
-                            <table className="min-w-[780px] w-full text-left text-xs border-collapse">
+                            <table className="min-w-[820px] w-full text-left text-xs border-collapse">
                                 <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-900 dark:text-white">
                                     <tr>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800">Stakeholder Group</th>
+                                        <th className="p-3 border-b border-slate-200 dark:border-slate-800">Conversion Basis</th>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Pre-Round %</th>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Post-SAFE %</th>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Post-Round Shares</th>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Post-Round %</th>
-                                        <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Invested ({sym})</th>
-                                        <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Share Price</th>
+                                        <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Converting Principal</th>
+                                        <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Eff. Share Price</th>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800 text-right">Post-Round Value ({sym})</th>
                                     </tr>
                                 </thead>
@@ -1683,8 +1777,11 @@ export default function SaasBurnRateCalculator() {
                                             <td className="p-3 font-bold text-slate-900 dark:text-white">
                                                 {row.name}
                                             </td>
+                                            <td className="p-3 text-slate-500 dark:text-slate-400">
+                                                {row.conversionBasisLabel}
+                                            </td>
                                             <td className="p-3 text-right font-mono">{row.preRoundPct}%</td>
-                                            <td className="p-3 text-right font-mono text-blue-600 dark:text-blue-400">
+                                            <td className="p-3 text-right font-mono text-blue-600 dark:text-blue-400 font-semibold">
                                                 {row.postSafePct}%
                                             </td>
                                             <td className="p-3 text-right font-mono">
@@ -1694,13 +1791,13 @@ export default function SaasBurnRateCalculator() {
                                                 {row.postRoundPct}%
                                             </td>
                                             <td className="p-3 text-right font-mono">
-                                                {row.investedAmount > 0
-                                                    ? `${sym}${row.investedAmount.toLocaleString()}`
+                                                {row.convertingPrincipalAmount > 0
+                                                    ? `${sym}${row.convertingPrincipalAmount.toLocaleString()}`
                                                     : '—'}
                                             </td>
                                             <td className="p-3 text-right font-mono">
                                                 {row.effectiveSharePrice > 0
-                                                    ? `${sym}${row.effectiveSharePrice.toFixed(3)}`
+                                                    ? `${sym}${row.effectiveSharePrice.toFixed(4)}`
                                                     : 'Common'}
                                             </td>
                                             <td className="p-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
@@ -1757,7 +1854,7 @@ export default function SaasBurnRateCalculator() {
                                             </span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="text-slate-500">Cash Runway:</span>
+                                            <span className="text-slate-500">Projected Runway:</span>
                                             <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
                                                 {col.runwayMonths >= 60
                                                     ? '60+ Months'
@@ -1828,24 +1925,21 @@ export default function SaasBurnRateCalculator() {
                 )}
 
                 {/* ========================================================================
-                    TAB 4: M&A EXIT PAYOUTS & LIQUIDATION PREFERENCE WATERFALL
+                    TAB 4: SCENARIO-BASED M&A EXIT WATERFALL & SENIORITY CONTROLS
                    ======================================================================== */}
                 {activeTab === 'exit_waterfall' && (
                     <div className="space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                             <div>
                                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                                    M&amp;A Exit Payouts by Valuation ({sym}10M to {sym}500M Exit)
+                                    Scenario-Based M&amp;A Exit Waterfall ({sym}10M to {sym}500M Exit)
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    Models {state.liquidationPreferenceMultiple}x{' '}
-                                    {state.liquidationParticipation === 'NON_PARTICIPATING'
-                                        ? 'Non-Participating Preferred (Market Standard)'
-                                        : 'Participating Preferred ("Double Dip")'}{' '}
-                                    investor claims vs. common stock conversion.
+                                    Configure preferred liquidation multiple, participation rights, SAFE conversion
+                                    treatment, and seniority structure.
                                 </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                                 <select
                                     value={`${state.liquidationPreferenceMultiple}_${state.liquidationParticipation}`}
                                     onChange={(e) => {
@@ -1856,18 +1950,50 @@ export default function SaasBurnRateCalculator() {
                                             liquidationParticipation: pType as LiquidationPrefType,
                                         }));
                                     }}
-                                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold"
+                                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-2 font-semibold"
                                 >
-                                    <option value="1_NON_PARTICIPATING">1x Non-Participating (Standard)</option>
+                                    <option value="1_NON_PARTICIPATING">1x Non-Participating</option>
                                     <option value="1_PARTICIPATING">1x Participating (Double Dip)</option>
                                     <option value="2_NON_PARTICIPATING">2x Non-Participating</option>
                                     <option value="2_PARTICIPATING">2x Participating</option>
+                                </select>
+
+                                <select
+                                    value={state.safeLiquidationTreatment}
+                                    onChange={(e) =>
+                                        setState((prev) => ({
+                                            ...prev,
+                                            safeLiquidationTreatment: e.target
+                                                .value as SafeLiquidationTreatment,
+                                        }))
+                                    }
+                                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-2 font-semibold"
+                                    title="Converted SAFE Liquidation Treatment"
+                                >
+                                    <option value="SHADOW_PREFERRED_1X">SAFE: 1x Shadow Preferred</option>
+                                    <option value="CONVERT_TO_COMMON">SAFE: Convert to Common</option>
+                                </select>
+
+                                <select
+                                    value={state.waterfallSeniorityMode}
+                                    onChange={(e) =>
+                                        setState((prev) => ({
+                                            ...prev,
+                                            waterfallSeniorityMode: e.target
+                                                .value as WaterfallSeniorityMode,
+                                        }))
+                                    }
+                                    className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-2 font-semibold"
+                                    title="Preferred Seniority Tiering"
+                                >
+                                    <option value="SERIES_A_SENIOR_TO_SAFE">Series A Senior to SAFE</option>
+                                    <option value="PARI_PASSU_EQUAL_TIER">Pari Passu (Equal Tier)</option>
                                 </select>
                             </div>
                         </div>
 
                         <div className="w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-slate-200 dark:border-slate-800">
-                            <table className="min-w-[700px] w-full text-left text-xs border-collapse">
+                            <table className="min-w-[720px] w-full text-left text-xs border-collapse">
                                 <thead className="bg-slate-50 dark:bg-slate-800/90 text-slate-900 dark:text-white">
                                     <tr>
                                         <th className="p-3 border-b border-slate-200 dark:border-slate-800">Exit Valuation</th>

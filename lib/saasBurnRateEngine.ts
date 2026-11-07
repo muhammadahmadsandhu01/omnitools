@@ -1,15 +1,18 @@
 /**
- * KivaroTools — Client-Side SaaS Burn Rate, Cash Runway & Equity Dilution Calculator Engine
+ * KivaroTools — Scenario-Based SaaS Burn Rate, Cash Runway & Equity Dilution Modeling Engine
  * File: lib/saasBurnRateEngine.ts
- * Version: 3.0.0
+ * Version: 4.0.0
  *
- * 100% Pure Startup Finance & Cap Table Mathematics • Zero Unrelated Jargon
- * Covers: Gross/Net Burn, Static vs. Dynamic Compounding Runway, Zero-Cash & Raise-By Dates,
- * Paul Graham Default Alive/Dead, David Sacks Burn Multiple, Target Runway Expense Solver,
- * Pre/Post-Money SAFE & Convertible Note Dilution, Option Pool Shuffle & Exit Payouts.
+ * Modular Domain Architecture:
+ *   1. Burn & Runway Domain (`runBurnAndRunwayDomain`)
+ *   2. SAFE Conversion Domain (`runSafeConversionDomain`)
+ *   3. Convertible Note Domain (`runConvertibleNoteDomain`)
+ *   4. Option Pool & Priced Round Domain (`runOptionPoolAndPricedRoundDomain`)
+ *   5. M&A Liquidation Waterfall Domain (`runLiquidationWaterfallDomain`)
+ *   6. Invariant & Conservation Verification Layer (`verifyFinancialModelInvariants`)
  */
 
-export const SAAS_ENGINE_VERSION = '3.0.0';
+export const SAAS_ENGINE_VERSION = '4.0.0';
 
 export type SaasScenarioPresetId =
     | 'seed_saas_default_alive'
@@ -26,6 +29,14 @@ export type ConvertibleNoteType =
 export type LiquidationPrefType =
     | 'NON_PARTICIPATING'
     | 'PARTICIPATING';
+
+export type SafeLiquidationTreatment =
+    | 'SHADOW_PREFERRED_1X'
+    | 'CONVERT_TO_COMMON';
+
+export type WaterfallSeniorityMode =
+    | 'SERIES_A_SENIOR_TO_SAFE'
+    | 'PARI_PASSU_EQUAL_TIER';
 
 export type TrajectoryStatus =
     | 'DEFAULT_ALIVE'
@@ -55,8 +66,8 @@ export interface ConvertibleTranche {
     investmentAmount: number;
     valuationCap: number;
     discountPct: number;
-    interestRatePct: number; // only for CONVERTIBLE_NOTE
-    durationMonths: number; // only for CONVERTIBLE_NOTE
+    interestRatePct: number; // simple annual interest for CONVERTIBLE_NOTE
+    durationMonths: number; // accrued months for CONVERTIBLE_NOTE
 }
 
 export interface SaasCalculatorState {
@@ -75,6 +86,7 @@ export interface SaasCalculatorState {
 
     // 2. Target Runway & Runway Extension Levers
     targetRunwayMonths: number;
+    raisePlanningBufferMonths: number; // default 6 months before zero-cash point
     plannedCostReductionMonthly: number;
     oneTimeCashInflowAmount: number;
     oneTimeCashInflowMonth: number;
@@ -93,8 +105,13 @@ export interface SaasCalculatorState {
     newInvestmentAmount: number;
     targetPostRoundOptionPoolPct: number;
     optionPoolMode: 'PRE_MONEY_CARVEOUT' | 'POST_MONEY_SHARED';
-    liquidationPreferenceMultiple: number; // 1x or 2x
+
+    // 4. M&A Liquidation Waterfall Modeling Assumptions
+    liquidationPreferenceMultiple: number; // 1x or 2x on New Round Preferred
     liquidationParticipation: LiquidationPrefType;
+    participationCapMultiple: number; // 0 = uncapped participation, >0 = e.g. 2x or 3x cap
+    safeLiquidationTreatment: SafeLiquidationTreatment;
+    waterfallSeniorityMode: WaterfallSeniorityMode;
     targetExitValuation: number;
 }
 
@@ -119,7 +136,12 @@ export interface MonthlyRunwayRow {
 export interface CapTableStakeholder {
     id: string;
     name: string;
-    group: 'FOUNDERS' | 'EXISTING_OPTION_POOL' | 'SAFE_NOTE_HOLDERS' | 'OPTION_POOL_TOPUP' | 'NEW_ROUND_INVESTORS';
+    group:
+    | 'FOUNDERS'
+    | 'EXISTING_OPTION_POOL'
+    | 'SAFE_NOTE_HOLDERS'
+    | 'OPTION_POOL_TOPUP'
+    | 'NEW_ROUND_INVESTORS';
     preRoundShares: number;
     preRoundPct: number;
     postSafeShares: number;
@@ -127,7 +149,10 @@ export interface CapTableStakeholder {
     postRoundShares: number;
     postRoundPct: number;
     investedAmount: number;
+    accruedInterestAmount: number;
+    convertingPrincipalAmount: number;
     effectiveSharePrice: number;
+    conversionBasisLabel: string;
     postRoundPaperValue: number;
     dilutionPctPoints: number;
     exitPayoutAmount: number;
@@ -155,12 +180,33 @@ export interface FinancialHealthAlert {
     actionLabel: string;
 }
 
+export interface ModelInvariantVerification {
+    allPassed: boolean;
+    capTablePreSafeSumPct: number;
+    capTablePostSafeSumPct: number;
+    capTablePostRoundSumPct: number;
+    capTableShareCountConserved: boolean;
+    postMoneySafeStandaloneOwnershipConserved: boolean;
+    waterfallPayoutConserved: boolean;
+    cashFlowAccountingConserved: boolean;
+    grossProfitAndBurnConserved: boolean;
+    checks: {
+        id: string;
+        label: string;
+        passed: boolean;
+        expected: string;
+        actual: string;
+    }[];
+}
+
 export interface SaasCalculationOutput {
     // Core Burn & Runway KPIs
     grossBurnMonthly: number;
     netBurnMonthly: number;
-    staticRunwayMonths: number; // simple Cash / Net Burn without growth
-    dynamicRunwayMonths: number; // compounding month-by-month runway
+    uncappedStaticRunwayMonths: number; // raw Cash / Net Burn without 60m cap
+    staticRunwayMonths: number; // capped at 60m for display consistency
+    staticRunwayIsCappedAt60: boolean;
+    dynamicRunwayMonths: number; // compounding 60m simulation (rounded to 1 decimal)
     runwayExhausted: boolean;
     zeroCashDateLabel: string;
     raiseByDateLabel: string;
@@ -173,27 +219,31 @@ export interface SaasCalculationOutput {
     // SaaS Capital Efficiency KPIs
     currentArr: number;
     month12Arr: number;
-    netNewArrAnnualized: number;
-    burnMultiple: number;
+    netNewArrAnnualized: number; // Modeled Month-1 Forward Net New ARR
+    trailing12MonthSimulatedNetNewArr: number; // Month 12 ARR - Initial ARR
+    burnMultiple: number; // Modeled Burn Multiple
     burnEfficiencyRating: BurnEfficiencyRating;
     revenueCoverageRatioPct: number;
     netBurnDeficitRatioPct: number;
 
-    // Target Runway & Breakeven Solver
+    // Target Runway & Breakeven Solver (within solver tolerance)
     requiredMonthlyCostCutForTargetRunway: number;
     requiredMonthlyCostCutForDefaultAlive: number;
     requiredMonthlyGrowthPctForDefaultAlive: number;
 
     // Cap Table, SAFE Conversion & Priced Round Dilution KPIs
     initialShares: number;
+    postSafeTotalShares: number;
     postRoundTotalShares: number;
     roundSharePrice: number;
     postMoneyValuation: number;
-    totalSafeDilutionPct: number;
+    standalonePostMoneySafeDilutionPct: number; // sum of (Investment / Post-Money Cap)
+    totalSafeDilutionPct: number; // post-round ownership % of all converted SAFEs/Notes
     optionPoolTopUpShares: number;
     optionPoolTopUpDilutionPct: number;
     newRoundInvestorPct: number;
     foundersPreRoundPct: number;
+    foundersPostSafePct: number;
     foundersPostRoundPct: number;
     foundersTotalDilutionPctPoints: number;
     foundersPaperValuePostRound: number;
@@ -201,7 +251,7 @@ export interface SaasCalculationOutput {
     investorsExitPayout: number;
     optionPoolExitPayout: number;
 
-    // Schedules, Tables & Scenarios
+    // Schedules, Tables, Scenarios & Verification
     monthlySchedule: MonthlyRunwayRow[];
     yearlySummary: {
         year: number;
@@ -221,6 +271,7 @@ export interface SaasCalculationOutput {
         safeHoldersPayout: number;
         seriesAInvestorsPayout: number;
         optionPoolPayout: number;
+        totalDistributed: number;
     }[];
     scenarioComparison: {
         conservative: ScenarioComparisonColumn;
@@ -228,6 +279,7 @@ export interface SaasCalculationOutput {
         optimistic: ScenarioComparisonColumn;
     };
     healthAlerts: FinancialHealthAlert[];
+    invariantVerification: ModelInvariantVerification;
 
     // Export Strings
     runwayCsv: string;
@@ -274,7 +326,9 @@ export function sanitizeSpreadsheetCell(val: unknown): string {
 }
 
 /**
- * Simulate 60-Month Cash Flow Trajectory
+ * ============================================================================
+ * DOMAIN 1: BURN RATE & 60-MONTH CASH RUNWAY SIMULATION ENGINE
+ * ============================================================================
  */
 export function simulateRunwaySchedule(state: SaasCalculatorState): {
     monthlySchedule: MonthlyRunwayRow[];
@@ -310,8 +364,8 @@ export function simulateRunwaySchedule(state: SaasCalculatorState): {
         const mrr = m === 1 ? currentMrr : Math.max(0, currentMrr * (1 + revGrowthRate));
         const arr = mrr * 12;
 
-        // COGS from Gross Margin %
-        const cogsExpenses = mrr * (1 - grossMarginRatio);
+        // COGS derived from Gross Margin %
+        const cogsExpenses = Number((mrr * ((100 - Math.min(100, Math.max(5, state.grossMarginPct))) / 100)).toFixed(2));
         const grossProfit = mrr - cogsExpenses;
 
         const baseExpenses =
@@ -349,7 +403,7 @@ export function simulateRunwaySchedule(state: SaasCalculatorState): {
             cumulativeBurn += netBurn;
         }
 
-        // Detect exact fractional zero-cash month
+        // Estimate zero-cash point to one decimal month when cash crosses zero
         if (!runwayExhausted && endingCash <= 0) {
             runwayExhausted = true;
             const monthlyDeficit = Math.max(1, -netCashFlow);
@@ -357,8 +411,13 @@ export function simulateRunwaySchedule(state: SaasCalculatorState): {
             dynamicRunwayMonths = Number(((m - 1) + fractionCovered).toFixed(1));
         }
 
-        // Detect operational breakeven month (MRR >= Total Gross Burn before running out of cash)
-        if (!runwayExhausted && breakevenMonth === null && mrr >= totalGrossBurn && totalGrossBurn > 0) {
+        // Calculator's Default Alive operational breakeven test (MRR >= Total Gross Burn before cash hits 0)
+        if (
+            !runwayExhausted &&
+            breakevenMonth === null &&
+            mrr >= totalGrossBurn &&
+            totalGrossBurn > 0
+        ) {
             breakevenMonth = m;
         }
 
@@ -403,7 +462,7 @@ export function simulateRunwaySchedule(state: SaasCalculatorState): {
 }
 
 /**
- * Solve Exact Monthly Expense Cut or Revenue Growth Required for Target Runway & Default Alive
+ * Binary-Search Target Runway & Default Alive Solver (28 Iterations within solver tolerance)
  */
 export function solveRunwayAndBreakevenTargets(state: SaasCalculatorState): {
     requiredMonthlyCostCutForTargetRunway: number;
@@ -413,29 +472,30 @@ export function solveRunwayAndBreakevenTargets(state: SaasCalculatorState): {
     const baseline = simulateRunwaySchedule(state);
     const targetMonths = Math.min(60, Math.max(1, state.targetRunwayMonths || 24));
 
-    // 1. Solve Monthly Cost Cut for Target Runway
     let requiredMonthlyCostCutForTargetRunway = 0;
     if (baseline.runwayExhausted && baseline.dynamicRunwayMonths < targetMonths) {
         let low = 0;
         let high = state.monthlyOperatingExpenses;
-        for (let i = 0; i < 25; i++) {
+        let best = state.monthlyOperatingExpenses;
+        for (let i = 0; i < 28; i++) {
             const mid = (low + high) / 2;
             const sim = simulateRunwaySchedule({
                 ...state,
                 plannedCostReductionMonthly: state.plannedCostReductionMonthly + mid,
             });
             if (!sim.runwayExhausted || sim.dynamicRunwayMonths >= targetMonths) {
-                requiredMonthlyCostCutForTargetRunway = mid;
+                best = mid;
                 high = mid;
             } else {
                 low = mid;
             }
         }
+        requiredMonthlyCostCutForTargetRunway = Math.ceil(best);
     }
 
-    // 2. Solve Monthly Cost Cut for Default Alive (Breakeven before Cash hits 0)
     let requiredMonthlyCostCutForDefaultAlive = 0;
-    const isCurrentlyDefaultAlive = !baseline.runwayExhausted && baseline.breakevenMonth !== null;
+    const isCurrentlyDefaultAlive =
+        !baseline.runwayExhausted && baseline.breakevenMonth !== null;
     if (!isCurrentlyDefaultAlive) {
         let low = 0;
         let high = state.monthlyOperatingExpenses;
@@ -456,7 +516,6 @@ export function solveRunwayAndBreakevenTargets(state: SaasCalculatorState): {
         requiredMonthlyCostCutForDefaultAlive = Math.ceil(bestCut);
     }
 
-    // 3. Solve Monthly Revenue Growth % for Default Alive
     let requiredMonthlyGrowthPctForDefaultAlive = state.monthlyNetRevenueGrowthPct;
     if (!isCurrentlyDefaultAlive) {
         let low = state.monthlyNetRevenueGrowthPct;
@@ -475,42 +534,58 @@ export function solveRunwayAndBreakevenTargets(state: SaasCalculatorState): {
                 low = mid;
             }
         }
-        requiredMonthlyGrowthPctForDefaultAlive = Number((Math.ceil(bestGrowth * 10) / 10).toFixed(1));
+        requiredMonthlyGrowthPctForDefaultAlive = Number(
+            (Math.ceil(bestGrowth * 10) / 10).toFixed(1)
+        );
     }
 
     return {
-        requiredMonthlyCostCutForTargetRunway: Math.ceil(requiredMonthlyCostCutForTargetRunway),
+        requiredMonthlyCostCutForTargetRunway,
         requiredMonthlyCostCutForDefaultAlive,
         requiredMonthlyGrowthPctForDefaultAlive,
     };
 }
 
 /**
- * Calculate Pre/Post-Money SAFE Conversions, Option Pool Top-Up & Priced Round Ownership Dilution
+ * ============================================================================
+ * DOMAIN 2 & 3: CONVERTIBLE NOTE & YC POST-MONEY / PRE-MONEY SAFE ENGINE
+ * ============================================================================
+ * Under YC Post-Money SAFE v1.1 mechanics:
+ * - Each Post-Money SAFE converting at its Valuation Cap locks an ownership
+ *   slice `alpha_i = Investment_i / PostMoneyCap_i` of the Post-SAFE
+ *   Company Capitalization (prior to new Series A money and new Series A
+ *   option pool expansion).
+ * - Multiple Post-Money SAFEs stack additively (`Alpha_total = sum(alpha_i)`),
+ *   so each Post-Money SAFE preserves its exact `alpha_i` pre-round ownership
+ *   without diluting other Post-Money SAFEs!
+ * - Pre-Money SAFEs and Convertible Notes (Principal * (1 + r * m/12))
+ *   converting at a Pre-Money Cap divide their cap by `initialShares`.
  */
-export function calculateCapTableDilution(state: SaasCalculatorState): {
+export interface EvaluatedConvertibleItem {
+    tranche: ConvertibleTranche;
+    accruedInterest: number;
+    convertingPrincipal: number;
+    convertedShares: number;
+    effectiveSharePrice: number;
+    conversionBasisLabel: string;
+    standalonePostSafePct: number;
+}
+
+export function solveConvertiblesAndOptionPoolDomain(state: SaasCalculatorState): {
     initialShares: number;
+    founderInitialShares: number;
+    existingPoolShares: number;
+    evaluatedConvertibles: EvaluatedConvertibleItem[];
+    postSafeTotalShares: number;
+    optionPoolTopUpShares: number;
+    newRoundInvestorShares: number;
     postRoundTotalShares: number;
     roundSharePrice: number;
     postMoneyValuation: number;
-    totalSafeDilutionPct: number;
-    optionPoolTopUpShares: number;
-    optionPoolTopUpDilutionPct: number;
-    newRoundInvestorPct: number;
-    foundersPreRoundPct: number;
-    foundersPostRoundPct: number;
-    foundersTotalDilutionPctPoints: number;
-    foundersPaperValuePostRound: number;
-    foundersExitPayout: number;
-    investorsExitPayout: number;
-    optionPoolExitPayout: number;
-    capTableRows: CapTableStakeholder[];
-    exitValuationTable: SaasCalculationOutput['exitValuationTable'];
+    standalonePostMoneySafeDilutionPct: number;
 } {
-    const initialShares = Math.max(100_000, state.initialTotalShares || 10_000_000);
+    const initialShares = Math.max(100_000, Math.round(state.initialTotalShares || 10_000_000));
     const foundersPrePct = Math.min(100, Math.max(1, state.foundersInitialOwnershipPct));
-    const existingPoolPct = Math.min(100 - foundersPrePct, Math.max(0, state.existingOptionPoolPct));
-
     const founderInitialShares = Math.round(initialShares * (foundersPrePct / 100));
     const existingPoolShares = Math.max(0, initialShares - founderInitialShares);
 
@@ -521,68 +596,167 @@ export function calculateCapTableDilution(state: SaasCalculatorState): {
     const postMoneyValuation = preMoneyVal + newInvestment;
 
     const targetPoolRatio = state.includeNextFundingRound
-        ? Math.min(0.4, Math.max(0, state.targetPostRoundOptionPoolPct / 100))
+        ? Math.min(0.45, Math.max(0, state.targetPostRoundOptionPoolPct / 100))
         : existingPoolShares / initialShares;
 
-    // Solve simultaneously for Round Share Price, SAFE Converted Shares, and Option Pool Top-Up
+    // Pre-calculate converting principal (including simple interest for Convertible Notes)
+    const noteInputs = state.convertibleNotes.map((tranche) => {
+        const inv = Math.max(0, tranche.investmentAmount);
+        const accruedInterest =
+            tranche.instrumentType === 'CONVERTIBLE_NOTE'
+                ? inv *
+                (Math.max(0, tranche.interestRatePct) / 100) *
+                (Math.max(0, tranche.durationMonths) / 12)
+                : 0;
+        const convertingPrincipal = inv + accruedInterest;
+        return { tranche, accruedInterest, convertingPrincipal };
+    });
+
+    // Solve simultaneously for Round Share Price, Post-Money SAFE exact ownership locks,
+    // Pre-Money SAFE / Note conversions, and Option Pool Top-Up shares.
     let roundSharePrice = preMoneyVal / initialShares;
     let optionPoolTopUpShares = 0;
     let newRoundInvestorShares = 0;
-    let safeConvertedShares: number[] = state.convertibleNotes.map(() => 0);
-    const safeConversionPrices: number[] = state.convertibleNotes.map(() => roundSharePrice);
+    let convertedSharesList: number[] = noteInputs.map(() => 0);
+    let conversionBasisList: string[] = noteInputs.map(() => 'Round Price');
 
-    for (let iter = 0; iter < 35; iter++) {
-        const sumSafeShares = safeConvertedShares.reduce((a, b) => a + b, 0);
-        const postSafeCapitalization = initialShares + sumSafeShares;
+    for (let iter = 0; iter < 45; iter++) {
+        const currentTotalSafeShares = convertedSharesList.reduce((a, b) => a + b, 0);
 
-        const preMoneyShareCountForRoundPrice =
-            state.optionPoolMode === 'PRE_MONEY_CARVEOUT'
-                ? initialShares + sumSafeShares + optionPoolTopUpShares
-                : initialShares + sumSafeShares;
+        // Pre-money share count used to price the new round
+        const preMoneySharesForRoundPricing =
+            state.includeNextFundingRound && state.optionPoolMode === 'PRE_MONEY_CARVEOUT'
+                ? initialShares + currentTotalSafeShares + optionPoolTopUpShares
+                : initialShares + currentTotalSafeShares;
 
-        roundSharePrice = preMoneyVal / Math.max(1, preMoneyShareCountForRoundPrice);
+        roundSharePrice = preMoneyVal / Math.max(1, preMoneySharesForRoundPricing);
 
-        const nextSafeShares: number[] = [];
-        for (let i = 0; i < state.convertibleNotes.length; i++) {
-            const note = state.convertibleNotes[i];
-            if (note.investmentAmount <= 0) {
-                nextSafeShares.push(0);
+        // Determine for each convertible whether it converts via Post-Money Cap, Pre-Money Cap, or Discount
+        // For YC Post-Money SAFEs converting on Cap, their exact ownership fraction of Post-SAFE Capitalization
+        // is locked at alpha_i = convertingPrincipal / valuationCap.
+        const postMoneyCapAlphas: number[] = [];
+        const nonPostMoneyCapShares: number[] = [];
+        const modePerNote: ('POST_CAP' | 'PRE_CAP' | 'DISCOUNT' | 'ROUND')[] = [];
+
+        for (let i = 0; i < noteInputs.length; i++) {
+            const { tranche, convertingPrincipal } = noteInputs[i];
+            if (convertingPrincipal <= 0) {
+                postMoneyCapAlphas.push(0);
+                nonPostMoneyCapShares.push(0);
+                modePerNote.push('ROUND');
                 continue;
             }
-            const interestFactor =
-                note.instrumentType === 'CONVERTIBLE_NOTE'
-                    ? 1 + (Math.max(0, note.interestRatePct) / 100) * (Math.max(0, note.durationMonths) / 12)
-                    : 1;
-            const convertingPrincipal = note.investmentAmount * interestFactor;
 
-            const discountMultiplier = 1 - Math.min(0.8, Math.max(0, note.discountPct / 100));
-            const discountedPrice = roundSharePrice * discountMultiplier;
+            const discountMultiplier =
+                1 - Math.min(0.8, Math.max(0, tranche.discountPct / 100));
+            const discountPrice = roundSharePrice * discountMultiplier;
 
-            let capPrice = Number.POSITIVE_INFINITY;
-            if (note.valuationCap > 0) {
-                if (note.instrumentType === 'POST_MONEY_SAFE') {
-                    capPrice = note.valuationCap / Math.max(1, postSafeCapitalization);
+            if (tranche.instrumentType === 'POST_MONEY_SAFE') {
+                // Tentative cap price based on current post-SAFE capitalization
+                const tentativePostSafeTotal = Math.max(
+                    initialShares,
+                    initialShares + currentTotalSafeShares
+                );
+                const capPrice =
+                    tranche.valuationCap > 0
+                        ? tranche.valuationCap / tentativePostSafeTotal
+                        : Number.POSITIVE_INFINITY;
+
+                if (capPrice <= discountPrice && capPrice <= roundSharePrice && tranche.valuationCap > 0) {
+                    const alpha = Math.min(
+                        0.85,
+                        convertingPrincipal / Math.max(1, tranche.valuationCap)
+                    );
+                    postMoneyCapAlphas.push(alpha);
+                    nonPostMoneyCapShares.push(0);
+                    modePerNote.push('POST_CAP');
+                } else if (discountPrice < roundSharePrice) {
+                    postMoneyCapAlphas.push(0);
+                    nonPostMoneyCapShares.push(
+                        convertingPrincipal / Math.max(0.0001, discountPrice)
+                    );
+                    modePerNote.push('DISCOUNT');
                 } else {
-                    capPrice = note.valuationCap / Math.max(1, initialShares);
+                    postMoneyCapAlphas.push(0);
+                    nonPostMoneyCapShares.push(
+                        convertingPrincipal / Math.max(0.0001, roundSharePrice)
+                    );
+                    modePerNote.push('ROUND');
+                }
+            } else {
+                // PRE_MONEY_SAFE or CONVERTIBLE_NOTE
+                const preCapPrice =
+                    tranche.valuationCap > 0
+                        ? tranche.valuationCap / initialShares
+                        : Number.POSITIVE_INFINITY;
+
+                if (preCapPrice <= discountPrice && preCapPrice <= roundSharePrice) {
+                    postMoneyCapAlphas.push(0);
+                    nonPostMoneyCapShares.push(
+                        convertingPrincipal / Math.max(0.0001, preCapPrice)
+                    );
+                    modePerNote.push('PRE_CAP');
+                } else if (discountPrice < roundSharePrice) {
+                    postMoneyCapAlphas.push(0);
+                    nonPostMoneyCapShares.push(
+                        convertingPrincipal / Math.max(0.0001, discountPrice)
+                    );
+                    modePerNote.push('DISCOUNT');
+                } else {
+                    postMoneyCapAlphas.push(0);
+                    nonPostMoneyCapShares.push(
+                        convertingPrincipal / Math.max(0.0001, roundSharePrice)
+                    );
+                    modePerNote.push('ROUND');
                 }
             }
-
-            const effectivePrice = Math.max(
-                0.0001,
-                Math.min(roundSharePrice, discountedPrice, capPrice)
-            );
-            safeConversionPrices[i] = effectivePrice;
-            nextSafeShares.push(convertingPrincipal / effectivePrice);
         }
 
-        safeConvertedShares = nextSafeShares;
-        const totalSafeSh = safeConvertedShares.reduce((a, b) => a + b, 0);
+        // Exact Closed-Form Resolution of Post-SAFE Total Shares (`S_post_safe`):
+        // Every Post-Money SAFE i converting on its cap receives `alpha_i * S_post_safe` shares.
+        // Therefore: S_post_safe = initialShares + sum(nonPostMoneyCapShares) + S_post_safe * sum(postMoneyCapAlphas)
+        // => S_post_safe = (initialShares + sum(nonPostMoneyCapShares)) / (1 - sum(postMoneyCapAlphas))
+        const sumAlphas = Math.min(
+            0.9,
+            postMoneyCapAlphas.reduce((a, b) => a + b, 0)
+        );
+        const sumOtherConvertibleShares = nonPostMoneyCapShares.reduce((a, b) => a + b, 0);
+        const exactPostSafeTotalShares =
+            (initialShares + sumOtherConvertibleShares) / Math.max(0.1, 1 - sumAlphas);
+
+        const nextConvertedShares: number[] = [];
+        const nextBasisLabels: string[] = [];
+
+        for (let i = 0; i < noteInputs.length; i++) {
+            const { tranche } = noteInputs[i];
+            const mode = modePerNote[i];
+            if (mode === 'POST_CAP') {
+                nextConvertedShares.push(postMoneyCapAlphas[i] * exactPostSafeTotalShares);
+                nextBasisLabels.push(
+                    `Post-Money Cap (${(postMoneyCapAlphas[i] * 100).toFixed(2)}% Lock)`
+                );
+            } else if (mode === 'PRE_CAP') {
+                nextConvertedShares.push(nonPostMoneyCapShares[i]);
+                nextBasisLabels.push('Pre-Money Cap');
+            } else if (mode === 'DISCOUNT') {
+                nextConvertedShares.push(nonPostMoneyCapShares[i]);
+                nextBasisLabels.push(`${tranche.discountPct}% Discount`);
+            } else {
+                nextConvertedShares.push(nonPostMoneyCapShares[i]);
+                nextBasisLabels.push('Round Price');
+            }
+        }
+
+        convertedSharesList = nextConvertedShares;
+        conversionBasisList = nextBasisLabels;
+
+        const sumSafeSh = convertedSharesList.reduce((a, b) => a + b, 0);
         newRoundInvestorShares =
             state.includeNextFundingRound && newInvestment > 0
                 ? newInvestment / Math.max(0.0001, roundSharePrice)
                 : 0;
 
-        const nonTopUpTotal = initialShares + totalSafeSh + newRoundInvestorShares;
+        const nonTopUpTotal = initialShares + sumSafeSh + newRoundInvestorShares;
         if (state.includeNextFundingRound && targetPoolRatio > 0 && targetPoolRatio < 0.85) {
             const reqTopUp =
                 (targetPoolRatio * nonTopUpTotal - existingPoolShares) / (1 - targetPoolRatio);
@@ -592,270 +766,352 @@ export function calculateCapTableDilution(state: SaasCalculatorState): {
         }
     }
 
-    safeConvertedShares = safeConvertedShares.map((s) => Math.round(s));
+    // Round share counts to whole integers while preserving exact sum invariants
+    convertedSharesList = convertedSharesList.map((s) => Math.round(s));
     optionPoolTopUpShares = Math.round(optionPoolTopUpShares);
     newRoundInvestorShares = Math.round(newRoundInvestorShares);
 
-    const totalSafeShares = safeConvertedShares.reduce((a, b) => a + b, 0);
+    const totalSafeShares = convertedSharesList.reduce((a, b) => a + b, 0);
     const postSafeTotalShares = initialShares + totalSafeShares;
     const postRoundTotalShares =
         initialShares + totalSafeShares + optionPoolTopUpShares + newRoundInvestorShares;
 
-    // Evaluate M&A Exit Payout helper at any Exit Valuation
-    const computeExitSplit = (exitVal: number) => {
-        const netExit = Math.max(0, exitVal);
-        const prefMultiple = Math.max(1, state.liquidationPreferenceMultiple || 1);
-        const totalSafeInvested = state.convertibleNotes.reduce(
-            (sum, n) => sum + Math.max(0, n.investmentAmount),
-            0
-        );
-        const seriesAInvested = state.includeNextFundingRound ? newInvestment : 0;
-
-        // Evaluate Series A Preferred and SAFE/Note Holders independently by seniority (Series A senior to Seed/SAFE)
-        const seriesAPrefClaim = seriesAInvested * prefMultiple;
-        const safePrefClaim = totalSafeInvested * 1; // Standard 1x on converted SAFEs
-
-        const seriesAOwnershipRatio = newRoundInvestorShares / Math.max(1, postRoundTotalShares);
-        const safeOwnershipRatio = totalSafeShares / Math.max(1, postRoundTotalShares);
-
-        let remainingPool = netExit;
-        let seriesAPrefPaid = 0;
-        let safePrefPaid = 0;
-
-        const seriesAConverts =
-            state.liquidationParticipation === 'NON_PARTICIPATING' &&
-            netExit * seriesAOwnershipRatio > seriesAPrefClaim;
-        if (!seriesAConverts && seriesAInvested > 0) {
-            seriesAPrefPaid = Math.min(remainingPool, seriesAPrefClaim);
-            remainingPool = Math.max(0, remainingPool - seriesAPrefPaid);
-        }
-
-        const safeConverts =
-            state.liquidationParticipation === 'NON_PARTICIPATING' &&
-            netExit * safeOwnershipRatio > safePrefClaim;
-        if (!safeConverts && totalSafeInvested > 0) {
-            safePrefPaid = Math.min(remainingPool, safePrefClaim);
-            remainingPool = Math.max(0, remainingPool - safePrefPaid);
-        }
-
-        const participatingCommonShares =
-            founderInitialShares +
-            existingPoolShares +
-            optionPoolTopUpShares +
-            (seriesAConverts || state.liquidationParticipation === 'PARTICIPATING'
-                ? newRoundInvestorShares
-                : 0) +
-            (safeConverts || state.liquidationParticipation === 'PARTICIPATING'
-                ? totalSafeShares
-                : 0);
-
-        const denomShares = Math.max(1, participatingCommonShares);
-
-        const foundersPayout = Math.round(
-            remainingPool * (founderInitialShares / denomShares)
-        );
-        const optionPoolPayout = Math.round(
-            remainingPool * ((existingPoolShares + optionPoolTopUpShares) / denomShares)
-        );
-        const seriesAParticipation =
-            seriesAConverts || state.liquidationParticipation === 'PARTICIPATING'
-                ? remainingPool * (newRoundInvestorShares / denomShares)
-                : 0;
-        const safeParticipation =
-            safeConverts || state.liquidationParticipation === 'PARTICIPATING'
-                ? remainingPool * (totalSafeShares / denomShares)
-                : 0;
-
-        const seriesAInvestorsPayout = Math.round(seriesAPrefPaid + seriesAParticipation);
-        const safeHoldersPayout = Math.round(safePrefPaid + safeParticipation);
-
+    const evaluatedConvertibles: EvaluatedConvertibleItem[] = noteInputs.map((item, idx) => {
+        const sh = convertedSharesList[idx] || 0;
+        const effPrice = sh > 0 ? item.convertingPrincipal / sh : roundSharePrice;
         return {
-            exitValuation: netExit,
-            foundersPayout,
-            foundersSharePct:
-                netExit > 0 ? Number(((foundersPayout / netExit) * 100).toFixed(1)) : 0,
-            safeHoldersPayout,
-            seriesAInvestorsPayout,
-            optionPoolPayout,
+            tranche: item.tranche,
+            accruedInterest: Math.round(item.accruedInterest),
+            convertingPrincipal: Math.round(item.convertingPrincipal),
+            convertedShares: sh,
+            effectiveSharePrice: Number(effPrice.toFixed(4)),
+            conversionBasisLabel: conversionBasisList[idx] || 'Round Price',
+            standalonePostSafePct: Number(((sh / postSafeTotalShares) * 100).toFixed(2)),
         };
-    };
-
-    const targetExitSplit = computeExitSplit(state.targetExitValuation || 100_000_000);
-    const exitMilestones = [
-        10_000_000,
-        25_000_000,
-        50_000_000,
-        100_000_000,
-        250_000_000,
-        500_000_000,
-    ].map((v) => computeExitSplit(v));
-
-    // Build Stakeholder Cap Table Rows
-    const capTableRows: CapTableStakeholder[] = [];
-
-    const foundersPostRoundPct = Number(
-        ((founderInitialShares / postRoundTotalShares) * 100).toFixed(2)
-    );
-    capTableRows.push({
-        id: 'row_founders',
-        name: 'Founders (Common Stock)',
-        group: 'FOUNDERS',
-        preRoundShares: founderInitialShares,
-        preRoundPct: Number(foundersPrePct.toFixed(2)),
-        postSafeShares: founderInitialShares,
-        postSafePct: Number(((founderInitialShares / postSafeTotalShares) * 100).toFixed(2)),
-        postRoundShares: founderInitialShares,
-        postRoundPct: foundersPostRoundPct,
-        investedAmount: 0,
-        effectiveSharePrice: 0,
-        postRoundPaperValue: Math.round(founderInitialShares * roundSharePrice),
-        dilutionPctPoints: Number((foundersPostRoundPct - foundersPrePct).toFixed(2)),
-        exitPayoutAmount: targetExitSplit.foundersPayout,
-        exitPayoutPct: targetExitSplit.foundersSharePct,
-        exitMultipleMoic: 0,
     });
 
-    // Existing Option Pool + Top-Up
-    const totalPoolSharesPostRound = existingPoolShares + optionPoolTopUpShares;
-    const poolPostRoundPct = Number(
-        ((totalPoolSharesPostRound / postRoundTotalShares) * 100).toFixed(2)
-    );
-    capTableRows.push({
-        id: 'row_option_pool',
-        name: `Employee Option Pool (ESOP${optionPoolTopUpShares > 0 ? ' + Top-Up' : ''})`,
-        group: 'EXISTING_OPTION_POOL',
-        preRoundShares: existingPoolShares,
-        preRoundPct: Number(existingPoolPct.toFixed(2)),
-        postSafeShares: existingPoolShares,
-        postSafePct: Number(((existingPoolShares / postSafeTotalShares) * 100).toFixed(2)),
-        postRoundShares: totalPoolSharesPostRound,
-        postRoundPct: poolPostRoundPct,
-        investedAmount: 0,
-        effectiveSharePrice: 0,
-        postRoundPaperValue: Math.round(totalPoolSharesPostRound * roundSharePrice),
-        dilutionPctPoints: Number((poolPostRoundPct - existingPoolPct).toFixed(2)),
-        exitPayoutAmount: targetExitSplit.optionPoolPayout,
-        exitPayoutPct:
-            state.targetExitValuation > 0
-                ? Number(
-                    ((targetExitSplit.optionPoolPayout / state.targetExitValuation) * 100).toFixed(1)
-                )
-                : 0,
-        exitMultipleMoic: 0,
-    });
-
-    // Individual SAFE / Convertible Note Tranches
-    state.convertibleNotes.forEach((note, idx) => {
-        const sh = safeConvertedShares[idx] || 0;
-        const pps = safeConversionPrices[idx] || roundSharePrice;
-        const postSafePct = Number(((sh / postSafeTotalShares) * 100).toFixed(2));
-        const postRoundPct = Number(((sh / postRoundTotalShares) * 100).toFixed(2));
-        const trancheExitShare =
-            totalSafeShares > 0
-                ? Math.round(targetExitSplit.safeHoldersPayout * (sh / totalSafeShares))
-                : 0;
-
-        capTableRows.push({
-            id: note.id,
-            name: `${note.label} (${note.instrumentType === 'POST_MONEY_SAFE' ? 'Post-Money SAFE' : note.instrumentType === 'PRE_MONEY_SAFE' ? 'Pre-Money SAFE' : 'Conv. Note'})`,
-            group: 'SAFE_NOTE_HOLDERS',
-            preRoundShares: 0,
-            preRoundPct: 0,
-            postSafeShares: sh,
-            postSafePct,
-            postRoundShares: sh,
-            postRoundPct,
-            investedAmount: note.investmentAmount,
-            effectiveSharePrice: Number(pps.toFixed(4)),
-            postRoundPaperValue: Math.round(sh * roundSharePrice),
-            dilutionPctPoints: postRoundPct,
-            exitPayoutAmount: trancheExitShare,
-            exitPayoutPct:
-                state.targetExitValuation > 0
-                    ? Number(((trancheExitShare / state.targetExitValuation) * 100).toFixed(1))
-                    : 0,
-            exitMultipleMoic:
-                note.investmentAmount > 0
-                    ? Number((trancheExitShare / note.investmentAmount).toFixed(2))
-                    : 0,
-        });
-    });
-
-    // New Priced Round Investors
-    const newRoundInvestorPct = Number(
-        ((newRoundInvestorShares / postRoundTotalShares) * 100).toFixed(2)
-    );
-    if (state.includeNextFundingRound && newRoundInvestorShares > 0) {
-        capTableRows.push({
-            id: 'row_new_round',
-            name: `${state.fundingRoundName} Investors`,
-            group: 'NEW_ROUND_INVESTORS',
-            preRoundShares: 0,
-            preRoundPct: 0,
-            postSafeShares: 0,
-            postSafePct: 0,
-            postRoundShares: newRoundInvestorShares,
-            postRoundPct: newRoundInvestorPct,
-            investedAmount: newInvestment,
-            effectiveSharePrice: Number(roundSharePrice.toFixed(4)),
-            postRoundPaperValue: Math.round(newRoundInvestorShares * roundSharePrice),
-            dilutionPctPoints: newRoundInvestorPct,
-            exitPayoutAmount: targetExitSplit.seriesAInvestorsPayout,
-            exitPayoutPct:
-                state.targetExitValuation > 0
-                    ? Number(
-                        (
-                            (targetExitSplit.seriesAInvestorsPayout /
-                                state.targetExitValuation) *
-                            100
-                        ).toFixed(1)
-                    )
-                    : 0,
-            exitMultipleMoic:
-                newInvestment > 0
-                    ? Number((targetExitSplit.seriesAInvestorsPayout / newInvestment).toFixed(2))
-                    : 0,
-        });
-    }
-
-    const totalSafeDilutionPct = Number(
-        ((totalSafeShares / postRoundTotalShares) * 100).toFixed(2)
-    );
-    const optionPoolTopUpDilutionPct = Number(
-        ((optionPoolTopUpShares / postRoundTotalShares) * 100).toFixed(2)
+    const standalonePostMoneySafeDilutionPct = Number(
+        ((totalSafeShares / postSafeTotalShares) * 100).toFixed(2)
     );
 
     return {
         initialShares,
+        founderInitialShares,
+        existingPoolShares,
+        evaluatedConvertibles,
+        postSafeTotalShares,
+        optionPoolTopUpShares,
+        newRoundInvestorShares,
         postRoundTotalShares,
         roundSharePrice: Number(roundSharePrice.toFixed(4)),
         postMoneyValuation,
-        totalSafeDilutionPct,
-        optionPoolTopUpShares,
-        optionPoolTopUpDilutionPct,
-        newRoundInvestorPct,
-        foundersPreRoundPct: Number(foundersPrePct.toFixed(2)),
-        foundersPostRoundPct,
-        foundersTotalDilutionPctPoints: Number((foundersPrePct - foundersPostRoundPct).toFixed(2)),
-        foundersPaperValuePostRound: Math.round(founderInitialShares * roundSharePrice),
-        foundersExitPayout: targetExitSplit.foundersPayout,
-        investorsExitPayout:
-            targetExitSplit.safeHoldersPayout + targetExitSplit.seriesAInvestorsPayout,
-        optionPoolExitPayout: targetExitSplit.optionPoolPayout,
-        capTableRows,
-        exitValuationTable: exitMilestones,
+        standalonePostMoneySafeDilutionPct,
     };
 }
 
 /**
- * Master Calculator Compiler
+ * ============================================================================
+ * DOMAIN 5: SCENARIO-BASED M&A LIQUIDATION WATERFALL ENGINE
+ * ============================================================================
+ * Explicitly models:
+ * - Seniority Mode: Series A Senior to Converted SAFE/Seed vs. Pari Passu (Equal Tier)
+ * - SAFE Liquidation Treatment: 1x Shadow Preferred Claim vs. Convert to Common
+ * - Participation Mode: Non-Participating vs. Participating (with optional Participation Cap)
+ * - Exact Total Distribution Conservation (Founders + SAFEs + Series A + Option Pool === Exit Valuation)
+ */
+export function evaluateExitWaterfallAtValuation(
+    exitVal: number,
+    state: SaasCalculatorState,
+    capDomain: ReturnType<typeof solveConvertiblesAndOptionPoolDomain>
+): {
+    exitValuation: number;
+    foundersPayout: number;
+    foundersSharePct: number;
+    safeHoldersPayout: number;
+    seriesAInvestorsPayout: number;
+    optionPoolPayout: number;
+    totalDistributed: number;
+} {
+    const netExit = Math.max(0, Math.round(exitVal));
+    if (netExit === 0) {
+        return {
+            exitValuation: 0,
+            foundersPayout: 0,
+            foundersSharePct: 0,
+            safeHoldersPayout: 0,
+            seriesAInvestorsPayout: 0,
+            optionPoolPayout: 0,
+            totalDistributed: 0,
+        };
+    }
+
+    const {
+        founderInitialShares,
+        existingPoolShares,
+        evaluatedConvertibles,
+        optionPoolTopUpShares,
+        newRoundInvestorShares,
+        postRoundTotalShares,
+    } = capDomain;
+
+    const totalSafeShares = evaluatedConvertibles.reduce((a, b) => a + b.convertedShares, 0);
+    const totalSafeInvested = evaluatedConvertibles.reduce(
+        (a, b) => a + b.convertingPrincipal,
+        0
+    );
+    const seriesAInvested = state.includeNextFundingRound
+        ? Math.max(0, state.newInvestmentAmount)
+        : 0;
+
+    const prefMultiple = Math.max(1, state.liquidationPreferenceMultiple || 1);
+    const seriesAPrefClaim = seriesAInvested * prefMultiple;
+    const safePrefClaim =
+        state.safeLiquidationTreatment === 'SHADOW_PREFERRED_1X' ? totalSafeInvested : 0;
+
+    const seriesAOwnership = newRoundInvestorShares / Math.max(1, postRoundTotalShares);
+    const safeOwnership = totalSafeShares / Math.max(1, postRoundTotalShares);
+
+    // Determine whether each preferred class converts to common or takes preference
+    const capMult = state.participationCapMultiple > 0 ? state.participationCapMultiple : 0;
+
+    const seriesAConverts =
+        seriesAInvested <= 0 ||
+        (state.liquidationParticipation === 'NON_PARTICIPATING' &&
+            netExit * seriesAOwnership > seriesAPrefClaim) ||
+        (state.liquidationParticipation === 'PARTICIPATING' &&
+            capMult > 0 &&
+            netExit * seriesAOwnership > seriesAInvested * capMult);
+
+    const safeConverts =
+        totalSafeInvested <= 0 ||
+        state.safeLiquidationTreatment === 'CONVERT_TO_COMMON' ||
+        netExit * safeOwnership > safePrefClaim;
+
+    let remainingProceeds = netExit;
+    let seriesAPrefPaid = 0;
+    let safePrefPaid = 0;
+
+    if (state.waterfallSeniorityMode === 'PARI_PASSU_EQUAL_TIER') {
+        const activeSeriesAClaim = seriesAConverts ? 0 : seriesAPrefClaim;
+        const activeSafeClaim = safeConverts ? 0 : safePrefClaim;
+        const combinedClaim = activeSeriesAClaim + activeSafeClaim;
+        if (combinedClaim > 0) {
+            const totalPrefPaid = Math.min(remainingProceeds, combinedClaim);
+            seriesAPrefPaid = totalPrefPaid * (activeSeriesAClaim / combinedClaim);
+            safePrefPaid = totalPrefPaid * (activeSafeClaim / combinedClaim);
+            remainingProceeds = Math.max(0, remainingProceeds - totalPrefPaid);
+        }
+    } else {
+        // SERIES_A_SENIOR_TO_SAFE (Standard Tiered Seniority)
+        if (!seriesAConverts && seriesAPrefClaim > 0) {
+            seriesAPrefPaid = Math.min(remainingProceeds, seriesAPrefClaim);
+            remainingProceeds = Math.max(0, remainingProceeds - seriesAPrefPaid);
+        }
+        if (!safeConverts && safePrefClaim > 0) {
+            safePrefPaid = Math.min(remainingProceeds, safePrefClaim);
+            remainingProceeds = Math.max(0, remainingProceeds - safePrefPaid);
+        }
+    }
+
+    // Distribute remaining proceeds among Common, Option Pool, Converted Preferred, and Participating Preferred
+    const totalOptionPoolShares = existingPoolShares + optionPoolTopUpShares;
+    const seriesAParticipatesInRemainder =
+        seriesAConverts || state.liquidationParticipation === 'PARTICIPATING';
+    const safeParticipatesInRemainder = safeConverts;
+
+    const participatingSharesTotal = Math.max(
+        1,
+        founderInitialShares +
+        totalOptionPoolShares +
+        (seriesAParticipatesInRemainder ? newRoundInvestorShares : 0) +
+        (safeParticipatesInRemainder ? totalSafeShares : 0)
+    );
+
+    let seriesARemainderCut = seriesAParticipatesInRemainder
+        ? remainingProceeds * (newRoundInvestorShares / participatingSharesTotal)
+        : 0;
+
+    // Enforce Participation Cap if configured on Participating Preferred
+    if (
+        !seriesAConverts &&
+        state.liquidationParticipation === 'PARTICIPATING' &&
+        capMult > 0
+    ) {
+        const maxAllowedSeriesATotal = seriesAInvested * capMult;
+        const maxAllowedExtra = Math.max(0, maxAllowedSeriesATotal - seriesAPrefPaid);
+        if (seriesARemainderCut > maxAllowedExtra) {
+            seriesARemainderCut = maxAllowedExtra;
+        }
+    }
+
+    const poolAfterSeriesAParticipation = Math.max(0, remainingProceeds - seriesARemainderCut);
+    const nonSeriesAParticipatingShares = Math.max(
+        1,
+        founderInitialShares +
+        totalOptionPoolShares +
+        (safeParticipatesInRemainder ? totalSafeShares : 0)
+    );
+
+    const safeRemainderCut = safeParticipatesInRemainder
+        ? poolAfterSeriesAParticipation * (totalSafeShares / nonSeriesAParticipatingShares)
+        : 0;
+    const optionPoolCut =
+        poolAfterSeriesAParticipation *
+        (totalOptionPoolShares / nonSeriesAParticipatingShares);
+
+    const seriesAInvestorsPayout = Math.round(seriesAPrefPaid + seriesARemainderCut);
+    const safeHoldersPayout = Math.round(safePrefPaid + safeRemainderCut);
+    const optionPoolPayout = Math.round(optionPoolCut);
+
+    // Exact Conservation Guard: Founders receive the exact residual dollar so sum === netExit
+    const foundersPayout = Math.max(
+        0,
+        netExit - seriesAInvestorsPayout - safeHoldersPayout - optionPoolPayout
+    );
+
+    return {
+        exitValuation: netExit,
+        foundersPayout,
+        foundersSharePct: Number(((foundersPayout / netExit) * 100).toFixed(1)),
+        safeHoldersPayout,
+        seriesAInvestorsPayout,
+        optionPoolPayout,
+        totalDistributed:
+            foundersPayout + safeHoldersPayout + seriesAInvestorsPayout + optionPoolPayout,
+    };
+}
+
+/**
+ * ============================================================================
+ * DOMAIN 6: INVARIANT & CONSERVATION VERIFICATION LAYER
+ * ============================================================================
+ */
+export function verifyFinancialModelInvariants(
+    state: SaasCalculatorState,
+    monthlySchedule: MonthlyRunwayRow[],
+    capDomain: ReturnType<typeof solveConvertiblesAndOptionPoolDomain>,
+    capTableRows: CapTableStakeholder[],
+    targetExitSplit: ReturnType<typeof evaluateExitWaterfallAtValuation>
+): ModelInvariantVerification {
+    const preRoundSumPct = Number(
+        capTableRows.reduce((a, b) => a + b.preRoundPct, 0).toFixed(2)
+    );
+    const postSafeSumPct = Number(
+        capTableRows.reduce((a, b) => a + b.postSafePct, 0).toFixed(2)
+    );
+    const postRoundSumPct = Number(
+        capTableRows.reduce((a, b) => a + b.postRoundPct, 0).toFixed(2)
+    );
+
+    const sumPostRoundShares = capTableRows.reduce((a, b) => a + b.postRoundShares, 0);
+    const capTableShareCountConserved =
+        sumPostRoundShares === capDomain.postRoundTotalShares;
+
+    // Verify Post-Money SAFE standalone ownership lock: each Post-Money SAFE converting on cap
+    // must match Investment / Valuation Cap within 0.05% rounding tolerance
+    let postMoneySafeStandaloneOwnershipConserved = true;
+    for (const ev of capDomain.evaluatedConvertibles) {
+        if (
+            ev.tranche.instrumentType === 'POST_MONEY_SAFE' &&
+            ev.conversionBasisLabel.startsWith('Post-Money Cap') &&
+            ev.tranche.valuationCap > 0
+        ) {
+            const expectedPct =
+                (ev.convertingPrincipal / ev.tranche.valuationCap) * 100;
+            if (Math.abs(ev.standalonePostSafePct - expectedPct) > 0.06) {
+                postMoneySafeStandaloneOwnershipConserved = false;
+            }
+        }
+    }
+
+    const waterfallPayoutConserved =
+        targetExitSplit.totalDistributed === targetExitSplit.exitValuation;
+
+    let cashFlowAccountingConserved = true;
+    let grossProfitAndBurnConserved = true;
+    for (const r of monthlySchedule) {
+        if (Math.abs(r.startingCash + r.netCashFlow - r.endingCash) > 0.01) {
+            cashFlowAccountingConserved = false;
+        }
+        if (Math.abs(r.mrr - r.cogsExpenses - r.grossProfit) > 0.01) {
+            grossProfitAndBurnConserved = false;
+        }
+        const expectedNetBurn = Math.max(0, r.totalGrossBurn - r.mrr);
+        if (Math.abs(r.netBurn - expectedNetBurn) > 0.01) {
+            grossProfitAndBurnConserved = false;
+        }
+    }
+
+    const checks = [
+        {
+            id: 'inv_cap_100',
+            label: 'Post-Round Cap Table Ownership Sum',
+            passed: Math.abs(postRoundSumPct - 100) <= 0.15,
+            expected: '100.00% (±0.15%)',
+            actual: `${postRoundSumPct.toFixed(2)}%`,
+        },
+        {
+            id: 'inv_shares_sum',
+            label: 'Fully Diluted Integer Share Conservation',
+            passed: capTableShareCountConserved,
+            expected: `${capDomain.postRoundTotalShares.toLocaleString()} shares`,
+            actual: `${sumPostRoundShares.toLocaleString()} shares`,
+        },
+        {
+            id: 'inv_post_safe_lock',
+            label: 'YC Post-Money SAFE Pre-Round Ownership Lock (Investment ÷ Cap)',
+            passed: postMoneySafeStandaloneOwnershipConserved,
+            expected: 'Exact additive pre-Series A ownership lock',
+            actual: postMoneySafeStandaloneOwnershipConserved
+                ? `Verified (${capDomain.standalonePostMoneySafeDilutionPct}% Post-SAFE)`
+                : 'Deviation detected',
+        },
+        {
+            id: 'inv_waterfall_sum',
+            label: 'M&A Exit Waterfall Payout Conservation',
+            passed: waterfallPayoutConserved,
+            expected: `${state.currencySymbol}${targetExitSplit.exitValuation.toLocaleString()}`,
+            actual: `${state.currencySymbol}${targetExitSplit.totalDistributed.toLocaleString()}`,
+        },
+        {
+            id: 'inv_cashflow_continuity',
+            label: '60-Month Cash Flow Continuity (Starting Cash + Net Flow = Ending Cash)',
+            passed: cashFlowAccountingConserved && grossProfitAndBurnConserved,
+            expected: '60/60 months reconciled',
+            actual:
+                cashFlowAccountingConserved && grossProfitAndBurnConserved
+                    ? '60/60 months reconciled'
+                    : 'Mismatch detected',
+        },
+    ];
+
+    const allPassed = checks.every((c) => c.passed);
+
+    return {
+        allPassed,
+        capTablePreSafeSumPct: preRoundSumPct,
+        capTablePostSafeSumPct: postSafeSumPct,
+        capTablePostRoundSumPct: postRoundSumPct,
+        capTableShareCountConserved,
+        postMoneySafeStandaloneOwnershipConserved,
+        waterfallPayoutConserved,
+        cashFlowAccountingConserved,
+        grossProfitAndBurnConserved,
+        checks,
+    };
+}
+
+/**
+ * ============================================================================
+ * MASTER CALCULATOR ORCHESTRATOR
+ * ============================================================================
  */
 export function calculateSaasBurnRunwayAndDilution(
     state: SaasCalculatorState
 ): SaasCalculationOutput {
     const sim = simulateRunwaySchedule(state);
     const solvers = solveRunwayAndBreakevenTargets(state);
-    const cap = calculateCapTableDilution(state);
+    const capDomain = solveConvertiblesAndOptionPoolDomain(state);
 
     const m1 = sim.monthlySchedule[0];
     const m12 = sim.monthlySchedule[11] || m1;
@@ -863,19 +1119,26 @@ export function calculateSaasBurnRunwayAndDilution(
     const grossBurnMonthly = Math.round(m1.totalGrossBurn);
     const netBurnMonthly = Math.round(m1.netBurn);
 
-    // Static Runway (Cash / Current Net Burn without compounding growth)
-    const staticRunwayMonths =
+    // Uncapped vs Capped Static Runway (Cash / Current Net Burn assuming 0% growth)
+    const uncappedStaticRunwayMonths =
         netBurnMonthly <= 0
-            ? 60
-            : Number(Math.min(60, state.cashOnHand / netBurnMonthly).toFixed(1));
+            ? 999
+            : Number((state.cashOnHand / netBurnMonthly).toFixed(1));
+    const staticRunwayIsCappedAt60 = uncappedStaticRunwayMonths > 60;
+    const staticRunwayMonths = Number(
+        Math.min(60, uncappedStaticRunwayMonths).toFixed(1)
+    );
 
+    const bufferMonths = Math.max(1, state.raisePlanningBufferMonths || 6);
     const mandatoryRaiseByMonth = sim.runwayExhausted
-        ? Number(Math.max(0, sim.dynamicRunwayMonths - 6.0).toFixed(1))
+        ? Number(Math.max(0, sim.dynamicRunwayMonths - bufferMonths).toFixed(1))
         : 60;
 
     const zeroCashRow =
         sim.runwayExhausted && sim.monthlySchedule.length > 0
-            ? sim.monthlySchedule[Math.min(59, Math.max(0, Math.ceil(sim.dynamicRunwayMonths) - 1))]
+            ? sim.monthlySchedule[
+            Math.min(59, Math.max(0, Math.ceil(sim.dynamicRunwayMonths) - 1))
+            ]
             : null;
     const zeroCashDateLabel = zeroCashRow
         ? zeroCashRow.dateLabel.split(' ')[0] + ' ' + zeroCashRow.dateLabel.split(' ')[1]
@@ -883,7 +1146,9 @@ export function calculateSaasBurnRunwayAndDilution(
 
     const raiseByRow =
         sim.runwayExhausted && mandatoryRaiseByMonth >= 1
-            ? sim.monthlySchedule[Math.min(59, Math.max(0, Math.floor(mandatoryRaiseByMonth) - 1))]
+            ? sim.monthlySchedule[
+            Math.min(59, Math.max(0, Math.floor(mandatoryRaiseByMonth) - 1))
+            ]
             : null;
     const raiseByDateLabel = raiseByRow
         ? raiseByRow.dateLabel.split(' ')[0] + ' ' + raiseByRow.dateLabel.split(' ')[1]
@@ -898,14 +1163,17 @@ export function calculateSaasBurnRunwayAndDilution(
     let trajectoryStatus: TrajectoryStatus = 'DEFAULT_ALIVE';
     if (sim.runwayExhausted) {
         trajectoryStatus =
-            sim.dynamicRunwayMonths < 9.0 ? 'DEFAULT_DEAD_CRITICAL' : 'DEFAULT_DEAD_RAISE_SOON';
+            sim.dynamicRunwayMonths < 9.0
+                ? 'DEFAULT_DEAD_CRITICAL'
+                : 'DEFAULT_DEAD_RAISE_SOON';
     } else if (sim.breakevenMonth === null && sim.monthlySchedule[59]?.netBurn > 0) {
         trajectoryStatus = 'DEFAULT_DEAD_RAISE_SOON';
     }
 
-    // David Sacks Burn Multiple = Annualized Net Burn / Annualized Net New ARR
+    // Modeled Burn Multiple = Annualized Net Burn / Annualized Net New ARR
     const currentArr = Math.round(state.monthlyRevenueMrr * 12);
     const month12Arr = Math.round(m12.arr);
+    const trailing12MonthSimulatedNetNewArr = Math.max(0, month12Arr - currentArr);
     const monthlyNetNewMrr =
         state.monthlyRevenueMrr * (state.monthlyNetRevenueGrowthPct / 100);
     const netNewArrAnnualized = Math.round(monthlyNetNewMrr * 12);
@@ -935,6 +1203,218 @@ export function calculateSaasBurnRunwayAndDilution(
     const revenueCoverageRatioPct = Number(((m1.mrr / totalOutflowM1) * 100).toFixed(1));
     const netBurnDeficitRatioPct = Number((100 - revenueCoverageRatioPct).toFixed(1));
 
+    // Evaluate M&A Exit Waterfall at Target Exit Valuation & 6 Valuation Milestones
+    const targetExitSplit = evaluateExitWaterfallAtValuation(
+        state.targetExitValuation || 100_000_000,
+        state,
+        capDomain
+    );
+    const exitValuationTable = [
+        10_000_000,
+        25_000_000,
+        50_000_000,
+        100_000_000,
+        250_000_000,
+        500_000_000,
+    ].map((v) => evaluateExitWaterfallAtValuation(v, state, capDomain));
+
+    // Build Stakeholder Cap Table Rows
+    const {
+        initialShares,
+        founderInitialShares,
+        existingPoolShares,
+        evaluatedConvertibles,
+        postSafeTotalShares,
+        optionPoolTopUpShares,
+        newRoundInvestorShares,
+        postRoundTotalShares,
+        roundSharePrice,
+        postMoneyValuation,
+        standalonePostMoneySafeDilutionPct,
+    } = capDomain;
+
+    const totalSafeShares = evaluatedConvertibles.reduce(
+        (a, b) => a + b.convertedShares,
+        0
+    );
+
+    const foundersPreRoundPct = Number(
+        ((founderInitialShares / initialShares) * 100).toFixed(2)
+    );
+    const foundersPostSafePct = Number(
+        ((founderInitialShares / postSafeTotalShares) * 100).toFixed(2)
+    );
+    const foundersPostRoundPct = Number(
+        ((founderInitialShares / postRoundTotalShares) * 100).toFixed(2)
+    );
+
+    const capTableRows: CapTableStakeholder[] = [];
+
+    capTableRows.push({
+        id: 'row_founders',
+        name: 'Founders (Common Stock)',
+        group: 'FOUNDERS',
+        preRoundShares: founderInitialShares,
+        preRoundPct: foundersPreRoundPct,
+        postSafeShares: founderInitialShares,
+        postSafePct: foundersPostSafePct,
+        postRoundShares: founderInitialShares,
+        postRoundPct: foundersPostRoundPct,
+        investedAmount: 0,
+        accruedInterestAmount: 0,
+        convertingPrincipalAmount: 0,
+        effectiveSharePrice: 0,
+        conversionBasisLabel: 'Common Stock',
+        postRoundPaperValue: Math.round(founderInitialShares * roundSharePrice),
+        dilutionPctPoints: Number((foundersPostRoundPct - foundersPreRoundPct).toFixed(2)),
+        exitPayoutAmount: targetExitSplit.foundersPayout,
+        exitPayoutPct: targetExitSplit.foundersSharePct,
+        exitMultipleMoic: 0,
+    });
+
+    const totalPoolSharesPostRound = existingPoolShares + optionPoolTopUpShares;
+    const existingPoolPrePct = Number(
+        ((existingPoolShares / initialShares) * 100).toFixed(2)
+    );
+    const existingPoolPostSafePct = Number(
+        ((existingPoolShares / postSafeTotalShares) * 100).toFixed(2)
+    );
+    const poolPostRoundPct = Number(
+        ((totalPoolSharesPostRound / postRoundTotalShares) * 100).toFixed(2)
+    );
+
+    capTableRows.push({
+        id: 'row_option_pool',
+        name: `Employee Option Pool (ESOP${optionPoolTopUpShares > 0 ? ' + Top-Up' : ''})`,
+        group: 'EXISTING_OPTION_POOL',
+        preRoundShares: existingPoolShares,
+        preRoundPct: existingPoolPrePct,
+        postSafeShares: existingPoolShares,
+        postSafePct: existingPoolPostSafePct,
+        postRoundShares: totalPoolSharesPostRound,
+        postRoundPct: poolPostRoundPct,
+        investedAmount: 0,
+        accruedInterestAmount: 0,
+        convertingPrincipalAmount: 0,
+        effectiveSharePrice: 0,
+        conversionBasisLabel:
+            optionPoolTopUpShares > 0
+                ? state.optionPoolMode === 'PRE_MONEY_CARVEOUT'
+                    ? `Pre-Money Pool Top-Up (+${optionPoolTopUpShares.toLocaleString()} sh)`
+                    : `Post-Money Shared Top-Up (+${optionPoolTopUpShares.toLocaleString()} sh)`
+                : 'Existing Option Pool',
+        postRoundPaperValue: Math.round(totalPoolSharesPostRound * roundSharePrice),
+        dilutionPctPoints: Number((poolPostRoundPct - existingPoolPrePct).toFixed(2)),
+        exitPayoutAmount: targetExitSplit.optionPoolPayout,
+        exitPayoutPct:
+            state.targetExitValuation > 0
+                ? Number(
+                    (
+                        (targetExitSplit.optionPoolPayout / state.targetExitValuation) *
+                        100
+                    ).toFixed(1)
+                )
+                : 0,
+        exitMultipleMoic: 0,
+    });
+
+    for (const ev of evaluatedConvertibles) {
+        const postRoundPct = Number(
+            ((ev.convertedShares / postRoundTotalShares) * 100).toFixed(2)
+        );
+        const trancheExitShare =
+            totalSafeShares > 0
+                ? Math.round(
+                    targetExitSplit.safeHoldersPayout *
+                    (ev.convertedShares / totalSafeShares)
+                )
+                : 0;
+
+        capTableRows.push({
+            id: ev.tranche.id,
+            name: `${ev.tranche.label} (${ev.tranche.instrumentType === 'POST_MONEY_SAFE'
+                    ? 'Post-Money SAFE'
+                    : ev.tranche.instrumentType === 'PRE_MONEY_SAFE'
+                        ? 'Pre-Money SAFE'
+                        : 'Conv. Note'
+                })`,
+            group: 'SAFE_NOTE_HOLDERS',
+            preRoundShares: 0,
+            preRoundPct: 0,
+            postSafeShares: ev.convertedShares,
+            postSafePct: ev.standalonePostSafePct,
+            postRoundShares: ev.convertedShares,
+            postRoundPct,
+            investedAmount: ev.tranche.investmentAmount,
+            accruedInterestAmount: ev.accruedInterest,
+            convertingPrincipalAmount: ev.convertingPrincipal,
+            effectiveSharePrice: ev.effectiveSharePrice,
+            conversionBasisLabel: ev.conversionBasisLabel,
+            postRoundPaperValue: Math.round(ev.convertedShares * roundSharePrice),
+            dilutionPctPoints: postRoundPct,
+            exitPayoutAmount: trancheExitShare,
+            exitPayoutPct:
+                state.targetExitValuation > 0
+                    ? Number(((trancheExitShare / state.targetExitValuation) * 100).toFixed(1))
+                    : 0,
+            exitMultipleMoic:
+                ev.tranche.investmentAmount > 0
+                    ? Number((trancheExitShare / ev.tranche.investmentAmount).toFixed(2))
+                    : 0,
+        });
+    }
+
+    const newRoundInvestorPct = Number(
+        ((newRoundInvestorShares / postRoundTotalShares) * 100).toFixed(2)
+    );
+    if (state.includeNextFundingRound && newRoundInvestorShares > 0) {
+        capTableRows.push({
+            id: 'row_new_round',
+            name: `${state.fundingRoundName} Investors`,
+            group: 'NEW_ROUND_INVESTORS',
+            preRoundShares: 0,
+            preRoundPct: 0,
+            postSafeShares: 0,
+            postSafePct: 0,
+            postRoundShares: newRoundInvestorShares,
+            postRoundPct: newRoundInvestorPct,
+            investedAmount: state.newInvestmentAmount,
+            accruedInterestAmount: 0,
+            convertingPrincipalAmount: state.newInvestmentAmount,
+            effectiveSharePrice: roundSharePrice,
+            conversionBasisLabel: 'New Priced Round Preferred',
+            postRoundPaperValue: Math.round(newRoundInvestorShares * roundSharePrice),
+            dilutionPctPoints: newRoundInvestorPct,
+            exitPayoutAmount: targetExitSplit.seriesAInvestorsPayout,
+            exitPayoutPct:
+                state.targetExitValuation > 0
+                    ? Number(
+                        (
+                            (targetExitSplit.seriesAInvestorsPayout /
+                                state.targetExitValuation) *
+                            100
+                        ).toFixed(1)
+                    )
+                    : 0,
+            exitMultipleMoic:
+                state.newInvestmentAmount > 0
+                    ? Number(
+                        (
+                            targetExitSplit.seriesAInvestorsPayout /
+                            state.newInvestmentAmount
+                        ).toFixed(2)
+                    )
+                    : 0,
+        });
+    }
+
+    const totalSafeDilutionPct = Number(
+        ((totalSafeShares / postRoundTotalShares) * 100).toFixed(2)
+    );
+    const optionPoolTopUpDilutionPct = Number(
+        ((optionPoolTopUpShares / postRoundTotalShares) * 100).toFixed(2)
+    );
+
     // 5-Year Yearly Summary
     const yearlySummary = [1, 2, 3, 4, 5].map((yr) => {
         const slice = sim.monthlySchedule.slice((yr - 1) * 12, yr * 12);
@@ -951,15 +1431,21 @@ export function calculateSaasBurnRunwayAndDilution(
         };
     });
 
-    // 3-Scenario Comparison Matrix (Conservative / Base / Optimistic)
+    // 3-Scenario Comparison Matrix
     const buildScenarioCol = (
         name: string,
         subtitle: string,
         growthDelta: number,
         expDelta: number
     ): ScenarioComparisonColumn => {
-        const g = Math.max(0, Number((state.monthlyNetRevenueGrowthPct + growthDelta).toFixed(1)));
-        const e = Math.max(0, Number((state.monthlyExpenseGrowthPct + expDelta).toFixed(1)));
+        const g = Math.max(
+            0,
+            Number((state.monthlyNetRevenueGrowthPct + growthDelta).toFixed(1))
+        );
+        const e = Math.max(
+            0,
+            Number((state.monthlyExpenseGrowthPct + expDelta).toFixed(1))
+        );
         const sSim = simulateRunwaySchedule({
             ...state,
             monthlyNetRevenueGrowthPct: g,
@@ -1005,30 +1491,29 @@ export function calculateSaasBurnRunwayAndDilution(
         ),
     };
 
-    // Actionable Financial Health Alerts
     const healthAlerts: FinancialHealthAlert[] = [];
     if (trajectoryStatus === 'DEFAULT_DEAD_CRITICAL') {
         healthAlerts.push({
             id: 'alert_critical_runway',
             severity: 'CRITICAL',
-            title: `Critical Runway Alert: ${sim.dynamicRunwayMonths} Months Left (Under 9-Month Safety Threshold)`,
-            description: `Typical venture rounds take 4 to 6 months to close. With ${sim.dynamicRunwayMonths} months of cash left, reduce monthly expenses by ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo or bridge immediately.`,
-            actionLabel: `Apply ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo Expense Reduction`,
+            title: `Critical Runway Alert: ${sim.dynamicRunwayMonths} Months Projected (Under 9-Month Buffer)`,
+            description: `Fundraising rounds often take several months to close. With ${sim.dynamicRunwayMonths} months of projected cash left, reducing monthly spend by ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo or bridging capital is recommended.`,
+            actionLabel: `Apply ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo Cost Reduction`,
         });
     } else if (trajectoryStatus === 'DEFAULT_DEAD_RAISE_SOON') {
         healthAlerts.push({
             id: 'alert_default_dead',
             severity: 'WARNING',
-            title: `Default Dead Trajectory: Cash Runs Out in Month ${sim.dynamicRunwayMonths} (Start Raising by Month ${mandatoryRaiseByMonth})`,
-            description: `At ${state.monthlyNetRevenueGrowthPct}%/mo revenue growth, expenses outpace revenue before cash reaches zero. Lifting growth to ${solvers.requiredMonthlyGrowthPctForDefaultAlive}%/mo or trimming ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo flips you to Default Alive.`,
-            actionLabel: `Flip to Default Alive`,
+            title: `Default Dead Trajectory: Projected Zero-Cash in Month ${sim.dynamicRunwayMonths} (Raise-By Indicator: Month ${mandatoryRaiseByMonth})`,
+            description: `Under current growth (${state.monthlyNetRevenueGrowthPct}%/mo) and expense assumptions, cash reaches zero before operational breakeven. Lifting growth to ${solvers.requiredMonthlyGrowthPctForDefaultAlive}%/mo or trimming ${state.currencySymbol}${solvers.requiredMonthlyCostCutForDefaultAlive.toLocaleString()}/mo flips the model to Default Alive.`,
+            actionLabel: 'Flip to Default Alive',
         });
     } else {
         healthAlerts.push({
             id: 'alert_default_alive',
             severity: 'POSITIVE',
-            title: `Default Alive: Reaches Cash Breakeven in Month ${sim.breakevenMonth ?? 1} (${breakevenDateLabel || 'Profitable'})`,
-            description: `Your recurring revenue overtakes total monthly expenses with ${state.currencySymbol}${Math.round(sim.minimumCashBalance).toLocaleString()} in minimum cash reserves remaining.`,
+            title: `Default Alive Trajectory: Reaches Operational Breakeven in Month ${sim.breakevenMonth ?? 1} (${breakevenDateLabel || 'Profitable'})`,
+            description: `Under your modeled growth and expense assumptions, recurring revenue overtakes monthly gross burn with ${state.currencySymbol}${Math.round(sim.minimumCashBalance).toLocaleString()} in minimum cash reserves.`,
             actionLabel: 'Trajectory Healthy',
         });
     }
@@ -1037,23 +1522,21 @@ export function calculateSaasBurnRunwayAndDilution(
         healthAlerts.push({
             id: 'alert_burn_multiple',
             severity: 'WARNING',
-            title: `High Burn Multiple (${burnMultiple}x): Burning ${state.currencySymbol}${burnMultiple} per ${state.currencySymbol}1 of Net New ARR`,
-            description: `Investors benchmark Seed/Series A SaaS startups for a Burn Multiple below 1.5x. Slowing non-essential hiring or increasing net revenue growth improves capital efficiency.`,
+            title: `Elevated Modeled Burn Multiple (${burnMultiple}x): Burning ${state.currencySymbol}${burnMultiple} per ${state.currencySymbol}1 of Net New ARR`,
+            description: `SaaS investors commonly look for a Burn Multiple below 1.5x–2.0x. Pacing non-essential hiring or accelerating net revenue growth improves capital efficiency.`,
             actionLabel: 'Optimize Burn Multiple',
         });
     }
 
-    if (cap.foundersPostRoundPct < 45) {
-        healthAlerts.push({
-            id: 'alert_founder_dilution',
-            severity: 'WARNING',
-            title: `High Founder Dilution: Founders Hold ${cap.foundersPostRoundPct}% After ${state.fundingRoundName}`,
-            description: `Stacked SAFEs (${cap.totalSafeDilutionPct}% dilution) and the ${state.targetPostRoundOptionPoolPct}% option pool reduce founder ownership by ${cap.foundersTotalDilutionPctPoints} percentage points.`,
-            actionLabel: 'Review Cap Table Terms',
-        });
-    }
+    // Run Domain 6 Invariant Verification
+    const invariantVerification = verifyFinancialModelInvariants(
+        state,
+        sim.monthlySchedule,
+        capDomain,
+        capTableRows,
+        targetExitSplit
+    );
 
-    // Export Payloads
     const toCsvRow = (vals: (string | number)[]) =>
         vals
             .map((v) => {
@@ -1104,6 +1587,7 @@ export function calculateSaasBurnRunwayAndDilution(
         [
             toCsvRow([
                 'Stakeholder_Group',
+                'Conversion_Basis',
                 'Pre_Round_Shares',
                 'Pre_Round_Ownership_Pct',
                 'Post_SAFE_Shares',
@@ -1111,14 +1595,16 @@ export function calculateSaasBurnRunwayAndDilution(
                 'Post_Round_Shares',
                 'Post_Round_Ownership_Pct',
                 'Invested_Capital',
+                'Converting_Principal_With_Interest',
                 'Effective_Share_Price',
                 'Post_Round_Paper_Value',
-                'Projected_Exit_Payout',
+                'Scenario_Exit_Payout',
                 'Exit_MOIC',
             ]),
-            ...cap.capTableRows.map((c) =>
+            ...capTableRows.map((c) =>
                 toCsvRow([
                     c.name,
+                    c.conversionBasisLabel,
                     c.preRoundShares,
                     c.preRoundPct,
                     c.postSafeShares,
@@ -1126,6 +1612,7 @@ export function calculateSaasBurnRunwayAndDilution(
                     c.postRoundShares,
                     c.postRoundPct,
                     c.investedAmount,
+                    c.convertingPrincipalAmount,
                     c.effectiveSharePrice,
                     c.postRoundPaperValue,
                     c.exitPayoutAmount,
@@ -1135,24 +1622,24 @@ export function calculateSaasBurnRunwayAndDilution(
         ].join('\n');
 
     const summaryMarkdown = [
-        `# ${state.companyName} — SaaS Burn Rate, Runway & Dilution Summary`,
+        `# ${state.companyName} — Scenario-Based Burn Rate, Runway & Dilution Model`,
         ``,
-        `## 1. Cash Burn & Runway Overview`,
+        `## 1. Cash Burn & Runway Projection`,
         `- **Current Cash on Hand**: ${state.currencySymbol}${state.cashOnHand.toLocaleString()}`,
         `- **Monthly Recurring Revenue (MRR)**: ${state.currencySymbol}${state.monthlyRevenueMrr.toLocaleString()} (${state.currencySymbol}${currentArr.toLocaleString()} ARR)`,
         `- **Monthly Gross Burn**: ${state.currencySymbol}${grossBurnMonthly.toLocaleString()}/mo`,
         `- **Monthly Net Burn**: ${state.currencySymbol}${netBurnMonthly.toLocaleString()}/mo`,
-        `- **Dynamic Cash Runway**: **${sim.runwayExhausted ? `${sim.dynamicRunwayMonths} Months (Zero Cash: ${zeroCashDateLabel})` : '60+ Months (Default Alive)'}**`,
-        `- **Static Runway (Zero Growth)**: ${staticRunwayMonths} Months`,
-        `- **Paul Graham Trajectory**: **${trajectoryStatus.replace(/_/g, ' ')}**${breakevenDateLabel ? ` (Breakeven in Month ${sim.breakevenMonth} — ${breakevenDateLabel})` : ` (Recommended Raise-By Date: ${raiseByDateLabel})`}`,
-        `- **Burn Multiple (Net Burn / Net New ARR)**: **${burnMultiple}x**`,
+        `- **Projected Dynamic Cash Runway**: **${sim.runwayExhausted ? `${sim.dynamicRunwayMonths} Months (Projected Zero-Cash: ${zeroCashDateLabel})` : '60+ Months (Default Alive)'}**`,
+        `- **Static Runway (Zero Growth)**: ${staticRunwayIsCappedAt60 ? `60+ Months (${uncappedStaticRunwayMonths}m uncapped)` : `${staticRunwayMonths} Months`}`,
+        `- **Modeled Burn Multiple**: **${burnMultiple}x**`,
         ``,
-        `## 2. Cap Table & Equity Dilution (${state.fundingRoundName})`,
+        `## 2. Modeled Cap Table & Dilution (${state.fundingRoundName})`,
         `- **Pre-Money Valuation**: ${state.currencySymbol}${state.preMoneyValuation.toLocaleString()}`,
-        `- **New Round Investment**: ${state.currencySymbol}${state.newInvestmentAmount.toLocaleString()} (Post-Money: ${state.currencySymbol}${cap.postMoneyValuation.toLocaleString()})`,
-        `- **Round Share Price**: ${state.currencySymbol}${cap.roundSharePrice.toFixed(4)}/share`,
-        `- **Founders Ownership**: ${cap.foundersPreRoundPct}% Pre-Round → **${cap.foundersPostRoundPct}% Post-Round** (-${cap.foundersTotalDilutionPctPoints}% dilution)`,
-        `- **Projected Founder Exit Payout (@ ${state.currencySymbol}${state.targetExitValuation.toLocaleString()} Exit)**: **${state.currencySymbol}${cap.foundersExitPayout.toLocaleString()}**`,
+        `- **New Round Investment**: ${state.currencySymbol}${state.newInvestmentAmount.toLocaleString()} (Post-Money: ${state.currencySymbol}${postMoneyValuation.toLocaleString()})`,
+        `- **Modeled Round Share Price**: ${state.currencySymbol}${roundSharePrice.toFixed(4)}/share`,
+        `- **Standalone Post-SAFE Dilution**: ${standalonePostMoneySafeDilutionPct}%`,
+        `- **Founders Ownership**: ${foundersPreRoundPct}% Pre-Round → ${foundersPostSafePct}% Post-SAFE → **${foundersPostRoundPct}% Post-Round**`,
+        `- **Scenario Founder Exit Payout (@ ${state.currencySymbol}${state.targetExitValuation.toLocaleString()} Exit)**: **${state.currencySymbol}${targetExitSplit.foundersPayout.toLocaleString()}**`,
     ].join('\n');
 
     const shareableQueryString = `?preset=${encodeURIComponent(state.presetId)}&cash=${state.cashOnHand}&mrr=${state.monthlyRevenueMrr}&opex=${state.monthlyOperatingExpenses}&growth=${state.monthlyNetRevenueGrowthPct}&expGrowth=${state.monthlyExpenseGrowthPct}&preVal=${state.preMoneyValuation}&newInv=${state.newInvestmentAmount}&pool=${state.targetPostRoundOptionPoolPct}&exit=${state.targetExitValuation}`;
@@ -1160,7 +1647,9 @@ export function calculateSaasBurnRunwayAndDilution(
     return {
         grossBurnMonthly,
         netBurnMonthly,
+        uncappedStaticRunwayMonths,
         staticRunwayMonths,
+        staticRunwayIsCappedAt60,
         dynamicRunwayMonths: sim.dynamicRunwayMonths,
         runwayExhausted: sim.runwayExhausted,
         zeroCashDateLabel,
@@ -1173,6 +1662,7 @@ export function calculateSaasBurnRunwayAndDilution(
         currentArr,
         month12Arr,
         netNewArrAnnualized,
+        trailing12MonthSimulatedNetNewArr,
         burnMultiple,
         burnEfficiencyRating,
         revenueCoverageRatioPct,
@@ -1180,27 +1670,34 @@ export function calculateSaasBurnRunwayAndDilution(
         requiredMonthlyCostCutForTargetRunway: solvers.requiredMonthlyCostCutForTargetRunway,
         requiredMonthlyCostCutForDefaultAlive: solvers.requiredMonthlyCostCutForDefaultAlive,
         requiredMonthlyGrowthPctForDefaultAlive: solvers.requiredMonthlyGrowthPctForDefaultAlive,
-        initialShares: cap.initialShares,
-        postRoundTotalShares: cap.postRoundTotalShares,
-        roundSharePrice: cap.roundSharePrice,
-        postMoneyValuation: cap.postMoneyValuation,
-        totalSafeDilutionPct: cap.totalSafeDilutionPct,
-        optionPoolTopUpShares: cap.optionPoolTopUpShares,
-        optionPoolTopUpDilutionPct: cap.optionPoolTopUpDilutionPct,
-        newRoundInvestorPct: cap.newRoundInvestorPct,
-        foundersPreRoundPct: cap.foundersPreRoundPct,
-        foundersPostRoundPct: cap.foundersPostRoundPct,
-        foundersTotalDilutionPctPoints: cap.foundersTotalDilutionPctPoints,
-        foundersPaperValuePostRound: cap.foundersPaperValuePostRound,
-        foundersExitPayout: cap.foundersExitPayout,
-        investorsExitPayout: cap.investorsExitPayout,
-        optionPoolExitPayout: cap.optionPoolExitPayout,
+        initialShares,
+        postSafeTotalShares,
+        postRoundTotalShares,
+        roundSharePrice,
+        postMoneyValuation,
+        standalonePostMoneySafeDilutionPct,
+        totalSafeDilutionPct,
+        optionPoolTopUpShares,
+        optionPoolTopUpDilutionPct,
+        newRoundInvestorPct,
+        foundersPreRoundPct,
+        foundersPostSafePct,
+        foundersPostRoundPct,
+        foundersTotalDilutionPctPoints: Number(
+            (foundersPreRoundPct - foundersPostRoundPct).toFixed(2)
+        ),
+        foundersPaperValuePostRound: Math.round(founderInitialShares * roundSharePrice),
+        foundersExitPayout: targetExitSplit.foundersPayout,
+        investorsExitPayout:
+            targetExitSplit.safeHoldersPayout + targetExitSplit.seriesAInvestorsPayout,
+        optionPoolExitPayout: targetExitSplit.optionPoolPayout,
         monthlySchedule: sim.monthlySchedule,
         yearlySummary,
-        capTableRows: cap.capTableRows,
-        exitValuationTable: cap.exitValuationTable,
+        capTableRows,
+        exitValuationTable,
         scenarioComparison,
         healthAlerts,
+        invariantVerification,
         runwayCsv,
         capTableCsv,
         summaryMarkdown,
@@ -1209,7 +1706,7 @@ export function calculateSaasBurnRunwayAndDilution(
 }
 
 /**
- * Native 3-Sheet OpenXML Excel (.xlsx) Workbook Builder (Zero External Dependencies)
+ * Native 3-Sheet OpenXML Excel (.xlsx) Workbook Builder
  */
 export function exportSaasCalculatorXlsx(
     state: SaasCalculatorState,
@@ -1299,6 +1796,7 @@ export function exportSaasCalculatorXlsx(
     const sheet2Rows: (string | number)[][] = [
         [
             'Stakeholder_Group',
+            'Conversion_Basis',
             'Pre_Round_Shares',
             'Pre_Round_Pct',
             'Post_SAFE_Shares',
@@ -1306,13 +1804,15 @@ export function exportSaasCalculatorXlsx(
             'Post_Round_Shares',
             'Post_Round_Pct',
             'Invested_Amount',
+            'Converting_Principal',
             'Effective_Share_Price',
             'Post_Round_Paper_Value',
-            'Projected_Exit_Payout',
+            'Scenario_Exit_Payout',
             'Exit_MOIC',
         ],
         ...data.capTableRows.map((c) => [
             c.name,
+            c.conversionBasisLabel,
             c.preRoundShares,
             c.preRoundPct,
             c.postSafeShares,
@@ -1320,6 +1820,7 @@ export function exportSaasCalculatorXlsx(
             c.postRoundShares,
             c.postRoundPct,
             c.investedAmount,
+            c.convertingPrincipalAmount,
             c.effectiveSharePrice,
             c.postRoundPaperValue,
             c.exitPayoutAmount,
@@ -1335,6 +1836,7 @@ export function exportSaasCalculatorXlsx(
             'SAFE_Holders_Payout',
             'Series_A_Investors_Payout',
             'Employee_Option_Pool_Payout',
+            'Total_Distributed',
         ],
         ...data.exitValuationTable.map((e) => [
             e.exitValuation,
@@ -1343,6 +1845,7 @@ export function exportSaasCalculatorXlsx(
             e.safeHoldersPayout,
             e.seriesAInvestorsPayout,
             e.optionPoolPayout,
+            e.totalDistributed,
         ]),
     ];
 
@@ -1483,7 +1986,7 @@ export function exportSaasCalculatorXlsx(
 }
 
 /**
- * 5 Clean, Practical Startup Scenario Presets
+ * 5 Scenario Presets
  */
 export function getSaasScenarioPreset(presetId: SaasScenarioPresetId): SaasCalculatorState {
     if (presetId === 'seed_saas_default_alive') {
@@ -1499,6 +2002,7 @@ export function getSaasScenarioPreset(presetId: SaasScenarioPresetId): SaasCalcu
             monthlyExpenseGrowthPct: 1.5,
             grossMarginPct: 82,
             targetRunwayMonths: 24,
+            raisePlanningBufferMonths: 6,
             plannedCostReductionMonthly: 0,
             oneTimeCashInflowAmount: 0,
             oneTimeCashInflowMonth: 6,
@@ -1554,6 +2058,9 @@ export function getSaasScenarioPreset(presetId: SaasScenarioPresetId): SaasCalcu
             optionPoolMode: 'PRE_MONEY_CARVEOUT',
             liquidationPreferenceMultiple: 1,
             liquidationParticipation: 'NON_PARTICIPATING',
+            participationCapMultiple: 0,
+            safeLiquidationTreatment: 'SHADOW_PREFERRED_1X',
+            waterfallSeniorityMode: 'SERIES_A_SENIOR_TO_SAFE',
             targetExitValuation: 100_000_000,
         };
     }

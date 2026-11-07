@@ -29,6 +29,38 @@ export interface IsoCurrencyEntry {
     regionGroup: 'AMERICAS' | 'EUROPE' | 'ASIA_PACIFIC' | 'MIDDLE_EAST_CENTRAL_ASIA' | 'AFRICA';
 }
 
+export const REFERENCE_FX_UNITS_PER_USD: Record<string, number> = {
+    USD: 1.0, EUR: 0.92, GBP: 0.79, CAD: 1.39, AUD: 1.53, CHF: 0.88, JPY: 154.0, SGD: 1.34,
+    AED: 3.6725, INR: 84.4, PKR: 278.5, SAR: 3.75, CNY: 7.24, HKD: 7.78, NZD: 1.68,
+    AFN: 68.0, ALL: 93.0, AMD: 388.0, ANG: 1.79, AOA: 915.0, ARS: 995.0, AWG: 1.8,
+    AZN: 1.7, BAM: 1.8, BBD: 2.0, BDT: 119.5, BGN: 1.8, BHD: 0.376, BIF: 2900.0,
+    BMD: 1.0, BND: 1.34, BOB: 6.91, BRL: 5.78, BSD: 1.0, BTN: 84.4, BWP: 13.5,
+    BYN: 3.27, BZD: 2.0, CDF: 2850.0, CLP: 975.0, COP: 4420.0, CRC: 512.0, CUP: 24.0,
+    CVE: 101.5, CZK: 23.4, DJF: 177.7, DKK: 6.86, DOP: 60.2, DZD: 133.5, EGP: 49.3,
+    ERN: 15.0, ETB: 121.0, FJD: 2.26, FKP: 0.79, GEL: 2.73, GHS: 15.9, GIP: 0.79,
+    GMD: 71.0, GNF: 8650.0, GTQ: 7.72, GYD: 209.0, HNL: 25.1, HTG: 131.5, HUF: 376.0,
+    IDR: 15850.0, ILS: 3.74, IQD: 1310.0, IRR: 42000.0, ISK: 138.0, JMD: 158.0, JOD: 0.709,
+    KES: 129.0, KGS: 86.5, KHR: 4060.0, KMF: 452.0, KRW: 1400.0, KWD: 0.307, KYD: 0.83,
+    KZT: 495.0, LAK: 21900.0, LBP: 89500.0, LKR: 292.0, LRD: 192.0, LSL: 18.1, LYD: 4.86,
+    MAD: 9.9, MDL: 18.0, MGA: 4650.0, MKD: 56.6, MMK: 2100.0, MNT: 3420.0, MOP: 8.01,
+    MRU: 39.7, MUR: 46.5, MVR: 15.4, MWK: 1735.0, MXN: 20.3, MYR: 4.45, MZN: 63.9,
+    NAD: 18.1, NGN: 1650.0, NIO: 36.8, NOK: 11.1, NPR: 135.0, OMR: 0.385, PAB: 1.0,
+    PEN: 3.78, PGK: 3.98, PHP: 58.7, PLN: 4.01, PYG: 7820.0, QAR: 3.64, RON: 4.58,
+    RSD: 108.0, RUB: 98.0, RWF: 1365.0, SBD: 8.45, SCR: 13.6, SDG: 601.0, SEK: 10.7,
+    SHP: 0.79, SLE: 22.6, SOS: 571.0, SRD: 35.2, SSP: 1300.0, STN: 22.6, SYP: 13000.0,
+    SZL: 18.1, THB: 34.6, TJS: 10.65, TMT: 3.5, TND: 3.12, TOP: 2.37, TRY: 34.4,
+    TTD: 6.78, TWD: 32.4, TZS: 2660.0, UAH: 41.3, UGX: 3675.0, UYU: 42.5, UZS: 12800.0,
+    VES: 45.0, VND: 25350.0, VUV: 120.0, WST: 2.75, XAF: 603.5, XCD: 2.7, XOF: 603.5,
+    XPF: 110.0, YER: 250.0, ZAR: 18.1, ZMW: 27.3, ZWG: 25.5,
+};
+
+export function computeCrossRate(fromCurrency: string, toCurrency: string): number {
+    if (!fromCurrency || !toCurrency || fromCurrency.toUpperCase() === toCurrency.toUpperCase()) return 1.0;
+    const fromPerUsd = REFERENCE_FX_UNITS_PER_USD[fromCurrency.toUpperCase()] || 1.0;
+    const toPerUsd = REFERENCE_FX_UNITS_PER_USD[toCurrency.toUpperCase()] || 1.0;
+    return Number((toPerUsd / fromPerUsd).toFixed(6));
+}
+
 export type RateInputMode = 'HOURLY' | 'DAILY' | 'MONTHLY' | 'ANNUAL';
 
 export type FilingStatusCode = 'SINGLE' | 'MARRIED_JOINT' | 'HEAD_OF_HOUSEHOLD';
@@ -72,7 +104,9 @@ export interface ClassificationAuditFlags {
 
 export interface ContractorVsEmployeeInputs {
     jurisdiction: SupportedJurisdictionCode;
+    taxYear?: '2026' | '2025';
     currencyCode?: string;
+    fxConversionRate?: number; // Units of display currency per 1 unit of statutory currency
     regionCode: string;
     filingStatus: FilingStatusCode;
     stateTaxRatePercent: number;
@@ -83,6 +117,17 @@ export interface ContractorVsEmployeeInputs {
     customContractorSocialTaxPercent?: number;
     customCorporateTaxPercent?: number;
     customDividendTaxPercent?: number;
+
+    // Country-Specific Statutory Eligibility & Override Controls
+    usScorpReasonableSalaryOverride?: number; // Explicit $ salary override (0 = use entityOwnerSalaryPercent)
+    usIsSpecifiedServiceTradeOrBusinessSstb?: boolean; // IRS Sec 199A SSTB phase-out flag
+    ukDirectorSalaryStrategy?: 'NI_THRESHOLD_5000' | 'PERSONAL_ALLOWANCE_12570';
+    ukClaimsEmploymentAllowance?: boolean;
+    indiaIsEligibleProfession44ADA?: boolean;
+    indiaHas95PercentDigitalReceipts?: boolean;
+    pakistanHasValidPsebCertificate?: boolean;
+    pakistanHasValidPrcCode9186?: boolean;
+    uaeQualifiesForFreeZoneOrSbr?: boolean;
 
     // Full-Time Employee (W-2 / PAYE / T4 / Salaried) Parameters
     employeeBaseSalaryAnnual: number;
@@ -239,6 +284,19 @@ export interface CompiledContractorVsEmployeeReport {
     ukIr35KidWaterfall: UkIr35KidWaterfall;
     usScheduleSeAndScorp: UsScheduleSeAndScorpBreakdown;
     employerTceComparison: EmployerTceAndEorComparison;
+    statutoryCurrencyCode: string;
+    statutoryCurrencySymbol: string;
+    appliedFxRateDisplayPerStatutory: number;
+    breakEvenSolverConverged: boolean;
+    validationWarnings: string[];
+    calculationAssumptionsAuditTrail: {
+        stepNumber: number;
+        category: string;
+        label: string;
+        formulaOrRule: string;
+        statutoryAmountFormatted: string;
+    }[];
+    contractualAddendumClausesText: string;
     classificationComplianceScore: number;
     classificationVerdict: 'OUTSIDE_IR35_SAFE_INDEPENDENT' | 'BORDERLINE_GREY_ZONE' | 'INSIDE_IR35_HIGH_MISCLASSIFICATION_RISK';
     classificationLintIssues: ClassificationLintIssue[];
@@ -820,8 +878,58 @@ function computeProgressiveTax(
  * Computes all 3 regimes for a given contractor annual gross revenue and employee input state.
  * Used both for the primary calculation AND inside the binary-search Reverse Break-Even Rate Solver.
  */
+export function validateAndNormalizeCalculatorInputs(
+    raw: ContractorVsEmployeeInputs
+): {
+    normalized: ContractorVsEmployeeInputs;
+    validationWarnings: string[];
+} {
+    const warnings: string[] = [];
+    const jurisdiction = JURISDICTION_CATALOG[raw.jurisdiction] ? raw.jurisdiction : 'US';
+    const billableHoursPerDay = Math.min(24, Math.max(1, Number(raw.billableHoursPerDay) || 8));
+    if (raw.billableHoursPerDay <= 0 || raw.billableHoursPerDay > 24) {
+        warnings.push('Clamped Billable Hours/Day to valid range [1..24].');
+    }
+    const workingDaysPerWeek = Math.min(7, Math.max(1, Number(raw.workingDaysPerWeek) || 5));
+    const billableWeeksPerYear = Math.min(52, Math.max(1, Number(raw.billableWeeksPerYear) || 46));
+    if (raw.billableWeeksPerYear <= 0 || raw.billableWeeksPerYear > 52) {
+        warnings.push('Clamped Billable Weeks/Year to valid range [1..52].');
+    }
+    const entityOwnerSalaryPercent = Math.min(85, Math.max(15, Number(raw.entityOwnerSalaryPercent) || 40));
+
+    return {
+        normalized: {
+            ...raw,
+            jurisdiction,
+            taxYear: raw.taxYear === '2025' ? '2025' : '2026',
+            billableHoursPerDay,
+            workingDaysPerWeek,
+            billableWeeksPerYear,
+            entityOwnerSalaryPercent,
+            employeeBaseSalaryAnnual: Math.max(0, Number(raw.employeeBaseSalaryAnnual) || 0),
+            employeeAnnualBonus: Math.max(0, Number(raw.employeeAnnualBonus) || 0),
+            employerHealthInsuranceAnnual: Math.max(0, Number(raw.employerHealthInsuranceAnnual) || 0),
+            employerRetirementMatchPercent: Math.min(50, Math.max(0, Number(raw.employerRetirementMatchPercent) || 0)),
+            employeeRetirementContributionPercent: Math.min(50, Math.max(0, Number(raw.employeeRetirementContributionPercent) || 0)),
+            paidVacationAndHolidaysDays: Math.min(120, Math.max(0, Number(raw.paidVacationAndHolidaysDays) || 0)),
+            paidSickDays: Math.min(60, Math.max(0, Number(raw.paidSickDays) || 0)),
+            employerOtherPerksAnnual: Math.max(0, Number(raw.employerOtherPerksAnnual) || 0),
+            contractorRateInput: Math.max(0, Number(raw.contractorRateInput) || 0),
+            deductibleBusinessExpensesAnnual: Math.max(0, Number(raw.deductibleBusinessExpensesAnnual) || 0),
+            contractorSelfFundedHealthAnnual: Math.max(0, Number(raw.contractorSelfFundedHealthAnnual) || 0),
+            contractorRetirementContributionAnnual: Math.max(0, Number(raw.contractorRetirementContributionAnnual) || 0),
+            entityAccountingAndUmbrellaFeesAnnual: Math.max(0, Number(raw.entityAccountingAndUmbrellaFeesAnnual) || 0),
+        },
+        validationWarnings: warnings,
+    };
+}
+
+/**
+ * Computes all 3 regimes in the jurisdiction's STATUTORY CURRENCY first so tax brackets
+ * and statutory caps are never distorted by foreign display currencies.
+ */
 export function evaluateThreeRegimesForGross(
-    inputs: ContractorVsEmployeeInputs,
+    rawInputs: ContractorVsEmployeeInputs,
     contractorAnnualGrossOverride?: number
 ): {
     employeeRegime: RegimeFinancialBreakdown;
@@ -830,6 +938,7 @@ export function evaluateThreeRegimesForGross(
     ukIr35KidWaterfall: UkIr35KidWaterfall;
     usScheduleSeAndScorp: UsScheduleSeAndScorpBreakdown;
 } {
+    const { normalized: inputs } = validateAndNormalizeCalculatorInputs(rawInputs);
     const meta = JURISDICTION_CATALOG[inputs.jurisdiction];
     const billableDaysPerYear = Math.max(1, inputs.billableWeeksPerYear * inputs.workingDaysPerWeek);
     const billableHoursPerYear = Math.max(1, billableDaysPerYear * inputs.billableHoursPerDay);
@@ -862,11 +971,10 @@ export function evaluateThreeRegimesForGross(
     const salarySplitRatio = Math.min(0.85, Math.max(0.15, inputs.entityOwnerSalaryPercent / 100));
     const stateRate = Math.max(0, inputs.stateTaxRatePercent) / 100;
 
-    // Default placeholders for US and UK specialized telemetry
     let usScheduleSeAndScorp: UsScheduleSeAndScorpBreakdown = {
         scheduleCNetProfit: 0,
         scheduleSeTaxableBase9235: 0,
-        socialSecurityWageCap: 184500,
+        socialSecurityWageCap: inputs.taxYear === '2025' ? 176100 : 184500,
         socialSecurityTax124: 0,
         medicareTax29: 0,
         additionalMedicareTax09: 0,
@@ -900,17 +1008,45 @@ export function evaluateThreeRegimesForGross(
     };
 
     // ==========================================================================
-    // CASE 1: UNITED STATES (IRS W-2 vs. 1099 Schedule C vs. S-Corp Form 1120-S)
+    // DEDICATED MODULE 1: UNITED STATES (IRS W-2 vs. 1099 Schedule C vs. S-Corp 1120-S)
     // ==========================================================================
     if (inputs.jurisdiction === 'US') {
-        const ssWageCap = 184500; // 2026 IRS Social Security Wage Base
+        const ssWageCap = inputs.taxYear === '2025' ? 176100 : 184500;
         const stdDed =
             inputs.filingStatus === 'MARRIED_JOINT'
-                ? 31500
+                ? inputs.taxYear === '2025' ? 30000 : 31500
                 : inputs.filingStatus === 'HEAD_OF_HOUSEHOLD'
-                    ? 23625
-                    : 15750;
+                    ? inputs.taxYear === '2025' ? 22500 : 23625
+                    : inputs.taxYear === '2025' ? 15000 : 15750;
         const addMedicareThreshold = inputs.filingStatus === 'MARRIED_JOINT' ? 250000 : 200000;
+
+        // QBI Section 199A Phase-Out Thresholds (2025/2026)
+        const qbiPhaseOutStart = inputs.filingStatus === 'MARRIED_JOINT' ? 394600 : 197300;
+        const qbiPhaseOutRange = inputs.filingStatus === 'MARRIED_JOINT' ? 100000 : 50000;
+        const isSstb = Boolean(inputs.usIsSpecifiedServiceTradeOrBusinessSstb);
+
+        const computeUsQbiDeduction = (qbiEligibleProfit: number, taxableIncomeBeforeQbi: number, w2WagesPaidByEntity: number): number => {
+            if (qbiEligibleProfit <= 0 || taxableIncomeBeforeQbi <= 0) return 0;
+            const base20 = qbiEligibleProfit * 0.2;
+            const overallCap = taxableIncomeBeforeQbi * 0.2;
+            if (taxableIncomeBeforeQbi <= qbiPhaseOutStart) {
+                return Math.min(base20, overallCap);
+            }
+            const phaseProgress = Math.min(1, (taxableIncomeBeforeQbi - qbiPhaseOutStart) / qbiPhaseOutRange);
+            if (isSstb) {
+                // Specified Service Trade or Business (SSTB) phases out to $0 above upper threshold
+                const sstbMultiplier = Math.max(0, 1 - phaseProgress);
+                const w2Limit = Math.max(w2WagesPaidByEntity * 0.5, w2WagesPaidByEntity * 0.25);
+                const phasedBase = base20 * sstbMultiplier;
+                const wageCapped = phasedBase - (phasedBase - Math.min(phasedBase, w2Limit * sstbMultiplier)) * phaseProgress;
+                return Math.max(0, Math.min(wageCapped, overallCap));
+            } else {
+                // Non-SSTB is limited by greater of 50% of W-2 wages or 25% of W-2 wages + 2.5% UBIA
+                const w2Limit = w2WagesPaidByEntity * 0.5;
+                const excessReduction = Math.max(0, base20 - w2Limit) * phaseProgress;
+                return Math.max(0, Math.min(base20 - excessReduction, overallCap));
+            }
+        };
 
         const usBrackets =
             inputs.filingStatus === 'MARRIED_JOINT'
@@ -949,10 +1085,10 @@ export function evaluateThreeRegimesForGross(
             regimeId: 'FULL_TIME_EMPLOYEE',
             regimeTitle: meta.employeeRegimeName,
             regimeSubtitle: 'Employee pays 7.65% FICA half; Employer pays matching 7.65% + Benefits',
-            grossTopLineAnnual: empGrossCash,
+            grossTopLineAnnual: Math.round(empGrossCash),
             deductibleExpensesAndFeesAnnual: 0,
             employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: w2Taxable,
+            taxableIncomeBaseAnnual: Math.round(w2Taxable),
             incomeTaxFederalOrNationalAnnual: Math.round(w2FedTax),
             stateOrProvincialTaxAnnual: Math.round(w2StateTax),
             socialSecurityOrEmployeeNiAnnual: Math.round(w2FicaTotal),
@@ -968,7 +1104,7 @@ export function evaluateThreeRegimesForGross(
             trueTotalEconomicPackageAnnual: Math.round(w2NetCash + empMonetizedBenefits + employeeOwnRetirementAnnual),
             qbiOrSpecialDeductionSavedAnnual: 0,
             lineItemNotes: [
-                `Employee FICA: $${Math.round(w2SsTax).toLocaleString()} Social Security (6.2% capped at $${ssWageCap.toLocaleString()}) + $${Math.round(w2MedTax).toLocaleString()} Medicare`,
+                `Employee FICA (${inputs.taxYear}): $${Math.round(w2SsTax).toLocaleString()} Social Security (6.2% up to $${ssWageCap.toLocaleString()}) + $${Math.round(w2MedTax).toLocaleString()} Medicare`,
                 `Standard Deduction ($${stdDed.toLocaleString()}) + Pre-Tax 401(k) deferral ($${Math.round(employeeOwnRetirementAnnual).toLocaleString()})`,
             ],
         };
@@ -980,23 +1116,20 @@ export function evaluateThreeRegimesForGross(
         const seMedTax = seTaxableBase * 0.029;
         const seAddMedTax = Math.max(0, seTaxableBase - addMedicareThreshold) * 0.009;
         const totalSeTax = seSsTax + seMedTax + seAddMedTax;
-        const halfSeDeduction = (seSsTax + seMedTax) * 0.5; // Schedule 1 Line 15 deducts 50% of base SE tax (excludes 0.9% Addl Medicare)
+        const halfSeDeduction = (seSsTax + seMedTax) * 0.5;
 
         const solePropAgi = Math.max(
             0,
             schedCNetProfit - halfSeDeduction - selfHealth - contractorRetire
         );
-        const qbiBase = Math.max(0, schedCNetProfit - halfSeDeduction - selfHealth - contractorRetire);
-        const qbiDeduction = Math.min(qbiBase * 0.2, Math.max(0, solePropAgi - stdDed) * 0.2);
-        const solePropTaxable = Math.max(0, solePropAgi - stdDed - qbiDeduction);
+        const taxableBeforeQbi = Math.max(0, solePropAgi - stdDed);
+        const qbiDeduction = computeUsQbiDeduction(solePropAgi, taxableBeforeQbi, 0);
+        const solePropTaxable = Math.max(0, taxableBeforeQbi - qbiDeduction);
         const { totalTax: solePropFedTax, marginalRate: solePropMarginal } = computeProgressiveTax(
             solePropTaxable,
             usBrackets
         );
-        const { totalTax: fedWithoutQbi } = computeProgressiveTax(
-            Math.max(0, solePropAgi - stdDed),
-            usBrackets
-        );
+        const { totalTax: fedWithoutQbi } = computeProgressiveTax(taxableBeforeQbi, usBrackets);
         const qbiTaxSaved = Math.max(0, fedWithoutQbi - solePropFedTax);
         const solePropStateTax = solePropAgi * stateRate;
         const solePropTotalTax = solePropFedTax + solePropStateTax + totalSeTax;
@@ -1008,7 +1141,7 @@ export function evaluateThreeRegimesForGross(
         const standardContractorRegime: RegimeFinancialBreakdown = {
             regimeId: 'STANDARD_CONTRACTOR',
             regimeTitle: meta.standardContractorRegimeName,
-            regimeSubtitle: '15.3% SECA on 92.35% of profit + 50% SE Deduction + 20% Sec 199A QBI',
+            regimeSubtitle: `15.3% SECA on 92.35% of profit ($${ssWageCap.toLocaleString()} SS cap) + 50% SE Ded + Sec 199A QBI`,
             grossTopLineAnnual: Math.round(contractorAnnualGross),
             deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
             employerSideDeductionsFromAssignmentAnnual: 0,
@@ -1032,15 +1165,19 @@ export function evaluateThreeRegimesForGross(
             qbiOrSpecialDeductionSavedAnnual: Math.round(qbiTaxSaved),
             lineItemNotes: [
                 `Schedule SE Base (92.35%): $${Math.round(seTaxableBase).toLocaleString()} → SE Tax: $${Math.round(totalSeTax).toLocaleString()} (50% deductible: $${Math.round(halfSeDeduction).toLocaleString()})`,
-                `Section 199A 20% QBI Deduction: $${Math.round(qbiDeduction).toLocaleString()} (Saved $${Math.round(qbiTaxSaved).toLocaleString()} in Federal Income Tax)`,
+                `Section 199A QBI Deduction${isSstb ? ' (SSTB Phase-Out Applied)' : ''}: $${Math.round(qbiDeduction).toLocaleString()} (Saved $${Math.round(qbiTaxSaved).toLocaleString()} Fed Tax)`,
             ],
         };
 
         // 1C. S-Corp Election (Form 1120-S Reasonable W-2 Salary + FICA-Exempt K-1 Distribution)
         const netBeforeOwnerComp = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth);
-        const scorpSalary = Math.round(netBeforeOwnerComp * salarySplitRatio);
+        const rawScorpSalary =
+            inputs.usScorpReasonableSalaryOverride && inputs.usScorpReasonableSalaryOverride > 0
+                ? Math.min(netBeforeOwnerComp, inputs.usScorpReasonableSalaryOverride)
+                : Math.round(netBeforeOwnerComp * salarySplitRatio);
+        const scorpSalary = Math.max(0, rawScorpSalary);
         const scorpEmployerFica =
-            Math.min(scorpSalary, ssWageCap) * 0.062 + scorpSalary * 0.0145 + Math.min(scorpSalary, 7000) * 0.006; // includes FUTA
+            Math.min(scorpSalary, ssWageCap) * 0.062 + scorpSalary * 0.0145 + Math.min(scorpSalary, 7000) * 0.006;
         const scorpEmployeeFica =
             Math.min(scorpSalary, ssWageCap) * 0.062 +
             scorpSalary * 0.0145 +
@@ -1049,11 +1186,13 @@ export function evaluateThreeRegimesForGross(
         const scorpK1Distribution = Math.max(0, netBeforeOwnerComp - scorpSalary - scorpEmployerFica);
 
         const scorpAgi = Math.max(0, scorpSalary + scorpK1Distribution - contractorRetire);
-        const scorpQbiDeduction = Math.min(
-            Math.max(0, scorpK1Distribution - contractorRetire) * 0.2,
-            Math.max(0, scorpAgi - stdDed) * 0.2
+        const scorpTaxableBeforeQbi = Math.max(0, scorpAgi - stdDed);
+        const scorpQbiDeduction = computeUsQbiDeduction(
+            Math.max(0, scorpK1Distribution - contractorRetire),
+            scorpTaxableBeforeQbi,
+            scorpSalary
         );
-        const scorpTaxable = Math.max(0, scorpAgi - stdDed - scorpQbiDeduction);
+        const scorpTaxable = Math.max(0, scorpTaxableBeforeQbi - scorpQbiDeduction);
         const { totalTax: scorpFedTax, marginalRate: scorpMarginal } = computeProgressiveTax(
             scorpTaxable,
             usBrackets
@@ -1085,7 +1224,7 @@ export function evaluateThreeRegimesForGross(
         const optimizedEntityRegime: RegimeFinancialBreakdown = {
             regimeId: 'OPTIMIZED_ENTITY',
             regimeTitle: meta.optimizedEntityRegimeName,
-            regimeSubtitle: `${Math.round(salarySplitRatio * 100)}% W-2 Reasonable Salary ($${scorpSalary.toLocaleString()}) + ${Math.round((1 - salarySplitRatio) * 100)}% FICA-Exempt K-1 Distribution ($${Math.round(scorpK1Distribution).toLocaleString()})`,
+            regimeSubtitle: `W-2 Reasonable Salary ($${Math.round(scorpSalary).toLocaleString()}) + FICA-Exempt K-1 Distribution ($${Math.round(scorpK1Distribution).toLocaleString()})`,
             grossTopLineAnnual: Math.round(contractorAnnualGross),
             deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
             employerSideDeductionsFromAssignmentAnnual: 0,
@@ -1108,7 +1247,7 @@ export function evaluateThreeRegimesForGross(
             trueTotalEconomicPackageAnnual: Math.round(scorpNetCash + contractorRetire),
             qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, totalSeTax - scorpTotalFica)),
             lineItemNotes: [
-                `FICA-Exempt K-1 Distribution: $${Math.round(scorpK1Distribution).toLocaleString()} avoids 15.3% SECA tax`,
+                `Reasonable W-2 Salary Benchmark (35%–55% of net profit = $${Math.round(netBeforeOwnerComp * 0.35).toLocaleString()}–$${Math.round(netBeforeOwnerComp * 0.55).toLocaleString()}): Applied $${Math.round(scorpSalary).toLocaleString()}`,
                 `Net S-Corp Advantage vs. 1099 Sole Prop (after $${Math.round(entityFees).toLocaleString()} CPA/Payroll cost): $${Math.round(scorpNetCash - solePropNetCash).toLocaleString()}/yr`,
             ],
         };
@@ -1123,7 +1262,7 @@ export function evaluateThreeRegimesForGross(
     }
 
     // ==========================================================================
-    // CASE 2: UNITED KINGDOM (Permanent PAYE vs. Inside IR35 Umbrella vs. Outside IR35 Ltd)
+    // DEDICATED MODULE 2: UNITED KINGDOM (PAYE vs. Inside IR35 KID vs. Outside IR35 Ltd)
     // ==========================================================================
     if (inputs.jurisdiction === 'UK') {
         const computeUkPersonalAllowance = (adjustedNetIncome: number): number => {
@@ -1132,17 +1271,31 @@ export function evaluateThreeRegimesForGross(
             return Math.max(0, 12570 - reduction);
         };
 
+        const isScotland = inputs.regionCode === 'SCOTLAND';
+        const divBasicRate = inputs.taxYear === '2025' ? 0.0875 : 0.1075; // 8.75% in 2025/26, 10.75% in 2026/27
+
         const computeUkPayeTaxAndNi = (grossSalary: number, pensionSacrifice = 0) => {
             const taxableSalaryAfterPension = Math.max(0, grossSalary - pensionSacrifice);
             const pa = computeUkPersonalAllowance(taxableSalaryAfterPension);
             const taxableAfterPa = Math.max(0, taxableSalaryAfterPension - pa);
-            const scotlandAdder = stateRate; // 0 for rUK, 0.015 for Scotland
-            const { totalTax: incomeTax, marginalRate } = computeProgressiveTax(taxableAfterPa, [
-                { upTo: 37700, rate: 0.2 + scotlandAdder },
-                { upTo: 125140 - pa, rate: 0.4 + scotlandAdder },
-                { upTo: Infinity, rate: 0.45 + scotlandAdder },
-            ]);
-            // Employee Class 1 NI: 8% between £12,570 and £50,270; 2% above £50,270
+
+            // Official 6-band Scottish Income Tax Table vs. rUK 3-band Table
+            const ukBrackets = isScotland
+                ? [
+                    { upTo: 2306, rate: 0.19 }, // Starter Rate 19%
+                    { upTo: 13991, rate: 0.2 }, // Scottish Basic Rate 20%
+                    { upTo: 31092, rate: 0.21 }, // Intermediate Rate 21%
+                    { upTo: 62430, rate: 0.42 }, // Higher Rate 42%
+                    { upTo: 125140 - pa, rate: 0.45 }, // Advanced Rate 45%
+                    { upTo: Infinity, rate: 0.48 }, // Top Rate 48%
+                ]
+                : [
+                    { upTo: 37700, rate: 0.2 },
+                    { upTo: 125140 - pa, rate: 0.4 },
+                    { upTo: Infinity, rate: 0.45 },
+                ];
+
+            const { totalTax: incomeTax, marginalRate } = computeProgressiveTax(taxableAfterPa, ukBrackets);
             const niBand1 = Math.max(0, Math.min(taxableSalaryAfterPension, 50270) - 12570) * 0.08;
             const niBand2 = Math.max(0, taxableSalaryAfterPension - 50270) * 0.02;
             const empNi = niBand1 + niBand2;
@@ -1157,7 +1310,9 @@ export function evaluateThreeRegimesForGross(
         const employeeRegime: RegimeFinancialBreakdown = {
             regimeId: 'FULL_TIME_EMPLOYEE',
             regimeTitle: meta.employeeRegimeName,
-            regimeSubtitle: 'HMRC PAYE Income Tax (20%/40%/45%) + Employee Class 1 NI (8%/2%)',
+            regimeSubtitle: isScotland
+                ? 'Scottish 6-Band PAYE Income Tax (19%–48%) + Class 1 NI (8%/2%)'
+                : 'rUK PAYE Income Tax (20%/40%/45%) + Employee Class 1 NI (8%/2%)',
             grossTopLineAnnual: Math.round(empGrossCash),
             deductibleExpensesAndFeesAnnual: 0,
             employerSideDeductionsFromAssignmentAnnual: 0,
@@ -1177,7 +1332,7 @@ export function evaluateThreeRegimesForGross(
             trueTotalEconomicPackageAnnual: Math.round(permNetCash + empMonetizedBenefits + employeeOwnRetirementAnnual),
             qbiOrSpecialDeductionSavedAnnual: 0,
             lineItemNotes: [
-                `PAYE Income Tax: £${Math.round(perm.incomeTax).toLocaleString()} (includes £100k–£125,140 60% Personal Allowance taper if applicable)`,
+                `PAYE Income Tax (${isScotland ? 'Scottish 6-Band' : 'England/NI/Wales'}): £${Math.round(perm.incomeTax).toLocaleString()}`,
                 `Employee Class 1 NI (8% / 2%): £${Math.round(perm.empNi).toLocaleString()}`,
             ],
         };
@@ -1185,15 +1340,13 @@ export function evaluateThreeRegimesForGross(
         // 2B. Inside IR35 via Umbrella Company (Key Information Document / KID Waterfall)
         const umbrellaMargin = Math.min(2600, Math.max(1000, entityFees || 1300));
         const distributablePool = Math.max(0, contractorAnnualGross - umbrellaMargin - contractorRetire);
-        // Employer NI is 15% above Secondary Threshold (£5,000) + 0.5% Apprenticeship Levy = 15.5% above £5,000
-        // distributablePool = GrossSalary + max(0, (GrossSalary - 5000) * 0.155)
         const grossTaxablePayeSalary =
             distributablePool <= 5000
                 ? distributablePool
                 : (distributablePool + 5000 * 0.155) / 1.155;
         const employerNiAnnual = Math.max(0, (grossTaxablePayeSalary - 5000) * 0.15);
         const apprenticeshipLevyAnnual = Math.max(0, (grossTaxablePayeSalary - 5000) * 0.005);
-        const rolledUpHolidayPay = grossTaxablePayeSalary * 0.1077; // 12.07% of base pay = 10.77% of total gross pay
+        const rolledUpHolidayPay = grossTaxablePayeSalary * 0.1077;
         const insidePaye = computeUkPayeTaxAndNi(grossTaxablePayeSalary, 0);
         const insideTotalDeductions =
             umbrellaMargin +
@@ -1239,32 +1392,35 @@ export function evaluateThreeRegimesForGross(
             qbiOrSpecialDeductionSavedAnnual: 0,
             lineItemNotes: [
                 `HMRC KID Employer Deductions from Rate: £${Math.round(employerNiAnnual).toLocaleString()} Employer NI (15%) + £${Math.round(apprenticeshipLevyAnnual).toLocaleString()} Levy (0.5%) + £${Math.round(umbrellaMargin).toLocaleString()} Umbrella Fee`,
-                `Taxable Gross PAYE Pay: £${Math.round(grossTaxablePayeSalary).toLocaleString()} (includes £${Math.round(rolledUpHolidayPay).toLocaleString()} rolled-up holiday allocation)`,
+                `Taxable Gross PAYE Pay: £${Math.round(grossTaxablePayeSalary).toLocaleString()} (includes £${Math.round(rolledUpHolidayPay).toLocaleString()} rolled-up holiday pot)`,
             ],
         };
 
-        // 2C. Outside IR35 via UK Limited Company (£12,570 Director Salary + Corporation Tax + Dividends)
-        const directorSalary = Math.min(12570, Math.max(5000, contractorAnnualGross * 0.5));
-        const ltdEmployerNi = Math.max(0, (directorSalary - 5000) * 0.15);
+        // 2C. Outside IR35 via UK Limited Company (Configurable Director Salary £5,000 or £12,570 + Corp Tax + Dividends)
+        const targetDirectorSalary =
+            inputs.ukDirectorSalaryStrategy === 'NI_THRESHOLD_5000' ? 5000 : 12570;
+        const directorSalary = Math.min(targetDirectorSalary, Math.max(0, contractorAnnualGross * 0.5));
+        const rawLtdEmpNi = Math.max(0, (directorSalary - 5000) * 0.15);
+        const ltdEmployerNi = inputs.ukClaimsEmploymentAllowance ? 0 : rawLtdEmpNi;
         const ltdProfitBeforeTax = Math.max(
             0,
             contractorAnnualGross - expenses - entityFees - directorSalary - ltdEmployerNi - contractorRetire
         );
-        // UK Corporation Tax: 19% up to £50k, 25% above £250k, Marginal Relief (26.5% marginal rate) between £50k and £250k
+        // Exact HMRC Corporation Tax with Marginal Relief fraction 3/200 (0.015):
+        // For profits between £50,000 and £250,000: Tax = P * 25% - (250,000 - P) * (3 / 200)
         let corpTax = 0;
         if (ltdProfitBeforeTax <= 50000) {
             corpTax = ltdProfitBeforeTax * 0.19;
         } else if (ltdProfitBeforeTax >= 250000) {
             corpTax = ltdProfitBeforeTax * 0.25;
         } else {
-            corpTax = 50000 * 0.19 + (ltdProfitBeforeTax - 50000) * 0.265;
+            corpTax = ltdProfitBeforeTax * 0.25 - (250000 - ltdProfitBeforeTax) * (3 / 200);
         }
         const distributableDividends = Math.max(0, ltdProfitBeforeTax - corpTax);
-        // Dividend Tax (after £500 dividend allowance; £12,570 salary absorbs Personal Allowance):
-        // First £37,700 in Basic Band @ 10.75% (2026/27 rate), £37,700..£112,570 @ 33.75%, above @ 39.35%
-        const taxableDividends = Math.max(0, distributableDividends - 500);
+        const unusedPersonalAllowance = Math.max(0, 12570 - directorSalary);
+        const taxableDividends = Math.max(0, distributableDividends - unusedPersonalAllowance - 500);
         const { totalTax: dividendTax, marginalRate: divMarginal } = computeProgressiveTax(taxableDividends, [
-            { upTo: 37700, rate: 0.1075 },
+            { upTo: 37700, rate: divBasicRate },
             { upTo: 112570, rate: 0.3375 },
             { upTo: Infinity, rate: 0.3935 },
         ]);
@@ -1288,7 +1444,7 @@ export function evaluateThreeRegimesForGross(
             outsideIr35NetCompanyProfitForDividends: Math.round(distributableDividends),
             outsideIr35DividendTaxAnnual: Math.round(dividendTax),
             outsideIr35NetTakeHomeAnnual: Math.round(outsideNetCash),
-            outsideIr35AnnualGainOverInside: Math.round(outsideTotalEconomicValue - insideNetCash),
+            outsideIr35AnnualGainOverInside: Math.round(outsideTotalEconomicValue - (insideNetCash + contractorRetire)),
         };
 
         const optimizedEntityRegime: RegimeFinancialBreakdown = {
@@ -1315,10 +1471,10 @@ export function evaluateThreeRegimesForGross(
             netEffectiveHourlyTakeHome: Number((outsideNetCash / billableHoursPerYear).toFixed(2)),
             monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
             trueTotalEconomicPackageAnnual: Math.round(outsideTotalEconomicValue),
-            qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, outsideTotalEconomicValue - insideNetCash)),
+            qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, outsideNetCash - insideNetCash)),
             lineItemNotes: [
-                `UK Corporation Tax (19%–25% with marginal relief): £${Math.round(corpTax).toLocaleString()} on £${Math.round(ltdProfitBeforeTax).toLocaleString()} company profit`,
-                `Outside IR35 Net Take-Home Gain vs. Inside IR35 Umbrella: +£${Math.round(outsideNetCash - insideNetCash).toLocaleString()}/yr`,
+                `HMRC Corp Tax (19%–25% with 3/200 Marginal Relief): £${Math.round(corpTax).toLocaleString()} on £${Math.round(ltdProfitBeforeTax).toLocaleString()} company profit`,
+                `Outside IR35 Net Cash Gain vs. Inside IR35 Umbrella: +£${Math.round(outsideNetCash - insideNetCash).toLocaleString()}/yr`,
             ],
         };
 
@@ -1332,11 +1488,582 @@ export function evaluateThreeRegimesForGross(
     }
 
     // ==========================================================================
-    // CASE 3: CANADA, AUSTRALIA, GERMANY, INDIA, PAKISTAN & UAE
+    // DEDICATED MODULE 3: CANADA (CRA T4 vs. T2125 Sole Prop vs. CCPC / PSB)
+    // ==========================================================================
+    if (inputs.jurisdiction === 'CA') {
+        const fedBrackets = [
+            { upTo: 16129, rate: 0 },
+            { upTo: 57375, rate: 0.145 },
+            { upTo: 114750, rate: 0.205 },
+            { upTo: 177882, rate: 0.26 },
+            { upTo: 253414, rate: 0.29 },
+            { upTo: Infinity, rate: 0.33 },
+        ];
+        // Real Progressive Provincial Tax Brackets for ON, BC, AB, QC
+        const provBracketsMap: Record<string, { upTo: number; rate: number }[]> = {
+            ON: [
+                { upTo: 12747, rate: 0 },
+                { upTo: 52886, rate: 0.0505 },
+                { upTo: 105775, rate: 0.0915 },
+                { upTo: 150000, rate: 0.1116 },
+                { upTo: 220000, rate: 0.1216 },
+                { upTo: Infinity, rate: 0.1316 },
+            ],
+            BC: [
+                { upTo: 12932, rate: 0 },
+                { upTo: 49279, rate: 0.0506 },
+                { upTo: 98560, rate: 0.077 },
+                { upTo: 113158, rate: 0.105 },
+                { upTo: 137407, rate: 0.1229 },
+                { upTo: Infinity, rate: 0.147 },
+            ],
+            AB: [
+                { upTo: 22323, rate: 0 },
+                { upTo: 151234, rate: 0.1 },
+                { upTo: 181481, rate: 0.12 },
+                { upTo: 241974, rate: 0.13 },
+                { upTo: Infinity, rate: 0.14 },
+            ],
+            QC: [
+                { upTo: 18571, rate: 0 },
+                { upTo: 53255, rate: 0.14 },
+                { upTo: 106495, rate: 0.19 },
+                { upTo: 129590, rate: 0.24 },
+                { upTo: Infinity, rate: 0.2575 },
+            ],
+        };
+        const provBrackets = provBracketsMap[inputs.regionCode] || provBracketsMap.ON;
+
+        // Exact CRA CPP (5.95% on $3,500..$71,300) + CPP2 (4% on $71,300..$81,200) + Employee EI (1.64% up to $65,700)
+        const computeCaCpp1And2 = (earnedIncome: number) => {
+            const cpp1 = Math.max(0, Math.min(earnedIncome, 71300) - 3500) * 0.0595;
+            const cpp2 = Math.max(0, Math.min(earnedIncome, 81200) - 71300) * 0.04;
+            return cpp1 + cpp2;
+        };
+        const empCpp = computeCaCpp1And2(empGrossCash);
+        const empEi = Math.min(empGrossCash, 65700) * 0.0164;
+        const empTaxable = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empCpp * 0.15);
+        const { totalTax: empFed, marginalRate: empFedMarg } = computeProgressiveTax(empTaxable, fedBrackets);
+        const { totalTax: empProv, marginalRate: empProvMarg } = computeProgressiveTax(empTaxable, provBrackets);
+        const empTotalTax = empFed + empProv + empCpp + empEi;
+        const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empTotalTax);
+
+        // T2125 Sole Proprietor (Pays 2x CPP1 + 2x CPP2, 50% employer CPP is deductible from taxable income)
+        const soleProfitBeforeCpp = Math.max(0, contractorAnnualGross - expenses - selfHealth);
+        const soleCpp = computeCaCpp1And2(soleProfitBeforeCpp) * 2;
+        const soleTaxable = Math.max(0, soleProfitBeforeCpp - soleCpp * 0.5 - contractorRetire);
+        const { totalTax: cFed, marginalRate: cFedMarg } = computeProgressiveTax(soleTaxable, fedBrackets);
+        const { totalTax: cProv, marginalRate: cProvMarg } = computeProgressiveTax(soleTaxable, provBrackets);
+        const cTotalTax = cFed + cProv + soleCpp;
+        const cNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - cTotalTax
+        );
+
+        // CCPC Incorporated Contractor (Small Business Deduction 12.2% vs. CRA PSB Risk if complianceScore < 55)
+        const auditPreview = evaluateClassificationAudit(inputs);
+        const isPsbTrap = auditPreview.complianceScore < 55;
+        const ccpcProfit = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire
+        );
+        // Small Business Deduction applies up to $500,000 active business income (9% Fed + 3.2% ON = 12.2%; General rate = 26.5%; PSB punitive rate = 44.5%)
+        const ccpcCorpTax = isPsbTrap
+            ? ccpcProfit * 0.445
+            : Math.min(ccpcProfit, 500000) * 0.122 + Math.max(0, ccpcProfit - 500000) * 0.265;
+        const distributableDiv = Math.max(0, ccpcProfit - ccpcCorpTax);
+        // Non-eligible dividend effective personal tax after dividend gross-up & credit
+        const divTax = distributableDiv * (isPsbTrap ? 0.28 : 0.155);
+        const optTotalTax = ccpcCorpTax + divTax;
+        const optNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - optTotalTax
+        );
+
+        return {
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: `CRA Federal + ${inputs.regionCode} Provincial Brackets + 1x CPP/CPP2 & EI`,
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 0,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(empTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(empFed),
+                stateOrProvincialTaxAnnual: Math.round(empProv),
+                socialSecurityOrEmployeeNiAnnual: Math.round(empCpp + empEi),
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
+                effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number(((empFedMarg + empProvMarg) * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(empNet),
+                netCashTakeHomeMonthly: Math.round(empNet / 12),
+                netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits + employeeOwnRetirementAnnual),
+                trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits + employeeOwnRetirementAnnual),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Employee CPP + CPP2 ($81,200 ceiling): CA$${Math.round(empCpp).toLocaleString()} + EI: CA$${Math.round(empEi).toLocaleString()}`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: meta.standardContractorRegimeName,
+                regimeSubtitle: 'CRA Form T2125 Sole Proprietor (Pays both Employer & Employee CPP + CPP2)',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(soleTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(cFed),
+                stateOrProvincialTaxAnnual: Math.round(cProv),
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: Math.round(soleCpp),
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(cTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((cTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number(((cFedMarg + cProvMarg) * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(cNet),
+                netCashTakeHomeMonthly: Math.round(cNet / 12),
+                netEffectiveHourlyTakeHome: Number((cNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(cNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Double Self-Employed CPP + CPP2: CA$${Math.round(soleCpp).toLocaleString()}/yr`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: isPsbTrap ? 'CCPC Reclassified as CRA Personal Services Business (PSB 44.5% Penalty!)' : meta.optimizedEntityRegimeName,
+                regimeSubtitle: isPsbTrap
+                    ? 'WARNING: Audit Score < 55 triggers CRA PSB penalty (44.5% Corp Tax — Small Business Deduction denied!)'
+                    : '12.2% CCPC Small Business Deduction (up to $500k) + Non-Eligible Dividend Credit',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(ccpcProfit),
+                incomeTaxFederalOrNationalAnnual: 0,
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: Math.round(divTax),
+                corporateOrEntityTaxAnnual: Math.round(ccpcCorpTax),
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(optTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((optTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: isPsbTrap ? 58.0 : 27.7,
+                netCashTakeHomeAnnual: Math.round(optNet),
+                netCashTakeHomeMonthly: Math.round(optNet / 12),
+                netEffectiveHourlyTakeHome: Number((optNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(optNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, cTotalTax - optTotalTax)),
+                lineItemNotes: [
+                    isPsbTrap
+                        ? 'CRA PSB Warning: Improve Classification Score >= 55 in Tab 3 to restore the 12.2% Small Business Deduction!'
+                        : `CCPC Corporate Tax (12.2%): CA$${Math.round(ccpcCorpTax).toLocaleString()} + Dividend Tax: CA$${Math.round(divTax).toLocaleString()}`,
+                ],
+            },
+            ukIr35KidWaterfall,
+            usScheduleSeAndScorp,
+        };
+    }
+
+    // ==========================================================================
+    // DEDICATED MODULE 4: AUSTRALIA (ATO Stage 3 PAYG + 12% Super vs. ABN vs. Pty Ltd)
+    // ==========================================================================
+    if (inputs.jurisdiction === 'AU') {
+        const auBrackets = [
+            { upTo: 18200, rate: 0 },
+            { upTo: 45000, rate: 0.16 },
+            { upTo: 135000, rate: 0.3 },
+            { upTo: 190000, rate: 0.37 },
+            { upTo: Infinity, rate: 0.45 },
+        ];
+        // PAYG Permanent Employee: Employer pays 12% Superannuation Guarantee on top (or user match %)
+        const superRate = Math.max(0.12, inputs.employerRetirementMatchPercent / 100);
+        const employerSuperAnnual = inputs.employeeBaseSalaryAnnual * superRate;
+        const auEmpBenefits = Math.max(0, inputs.employerHealthInsuranceAnnual) + employerSuperAnnual + Math.max(0, inputs.employerOtherPerksAnnual);
+        const empTaxable = Math.max(0, empGrossCash - employeeOwnRetirementAnnual);
+        const { totalTax: empIncTax, marginalRate: empMarg } = computeProgressiveTax(empTaxable, auBrackets);
+        const empMedicareLevy = empTaxable > 26000 ? empTaxable * 0.02 : 0;
+        const empMls = inputs.employerHealthInsuranceAnnual > 0 || empTaxable <= 97000 ? 0 : empTaxable * 0.01; // Medicare Levy Surcharge if no private hospital cover > $97k
+        const empTotalTax = empIncTax + empMedicareLevy + empMls;
+        const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empTotalTax);
+
+        // ABN Sole Trader (Concessional Super Contribution up to $30,000 cap is taxed at 15% inside super fund instead of marginal rate)
+        const concessionalSuper = Math.min(30000, contractorRetire);
+        const superFund15PctTax = concessionalSuper * 0.15;
+        const abnTaxable = Math.max(0, contractorAnnualGross - expenses - selfHealth - concessionalSuper);
+        const { totalTax: abnIncTax, marginalRate: abnMarg } = computeProgressiveTax(abnTaxable, auBrackets);
+        const abnMedicare = abnTaxable > 26000 ? abnTaxable * 0.02 : 0;
+        const abnTotalTax = abnIncTax + abnMedicare + superFund15PctTax;
+        const abnNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - (abnIncTax + abnMedicare)
+        );
+
+        // Pty Ltd Company (Requires passing ATO 80/20 PSI Results Test — if Classification Score < 65, PSI rules attribute all profit to individual!)
+        const auditPreview = evaluateClassificationAudit(inputs);
+        const passesPsiResultsTest = auditPreview.complianceScore >= 65;
+        const ptyProfit = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - concessionalSuper);
+        const ptyCorpTax = passesPsiResultsTest ? ptyProfit * 0.25 : 0;
+        const frankedDivTax = passesPsiResultsTest ? Math.max(0, (ptyProfit - ptyCorpTax) * 0.08) : abnIncTax + abnMedicare;
+        const ptyTotalTax = ptyCorpTax + frankedDivTax + superFund15PctTax;
+        const ptyNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - (ptyCorpTax + frankedDivTax)
+        );
+
+        return {
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: 'ATO Stage 3 Resident Brackets + 2% Medicare Levy + 12% Employer Super Guarantee',
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 0,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(empTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(empIncTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: Math.round(empMedicareLevy + empMls),
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
+                effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number(((empMarg + 0.02) * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(empNet),
+                netCashTakeHomeMonthly: Math.round(empNet / 12),
+                netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(auEmpBenefits + employeeOwnRetirementAnnual),
+                trueTotalEconomicPackageAnnual: Math.round(empNet + auEmpBenefits + employeeOwnRetirementAnnual),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Employer 12% Superannuation Guarantee: A$${Math.round(employerSuperAnnual).toLocaleString()}/yr`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: meta.standardContractorRegimeName,
+                regimeSubtitle: 'ABN Sole Trader + 15% Concessional Super Tax Shield (up to $30k cap)',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(abnTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(abnIncTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: Math.round(abnMedicare),
+                selfEmploymentOrDividendTaxAnnual: Math.round(superFund15PctTax),
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(abnTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((abnTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number(((abnMarg + 0.02) * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(abnNetCash),
+                netCashTakeHomeMonthly: Math.round(abnNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((abnNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire - superFund15PctTax),
+                trueTotalEconomicPackageAnnual: Math.round(abnNetCash + Math.max(0, contractorRetire - superFund15PctTax)),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Concessional Super Deduction: A$${Math.round(concessionalSuper).toLocaleString()} taxed at 15% inside fund`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: passesPsiResultsTest ? meta.optimizedEntityRegimeName : 'Pty Ltd Blocked by ATO PSI Rules (Look-Through to Individual Rates)',
+                regimeSubtitle: passesPsiResultsTest
+                    ? 'Passes ATO 80/20 PSI Results Test → 25% Base Rate Entity + Franking Credits'
+                    : 'ATO PSI Look-Through Applied: Score < 65 means income is taxed at individual marginal rates',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(ptyProfit),
+                incomeTaxFederalOrNationalAnnual: 0,
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: Math.round(frankedDivTax + superFund15PctTax),
+                corporateOrEntityTaxAnnual: Math.round(ptyCorpTax),
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(ptyTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((ptyTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: passesPsiResultsTest ? 33.0 : Number(((abnMarg + 0.02) * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(ptyNetCash),
+                netCashTakeHomeMonthly: Math.round(ptyNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((ptyNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(Math.max(0, contractorRetire - superFund15PctTax)),
+                trueTotalEconomicPackageAnnual: Math.round(ptyNetCash + Math.max(0, contractorRetire - superFund15PctTax)),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, abnTotalTax - ptyTotalTax)),
+                lineItemNotes: [
+                    passesPsiResultsTest
+                        ? `ATO PSI Results Test Passed: 25% Base Rate Entity Tax (A$${Math.round(ptyCorpTax).toLocaleString()})`
+                        : 'ATO PSI Warning: Satisfy Results/Substitution/Equipment tests in Tab 3 to unlock Pty Ltd retention!',
+                ],
+            },
+            ukIr35KidWaterfall,
+            usScheduleSeAndScorp,
+        };
+    }
+
+    // ==========================================================================
+    // DEDICATED MODULE 5: GERMANY (§ 32a EStG + 4-Pillar Sozialversicherung vs. Freiberufler)
+    // ==========================================================================
+    if (inputs.jurisdiction === 'DE') {
+        const deBrackets = [
+            { upTo: 12096, rate: 0 }, // Grundfreibetrag
+            { upTo: 17443, rate: 0.19 },
+            { upTo: 68480, rate: 0.31 },
+            { upTo: 277825, rate: 0.42 },
+            { upTo: Infinity, rate: 0.45 }, // Reichensteuer
+        ];
+        // 4-Pillar Statutory Social Insurance (Employee Half) with Beitragsbemessungsgrenzen (BBG):
+        // KV (Health 8.15%) + PV (Care 1.7%) capped at €66,150; RV (Pension 9.3%) + AV (Unemp 1.3%) capped at €96,600
+        const bbgHealth = Math.min(empGrossCash, 66150);
+        const bbgPension = Math.min(empGrossCash, 96600);
+        const empSocial = bbgHealth * (0.0815 + 0.017) + bbgPension * (0.093 + 0.013);
+        const empTaxable = Math.max(0, empGrossCash - empSocial * 0.88 - employeeOwnRetirementAnnual - 1230); // includes €1,230 Werbungskostenpauschale
+        const { totalTax: empEst, marginalRate: empMarg } = computeProgressiveTax(empTaxable, deBrackets);
+        const empSoli = empEst > 18130 ? empEst * 0.055 : 0;
+        const empChurch = inputs.regionCode === 'DE_CHURCH' ? empEst * 0.085 : 0;
+        const empTotalTax = empEst + empSoli + empChurch + empSocial;
+        const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empTotalTax);
+
+        // Freiberufler (§ 18 EStG — Exempt from Gewerbesteuer; self-funds PKV health & Basisrente)
+        const freiberuflerTaxable = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire
+        );
+        const { totalTax: fEst, marginalRate: fMarg } = computeProgressiveTax(freiberuflerTaxable, deBrackets);
+        const fSoli = fEst > 18130 ? fEst * 0.055 : 0;
+        const fChurch = inputs.regionCode === 'DE_CHURCH' ? fEst * 0.085 : 0;
+        const fTotalTax = fEst + fSoli + fChurch;
+        const fNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - fTotalTax
+        );
+
+        // Optimized GmbH / Freiberufler + Rürup-Rente & Investitionsabzugsbetrag (§ 7g EStG)
+        const ruerupExtraShield = Math.min(27566, Math.max(contractorRetire, contractorAnnualGross * 0.08));
+        const optTaxable = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - ruerupExtraShield
+        );
+        const { totalTax: oEst, marginalRate: oMarg } = computeProgressiveTax(optTaxable, deBrackets);
+        const oSoli = oEst > 18130 ? oEst * 0.055 : 0;
+        const oChurch = inputs.regionCode === 'DE_CHURCH' ? oEst * 0.085 : 0;
+        const oTotalTax = oEst + oSoli + oChurch;
+        const oNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - oTotalTax
+        );
+
+        return {
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: '§ 32a EStG + 4-Pillar Sozialversicherung (KV/PV BBG €66,150 • RV/AV BBG €96,600)',
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 1230,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(empTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(empEst + empSoli),
+                stateOrProvincialTaxAnnual: Math.round(empChurch),
+                socialSecurityOrEmployeeNiAnnual: Math.round(empSocial),
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
+                effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((empMarg * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(empNet),
+                netCashTakeHomeMonthly: Math.round(empNet / 12),
+                netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits + employeeOwnRetirementAnnual),
+                trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits + employeeOwnRetirementAnnual),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Employee KV/PV + RV/AV Social Contributions: €${Math.round(empSocial).toLocaleString()}/yr`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: meta.standardContractorRegimeName,
+                regimeSubtitle: '§ 18 EStG Freiberufler (Exempt from Gewerbesteuer + Deductible PKV Health)',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(freiberuflerTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(fEst + fSoli),
+                stateOrProvincialTaxAnnual: Math.round(fChurch),
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(fTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((fTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((fMarg * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(fNetCash),
+                netCashTakeHomeMonthly: Math.round(fNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((fNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(fNetCash + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Taxable § 18 EStG Profit: €${Math.round(freiberuflerTaxable).toLocaleString()}`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: meta.optimizedEntityRegimeName,
+                regimeSubtitle: '§ 18 EStG + Basisrente (Rürup up to €27,566) & § 7g EStG Tax Shield',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(optTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(oEst + oSoli),
+                stateOrProvincialTaxAnnual: Math.round(oChurch),
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(oTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((oTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((oMarg * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(oNetCash),
+                netCashTakeHomeMonthly: Math.round(oNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((oNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(oNetCash + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, fTotalTax - oTotalTax)),
+                lineItemNotes: [`Rürup / § 7g Tax Shield Saved: €${Math.round(Math.max(0, fTotalTax - oTotalTax)).toLocaleString()}/yr`],
+            },
+            ukIr35KidWaterfall,
+            usScheduleSeAndScorp,
+        };
+    }
+
+    // ==========================================================================
+    // DEDICATED MODULE 6: INDIA (Sec 115BAC + Sec 87A Marginal Relief vs. Sec 44ADA Eligibility Enforcement)
+    // ==========================================================================
+    if (inputs.jurisdiction === 'IN') {
+        const inBrackets = [
+            { upTo: 400000, rate: 0 },
+            { upTo: 800000, rate: 0.05 },
+            { upTo: 1200000, rate: 0.1 },
+            { upTo: 1600000, rate: 0.15 },
+            { upTo: 2000000, rate: 0.2 },
+            { upTo: 2400000, rate: 0.25 },
+            { upTo: Infinity, rate: 0.3 },
+        ];
+        // Exact Section 87A Rebate (0 tax up to ₹12,00,000 taxable income) + Marginal Relief just above ₹12,00,000
+        const computeIndiaTaxWith87AMarginalRelief = (taxableIncome: number) => {
+            if (taxableIncome <= 1200000) return { totalTaxWithCess: 0, marginalRate: 0 };
+            const { totalTax: rawSlabTax, marginalRate } = computeProgressiveTax(taxableIncome, inBrackets);
+            const excessOver12L = taxableIncome - 1200000;
+            const taxAfterMarginalRelief = Math.min(rawSlabTax, excessOver12L);
+            return { totalTaxWithCess: taxAfterMarginalRelief * 1.04, marginalRate: marginalRate * 1.04 };
+        };
+
+        const empTaxable = Math.max(0, empGrossCash - 75000 - employeeOwnRetirementAnnual);
+        const { totalTaxWithCess: empTotalTax, marginalRate: empMarg } = computeIndiaTaxWith87AMarginalRelief(empTaxable);
+        const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empTotalTax);
+
+        // Col B: Regular Professional Consultant (Actual Books under Sec 44AA / 44AB)
+        const regProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
+        const { totalTaxWithCess: regTotalTax, marginalRate: regMarg } = computeIndiaTaxWith87AMarginalRelief(regProfit);
+        const regNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - regTotalTax
+        );
+
+        // Col C: Section 44ADA Presumptive Taxation — Enforce Statutory Eligibility!
+        // Must be notified profession u/s 44AA(1) AND Gross Receipts <= ₹75,00,000 (if >=95% digital) or <= ₹50,00,000 (cash >5%)
+        const isEligibleProf = inputs.indiaIsEligibleProfession44ADA !== false;
+        const has95Digital = inputs.indiaHas95PercentDigitalReceipts !== false;
+        const sec44AdaGrossLimit = has95Digital ? 7500000 : 5000000;
+        const qualifiesFor44ADA = isEligibleProf && contractorAnnualGross <= sec44AdaGrossLimit;
+
+        const sec44AdaTaxable = qualifiesFor44ADA
+            ? Math.max(0, contractorAnnualGross * 0.5 - contractorRetire)
+            : Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire);
+        const { totalTaxWithCess: adaTotalTax, marginalRate: adaMarg } = computeIndiaTaxWith87AMarginalRelief(sec44AdaTaxable);
+        const adaNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - adaTotalTax
+        );
+
+        return {
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: 'Sec 115BAC New Regime + ₹75,000 Std Deduction + Sec 87A Rebate & 4% Cess',
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 75000,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(empTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(empTotalTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
+                effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((empMarg * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(empNet),
+                netCashTakeHomeMonthly: Math.round(empNet / 12),
+                netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits + employeeOwnRetirementAnnual),
+                trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits + employeeOwnRetirementAnnual),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Taxable Salary after ₹75,000 Std Deduction: ₹${Math.round(empTaxable).toLocaleString()}`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: meta.standardContractorRegimeName,
+                regimeSubtitle: 'Regular Books of Account (Gross Receipts minus Documented Expenses)',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(regProfit),
+                incomeTaxFederalOrNationalAnnual: Math.round(regTotalTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(regTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((regTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((regMarg * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(regNet),
+                netCashTakeHomeMonthly: Math.round(regNet / 12),
+                netEffectiveHourlyTakeHome: Number((regNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(regNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Actual Net Professional Profit: ₹${Math.round(regProfit).toLocaleString()}`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: qualifiesFor44ADA
+                    ? meta.optimizedEntityRegimeName
+                    : `Section 44ADA Ineligible (Exceeds ₹${(sec44AdaGrossLimit / 100000).toFixed(0)}L Limit or Non-44AA Profession — Taxed on Regular Books)`,
+                regimeSubtitle: qualifiesFor44ADA
+                    ? `Eligible u/s 44ADA (Receipts <= ₹${(sec44AdaGrossLimit / 100000).toFixed(0)}L): 50% of Gross Receipts Deemed Taxable`
+                    : 'Statutory Cap Exceeded: Mandatory Sec 44AB Tax Audit & Regular Expense Accounting Applies',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(sec44AdaTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(adaTotalTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(adaTotalTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((adaTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((adaMarg * (qualifiesFor44ADA ? 50 : 100)).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(adaNet),
+                netCashTakeHomeMonthly: Math.round(adaNet / 12),
+                netEffectiveHourlyTakeHome: Number((adaNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(adaNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, regTotalTax - adaTotalTax)),
+                lineItemNotes: [
+                    qualifiesFor44ADA
+                        ? `Section 44ADA 50% Presumptive Base: ₹${Math.round(sec44AdaTaxable).toLocaleString()} (Tax Saved: ₹${Math.round(Math.max(0, regTotalTax - adaTotalTax)).toLocaleString()})`
+                        : `Section 44ADA Disqualified: Gross receipts (₹${Math.round(contractorAnnualGross).toLocaleString()}) exceed ₹${sec44AdaGrossLimit.toLocaleString()} statutory threshold or profession is ineligible.`,
+                ],
+            },
+            ukIr35KidWaterfall,
+            usScheduleSeAndScorp,
+        };
+    }
+
+    // ==========================================================================
+    // DEDICATED MODULE 7: PAKISTAN (FBR Sec 149 vs. Sec 154A PSEB & PRC Eligibility Enforcement)
     // ==========================================================================
     if (inputs.jurisdiction === 'PK') {
-        // Pakistan FBR Tax Year 2026/27:
-        // Col A: Salaried Employee u/s 149 (0% up to Rs 600k, progressive up to 35% + 10% surcharge > Rs 10M)
         const pkSalariedBrackets = [
             { upTo: 600000, rate: 0 },
             { upTo: 1200000, rate: 0.05 },
@@ -1345,145 +2072,284 @@ export function evaluateThreeRegimesForGross(
             { upTo: 4100000, rate: 0.3 },
             { upTo: Infinity, rate: 0.35 },
         ];
+        const pkNonSalariedBusinessBrackets = [
+            { upTo: 600000, rate: 0 },
+            { upTo: 1200000, rate: 0.15 },
+            { upTo: 1600000, rate: 0.2 },
+            { upTo: 3200000, rate: 0.3 },
+            { upTo: 5600000, rate: 0.4 },
+            { upTo: Infinity, rate: 0.45 },
+        ];
+        const empTaxable = Math.max(0, empGrossCash - employeeOwnRetirementAnnual);
         const { totalTax: basePkTax, marginalRate: pkMarginal } = computeProgressiveTax(
-            empGrossCash,
+            empTaxable,
             pkSalariedBrackets
         );
-        const pkSurcharge = empGrossCash > 10000000 ? basePkTax * 0.1 : 0;
+        const pkSurcharge = empTaxable > 10000000 ? basePkTax * 0.1 : 0;
         const pkEmpTotalTax = basePkTax + pkSurcharge;
-        const pkEmpNet = Math.max(0, empGrossCash - pkEmpTotalTax);
+        const pkEmpNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - pkEmpTotalTax);
 
-        // Col B: Non-PSEB ATL Filer IT Export Freelancer u/s 154A (1.0% Final Tax on foreign IT remittances)
-        const nonPsebTax = contractorAnnualGross * 0.01;
-        const nonPsebNet = Math.max(0, contractorAnnualGross - expenses - selfHealth - nonPsebTax);
+        const hasValidPrc = inputs.pakistanHasValidPrcCode9186 !== false;
+        const hasValidPseb = inputs.pakistanHasValidPsebCertificate !== false;
 
-        // Col C: PSEB-Registered IT Export Freelancer u/s 154A (0.25% Final Tax on foreign IT remittances!)
-        const psebTax = contractorAnnualGross * 0.0025;
-        const psebNet = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - psebTax);
+        // Col B: Standard Contractor (1.0% Sec 154A if foreign IT export with valid PRC; otherwise Normal Non-Salaried Business Slabs!)
+        const nonPsebProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
+        const { totalTax: normalSlabTax } = computeProgressiveTax(nonPsebProfit, pkNonSalariedBusinessBrackets);
+        const normalSlabWithSurcharge = nonPsebProfit > 10000000 ? normalSlabTax * 1.1 : normalSlabTax;
+        const stdContractorTax = hasValidPrc ? contractorAnnualGross * 0.01 : normalSlabWithSurcharge;
+        const nonPsebNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - stdContractorTax
+        );
 
-        const employeeRegime: RegimeFinancialBreakdown = {
-            regimeId: 'FULL_TIME_EMPLOYEE',
-            regimeTitle: meta.employeeRegimeName,
-            regimeSubtitle: 'FBR Section 149 Salaried Slabs (0%–35% + 10% Surcharge > Rs. 10M)',
-            grossTopLineAnnual: Math.round(empGrossCash),
-            deductibleExpensesAndFeesAnnual: 0,
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(empGrossCash),
-            incomeTaxFederalOrNationalAnnual: Math.round(pkEmpTotalTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(pkEmpTotalTax),
-            effectiveTaxRatePercent: empGrossCash > 0 ? Number(((pkEmpTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
-            marginalTaxRatePercent: Number((pkMarginal * 100).toFixed(1)),
-            netCashTakeHomeAnnual: Math.round(pkEmpNet),
-            netCashTakeHomeMonthly: Math.round(pkEmpNet / 12),
-            netEffectiveHourlyTakeHome: Number((pkEmpNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits),
-            trueTotalEconomicPackageAnnual: Math.round(pkEmpNet + empMonetizedBenefits),
-            qbiOrSpecialDeductionSavedAnnual: 0,
-            lineItemNotes: [`FBR Section 149 Withholding Tax: Rs. ${Math.round(pkEmpTotalTax).toLocaleString()}/yr`],
-        };
-
-        const standardContractorRegime: RegimeFinancialBreakdown = {
-            regimeId: 'STANDARD_CONTRACTOR',
-            regimeTitle: meta.standardContractorRegimeName,
-            regimeSubtitle: 'FBR Section 154A 1.0% Final Tax on Foreign IT Export Remittances (ATL Filer)',
-            grossTopLineAnnual: Math.round(contractorAnnualGross),
-            deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(contractorAnnualGross),
-            incomeTaxFederalOrNationalAnnual: Math.round(nonPsebTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(nonPsebTax),
-            effectiveTaxRatePercent: 1.0,
-            marginalTaxRatePercent: 1.0,
-            netCashTakeHomeAnnual: Math.round(nonPsebNet),
-            netCashTakeHomeMonthly: Math.round(nonPsebNet / 12),
-            netEffectiveHourlyTakeHome: Number((nonPsebNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(nonPsebNet),
-            qbiOrSpecialDeductionSavedAnnual: 0,
-            lineItemNotes: [`1.0% Section 154A Final Tax: Rs. ${Math.round(nonPsebTax).toLocaleString()}/yr`],
-        };
-
-        const optimizedEntityRegime: RegimeFinancialBreakdown = {
-            regimeId: 'OPTIMIZED_ENTITY',
-            regimeTitle: meta.optimizedEntityRegimeName,
-            regimeSubtitle: '0.25% Final Tax u/s 154A with valid PSEB Certificate & PRC Purpose Code 9186',
-            grossTopLineAnnual: Math.round(contractorAnnualGross),
-            deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(contractorAnnualGross),
-            incomeTaxFederalOrNationalAnnual: Math.round(psebTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(psebTax),
-            effectiveTaxRatePercent: 0.25,
-            marginalTaxRatePercent: 0.25,
-            netCashTakeHomeAnnual: Math.round(psebNet),
-            netCashTakeHomeMonthly: Math.round(psebNet / 12),
-            netEffectiveHourlyTakeHome: Number((psebNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(psebNet),
-            qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, nonPsebTax - psebTax)),
-            lineItemNotes: [
-                `PSEB 0.25% Final Tax u/s 154A: Rs. ${Math.round(psebTax).toLocaleString()}/yr (Saves 75% of export withholding tax!)`,
-            ],
-        };
+        // Col C: Optimized PSEB Regime (0.25% ONLY if both hasValidPrc AND hasValidPseb are true!)
+        const qualifiesPseb025 = hasValidPrc && hasValidPseb;
+        const psebTax = qualifiesPseb025
+            ? contractorAnnualGross * 0.0025
+            : hasValidPrc
+                ? contractorAnnualGross * 0.01
+                : normalSlabWithSurcharge;
+        const psebNet = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - psebTax
+        );
 
         return {
-            employeeRegime,
-            standardContractorRegime,
-            optimizedEntityRegime,
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: 'FBR Section 149 Salaried Slabs (0%–35% + 10% Surcharge > Rs. 10M)',
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 0,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(empTaxable),
+                incomeTaxFederalOrNationalAnnual: Math.round(pkEmpTotalTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(pkEmpTotalTax),
+                effectiveTaxRatePercent: empGrossCash > 0 ? Number(((pkEmpTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: Number((pkMarginal * 100).toFixed(1)),
+                netCashTakeHomeAnnual: Math.round(pkEmpNet),
+                netCashTakeHomeMonthly: Math.round(pkEmpNet / 12),
+                netEffectiveHourlyTakeHome: Number((pkEmpNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits + employeeOwnRetirementAnnual),
+                trueTotalEconomicPackageAnnual: Math.round(pkEmpNet + empMonetizedBenefits + employeeOwnRetirementAnnual),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`FBR Section 149 Withholding Tax: Rs. ${Math.round(pkEmpTotalTax).toLocaleString()}/yr`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: hasValidPrc ? meta.standardContractorRegimeName : 'Non-Compliant / Domestic Freelancer (Normal Business Slabs up to 45%)',
+                regimeSubtitle: hasValidPrc
+                    ? 'FBR Section 154A 1.0% Final Tax on Foreign IT Export Remittances (Unregistered with PSEB)'
+                    : 'Missing Foreign Export PRC Code 9186: Taxed under Normal Non-Salaried Business Slabs',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(hasValidPrc ? contractorAnnualGross : nonPsebProfit),
+                incomeTaxFederalOrNationalAnnual: Math.round(stdContractorTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(stdContractorTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((stdContractorTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: hasValidPrc ? 1.0 : 45.0,
+                netCashTakeHomeAnnual: Math.round(nonPsebNet),
+                netCashTakeHomeMonthly: Math.round(nonPsebNet / 12),
+                netEffectiveHourlyTakeHome: Number((nonPsebNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(nonPsebNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Applied Tax: Rs. ${Math.round(stdContractorTax).toLocaleString()}/yr`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: qualifiesPseb025
+                    ? meta.optimizedEntityRegimeName
+                    : 'PSEB 0.25% Disqualified (Requires Active PSEB Certificate + Bank PRC Code 9186)',
+                regimeSubtitle: qualifiesPseb025
+                    ? '0.25% Final Tax u/s 154A (Verified PSEB Certificate + Foreign IT Remittance PRC)'
+                    : 'Fallback Rate Applied because PSEB Certificate or Export PRC Condition is unchecked',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(contractorAnnualGross),
+                incomeTaxFederalOrNationalAnnual: Math.round(psebTax),
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(psebTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((psebTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: qualifiesPseb025 ? 0.25 : hasValidPrc ? 1.0 : 45.0,
+                netCashTakeHomeAnnual: Math.round(psebNet),
+                netCashTakeHomeMonthly: Math.round(psebNet / 12),
+                netEffectiveHourlyTakeHome: Number((psebNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(psebNet + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, stdContractorTax - psebTax)),
+                lineItemNotes: [
+                    qualifiesPseb025
+                        ? `PSEB 0.25% Final Tax u/s 154A: Rs. ${Math.round(psebTax).toLocaleString()}/yr`
+                        : 'Enable PSEB Certificate & PRC 9186 in Advanced Options to qualify for 0.25% u/s 154A.',
+                ],
+            },
             ukIr35KidWaterfall,
             usScheduleSeAndScorp,
         };
     }
 
-    if (inputs.jurisdiction === 'GLOBAL_CUSTOM') {
-        const activeCur = getIsoCurrencyByCode(inputs.currencyCode, meta.currencyCode);
-        const empIncRate = Math.max(0, inputs.customEmployeeIncomeTaxPercent ?? 20) / 100;
-        const empSocRate = Math.max(0, inputs.customEmployeeSocialTaxPercent ?? 7.5) / 100;
-        const cIncRate = Math.max(0, inputs.customContractorIncomeTaxPercent ?? 20) / 100;
-        const cSocRate = Math.max(0, inputs.customContractorSocialTaxPercent ?? 12) / 100;
-        const corpRate = Math.max(0, inputs.customCorporateTaxPercent ?? 15) / 100;
-        const divRate = Math.max(0, inputs.customDividendTaxPercent ?? 8) / 100;
+    // ==========================================================================
+    // DEDICATED MODULE 8: UAE / DUBAI (MOHRE EOSB Gratuity + Federal Corporate Tax Decree-Law 47)
+    // ==========================================================================
+    if (inputs.jurisdiction === 'AE') {
+        // UAE Employee: 0% Personal Income Tax + End-of-Service Gratuity (21 days basic pay per year = ~5.75% of base salary)
+        const eosbGratuityAnnual = (inputs.employeeBaseSalaryAnnual / 365) * 21;
+        const uaeEmpBenefits = empMonetizedBenefits + eosbGratuityAnnual + employeeOwnRetirementAnnual;
+        const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual);
 
-        // 1. Employee
-        const empTaxable = Math.max(0, empGrossCash - employeeOwnRetirementAnnual);
-        const empFed = empTaxable * empIncRate;
-        const empState = empTaxable * stateRate;
-        const empSoc = empGrossCash * empSocRate;
-        const empTotalTax = empFed + empState + empSoc;
-        const empNet = Math.max(0, empGrossCash - empTotalTax);
+        // UAE Natural Person Freelancer (Cabinet Decision No. 49 of 2023):
+        // 0% if annual gross turnover <= AED 1,000,000; if turnover > AED 1,000,000, 9% Corporate Tax on net profit above AED 375,000
+        const freelanceNetProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
+        const freelanceCorpTax =
+            contractorAnnualGross <= 1000000 ? 0 : Math.max(0, (freelanceNetProfit - 375000) * 0.09);
+        const freelanceNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - selfHealth - contractorRetire - freelanceCorpTax
+        );
 
-        // 2. Standard Contractor
-        const cProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
-        const cFed = cProfit * cIncRate;
-        const cState = cProfit * stateRate;
-        const cSoc = cProfit * cSocRate;
-        const cTotalTax = cFed + cState + cSoc;
-        const cNet = Math.max(0, contractorAnnualGross - expenses - selfHealth - cTotalTax);
+        // UAE Free Zone FZ-LLC (Small Business Relief <= AED 3,000,000 revenue OR Qualifying Free Zone Person 0% / 9% > AED 375k)
+        const fzProfit = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire);
+        const qualifiesSbrOrQfzp = inputs.uaeQualifiesForFreeZoneOrSbr !== false && contractorAnnualGross <= 3000000;
+        const fzCorpTax = qualifiesSbrOrQfzp ? 0 : Math.max(0, (fzProfit - 375000) * 0.09);
+        const fzNetCash = Math.max(
+            0,
+            contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - fzCorpTax
+        );
 
-        // 3. Optimized B2B Entity
-        const entityPool = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire);
-        const ownerSal = entityPool * salarySplitRatio;
-        const ownerSalTax = ownerSal * (empIncRate * 0.75 + empSocRate * 0.5);
-        const remCorpProfit = Math.max(0, entityPool - ownerSal);
-        const corpTax = remCorpProfit * corpRate;
-        const netDivPool = Math.max(0, remCorpProfit - corpTax);
-        const divTax = netDivPool * divRate;
-        const optTotalTax = ownerSalTax + corpTax + divTax;
-        const optNet = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - optTotalTax);
+        return {
+            employeeRegime: {
+                regimeId: 'FULL_TIME_EMPLOYEE',
+                regimeTitle: meta.employeeRegimeName,
+                regimeSubtitle: '0% UAE Personal Tax + Statutory MOHRE End-of-Service Gratuity (21 Days/Yr)',
+                grossTopLineAnnual: Math.round(empGrossCash),
+                deductibleExpensesAndFeesAnnual: 0,
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: 0,
+                incomeTaxFederalOrNationalAnnual: 0,
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: 0,
+                totalTaxesAndStatutoryDeductionsAnnual: 0,
+                effectiveTaxRatePercent: 0,
+                marginalTaxRatePercent: 0,
+                netCashTakeHomeAnnual: Math.round(empNet),
+                netCashTakeHomeMonthly: Math.round(empNet / 12),
+                netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(uaeEmpBenefits),
+                trueTotalEconomicPackageAnnual: Math.round(empNet + uaeEmpBenefits),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`Statutory MOHRE EOSB Gratuity Accrual: AED ${Math.round(eosbGratuityAnnual).toLocaleString()}/yr`],
+            },
+            standardContractorRegime: {
+                regimeId: 'STANDARD_CONTRACTOR',
+                regimeTitle: meta.standardContractorRegimeName,
+                regimeSubtitle: 'Cabinet Decision No. 49: 0% up to AED 1M Turnover; 9% Corp Tax on Profit > AED 375k',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(freelanceNetProfit),
+                incomeTaxFederalOrNationalAnnual: 0,
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: Math.round(freelanceCorpTax),
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(freelanceCorpTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((freelanceCorpTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: contractorAnnualGross > 1000000 && freelanceNetProfit > 375000 ? 9.0 : 0,
+                netCashTakeHomeAnnual: Math.round(freelanceNetCash),
+                netCashTakeHomeMonthly: Math.round(freelanceNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((freelanceNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(freelanceNetCash + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: 0,
+                lineItemNotes: [`UAE Freelance Corporate Tax: AED ${Math.round(freelanceCorpTax).toLocaleString()}/yr`],
+            },
+            optimizedEntityRegime: {
+                regimeId: 'OPTIMIZED_ENTITY',
+                regimeTitle: meta.optimizedEntityRegimeName,
+                regimeSubtitle: qualifiesSbrOrQfzp
+                    ? 'Small Business Relief (Article 21 <= AED 3M) / Qualifying Free Zone 0% Rate'
+                    : '9% UAE Federal Corporate Tax on Taxable Profit Exceeding AED 375,000',
+                grossTopLineAnnual: Math.round(contractorAnnualGross),
+                deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
+                employerSideDeductionsFromAssignmentAnnual: 0,
+                taxableIncomeBaseAnnual: Math.round(fzProfit),
+                incomeTaxFederalOrNationalAnnual: 0,
+                stateOrProvincialTaxAnnual: 0,
+                socialSecurityOrEmployeeNiAnnual: 0,
+                selfEmploymentOrDividendTaxAnnual: 0,
+                corporateOrEntityTaxAnnual: Math.round(fzCorpTax),
+                totalTaxesAndStatutoryDeductionsAnnual: Math.round(fzCorpTax),
+                effectiveTaxRatePercent: contractorAnnualGross > 0 ? Number(((fzCorpTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
+                marginalTaxRatePercent: qualifiesSbrOrQfzp ? 0 : 9.0,
+                netCashTakeHomeAnnual: Math.round(fzNetCash),
+                netCashTakeHomeMonthly: Math.round(fzNetCash / 12),
+                netEffectiveHourlyTakeHome: Number((fzNetCash / billableHoursPerYear).toFixed(2)),
+                monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+                trueTotalEconomicPackageAnnual: Math.round(fzNetCash + contractorRetire),
+                qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, freelanceCorpTax - fzCorpTax)),
+                lineItemNotes: [`UAE FZ-LLC Corporate Tax: AED ${Math.round(fzCorpTax).toLocaleString()}/yr`],
+            },
+            ukIr35KidWaterfall,
+            usScheduleSeAndScorp,
+        };
+    }
 
-        const employeeRegime: RegimeFinancialBreakdown = {
+    // ==========================================================================
+    // DEDICATED MODULE 9: GLOBAL CUSTOM COUNTRY REGIME (USER-DEFINED RATES)
+    // ==========================================================================
+    const activeCur = getIsoCurrencyByCode(inputs.currencyCode, meta.currencyCode);
+    const empIncRate = Math.max(0, inputs.customEmployeeIncomeTaxPercent ?? 20) / 100;
+    const empSocRate = Math.max(0, inputs.customEmployeeSocialTaxPercent ?? 7.5) / 100;
+    const cIncRate = Math.max(0, inputs.customContractorIncomeTaxPercent ?? 20) / 100;
+    const cSocRate = Math.max(0, inputs.customContractorSocialTaxPercent ?? 12) / 100;
+    const corpRate = Math.max(0, inputs.customCorporateTaxPercent ?? 15) / 100;
+    const divRate = Math.max(0, inputs.customDividendTaxPercent ?? 8) / 100;
+
+    const empTaxable = Math.max(0, empGrossCash - employeeOwnRetirementAnnual);
+    const empFed = empTaxable * empIncRate;
+    const empState = empTaxable * stateRate;
+    const empSoc = empGrossCash * empSocRate;
+    const empTotalTax = empFed + empState + empSoc;
+    const empNet = Math.max(0, empGrossCash - employeeOwnRetirementAnnual - empTotalTax);
+
+    const cProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
+    const cFed = cProfit * cIncRate;
+    const cState = cProfit * stateRate;
+    const cSoc = cProfit * cSocRate;
+    const cTotalTax = cFed + cState + cSoc;
+    const cNet = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire - cTotalTax);
+
+    const entityPool = Math.max(0, contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire);
+    const ownerSal = entityPool * salarySplitRatio;
+    const ownerSalTax = ownerSal * (empIncRate * 0.75 + empSocRate * 0.5);
+    const remCorpProfit = Math.max(0, entityPool - ownerSal);
+    const corpTax = remCorpProfit * corpRate;
+    const netDivPool = Math.max(0, remCorpProfit - corpTax);
+    const divTax = netDivPool * divRate;
+    const optTotalTax = ownerSalTax + corpTax + divTax;
+    const optNet = Math.max(
+        0,
+        contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire - optTotalTax
+    );
+
+    return {
+        employeeRegime: {
             regimeId: 'FULL_TIME_EMPLOYEE',
             regimeTitle: meta.employeeRegimeName,
             regimeSubtitle: `Custom Income Tax (${(empIncRate * 100).toFixed(1)}%) + Employee Social (${(empSocRate * 100).toFixed(1)}%)`,
@@ -1502,13 +2368,12 @@ export function evaluateThreeRegimesForGross(
             netCashTakeHomeAnnual: Math.round(empNet),
             netCashTakeHomeMonthly: Math.round(empNet / 12),
             netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits),
-            trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits),
+            monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits + employeeOwnRetirementAnnual),
+            trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits + employeeOwnRetirementAnnual),
             qbiOrSpecialDeductionSavedAnnual: 0,
             lineItemNotes: [`Statutory Tax & Social Levy: ${activeCur.symbol}${Math.round(empTotalTax).toLocaleString()}`],
-        };
-
-        const standardContractorRegime: RegimeFinancialBreakdown = {
+        },
+        standardContractorRegime: {
             regimeId: 'STANDARD_CONTRACTOR',
             regimeTitle: meta.standardContractorRegimeName,
             regimeSubtitle: `Custom Contractor Tax (${(cIncRate * 100).toFixed(1)}%) + Self-Employed Social (${(cSocRate * 100).toFixed(1)}%)`,
@@ -1527,13 +2392,12 @@ export function evaluateThreeRegimesForGross(
             netCashTakeHomeAnnual: Math.round(cNet),
             netCashTakeHomeMonthly: Math.round(cNet / 12),
             netEffectiveHourlyTakeHome: Number((cNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(cNet),
+            monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+            trueTotalEconomicPackageAnnual: Math.round(cNet + contractorRetire),
             qbiOrSpecialDeductionSavedAnnual: 0,
             lineItemNotes: [`Taxable Profit: ${activeCur.symbol}${Math.round(cProfit).toLocaleString()}`],
-        };
-
-        const optimizedEntityRegime: RegimeFinancialBreakdown = {
+        },
+        optimizedEntityRegime: {
             regimeId: 'OPTIMIZED_ENTITY',
             regimeTitle: meta.optimizedEntityRegimeName,
             regimeSubtitle: `Corporate Tax (${(corpRate * 100).toFixed(1)}%) + Dividend Tax (${(divRate * 100).toFixed(1)}%)`,
@@ -1552,321 +2416,20 @@ export function evaluateThreeRegimesForGross(
             netCashTakeHomeAnnual: Math.round(optNet),
             netCashTakeHomeMonthly: Math.round(optNet / 12),
             netEffectiveHourlyTakeHome: Number((optNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(optNet),
+            monetizedBenefitsAndRetirementValueAnnual: Math.round(contractorRetire),
+            trueTotalEconomicPackageAnnual: Math.round(optNet + contractorRetire),
             qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, cTotalTax - optTotalTax)),
             lineItemNotes: [`Corporate + Dividend Tax Saved: ${activeCur.symbol}${Math.round(Math.max(0, cTotalTax - optTotalTax)).toLocaleString()}`],
-        };
-
-        return {
-            employeeRegime,
-            standardContractorRegime,
-            optimizedEntityRegime,
-            ukIr35KidWaterfall,
-            usScheduleSeAndScorp,
-        };
-    }
-
-    if (inputs.jurisdiction === 'IN') {
-        // India FY 2025-26 / AY 2026-27 New Tax Regime (Sec 115BAC) + 4% Health & Education Cess
-        const inBrackets = [
-            { upTo: 400000, rate: 0 },
-            { upTo: 800000, rate: 0.05 },
-            { upTo: 1200000, rate: 0.1 },
-            { upTo: 1600000, rate: 0.15 },
-            { upTo: 2000000, rate: 0.2 },
-            { upTo: 2400000, rate: 0.25 },
-            { upTo: Infinity, rate: 0.3 },
-        ];
-        const empTaxable = Math.max(0, empGrossCash - 75000); // ₹75,000 Standard Deduction
-        const { totalTax: empBaseTax, marginalRate: empMarg } = computeProgressiveTax(empTaxable, inBrackets);
-        const empTotalTax = (empTaxable <= 1200000 ? 0 : empBaseTax) * 1.04;
-        const empNet = Math.max(0, empGrossCash - empTotalTax);
-
-        // Col B: Regular Consultant (Actual profit = Gross - Expenses)
-        const regProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth);
-        const { totalTax: regBaseTax, marginalRate: regMarg } = computeProgressiveTax(regProfit, inBrackets);
-        const regTotalTax = (regProfit <= 1200000 ? 0 : regBaseTax) * 1.04;
-        const regNet = Math.max(0, contractorAnnualGross - expenses - selfHealth - regTotalTax);
-
-        // Col C: Section 44ADA Presumptive Taxation (50% of Gross Receipts deemed taxable profit up to ₹75L!)
-        const sec44AdaTaxable = contractorAnnualGross * 0.5;
-        const { totalTax: adaBaseTax, marginalRate: adaMarg } = computeProgressiveTax(sec44AdaTaxable, inBrackets);
-        const adaTotalTax = (sec44AdaTaxable <= 1200000 ? 0 : adaBaseTax) * 1.04;
-        const adaNet = Math.max(
-            0,
-            contractorAnnualGross - expenses - entityFees - selfHealth - adaTotalTax
-        );
-
-        const employeeRegime: RegimeFinancialBreakdown = {
-            regimeId: 'FULL_TIME_EMPLOYEE',
-            regimeTitle: meta.employeeRegimeName,
-            regimeSubtitle: 'Sec 115BAC New Regime Slabs + ₹75,000 Standard Deduction + 4% Cess',
-            grossTopLineAnnual: Math.round(empGrossCash),
-            deductibleExpensesAndFeesAnnual: 75000,
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(empTaxable),
-            incomeTaxFederalOrNationalAnnual: Math.round(empTotalTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
-            effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
-            marginalTaxRatePercent: Number((empMarg * 104).toFixed(1)),
-            netCashTakeHomeAnnual: Math.round(empNet),
-            netCashTakeHomeMonthly: Math.round(empNet / 12),
-            netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits),
-            trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits),
-            qbiOrSpecialDeductionSavedAnnual: 0,
-            lineItemNotes: [`Taxable Salary after ₹75,000 Std Deduction: ₹${Math.round(empTaxable).toLocaleString()}`],
-        };
-
-        const standardContractorRegime: RegimeFinancialBreakdown = {
-            regimeId: 'STANDARD_CONTRACTOR',
-            regimeTitle: meta.standardContractorRegimeName,
-            regimeSubtitle: 'Taxed on actual net profit (Gross minus documented expenses)',
-            grossTopLineAnnual: Math.round(contractorAnnualGross),
-            deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(regProfit),
-            incomeTaxFederalOrNationalAnnual: Math.round(regTotalTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(regTotalTax),
-            effectiveTaxRatePercent:
-                contractorAnnualGross > 0 ? Number(((regTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
-            marginalTaxRatePercent: Number((regMarg * 104).toFixed(1)),
-            netCashTakeHomeAnnual: Math.round(regNet),
-            netCashTakeHomeMonthly: Math.round(regNet / 12),
-            netEffectiveHourlyTakeHome: Number((regNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(regNet),
-            qbiOrSpecialDeductionSavedAnnual: 0,
-            lineItemNotes: [`Taxable Professional Profit: ₹${Math.round(regProfit).toLocaleString()}`],
-        };
-
-        const optimizedEntityRegime: RegimeFinancialBreakdown = {
-            regimeId: 'OPTIMIZED_ENTITY',
-            regimeTitle: meta.optimizedEntityRegimeName,
-            regimeSubtitle: 'Section 44ADA deems 50% of gross receipts as expense-free deduction',
-            grossTopLineAnnual: Math.round(contractorAnnualGross),
-            deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
-            employerSideDeductionsFromAssignmentAnnual: 0,
-            taxableIncomeBaseAnnual: Math.round(sec44AdaTaxable),
-            incomeTaxFederalOrNationalAnnual: Math.round(adaTotalTax),
-            stateOrProvincialTaxAnnual: 0,
-            socialSecurityOrEmployeeNiAnnual: 0,
-            selfEmploymentOrDividendTaxAnnual: 0,
-            corporateOrEntityTaxAnnual: 0,
-            totalTaxesAndStatutoryDeductionsAnnual: Math.round(adaTotalTax),
-            effectiveTaxRatePercent:
-                contractorAnnualGross > 0 ? Number(((adaTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
-            marginalTaxRatePercent: Number((adaMarg * 52).toFixed(1)),
-            netCashTakeHomeAnnual: Math.round(adaNet),
-            netCashTakeHomeMonthly: Math.round(adaNet / 12),
-            netEffectiveHourlyTakeHome: Number((adaNet / billableHoursPerYear).toFixed(2)),
-            monetizedBenefitsAndRetirementValueAnnual: 0,
-            trueTotalEconomicPackageAnnual: Math.round(adaNet),
-            qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, regTotalTax - adaTotalTax)),
-            lineItemNotes: [
-                `Section 44ADA 50% Presumptive Taxable Base: ₹${Math.round(sec44AdaTaxable).toLocaleString()} (Tax Saved: ₹${Math.round(Math.max(0, regTotalTax - adaTotalTax)).toLocaleString()})`,
-            ],
-        };
-
-        return {
-            employeeRegime,
-            standardContractorRegime,
-            optimizedEntityRegime,
-            ukIr35KidWaterfall,
-            usScheduleSeAndScorp,
-        };
-    }
-
-    // Remaining Jurisdictions: CA (Canada), AU (Australia), DE (Germany), AE (UAE)
-    const bracketsByCountry: Record<string, { upTo: number; rate: number }[]> = {
-        CA: [
-            { upTo: 16129, rate: 0 },
-            { upTo: 57375, rate: 0.145 },
-            { upTo: 114750, rate: 0.205 },
-            { upTo: 177882, rate: 0.26 },
-            { upTo: 253414, rate: 0.29 },
-            { upTo: Infinity, rate: 0.33 },
-        ],
-        AU: [
-            { upTo: 18200, rate: 0 },
-            { upTo: 45000, rate: 0.16 },
-            { upTo: 135000, rate: 0.3 },
-            { upTo: 190000, rate: 0.37 },
-            { upTo: Infinity, rate: 0.45 },
-        ],
-        DE: [
-            { upTo: 12096, rate: 0 },
-            { upTo: 68480, rate: 0.28 },
-            { upTo: 277825, rate: 0.42 },
-            { upTo: Infinity, rate: 0.45 },
-        ],
-        AE: [{ upTo: Infinity, rate: 0 }],
-    };
-
-    const activeBrackets = bracketsByCountry[inputs.jurisdiction] || bracketsByCountry.CA;
-
-    // Employee calculation for CA / AU / DE / AE
-    const empSocial =
-        inputs.jurisdiction === 'CA'
-            ? Math.min(4430, Math.max(0, empGrossCash - 3500) * 0.0595) + 1077 // CPP + CPP2 + EI
-            : inputs.jurisdiction === 'AU'
-                ? empGrossCash * 0.02 // 2% Medicare Levy (12% Super is paid on top by employer)
-                : inputs.jurisdiction === 'DE'
-                    ? Math.min(empGrossCash, 96600) * 0.205 // Employee half of German Sozialversicherung
-                    : 0;
-
-    const { totalTax: empFed, marginalRate: empMarg } = computeProgressiveTax(
-        Math.max(0, empGrossCash - employeeOwnRetirementAnnual),
-        activeBrackets
-    );
-    const empState = Math.max(0, empGrossCash - employeeOwnRetirementAnnual) * stateRate;
-    const empTotalTax = empFed + empState + empSocial;
-    const empNet = Math.max(0, empGrossCash - empTotalTax);
-
-    // Standard Contractor (Sole Prop / ABN / Freiberufler)
-    const netProfit = Math.max(0, contractorAnnualGross - expenses - selfHealth - contractorRetire);
-    const contractorSocial =
-        inputs.jurisdiction === 'CA'
-            ? Math.min(8860, Math.max(0, netProfit - 3500) * 0.119) // Double CPP (Employer + Employee)
-            : inputs.jurisdiction === 'AU'
-                ? netProfit * 0.02
-                : 0;
-    const { totalTax: cFed, marginalRate: cMarg } = computeProgressiveTax(netProfit, activeBrackets);
-    const cState = netProfit * stateRate;
-    const cTotalTax = cFed + cState + contractorSocial;
-    const cNet = Math.max(0, contractorAnnualGross - expenses - selfHealth - cTotalTax);
-
-    // Optimized Entity (CCPC / Pty Ltd / UAE Free Zone)
-    const corpProfit = Math.max(
-        0,
-        contractorAnnualGross - expenses - entityFees - selfHealth - contractorRetire
-    );
-    const corpTaxRate =
-        inputs.jurisdiction === 'CA'
-            ? 0.122 // 9% Federal + 3.2% Provincial CCPC Small Business Rate
-            : inputs.jurisdiction === 'AU'
-                ? 0.25 // 25% Base Rate Entity Pty Ltd
-                : inputs.jurisdiction === 'AE'
-                    ? corpProfit > 375000
-                        ? ((corpProfit - 375000) * 0.09) / Math.max(1, corpProfit)
-                        : 0
-                    : 0.24;
-    const corpTax = corpProfit * corpTaxRate;
-    const divTax =
-        inputs.jurisdiction === 'AE'
-            ? 0
-            : Math.max(0, (corpProfit - corpTax) * (inputs.jurisdiction === 'CA' ? 0.14 : 0.09));
-    const optTotalTax = corpTax + divTax;
-    const optNet = Math.max(
-        0,
-        contractorAnnualGross - expenses - entityFees - selfHealth - optTotalTax
-    );
-
-    const employeeRegime: RegimeFinancialBreakdown = {
-        regimeId: 'FULL_TIME_EMPLOYEE',
-        regimeTitle: meta.employeeRegimeName,
-        regimeSubtitle: `${meta.authorityName} Statutory Employee Schedule`,
-        grossTopLineAnnual: Math.round(empGrossCash),
-        deductibleExpensesAndFeesAnnual: 0,
-        employerSideDeductionsFromAssignmentAnnual: 0,
-        taxableIncomeBaseAnnual: Math.round(empGrossCash),
-        incomeTaxFederalOrNationalAnnual: Math.round(empFed),
-        stateOrProvincialTaxAnnual: Math.round(empState),
-        socialSecurityOrEmployeeNiAnnual: Math.round(empSocial),
-        selfEmploymentOrDividendTaxAnnual: 0,
-        corporateOrEntityTaxAnnual: 0,
-        totalTaxesAndStatutoryDeductionsAnnual: Math.round(empTotalTax),
-        effectiveTaxRatePercent: empGrossCash > 0 ? Number(((empTotalTax / empGrossCash) * 100).toFixed(2)) : 0,
-        marginalTaxRatePercent: Number(((empMarg + stateRate) * 100).toFixed(1)),
-        netCashTakeHomeAnnual: Math.round(empNet),
-        netCashTakeHomeMonthly: Math.round(empNet / 12),
-        netEffectiveHourlyTakeHome: Number((empNet / billableHoursPerYear).toFixed(2)),
-        monetizedBenefitsAndRetirementValueAnnual: Math.round(empMonetizedBenefits),
-        trueTotalEconomicPackageAnnual: Math.round(empNet + empMonetizedBenefits),
-        qbiOrSpecialDeductionSavedAnnual: 0,
-        lineItemNotes: [`Statutory Tax + Social Levy: ${meta.currencySymbol}${Math.round(empTotalTax).toLocaleString()}`],
-    };
-
-    const standardContractorRegime: RegimeFinancialBreakdown = {
-        regimeId: 'STANDARD_CONTRACTOR',
-        regimeTitle: meta.standardContractorRegimeName,
-        regimeSubtitle: 'Unincorporated Sole Trader / Freelancer Schedule',
-        grossTopLineAnnual: Math.round(contractorAnnualGross),
-        deductibleExpensesAndFeesAnnual: Math.round(expenses + selfHealth),
-        employerSideDeductionsFromAssignmentAnnual: 0,
-        taxableIncomeBaseAnnual: Math.round(netProfit),
-        incomeTaxFederalOrNationalAnnual: Math.round(cFed),
-        stateOrProvincialTaxAnnual: Math.round(cState),
-        socialSecurityOrEmployeeNiAnnual: 0,
-        selfEmploymentOrDividendTaxAnnual: Math.round(contractorSocial),
-        corporateOrEntityTaxAnnual: 0,
-        totalTaxesAndStatutoryDeductionsAnnual: Math.round(cTotalTax),
-        effectiveTaxRatePercent:
-            contractorAnnualGross > 0 ? Number(((cTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
-        marginalTaxRatePercent: Number(((cMarg + stateRate) * 100).toFixed(1)),
-        netCashTakeHomeAnnual: Math.round(cNet),
-        netCashTakeHomeMonthly: Math.round(cNet / 12),
-        netEffectiveHourlyTakeHome: Number((cNet / billableHoursPerYear).toFixed(2)),
-        monetizedBenefitsAndRetirementValueAnnual: 0,
-        trueTotalEconomicPackageAnnual: Math.round(cNet),
-        qbiOrSpecialDeductionSavedAnnual: 0,
-        lineItemNotes: [`Net Taxable Business Profit: ${meta.currencySymbol}${Math.round(netProfit).toLocaleString()}`],
-    };
-
-    const optimizedEntityRegime: RegimeFinancialBreakdown = {
-        regimeId: 'OPTIMIZED_ENTITY',
-        regimeTitle: meta.optimizedEntityRegimeName,
-        regimeSubtitle: 'Corporate Small Business Rate + Optimal Dividend Extraction',
-        grossTopLineAnnual: Math.round(contractorAnnualGross),
-        deductibleExpensesAndFeesAnnual: Math.round(expenses + entityFees + selfHealth),
-        employerSideDeductionsFromAssignmentAnnual: 0,
-        taxableIncomeBaseAnnual: Math.round(corpProfit),
-        incomeTaxFederalOrNationalAnnual: 0,
-        stateOrProvincialTaxAnnual: 0,
-        socialSecurityOrEmployeeNiAnnual: 0,
-        selfEmploymentOrDividendTaxAnnual: Math.round(divTax),
-        corporateOrEntityTaxAnnual: Math.round(corpTax),
-        totalTaxesAndStatutoryDeductionsAnnual: Math.round(optTotalTax),
-        effectiveTaxRatePercent:
-            contractorAnnualGross > 0 ? Number(((optTotalTax / contractorAnnualGross) * 100).toFixed(2)) : 0,
-        marginalTaxRatePercent: Number(((corpTaxRate + 0.1) * 100).toFixed(1)),
-        netCashTakeHomeAnnual: Math.round(optNet),
-        netCashTakeHomeMonthly: Math.round(optNet / 12),
-        netEffectiveHourlyTakeHome: Number((optNet / billableHoursPerYear).toFixed(2)),
-        monetizedBenefitsAndRetirementValueAnnual: 0,
-        trueTotalEconomicPackageAnnual: Math.round(optNet),
-        qbiOrSpecialDeductionSavedAnnual: Math.round(Math.max(0, cTotalTax - optTotalTax)),
-        lineItemNotes: [
-            `Corporate Tax: ${meta.currencySymbol}${Math.round(corpTax).toLocaleString()} + Dividend Tax: ${meta.currencySymbol}${Math.round(divTax).toLocaleString()}`,
-        ],
-    };
-
-    return {
-        employeeRegime,
-        standardContractorRegime,
-        optimizedEntityRegime,
+        },
         ukIr35KidWaterfall,
         usScheduleSeAndScorp,
     };
 }
 
 // ============================================================================
-// 4. BINARY-SEARCH REVERSE BREAK-EVEN RATE SOLVER (PRECISION < 0.01)
+// 4. UNROUNDED BINARY-SEARCH BREAK-EVEN SOLVER WITH CONVERGENCE CHECK
 // ============================================================================
 
-/**
- * Finds the exact Annual Contractor Gross Revenue required so that the Standard Contractor
- * Net Cash Take-Home equals `targetNetAnnual` (either Full-Time Cash Only or Full-Time Cash + Benefits).
- */
 export function solveRequiredContractorAnnualGross(
     inputs: ContractorVsEmployeeInputs,
     targetPackageAnnual: number,
@@ -1887,7 +2450,7 @@ export function solveRequiredContractorAnnualGross(
         high *= 2;
     }
 
-    for (let iter = 0; iter < 48; iter++) {
+    for (let iter = 0; iter < 54; iter++) {
         const mid = (low + high) / 2;
         if (getMetric(mid) < targetPackageAnnual) {
             low = mid;
@@ -1895,11 +2458,11 @@ export function solveRequiredContractorAnnualGross(
             high = mid;
         }
     }
-    return Math.round((low + high) / 2);
+    return Number(((low + high) / 2).toFixed(2));
 }
 
 // ============================================================================
-// 5. 12-POINT WORKER CLASSIFICATION & IR35 CEST AUDIT LINTER + 1-CLICK FIXER
+// 5. JURISDICTION-AWARE WORKER CLASSIFICATION RISK ASSESSMENT (12 INDICATORS)
 // ============================================================================
 
 export function evaluateClassificationAudit(
@@ -1910,11 +2473,17 @@ export function evaluateClassificationAudit(
     lintIssues: ClassificationLintIssue[];
 } {
     const f = inputs.classificationFlags;
+    const j = inputs.jurisdiction;
     const issues: ClassificationLintIssue[] = [];
     let score = 100;
 
+    // Jurisdiction-weighted risk penalties
+    const subWeight = j === 'UK' || j === 'AU' ? 22 : 16;
+    const ctrlWeight = j === 'US' || j === 'DE' ? 22 : 18;
+    const singleClientWeight = j === 'DE' || j === 'AU' || j === 'CA' ? 14 : 8;
+
     if (!f.hasUnfetteredRightOfSubstitution) {
-        score -= 18;
+        score -= subWeight;
         issues.push({
             id: 'CLS-001',
             ruleCode: 'IR35-CEST-001_NO_RIGHT_OF_SUBSTITUTION',
@@ -1922,14 +2491,14 @@ export function evaluateClassificationAudit(
             factorCategory: 'SUBSTITUTION',
             title: 'Personal Service Requirement (No Unfettered Right of Substitution)',
             explanation:
-                'Under UK HMRC CEST (Ready Mixed Concrete v Minister of Pensions) and IRS Common Law, if the contractor must perform the work personally and cannot send a qualified substitute, the engagement strongly points to disguised employment (Inside IR35).',
+                'Under UK HMRC CEST (Ready Mixed Concrete v Minister of Pensions), Australian ATO TR 2023/4 delegation rules, and IRS Common Law, if the contractor must perform the work personally and cannot send a qualified substitute, the engagement strongly points to employment status.',
             remediationClause:
                 'Contractor retains the unfettered right to provide a suitably qualified and vetted substitute at Contractor’s own expense without unreasonable Client veto.',
         });
     }
 
     if (f.clientControlsHowAndWhenWorkDone) {
-        score -= 18;
+        score -= ctrlWeight;
         issues.push({
             id: 'CLS-002',
             ruleCode: 'IRS-DOL-002_BEHAVIORAL_SUPERVISION_CONTROL',
@@ -1952,7 +2521,7 @@ export function evaluateClassificationAudit(
             factorCategory: 'MUTUALITY_OF_OBLIGATION',
             title: 'Ongoing Mutuality of Obligation (MOO) Beyond Project Scope',
             explanation:
-                'An obligation for the client to continuously provide paid work beyond the current Statement of Work (and for the worker to accept it) mirrors an evergreen employment contract.',
+                'An obligation for the client to continuously provide paid work beyond the current Statement of Work (and for the worker to accept it) mirrors an ongoing employment contract.',
             remediationClause:
                 'Neither Client nor Contractor is under any obligation to offer or accept further work once the contracted Statement of Work milestones are completed.',
         });
@@ -1989,13 +2558,13 @@ export function evaluateClassificationAudit(
     }
 
     if (f.singleClientOver80PercentRevenue) {
-        score -= 8;
+        score -= singleClientWeight;
         issues.push({
             id: 'CLS-006',
             ruleCode: 'DE-DRV-006_SINGLE_CLIENT_ECONOMIC_DEPENDENCY',
             severity: 'WARNING',
             factorCategory: 'INTEGRATION_AND_EXCLUSIVITY',
-            title: 'Over 80% of Annual Revenue Derived from a Single Client (Scheinselbstständigkeit / PSI Risk)',
+            title: 'Over 80% of Annual Revenue Derived from a Single Client (Scheinselbstständigkeit / PSI / PSB Risk)',
             explanation:
                 'In Germany (DRV >5/6 revenue rule), Australia (ATO 80/20 PSI rule), and Canada (CRA PSB), deriving >80% of revenue from one client without unrelated clients triggers automatic audit scrutiny.',
             remediationClause:
@@ -2012,7 +2581,7 @@ export function evaluateClassificationAudit(
             factorCategory: 'INTEGRATION_AND_EXCLUSIVITY',
             title: 'Contractor Integrated into Internal Org Chart, Performance Reviews & Employee Perks',
             explanation:
-                'Managing internal staff, appearing on the company org chart without a "External Vendor" designation, or receiving employee perks (PTO, bonuses, gym stipends) destroys independent contractor status.',
+                'Managing internal staff, appearing on the company org chart without an "External Vendor" designation, or receiving employee perks (PTO, bonuses, stipends) undermines independent contractor status.',
             remediationClause:
                 'Contractor is identified externally and internally as an Independent B2B Vendor and is excluded from all employee benefit plans, PTO accrual, and internal HR appraisals.',
         });
@@ -2126,24 +2695,63 @@ export function applySafeHarborClassificationFixes(
     };
 }
 
+function scaleRegimeByFx(regime: RegimeFinancialBreakdown, fx: number): RegimeFinancialBreakdown {
+    if (fx === 1) return regime;
+    const scale = (v: number) => Math.round(v * fx);
+    return {
+        ...regime,
+        grossTopLineAnnual: scale(regime.grossTopLineAnnual),
+        deductibleExpensesAndFeesAnnual: scale(regime.deductibleExpensesAndFeesAnnual),
+        employerSideDeductionsFromAssignmentAnnual: scale(regime.employerSideDeductionsFromAssignmentAnnual),
+        taxableIncomeBaseAnnual: scale(regime.taxableIncomeBaseAnnual),
+        incomeTaxFederalOrNationalAnnual: scale(regime.incomeTaxFederalOrNationalAnnual),
+        stateOrProvincialTaxAnnual: scale(regime.stateOrProvincialTaxAnnual),
+        socialSecurityOrEmployeeNiAnnual: scale(regime.socialSecurityOrEmployeeNiAnnual),
+        selfEmploymentOrDividendTaxAnnual: scale(regime.selfEmploymentOrDividendTaxAnnual),
+        corporateOrEntityTaxAnnual: scale(regime.corporateOrEntityTaxAnnual),
+        totalTaxesAndStatutoryDeductionsAnnual: scale(regime.totalTaxesAndStatutoryDeductionsAnnual),
+        netCashTakeHomeAnnual: scale(regime.netCashTakeHomeAnnual),
+        netCashTakeHomeMonthly: scale(regime.netCashTakeHomeMonthly),
+        netEffectiveHourlyTakeHome: Number((regime.netEffectiveHourlyTakeHome * fx).toFixed(2)),
+        monetizedBenefitsAndRetirementValueAnnual: scale(regime.monetizedBenefitsAndRetirementValueAnnual),
+        trueTotalEconomicPackageAnnual: scale(regime.trueTotalEconomicPackageAnnual),
+        qbiOrSpecialDeductionSavedAnnual: scale(regime.qbiOrSpecialDeductionSavedAnnual),
+    };
+}
+
 // ============================================================================
-// 6. COMPLETE REPORT COMPILER, SVG WATERFALL CHART & 6-FORMAT EXPORTERS
+// 6. COMPLETE REPORT COMPILER, FX CONVERSION LAYER & 6-FORMAT EXPORTERS
 // ============================================================================
 
 export function compileContractorVsEmployeeReport(
-    inputs: ContractorVsEmployeeInputs
+    rawInputs: ContractorVsEmployeeInputs
 ): CompiledContractorVsEmployeeReport {
+    const { normalized: inputs, validationWarnings } = validateAndNormalizeCalculatorInputs(rawInputs);
     const baseMeta = JURISDICTION_CATALOG[inputs.jurisdiction];
+    const statutoryCurrency = getIsoCurrencyByCode(baseMeta.currencyCode, 'USD');
     const activeCurrency = getIsoCurrencyByCode(inputs.currencyCode, baseMeta.currencyCode);
+
+    // Genuine FX Conversion Layer:
+    // For GLOBAL_CUSTOM, calculations already run natively in the chosen currency (fx = 1.0).
+    // For the 8 statutory countries, tax brackets & statutory caps execute in the country's statutory currency
+    // (e.g. USD for US, GBP for UK) and then convert by fxRate when a different display currency is selected!
+    const appliedFxRateDisplayPerStatutory =
+        inputs.jurisdiction === 'GLOBAL_CUSTOM' || activeCurrency.code === statutoryCurrency.code
+            ? 1.0
+            : inputs.fxConversionRate && inputs.fxConversionRate > 0
+                ? Number(inputs.fxConversionRate)
+                : computeCrossRate(statutoryCurrency.code, activeCurrency.code);
+
     const meta: JurisdictionMetadata = {
         ...baseMeta,
         currencyCode: activeCurrency.code,
         currencySymbol: activeCurrency.symbol,
     };
+
     const billableDaysPerYear = Math.max(1, inputs.billableWeeksPerYear * inputs.workingDaysPerWeek);
     const billableHoursPerYear = Math.max(1, billableDaysPerYear * inputs.billableHoursPerDay);
 
-    const contractorAnnualGrossRevenue =
+    const statutoryContractorAnnualGross =
         inputs.contractorRateMode === 'HOURLY'
             ? Math.max(0, inputs.contractorRateInput * billableHoursPerYear)
             : inputs.contractorRateMode === 'DAILY'
@@ -2152,13 +2760,22 @@ export function compileContractorVsEmployeeReport(
                     ? Math.max(0, inputs.contractorRateInput * 12)
                     : Math.max(0, inputs.contractorRateInput);
 
-    const {
-        employeeRegime,
-        standardContractorRegime,
-        optimizedEntityRegime,
-        ukIr35KidWaterfall,
-        usScheduleSeAndScorp,
-    } = evaluateThreeRegimesForGross(inputs, contractorAnnualGrossRevenue);
+    const rawEval = evaluateThreeRegimesForGross(inputs, statutoryContractorAnnualGross);
+    const employeeRegime = scaleRegimeByFx(rawEval.employeeRegime, appliedFxRateDisplayPerStatutory);
+    const standardContractorRegime = scaleRegimeByFx(
+        rawEval.standardContractorRegime,
+        appliedFxRateDisplayPerStatutory
+    );
+    const optimizedEntityRegime = scaleRegimeByFx(
+        rawEval.optimizedEntityRegime,
+        appliedFxRateDisplayPerStatutory
+    );
+    const ukIr35KidWaterfall = rawEval.ukIr35KidWaterfall;
+    const usScheduleSeAndScorp = rawEval.usScheduleSeAndScorp;
+
+    const contractorAnnualGrossRevenue = Math.round(
+        statutoryContractorAnnualGross * appliedFxRateDisplayPerStatutory
+    );
 
     const regimes = [employeeRegime, standardContractorRegime, optimizedEntityRegime];
     const winningRegime = [...regimes].sort(
@@ -2174,29 +2791,42 @@ export function compileContractorVsEmployeeReport(
     const netAnnualAdvantageOfOptimizedEntityVsStandardContractor =
         optimizedEntityRegime.netCashTakeHomeAnnual - standardContractorRegime.netCashTakeHomeAnnual;
 
-    // Binary-search exact Break-Even Contractor Gross to match Employee Cash Only and Employee Total Package
-    const breakEvenGrossTotalPkg = solveRequiredContractorAnnualGross(
+    // Unrounded Binary-Search Break-Even Solver in Statutory Currency, then scaled by FX
+    const rawBreakEvenGrossTotalPkg = solveRequiredContractorAnnualGross(
         inputs,
-        employeeRegime.trueTotalEconomicPackageAnnual,
+        rawEval.employeeRegime.trueTotalEconomicPackageAnnual,
         'STANDARD_CONTRACTOR'
     );
+    const checkSolvedNet = evaluateThreeRegimesForGross(inputs, rawBreakEvenGrossTotalPkg)
+        .standardContractorRegime.netCashTakeHomeAnnual;
+    const breakEvenSolverConverged =
+        Math.abs(checkSolvedNet - rawEval.employeeRegime.trueTotalEconomicPackageAnnual) <= 15;
+
+    const breakEvenGrossTotalPkg = Math.round(
+        rawBreakEvenGrossTotalPkg * appliedFxRateDisplayPerStatutory
+    );
     const exactBreakEvenHourlyRateTotalPkg = Number(
-        (breakEvenGrossTotalPkg / billableHoursPerYear).toFixed(2)
+        ((rawBreakEvenGrossTotalPkg * appliedFxRateDisplayPerStatutory) / billableHoursPerYear).toFixed(2)
     );
     const exactBreakEvenDailyRateTotalPkg = Number(
-        (breakEvenGrossTotalPkg / billableDaysPerYear).toFixed(2)
+        ((rawBreakEvenGrossTotalPkg * appliedFxRateDisplayPerStatutory) / billableDaysPerYear).toFixed(2)
     );
-    const breakEvenGrossOptimizedEntity = solveRequiredContractorAnnualGross(
+
+    const rawBreakEvenGrossOptimizedEntity = solveRequiredContractorAnnualGross(
         inputs,
-        employeeRegime.trueTotalEconomicPackageAnnual,
+        rawEval.employeeRegime.trueTotalEconomicPackageAnnual,
         'OPTIMIZED_ENTITY'
     );
+    const breakEvenGrossOptimizedEntity = Math.round(
+        rawBreakEvenGrossOptimizedEntity * appliedFxRateDisplayPerStatutory
+    );
     const exactBreakEvenHourlyRateOptimizedEntity = Number(
-        (breakEvenGrossOptimizedEntity / billableHoursPerYear).toFixed(2)
+        ((rawBreakEvenGrossOptimizedEntity * appliedFxRateDisplayPerStatutory) / billableHoursPerYear).toFixed(2)
     );
     const exactBreakEvenDailyRateOptimizedEntity = Number(
-        (breakEvenGrossOptimizedEntity / billableDaysPerYear).toFixed(2)
+        ((rawBreakEvenGrossOptimizedEntity * appliedFxRateDisplayPerStatutory) / billableDaysPerYear).toFixed(2)
     );
+
     const recommendedHourlyRateWithBuffer = Number(
         (exactBreakEvenHourlyRateTotalPkg * 1.15).toFixed(2)
     );
@@ -2208,19 +2838,22 @@ export function compileContractorVsEmployeeReport(
         (employeeRegime.grossTopLineAnnual / 260) * totalUnpaidDays
     );
 
-    const breakEvenGrossCashOnly = solveRequiredContractorAnnualGross(
+    const rawBreakEvenGrossCashOnly = solveRequiredContractorAnnualGross(
         inputs,
-        employeeRegime.netCashTakeHomeAnnual
+        rawEval.employeeRegime.netCashTakeHomeAnnual,
+        'STANDARD_CONTRACTOR'
+    );
+    const breakEvenGrossCashOnly = Math.round(
+        rawBreakEvenGrossCashOnly * appliedFxRateDisplayPerStatutory
     );
 
-    // 5-Tier Utilization Sensitivity Matrix (44, 46, 48, 50, 52 billable weeks)
     const breakEvenMatrix: BreakEvenRateRow[] = [44, 46, 48, 50, 52].map((wks) => {
         const days = wks * inputs.workingDaysPerWeek;
         const hrs = Math.max(1, days * inputs.billableHoursPerDay);
-        const hrCash = Number((breakEvenGrossCashOnly / hrs).toFixed(2));
-        const dayCash = Number((breakEvenGrossCashOnly / days).toFixed(2));
-        const hrPkg = Number((breakEvenGrossTotalPkg / hrs).toFixed(2));
-        const dayPkg = Number((breakEvenGrossTotalPkg / days).toFixed(2));
+        const hrCash = Number(((rawBreakEvenGrossCashOnly * appliedFxRateDisplayPerStatutory) / hrs).toFixed(2));
+        const dayCash = Number(((rawBreakEvenGrossCashOnly * appliedFxRateDisplayPerStatutory) / days).toFixed(2));
+        const hrPkg = Number(((rawBreakEvenGrossTotalPkg * appliedFxRateDisplayPerStatutory) / hrs).toFixed(2));
+        const dayPkg = Number(((rawBreakEvenGrossTotalPkg * appliedFxRateDisplayPerStatutory) / days).toFixed(2));
         return {
             billableWeeks: wks,
             billableHoursAnnual: hrs,
@@ -2235,35 +2868,53 @@ export function compileContractorVsEmployeeReport(
         };
     });
 
-    // Employer Total Cost of Employment (TCE) vs. EOR vs. Contractor
+    // Itemized Statutory Employer Cost Estimator (TCE) vs. EOR vs. Contractor
+    const statEmpGross = rawEval.employeeRegime.grossTopLineAnnual;
+    let statEmployerPayrollTax = 0;
+    if (inputs.jurisdiction === 'US') {
+        const ssCap = inputs.taxYear === '2025' ? 176100 : 184500;
+        statEmployerPayrollTax = Math.min(statEmpGross, ssCap) * 0.062 + statEmpGross * 0.0145 + Math.min(statEmpGross, 7000) * 0.026; // FICA + FUTA/SUTA
+    } else if (inputs.jurisdiction === 'UK') {
+        statEmployerPayrollTax = Math.max(0, (statEmpGross - 5000) * 0.155); // 15% Employer NI + 0.5% Levy
+    } else if (inputs.jurisdiction === 'CA') {
+        const cpp1 = Math.max(0, Math.min(statEmpGross, 71300) - 3500) * 0.0595;
+        const cpp2 = Math.max(0, Math.min(statEmpGross, 81200) - 71300) * 0.04;
+        const eiEmp = Math.min(statEmpGross, 65700) * 0.0164 * 1.4; // Employer EI is 1.4x employee rate
+        const eht = statEmpGross * 0.0195; // Employer Health Tax
+        statEmployerPayrollTax = cpp1 + cpp2 + eiEmp + eht;
+    } else if (inputs.jurisdiction === 'AU') {
+        statEmployerPayrollTax = statEmpGross * 0.0485; // State Payroll Tax (~4.85%); 12% Super is already in benefits
+    } else if (inputs.jurisdiction === 'DE') {
+        statEmployerPayrollTax = Math.min(statEmpGross, 66150) * 0.0985 + Math.min(statEmpGross, 96600) * 0.106; // Arbeitgeberanteil KV/PV + RV/AV
+    } else {
+        statEmployerPayrollTax = statEmpGross * 0.06;
+    }
+
     const empGross = employeeRegime.grossTopLineAnnual;
-    const employerPayrollRate =
-        inputs.jurisdiction === 'US'
-            ? 0.082
-            : inputs.jurisdiction === 'UK'
-                ? 0.155
-                : inputs.jurisdiction === 'CA'
-                    ? 0.085
-                    : inputs.jurisdiction === 'AU'
-                        ? 0.168 // 12% Super + ~4.8% State Payroll Tax
-                        : inputs.jurisdiction === 'DE'
-                            ? 0.208
-                            : 0.06;
-    const directEmployerPayrollTaxesAnnual = Math.round(empGross * employerPayrollRate);
-    const directEmployerBenefitsAndRetirementAnnual =
-        employeeRegime.monetizedBenefitsAndRetirementValueAnnual;
-    const directEmployerWorkersCompAndOverheadAnnual = Math.round(empGross * 0.025);
+    const directEmployerPayrollTaxesAnnual = Math.round(
+        statEmployerPayrollTax * appliedFxRateDisplayPerStatutory
+    );
+    const directEmployerBenefitsAndRetirementAnnual = Math.round(
+        (rawEval.employeeRegime.monetizedBenefitsAndRetirementValueAnnual -
+            inputs.employeeBaseSalaryAnnual * (inputs.employeeRetirementContributionPercent / 100)) *
+        appliedFxRateDisplayPerStatutory
+    );
+    const directEmployerWorkersCompAndOverheadAnnual = Math.round(empGross * 0.018);
     const directEmployeeTotalCostOfEmploymentAnnual =
         empGross +
         directEmployerPayrollTaxesAnnual +
         directEmployerBenefitsAndRetirementAnnual +
         directEmployerWorkersCompAndOverheadAnnual;
 
-    const eorAnnualPlatformFee = meta.eorMonthlyPlatformFeeLocal * 12;
+    const eorAnnualPlatformFee = Math.round(
+        meta.eorMonthlyPlatformFeeLocal * 12 * appliedFxRateDisplayPerStatutory
+    );
     const eorTotalAnnualCost = directEmployeeTotalCostOfEmploymentAnnual + eorAnnualPlatformFee;
-    const contractorManagementPlatformFeeAnnual = meta.contractorMgmtMonthlyFeeLocal * 12;
+    const contractorManagementPlatformFeeAnnual = Math.round(
+        meta.contractorMgmtMonthlyFeeLocal * 12 * appliedFxRateDisplayPerStatutory
+    );
     const contractorTotalCompanySpendAnnual =
-        Math.round(contractorAnnualGrossRevenue) + contractorManagementPlatformFeeAnnual;
+        contractorAnnualGrossRevenue + contractorManagementPlatformFeeAnnual;
 
     const employerTceComparison: EmployerTceAndEorComparison = {
         directEmployeeBaseAndBonusAnnual: empGross,
@@ -2273,7 +2924,7 @@ export function compileContractorVsEmployeeReport(
         directEmployeeTotalCostOfEmploymentAnnual,
         eorAnnualPlatformFee,
         eorTotalAnnualCost,
-        contractorGrossInvoiceAnnual: Math.round(contractorAnnualGrossRevenue),
+        contractorGrossInvoiceAnnual: contractorAnnualGrossRevenue,
         contractorManagementPlatformFeeAnnual,
         contractorTotalCompanySpendAnnual,
         employerAnnualSavingsHiringContractorVsDirect:
@@ -2281,15 +2932,77 @@ export function compileContractorVsEmployeeReport(
         employerAnnualSavingsHiringContractorVsEor:
             eorTotalAnnualCost - contractorTotalCompanySpendAnnual,
         estimatedMisclassificationBackTaxAndPenaltyRisk: Math.round(
-            directEmployerPayrollTaxesAnnual * 1.45 + directEmployerBenefitsAndRetirementAnnual * 0.5
+            directEmployerPayrollTaxesAnnual * 1.4 + directEmployerBenefitsAndRetirementAnnual * 0.5
         ),
     };
 
-    // Classification Audit
+    // Classification Risk Assessment & Contractual Addendum Clause Generator
     const { complianceScore, verdict, lintIssues } = evaluateClassificationAudit(inputs);
 
-    // Recruiter / Client Rate Negotiation Brief
     const cur = meta.currencySymbol;
+    const statCur = statutoryCurrency.symbol;
+
+    const calculationAssumptionsAuditTrail = [
+        {
+            stepNumber: 1,
+            category: 'Jurisdiction & Tax Year',
+            label: `${baseMeta.name} (${inputs.taxYear || '2026'})`,
+            formulaOrRule: baseMeta.taxYearLabel,
+            statutoryAmountFormatted: `Statutory Currency: ${statutoryCurrency.code} (${statCur}) | Display Currency: ${activeCurrency.code} (${cur}) @ FX ${appliedFxRateDisplayPerStatutory}`,
+        },
+        {
+            stepNumber: 2,
+            category: 'Billable Utilization Schedule',
+            label: `${inputs.billableWeeksPerYear} Wks/Yr × ${inputs.workingDaysPerWeek} Days/Wk × ${inputs.billableHoursPerDay} Hrs/Day`,
+            formulaOrRule: `${52 - inputs.billableWeeksPerYear} Unbillable Weeks (PTO/Holidays/Bench)`,
+            statutoryAmountFormatted: `${billableHoursPerYear} Billable Hours/Yr (${billableDaysPerYear} Days/Yr)`,
+        },
+        {
+            stepNumber: 3,
+            category: 'Full-Time Employee Baseline',
+            label: rawEval.employeeRegime.regimeTitle,
+            formulaOrRule: rawEval.employeeRegime.regimeSubtitle,
+            statutoryAmountFormatted: `Gross: ${statCur}${rawEval.employeeRegime.grossTopLineAnnual.toLocaleString()} → Tax: ${statCur}${rawEval.employeeRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} → Net Cash: ${statCur}${rawEval.employeeRegime.netCashTakeHomeAnnual.toLocaleString()} (+ ${statCur}${rawEval.employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()} Benefits/Retire)`,
+        },
+        {
+            stepNumber: 4,
+            category: 'Standard Contractor Schedule',
+            label: rawEval.standardContractorRegime.regimeTitle,
+            formulaOrRule: rawEval.standardContractorRegime.regimeSubtitle,
+            statutoryAmountFormatted: `Gross: ${statCur}${rawEval.standardContractorRegime.grossTopLineAnnual.toLocaleString()} → Tax: ${statCur}${rawEval.standardContractorRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} → Net Cash: ${statCur}${rawEval.standardContractorRegime.netCashTakeHomeAnnual.toLocaleString()}`,
+        },
+        {
+            stepNumber: 5,
+            category: 'Optimized Entity / Special Regime',
+            label: rawEval.optimizedEntityRegime.regimeTitle,
+            formulaOrRule: rawEval.optimizedEntityRegime.regimeSubtitle,
+            statutoryAmountFormatted: `Gross: ${statCur}${rawEval.optimizedEntityRegime.grossTopLineAnnual.toLocaleString()} → Tax: ${statCur}${rawEval.optimizedEntityRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} → Net Cash: ${statCur}${rawEval.optimizedEntityRegime.netCashTakeHomeAnnual.toLocaleString()}`,
+        },
+        {
+            stepNumber: 6,
+            category: 'Reverse Break-Even Solver (54-Iteration Binary Search)',
+            label: `Matches 100% of Employee Net Cash + Benefits (${cur}${employeeRegime.trueTotalEconomicPackageAnnual.toLocaleString()})`,
+            formulaOrRule: `Converged: ${breakEvenSolverConverged ? 'YES' : 'BOUNDARY_REACHED'}`,
+            statutoryAmountFormatted: `Standard Break-Even: ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day) | Entity Break-Even: ${cur}${exactBreakEvenHourlyRateOptimizedEntity}/hr`,
+        },
+    ];
+
+    const contractualAddendumClausesText = [
+        `INDEPENDENT CONTRACTOR STATEMENT OF WORK (SOW) & SAFE-HARBOR ADDENDUM`,
+        `Jurisdiction Reference: ${baseMeta.classificationTestName}`,
+        `============================================================================`,
+        `1. RIGHT OF SUBSTITUTION & DELEGATION:`,
+        `   Contractor retains the unfettered right to engage or substitute a suitably qualified and security-vetted sub-contractor or replacement personnel at Contractor's own expense. Client may only refuse a substitute on reasonable, objective security or qualification grounds.`,
+        `2. AUTONOMY & ABSENCE OF SUPERVISION, DIRECTION OR CONTROL (SDC):`,
+        `   Contractor retains complete operational autonomy over the manner, methodology, working hours, and location of service delivery, subject solely to agreed technical specifications and milestone deadlines.`,
+        `3. ABSENCE OF MUTUALITY OF OBLIGATION (MOO):`,
+        `   Client is under no obligation to offer additional projects or tasks beyond the milestones defined in this Statement of Work, and Contractor is under no obligation to accept any future extension.`,
+        `4. FINANCIAL RISK, DEFECT REMEDIATION & COMMERCIAL INSURANCE:`,
+        `   Contractor warrants all deliverables against material defects and shall rectify any non-conforming deliverable at Contractor's own unbilled time and cost. Contractor maintains active Professional Indemnity and Commercial Liability insurance.`,
+        `5. EQUIPMENT & NON-EXCLUSIVITY:`,
+        `   Contractor provides all primary computing hardware and software licenses and may concurrently provide services to other non-competing B2B clients.`,
+    ].join('\n');
+
     const recruiterNegotiationBriefText = [
         `SUBJECT: Compensation & Rate Alignment — ${meta.name.split('(')[0].trim()} Contract Engagement`,
         ``,
@@ -2299,31 +3012,30 @@ export function compileContractorVsEmployeeReport(
         ``,
         `1. Full-Time Employee Baseline Package:`,
         `   • Base Salary + Bonus: ${cur}${empGross.toLocaleString()}/yr (Net Cash Take-Home: ${cur}${employeeRegime.netCashTakeHomeAnnual.toLocaleString()}/yr)`,
-        `   • Employer-Paid Health, Retirement Match & Benefits: +${cur}${employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()}/yr`,
+        `   • Employer Benefits & Retirement Value: +${cur}${employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()}/yr`,
         `   • True Total Full-Time Economic Value: ${cur}${employeeRegime.trueTotalEconomicPackageAnnual.toLocaleString()}/yr`,
         ``,
         `2. Statutory Contractor Overhead & Self-Funded Benefits:`,
-        `   • As an independent contractor, I absorb both employer and employee payroll/self-employment taxes, ${52 - inputs.billableWeeksPerYear} weeks of unpaid PTO/public holidays, self-funded health coverage (${cur}${Math.round(inputs.contractorSelfFundedHealthAnnual).toLocaleString()}/yr), and B2B operating/accounting expenses (${cur}${Math.round(inputs.deductibleBusinessExpensesAnnual).toLocaleString()}/yr).`,
+        `   • As an independent contractor, I absorb self-employment/entity taxes, ${52 - inputs.billableWeeksPerYear} weeks of unpaid PTO/holidays, self-funded health coverage, and B2B operating/accounting expenses.`,
         ``,
         `3. Break-Even & Target Contract Rate:`,
-        `   • Exact Break-Even Rate (to match full-time net cash + benefits): ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day | ${cur}${breakEvenGrossTotalPkg.toLocaleString()}/yr)`,
+        `   • Break-Even Rate (to match full-time net cash + benefits): ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day | ${cur}${breakEvenGrossTotalPkg.toLocaleString()}/yr)`,
         `   • Recommended Commercial Contract Rate (with 15% B2B bench & risk buffer): ${cur}${recommendedHourlyRateWithBuffer}/hr (${cur}${recommendedDailyRateWithBuffer}/day)`,
         ``,
-        `At ${cur}${exactBreakEvenHourlyRateTotalPkg}–${cur}${recommendedHourlyRateWithBuffer}/hr, your organization also saves ${cur}${directEmployerPayrollTaxesAnnual.toLocaleString()}/yr in employer payroll taxes and ${cur}${eorAnnualPlatformFee.toLocaleString()}/yr in EOR/HR overhead. Please let me know if we can align the Statement of Work around ${cur}${recommendedHourlyRateWithBuffer}/hr (${cur}${recommendedDailyRateWithBuffer}/day).`,
+        `At ${cur}${exactBreakEvenHourlyRateTotalPkg}–${cur}${recommendedHourlyRateWithBuffer}/hr, your organization also avoids ${cur}${directEmployerPayrollTaxesAnnual.toLocaleString()}/yr in employer payroll taxes and ${cur}${eorAnnualPlatformFee.toLocaleString()}/yr in EOR overhead. Please let me know if we can align the Statement of Work around ${cur}${recommendedHourlyRateWithBuffer}/hr (${cur}${recommendedDailyRateWithBuffer}/day).`,
         ``,
         `Best regards,`,
         `[Your Name]`,
     ].join('\n');
 
-    // Markdown Tax & KID Dossier
     const markdownTaxAndKidReport = [
         `# Universal Contractor vs. Full-Time Tax & Total Compensation Dossier`,
         ``,
-        `- **Jurisdiction:** ${meta.name}`,
-        `- **Tax Year Basis:** ${meta.taxYearLabel}`,
+        `- **Jurisdiction:** ${meta.name} (${inputs.taxYear || '2026'})`,
+        `- **Currency & FX Basis:** Statutory ${statutoryCurrency.code} (${statCur}) → Display ${activeCurrency.code} (${cur}) @ FX ${appliedFxRateDisplayPerStatutory}`,
         `- **Billable Schedule:** ${inputs.billableWeeksPerYear} weeks/yr × ${inputs.workingDaysPerWeek} days/wk × ${inputs.billableHoursPerDay} hrs/day (${billableHoursPerYear} billable hrs/yr)`,
         `- **Winning Structure:** **${winningRegime.regimeTitle}** (${cur}${winningRegime.trueTotalEconomicPackageAnnual.toLocaleString()}/yr Total Economic Value)`,
-        `- **Classification Audit Score:** **${complianceScore}/100** (\`${verdict}\`)`,
+        `- **Worker Classification Risk Score:** **${complianceScore}/100** (\`${verdict}\` — Heuristic Risk Indicator, Not Legal Advice)`,
         ``,
         `## 1. Side-by-Side 3-Regime Financial Waterfall`,
         ``,
@@ -2334,80 +3046,74 @@ export function compileContractorVsEmployeeReport(
         `| **Total Statutory Taxes & NI/FICA/SECA** | ${cur}${employeeRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} | ${cur}${standardContractorRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} | ${cur}${optimizedEntityRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()} |`,
         `| **Effective Tax Rate (%)** | ${employeeRegime.effectiveTaxRatePercent}% | ${standardContractorRegime.effectiveTaxRatePercent}% | ${optimizedEntityRegime.effectiveTaxRatePercent}% |`,
         `| **Net Annual Cash Take-Home** | **${cur}${employeeRegime.netCashTakeHomeAnnual.toLocaleString()}** | **${cur}${standardContractorRegime.netCashTakeHomeAnnual.toLocaleString()}** | **${cur}${optimizedEntityRegime.netCashTakeHomeAnnual.toLocaleString()}** |`,
-        `| **Monetized Employer Benefits Value** | +${cur}${employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()} | ${cur}0 | ${cur}0 |`,
+        `| **Monetized Benefits & Retirement Value** | +${cur}${employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()} | +${cur}${standardContractorRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()} | +${cur}${optimizedEntityRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()} |`,
         `| **True Total Economic Package** | **${cur}${employeeRegime.trueTotalEconomicPackageAnnual.toLocaleString()}** | **${cur}${standardContractorRegime.trueTotalEconomicPackageAnnual.toLocaleString()}** | **${cur}${optimizedEntityRegime.trueTotalEconomicPackageAnnual.toLocaleString()}** |`,
         ``,
-        `## 2. Exact Break-Even Contractor Rate Benchmarks`,
-        `- **Break-Even Hourly Rate (Matches Full-Time Cash + Benefits):** ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day)`,
+        `## 2. Break-Even Contractor Rate Benchmarks`,
+        `- **Standard Contractor Break-Even Rate:** ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day)`,
+        `- **Optimized Entity Break-Even Rate:** ${cur}${exactBreakEvenHourlyRateOptimizedEntity}/hr (${cur}${exactBreakEvenDailyRateOptimizedEntity}/day)`,
         `- **Recommended Target Rate (+15% Bench & Risk Buffer):** ${cur}${recommendedHourlyRateWithBuffer}/hr (${cur}${recommendedDailyRateWithBuffer}/day)`,
     ].join('\n');
 
-    // Vector SVG Comparison Chart
     const maxVal = Math.max(
         1,
-        employeeRegime.grossTopLineAnnual + employeeRegime.monetizedBenefitsAndRetirementValueAnnual,
-        standardContractorRegime.grossTopLineAnnual,
-        optimizedEntityRegime.grossTopLineAnnual
+        employeeRegime.trueTotalEconomicPackageAnnual,
+        standardContractorRegime.trueTotalEconomicPackageAnnual,
+        optimizedEntityRegime.trueTotalEconomicPackageAnnual
     );
     const barScale = (v: number) => Math.max(8, Math.round((v / maxVal) * 440));
 
     const svgWaterfallChart = [
         `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" width="760" height="320" style="background:#0f172a;font-family:system-ui,sans-serif;border-radius:16px">`,
-        `  <text x="28" y="38" fill="#f8fafc" font-size="16" font-weight="bold">3-Way Net Take-Home &amp; Tax Comparison (${meta.currencyCode})</text>`,
-        `  <text x="28" y="58" fill="#94a3b8" font-size="12">${meta.name} • Break-Even Rate: ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day)</text>`,
-        // Bar 1: Employee
+        `  <text x="28" y="38" fill="#f8fafc" font-size="16" font-weight="bold">3-Way Net Take-Home &amp; Package Comparison (${meta.currencyCode})</text>`,
+        `  <text x="28" y="58" fill="#94a3b8" font-size="12">${meta.name} (${inputs.taxYear || '2026'}) • Break-Even Rate: ${cur}${exactBreakEvenHourlyRateTotalPkg}/hr (${cur}${exactBreakEvenDailyRateTotalPkg}/day)</text>`,
         `  <text x="28" y="105" fill="#e2e8f0" font-size="12" font-weight="bold">1. ${employeeRegime.regimeTitle}</text>`,
         `  <rect x="240" y="88" width="${barScale(employeeRegime.trueTotalEconomicPackageAnnual)}" height="26" rx="6" fill="#3b82f6"/>`,
         `  <text x="${250 + barScale(employeeRegime.trueTotalEconomicPackageAnnual)}" y="106" fill="#93c5fd" font-size="12" font-weight="bold">${cur}${employeeRegime.trueTotalEconomicPackageAnnual.toLocaleString()} (Net + Benefits)</text>`,
-        // Bar 2: Standard Contractor
         `  <text x="28" y="165" fill="#e2e8f0" font-size="12" font-weight="bold">2. ${standardContractorRegime.regimeTitle.slice(0, 28)}</text>`,
-        `  <rect x="240" y="148" width="${barScale(standardContractorRegime.netCashTakeHomeAnnual)}" height="26" rx="6" fill="#6366f1"/>`,
-        `  <text x="${250 + barScale(standardContractorRegime.netCashTakeHomeAnnual)}" y="166" fill="#a5b4fc" font-size="12" font-weight="bold">${cur}${standardContractorRegime.netCashTakeHomeAnnual.toLocaleString()} Net Cash</text>`,
-        // Bar 3: Optimized Entity
+        `  <rect x="240" y="148" width="${barScale(standardContractorRegime.trueTotalEconomicPackageAnnual)}" height="26" rx="6" fill="#6366f1"/>`,
+        `  <text x="${250 + barScale(standardContractorRegime.trueTotalEconomicPackageAnnual)}" y="166" fill="#a5b4fc" font-size="12" font-weight="bold">${cur}${standardContractorRegime.netCashTakeHomeAnnual.toLocaleString()} Net Cash</text>`,
         `  <text x="28" y="225" fill="#e2e8f0" font-size="12" font-weight="bold">3. ${optimizedEntityRegime.regimeTitle.slice(0, 28)}</text>`,
-        `  <rect x="240" y="208" width="${barScale(optimizedEntityRegime.netCashTakeHomeAnnual)}" height="26" rx="6" fill="#10b981"/>`,
-        `  <text x="${250 + barScale(optimizedEntityRegime.netCashTakeHomeAnnual)}" y="226" fill="#6ee7b7" font-size="12" font-weight="bold">${cur}${optimizedEntityRegime.netCashTakeHomeAnnual.toLocaleString()} Net Cash</text>`,
+        `  <rect x="240" y="208" width="${barScale(optimizedEntityRegime.trueTotalEconomicPackageAnnual)}" height="26" rx="6" fill="#10b981"/>`,
+        `  <text x="${250 + barScale(optimizedEntityRegime.trueTotalEconomicPackageAnnual)}" y="226" fill="#6ee7b7" font-size="12" font-weight="bold">${cur}${optimizedEntityRegime.netCashTakeHomeAnnual.toLocaleString()} Net Cash</text>`,
         `  <text x="28" y="285" fill="#cbd5e1" font-size="11">Generated locally by KivaroTools Universal Contractor vs. Full-Time Engine v${CONTRACTOR_VS_EMPLOYEE_ENGINE_VERSION}</text>`,
         `</svg>`,
     ].join('\n');
 
-    const rawCertPayload = JSON.stringify({
-        jurisdiction: inputs.jurisdiction,
-        employeeNet: employeeRegime.netCashTakeHomeAnnual,
-        contractorNet: standardContractorRegime.netCashTakeHomeAnnual,
-        optimizedNet: optimizedEntityRegime.netCashTakeHomeAnnual,
-        breakEvenHourly: exactBreakEvenHourlyRateTotalPkg,
-        complianceScore,
-    });
-    const sha256Signature = computeSha256Hex(rawCertPayload);
+    const scenarioSummaryObject = {
+        schemaType: 'KIVAROTOOLS_SCENARIO_DATA_FINGERPRINT_V2',
+        engineVersion: CONTRACTOR_VS_EMPLOYEE_ENGINE_VERSION,
+        jurisdiction: meta.code,
+        taxYear: inputs.taxYear || '2026',
+        statutoryCurrency: statutoryCurrency.code,
+        displayCurrency: activeCurrency.code,
+        appliedFxRateDisplayPerStatutory,
+        financialSummary: {
+            employeeNetCashAnnual: employeeRegime.netCashTakeHomeAnnual,
+            employeeTotalEconomicPackageAnnual: employeeRegime.trueTotalEconomicPackageAnnual,
+            standardContractorNetCashAnnual: standardContractorRegime.netCashTakeHomeAnnual,
+            optimizedEntityNetCashAnnual: optimizedEntityRegime.netCashTakeHomeAnnual,
+            exactBreakEvenHourlyRate: exactBreakEvenHourlyRateTotalPkg,
+            exactBreakEvenDailyRate: exactBreakEvenDailyRateTotalPkg,
+            exactBreakEvenHourlyRateOptimizedEntity,
+            recommendedHourlyRateWith15PctBuffer: recommendedHourlyRateWithBuffer,
+        },
+        classificationRiskAssessment: {
+            disclaimer: 'Heuristic risk indicator based on user-selected answers; does not constitute formal legal or tax advice.',
+            authority: meta.authorityName,
+            statutoryFramework: meta.classificationTestName,
+            riskScore: complianceScore,
+            riskBand: verdict,
+            activeRiskFactorsCount: lintIssues.length,
+        },
+        employerCostEstimate: employerTceComparison,
+    };
 
+    const sha256Signature = computeSha256Hex(JSON.stringify(scenarioSummaryObject));
     const auditCertificateJson = JSON.stringify(
         {
-            certificateType: 'KIVAROTOOLS_CONTRACTOR_VS_EMPLOYEE_COMPLIANCE_AUDIT',
-            engineVersion: CONTRACTOR_VS_EMPLOYEE_ENGINE_VERSION,
-            generatedAtIso: new Date().toISOString(),
-            jurisdiction: meta.code,
-            jurisdictionName: meta.name,
-            taxYearBasis: meta.taxYearLabel,
-            financialSummary: {
-                employeeNetCashAnnual: employeeRegime.netCashTakeHomeAnnual,
-                employeeTotalEconomicPackageAnnual: employeeRegime.trueTotalEconomicPackageAnnual,
-                standardContractorNetCashAnnual: standardContractorRegime.netCashTakeHomeAnnual,
-                optimizedEntityNetCashAnnual: optimizedEntityRegime.netCashTakeHomeAnnual,
-                exactBreakEvenHourlyRate: exactBreakEvenHourlyRateTotalPkg,
-                exactBreakEvenDailyRate: exactBreakEvenDailyRateTotalPkg,
-                recommendedHourlyRateWith15PctBuffer: recommendedHourlyRateWithBuffer,
-            },
-            classificationAudit: {
-                authority: meta.authorityName,
-                statutoryTest: meta.classificationTestName,
-                complianceScore,
-                verdict,
-                activeLintAlerts: lintIssues.length,
-                issues: lintIssues,
-            },
-            employerTceComparison,
-            sha256Signature,
+            ...scenarioSummaryObject,
+            sha256ScenarioDataFingerprint: sha256Signature,
         },
         null,
         2
@@ -2417,7 +3123,14 @@ export function compileContractorVsEmployeeReport(
         engineVersion: CONTRACTOR_VS_EMPLOYEE_ENGINE_VERSION,
         jurisdictionMeta: meta,
         activeCurrency,
-        contractorAnnualGrossRevenue: Math.round(contractorAnnualGrossRevenue),
+        statutoryCurrencyCode: statutoryCurrency.code,
+        statutoryCurrencySymbol: statutoryCurrency.symbol,
+        appliedFxRateDisplayPerStatutory,
+        breakEvenSolverConverged,
+        validationWarnings,
+        calculationAssumptionsAuditTrail,
+        contractualAddendumClausesText,
+        contractorAnnualGrossRevenue,
         totalBillableHoursPerYear: billableHoursPerYear,
         totalBillableDaysPerYear: billableDaysPerYear,
         employeeRegime,
