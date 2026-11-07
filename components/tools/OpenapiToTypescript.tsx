@@ -24,7 +24,6 @@ import {
     Sliders,
 } from 'lucide-react';
 import {
-    OPENAPI_ENGINE_VERSION,
     type OpenApiSampleId,
     type OpenApiCodegenConfig,
     type TsDeclarationStyle,
@@ -61,7 +60,7 @@ const SAMPLE_PRESET_CARDS: SamplePresetCard[] = [
         badge: 'OpenAPI 3.1 • Discriminated Union',
         formatBadge: 'YAML',
         description:
-            'Tests OpenAPI 3.1 nullable type arrays [string, null], oneOf discriminator unions, const literals, UUID/Email formats & regex rules.',
+            'OpenAPI 3.1 nullable type arrays [string, null], oneOf discriminator unions, const literals, UUID/Email formats & regex rules.',
     },
     {
         id: 'ecommerce_circular_openapi_30',
@@ -69,7 +68,7 @@ const SAMPLE_PRESET_CARDS: SamplePresetCard[] = [
         badge: 'OpenAPI 3.0 • Circular $ref Tree',
         formatBadge: 'JSON',
         description:
-            'Tests self-referencing CategoryNode schemas to verify DFS cycle detection and automatic z.lazy(() => Schema) runtime protection.',
+            'Self-referencing CategoryNode schemas testing DFS cycle detection and automatic z.lazy(() => Schema) runtime protection.',
     },
     {
         id: 'legacy_petstore_swagger_20',
@@ -77,7 +76,7 @@ const SAMPLE_PRESET_CARDS: SamplePresetCard[] = [
         badge: 'Swagger 2.0 • 1-Click Auto-Fix Demo',
         formatBadge: 'YAML',
         description:
-            'Contains legacy definitions, in:body params, missing operationId & a dangling $ref (#/definitions/ShippingAddress) to test 1-Click Auto-Fix.',
+            'Legacy definitions, in:body params, missing operationId & a dangling $ref (#/definitions/ShippingAddress) to test 1-Click Auto-Fix.',
     },
 ];
 
@@ -96,12 +95,11 @@ const DEFAULT_CONFIG: OpenApiCodegenConfig = {
 };
 
 export default function OpenapiToTypescript() {
-    const [activeSampleId, setActiveSampleId] = useState<OpenApiSampleId>('stripe_billing_openapi_31');
+    const [activeSampleId, setActiveSampleId] = useState<OpenApiSampleId | null>('stripe_billing_openapi_31');
     const [rawSpecText, setRawSpecText] = useState<string>(() =>
         getSampleOpenApiSpec('stripe_billing_openapi_31')
     );
     const [config, setConfig] = useState<OpenApiCodegenConfig>(DEFAULT_CONFIG);
-    const [showAdvancedConfig, setShowAdvancedConfig] = useState<boolean>(false);
     const [activeOutputTab, setActiveOutputTab] = useState<OutputArtifactTab>('typescript');
     const [activeBottomTab, setActiveBottomTab] = useState<BottomStudioTab>('explorer');
     const [showLineNumbers, setShowLineNumbers] = useState<boolean>(true);
@@ -141,8 +139,9 @@ export default function OpenapiToTypescript() {
         const reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === 'string') {
+                setActiveSampleId(null);
                 setRawSpecText(reader.result);
-                setAutoFixNotice(`Loaded "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`);
+                setAutoFixNotice(`Imported "${file.name}" (${(file.size / 1024).toFixed(1)} KB)`);
             }
         };
         reader.readAsText(file);
@@ -311,69 +310,81 @@ export default function OpenapiToTypescript() {
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto space-y-6">
-            {/* TOP STUDIO HEADER & GLOBAL ACTIONS */}
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div className="space-y-1.5 min-w-0">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/80 text-indigo-700 dark:text-indigo-300 text-xs font-semibold">
-                            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>
-                                OpenAPI 3.1 / 3.0 / Swagger 2.0 → TypeScript + Zod + MSW v2 + TanStack Query v5 Studio v{OPENAPI_ENGINE_VERSION}
+        <div className="w-full max-w-7xl mx-auto space-y-5 min-w-0">
+            {/* ============================================================================
+                ROW 1: 3 INSTANT 1-CLICK SAMPLE SPECIFICATIONS (DIRECT START — NO BLOATED HEADER)
+                ============================================================================ */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                        <span>3 Instant 1-Click Sample Specifications (Click Any Sample to Test):</span>
+                    </span>
+
+                    {compiled && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                {compiled.inputFormat} • {compiled.detectedSpecVersion}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-semibold text-slate-700 dark:text-slate-300">
+                                {compiled.schemas.length} Schemas • {compiled.operations.length} Endpoints
+                            </span>
+                            <span
+                                className={`px-2 py-0.5 rounded-md font-bold ${compiled.specHealthScore >= 90
+                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
+                                    }`}
+                            >
+                                Health: {compiled.specHealthScore}/100
                             </span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                            OpenAPI (Swagger) to TypeScript, Zod &amp; Mock Generator
-                        </h1>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">
-                            Paste or upload any OpenAPI YAML or JSON contract on the left to compile strict TypeScript interfaces, topologically sorted Zod schemas (with automatic <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 font-mono text-xs">z.lazy()</code> circular reference protection), MSW v2 mock handlers, and typed Fetch / TanStack Query hooks in real time on the right.
-                        </p>
-                    </div>
+                    )}
+                </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".yaml,.yml,.json,.txt"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold transition shadow-sm"
-                        >
-                            <Upload className="w-4 h-4" />
-                            <span>Upload YAML / JSON</span>
-                        </button>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {SAMPLE_PRESET_CARDS.map((sample) => {
+                        const isSelected = activeSampleId === sample.id;
+                        return (
+                            <button
+                                key={sample.id}
+                                type="button"
+                                onClick={() => handleSelectSample(sample.id)}
+                                className={`text-left p-3.5 rounded-xl border transition-all flex flex-col justify-between gap-1.5 min-w-0 ${isSelected
+                                        ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
+                                        : 'bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 border-slate-200 dark:border-slate-800'
+                                    }`}
+                            >
+                                <div className="flex items-center justify-between gap-2 w-full">
+                                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                                        {sample.title}
+                                    </span>
+                                    <span
+                                        className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${isSelected
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                            }`}
+                                    >
+                                        {isSelected ? '✓ Active' : `Load ${sample.formatBadge}`}
+                                    </span>
+                                </div>
 
-                        <button
-                            type="button"
-                            onClick={handleAutoFixSpec}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition shadow-sm"
-                            title="Upgrades Swagger 2.0 to OpenAPI 3.1, injects missing operationIds, scaffolds dangling $refs, and upgrades HTTP to HTTPS"
-                        >
-                            <Wrench className="w-4 h-4" />
-                            <span>1-Click Auto-Fix Spec</span>
-                        </button>
+                                <div className="inline-flex self-start items-center px-2 py-0.5 rounded bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] font-semibold">
+                                    {sample.badge}
+                                </div>
 
-                        <button
-                            type="button"
-                            onClick={handleDownloadXlsx}
-                            disabled={!compiled}
-                            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs sm:text-sm font-semibold transition shadow-sm"
-                        >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            <span>Export 3-Sheet Excel (.xlsx)</span>
-                        </button>
-                    </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-snug">
+                                    {sample.description}
+                                </p>
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {autoFixNotice && (
-                    <div className="mt-4 flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs sm:text-sm font-medium">
-                        <div className="flex items-center gap-2">
+                    <div className="mt-3 flex items-center justify-between gap-3 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-medium">
+                        <div className="flex items-center gap-2 min-w-0">
                             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                            <span>{autoFixNotice}</span>
+                            <span className="truncate">{autoFixNotice}</span>
                         </div>
                         <button
                             type="button"
@@ -384,347 +395,318 @@ export default function OpenapiToTypescript() {
                         </button>
                     </div>
                 )}
+            </div>
 
-                {/* ROW 1: 3 INSTANT 1-CLICK SAMPLE SPECIFICATIONS */}
-                <div className="mt-5 pt-5 border-t border-slate-200/80 dark:border-slate-800">
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                            3 Instant 1-Click Sample Specifications (Click Any Sample to Test Live Conversion):
+            {/* ============================================================================
+                ROW 2: COMPILER FEATURES & OPTIONS BAR (DIRECTLY BELOW SAMPLES)
+                ============================================================================ */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                            Compiler Configuration &amp; Codegen Options
                         </span>
-                        {compiled && (
-                            <span className="hidden sm:inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <span>
-                                    Detected: <strong className="text-slate-800 dark:text-slate-200">{compiled.inputFormat}</strong> ({compiled.detectedSpecVersion})
-                                </span>
-                                <span>•</span>
-                                <span>
-                                    Health Score: <strong className={compiled.specHealthScore >= 85 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}>{compiled.specHealthScore}/100</strong>
-                                </span>
-                            </span>
-                        )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                        {SAMPLE_PRESET_CARDS.map((sample) => {
-                            const isSelected = activeSampleId === sample.id;
-                            return (
-                                <button
-                                    key={sample.id}
-                                    type="button"
-                                    onClick={() => handleSelectSample(sample.id)}
-                                    className={`text-left p-4 rounded-xl border transition-all flex flex-col justify-between gap-2 min-w-0 ${isSelected
-                                            ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20 shadow-sm'
-                                            : 'bg-slate-50/70 hover:bg-slate-100/80 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 border-slate-200 dark:border-slate-800'
-                                        }`}
-                                >
-                                    <div className="space-y-1.5 w-full">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                                                {sample.title}
-                                            </span>
-                                            <span
-                                                className={`px-2 py-0.5 rounded-md text-[11px] font-bold shrink-0 ${isSelected
-                                                        ? 'bg-emerald-600 text-white'
-                                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
-                                                    }`}
-                                            >
-                                                {isSelected ? '✓ Active' : `Load ${sample.formatBadge}`}
-                                            </span>
-                                        </div>
+                    <button
+                        type="button"
+                        onClick={() => setConfig(DEFAULT_CONFIG)}
+                        className="text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition"
+                    >
+                        Reset Options to Default
+                    </button>
+                </div>
 
-                                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-indigo-100/80 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">
-                                            {sample.badge}
-                                        </div>
-
-                                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                            {sample.description}
-                                        </p>
-                                    </div>
-                                </button>
-                            );
-                        })}
+                {/* Primary Dropdowns & Inputs Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            TypeScript Declaration
+                        </label>
+                        <select
+                            value={config.declarationStyle}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    declarationStyle: e.target.value as TsDeclarationStyle,
+                                }))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="interface">export interface</option>
+                            <option value="type">export type =</option>
+                        </select>
                     </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Enum Output Style
+                        </label>
+                        <select
+                            value={config.enumStyle}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    enumStyle: e.target.value as TsEnumStyle,
+                                }))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="union">Literal Union (&apos;a&apos; | &apos;b&apos;)</option>
+                            <option value="const_object">as const Object</option>
+                            <option value="ts_enum">TS enum</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Zod Object Strictness
+                        </label>
+                        <select
+                            value={config.zodStrictness}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    zodStrictness: e.target.value as ZodStrictnessMode,
+                                }))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                            <option value="strict">.strict() (Reject Unknown)</option>
+                            <option value="default">Default (Strip Unknown)</option>
+                            <option value="passthrough">.passthrough() (Keep)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Mock Seed (PRNG)
+                        </label>
+                        <input
+                            type="number"
+                            value={config.mockSeed}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    mockSeed: Number(e.target.value) || 1,
+                                }))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Mock Array Items (1–5)
+                        </label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={5}
+                            value={config.mockArrayLength}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    mockArrayLength: Math.min(5, Math.max(1, Number(e.target.value) || 2)),
+                                }))
+                            }
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                            Base URL Override
+                        </label>
+                        <input
+                            type="text"
+                            value={config.baseUrlOverride}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    baseUrlOverride: e.target.value,
+                                }))
+                            }
+                            placeholder="https://api.acme.io/v1"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                    </div>
+                </div>
+
+                {/* Boolean Compiler Feature Toggles Strip */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-x-5 gap-y-2">
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={config.readonlyProperties}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    readonlyProperties: e.target.checked,
+                                }))
+                            }
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Emit <code className="font-mono text-[11px]">readonly</code> properties</span>
+                    </label>
+
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={config.optionalWithNullish}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    optionalWithNullish: e.target.checked,
+                                }))
+                            }
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Nullish optional (<code className="font-mono text-[11px]">.nullish()</code>)</span>
+                    </label>
+
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={config.coerceQueryAndPathParams}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    coerceQueryAndPathParams: e.target.checked,
+                                }))
+                            }
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Coerce query params (<code className="font-mono text-[11px]">z.coerce</code>)</span>
+                    </label>
+
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={config.includeJsDocComments}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    includeJsDocComments: e.target.checked,
+                                }))
+                            }
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Include JSDoc comments</span>
+                    </label>
+
+                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={config.emitZodInferTypes}
+                            onChange={(e) =>
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    emitZodInferTypes: e.target.checked,
+                                }))
+                            }
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Export <code className="font-mono text-[11px]">z.infer&lt;typeof Schema&gt;</code></span>
+                    </label>
                 </div>
             </div>
 
-            {/* ROW 2: 2 PARALLEL SIDE-BY-SIDE WINDOWS (LEFT: INPUT SPEC & COMPILER OPTIONS | RIGHT: LIVE CONVERTED SOLUTION) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                {/* LEFT WINDOW: OPENAPI YAML / JSON INPUT EDITOR & COMPILER SETTINGS */}
-                <div className="lg:col-span-5 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden min-w-0">
-                    {/* Left Window Top Bar */}
-                    <div className="px-4 py-3.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            {/* ============================================================================
+                ROW 3: 2 PARALLEL SIDE-BY-SIDE WINDOWS (LEFT: INPUT + IMPORT | RIGHT: OUTPUT + COPY/DOWNLOAD)
+                ============================================================================ */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+                {/* LEFT WINDOW: INPUT OPENAPI SPECIFICATION EDITOR (WITH IMPORT & AUTO-FIX IN HEADER) */}
+                <div className="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden min-w-0">
+                    {/* Input Window Header */}
+                    <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                             <Braces className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                            <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                1. Input OpenAPI / Swagger Spec
+                            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                Input OpenAPI / Swagger (YAML or JSON)
                             </h2>
-                            {compiled && (
-                                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                                    {compiled.inputFormat} • {compiled.detectedSpecVersion}
-                                </span>
-                            )}
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Import, Auto-Fix & Reset Actions in Input Header */}
+                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".yaml,.yml,.json,.txt"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-semibold transition shadow-xs"
+                                title="Import an OpenAPI .yaml, .yml, or .json file from your device"
+                            >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Import File</span>
+                            </button>
+
                             <button
                                 type="button"
                                 onClick={handleAutoFixSpec}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-800 transition"
-                                title="Upgrade Swagger 2.0 to OpenAPI 3.1 & resolve dangling $refs"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition shadow-xs"
+                                title="Upgrade Swagger 2.0 to OpenAPI 3.1, inject operationIds & scaffold dangling $refs"
                             >
                                 <Wrench className="w-3.5 h-3.5" />
-                                <span>Auto-Fix</span>
+                                <span>1-Click Auto-Fix</span>
                             </button>
+
                             <button
                                 type="button"
-                                onClick={() => setRawSpecText(getSampleOpenApiSpec(activeSampleId))}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
+                                onClick={() =>
+                                    setRawSpecText(
+                                        getSampleOpenApiSpec(activeSampleId || 'stripe_billing_openapi_31')
+                                    )
+                                }
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-200/80 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition"
                                 title="Reset editor to active sample"
                             >
                                 <RefreshCw className="w-3.5 h-3.5" />
-                                <span>Reset</span>
+                                <span className="hidden sm:inline">Reset</span>
                             </button>
                         </div>
                     </div>
 
-                    {/* Compiler Quick Toggles Strip inside Left Window */}
-                    <div className="p-3.5 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 space-y-3">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                                    TS Declaration
-                                </label>
-                                <select
-                                    value={config.declarationStyle}
-                                    onChange={(e) =>
-                                        setConfig((prev) => ({
-                                            ...prev,
-                                            declarationStyle: e.target.value as TsDeclarationStyle,
-                                        }))
-                                    }
-                                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="interface">export interface</option>
-                                    <option value="type">export type =</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                                    Enum Style
-                                </label>
-                                <select
-                                    value={config.enumStyle}
-                                    onChange={(e) =>
-                                        setConfig((prev) => ({
-                                            ...prev,
-                                            enumStyle: e.target.value as TsEnumStyle,
-                                        }))
-                                    }
-                                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="union">Literal Union (&apos;a&apos; | &apos;b&apos;)</option>
-                                    <option value="const_object">as const Object</option>
-                                    <option value="ts_enum">TS enum</option>
-                                </select>
-                            </div>
-
-                            <div className="col-span-2 sm:col-span-1">
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                                    Zod Object Mode
-                                </label>
-                                <select
-                                    value={config.zodStrictness}
-                                    onChange={(e) =>
-                                        setConfig((prev) => ({
-                                            ...prev,
-                                            zodStrictness: e.target.value as ZodStrictnessMode,
-                                        }))
-                                    }
-                                    className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="strict">.strict() (Reject Unknown)</option>
-                                    <option value="default">Default (Strip Unknown)</option>
-                                    <option value="passthrough">.passthrough() (Keep)</option>
-                                </select>
-                            </div>
+                    {/* Input Window Subheader Info Bar */}
+                    <div className="px-4 py-2 bg-slate-900 text-slate-300 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-mono font-semibold text-indigo-400 truncate">
+                                {compiled ? `${compiled.apiTitle} (v${compiled.apiVersion})` : 'Live Editor'}
+                            </span>
                         </div>
-
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                            <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
-                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={config.readonlyProperties}
-                                        onChange={(e) =>
-                                            setConfig((prev) => ({
-                                                ...prev,
-                                                readonlyProperties: e.target.checked,
-                                            }))
-                                        }
-                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    />
-                                    <span>readonly</span>
-                                </label>
-
-                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={config.optionalWithNullish}
-                                        onChange={(e) =>
-                                            setConfig((prev) => ({
-                                                ...prev,
-                                                optionalWithNullish: e.target.checked,
-                                            }))
-                                        }
-                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    />
-                                    <span>Nullish</span>
-                                </label>
-
-                                <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={config.coerceQueryAndPathParams}
-                                        onChange={(e) =>
-                                            setConfig((prev) => ({
-                                                ...prev,
-                                                coerceQueryAndPathParams: e.target.checked,
-                                            }))
-                                        }
-                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                    />
-                                    <span>z.coerce</span>
-                                </label>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowAdvancedConfig((v) => !v)}
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                            >
-                                <Sliders className="w-3.5 h-3.5" />
-                                <span>{showAdvancedConfig ? 'Hide Options' : 'More Options'}</span>
-                            </button>
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-slate-400 shrink-0">
+                            <span>{inputLineCount} lines</span>
+                            <span>•</span>
+                            <span>{rawSpecText.length.toLocaleString()} chars</span>
                         </div>
-
-                        {showAdvancedConfig && (
-                            <div className="pt-2.5 border-t border-slate-200/80 dark:border-slate-800 space-y-2.5">
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={config.includeJsDocComments}
-                                            onChange={(e) =>
-                                                setConfig((prev) => ({
-                                                    ...prev,
-                                                    includeJsDocComments: e.target.checked,
-                                                }))
-                                            }
-                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span>Emit JSDoc comments</span>
-                                    </label>
-
-                                    <label className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={config.emitZodInferTypes}
-                                            onChange={(e) =>
-                                                setConfig((prev) => ({
-                                                    ...prev,
-                                                    emitZodInferTypes: e.target.checked,
-                                                }))
-                                            }
-                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span>Emit z.infer&lt;&gt; types</span>
-                                    </label>
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                                    <div>
-                                        <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                            Mock PRNG Seed
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={config.mockSeed}
-                                            onChange={(e) =>
-                                                setConfig((prev) => ({
-                                                    ...prev,
-                                                    mockSeed: Number(e.target.value) || 1,
-                                                }))
-                                            }
-                                            className="w-full px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                            Mock Array Items (1–5)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            max={5}
-                                            value={config.mockArrayLength}
-                                            onChange={(e) =>
-                                                setConfig((prev) => ({
-                                                    ...prev,
-                                                    mockArrayLength: Math.min(
-                                                        5,
-                                                        Math.max(1, Number(e.target.value) || 2)
-                                                    ),
-                                                }))
-                                            }
-                                            className="w-full px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono"
-                                        />
-                                    </div>
-
-                                    <div className="col-span-2 sm:col-span-1">
-                                        <label className="block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                            Base URL Override
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={config.baseUrlOverride}
-                                            onChange={(e) =>
-                                                setConfig((prev) => ({
-                                                    ...prev,
-                                                    baseUrlOverride: e.target.value,
-                                                }))
-                                            }
-                                            placeholder="https://api.custom.io"
-                                            className="w-full px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-mono"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
                     {/* Live YAML / JSON Monospace Textarea */}
-                    <div className="relative flex-1 flex flex-col min-h-[420px] lg:min-h-[520px]">
+                    <div className="relative flex-1 flex flex-col min-h-[460px] lg:min-h-[540px]">
                         <textarea
                             value={rawSpecText}
                             onChange={(e) => setRawSpecText(e.target.value)}
                             spellCheck={false}
                             placeholder="Paste your OpenAPI 3.1, 3.0, or Swagger 2.0 YAML or JSON specification here..."
-                            className="w-full flex-1 p-4 font-mono text-xs sm:text-[13px] leading-relaxed bg-slate-950 text-slate-100 placeholder-slate-500 focus:outline-none resize-y min-h-[420px] lg:min-h-[520px] overflow-x-auto overscroll-x-contain"
+                            className="w-full flex-1 p-4 font-mono text-xs sm:text-[13px] leading-relaxed bg-slate-950 text-slate-100 placeholder-slate-500 focus:outline-none resize-y min-h-[460px] lg:min-h-[540px] max-h-[640px] overflow-x-auto overscroll-x-contain"
                         />
                     </div>
 
                     {/* Left Window Footer Status Bar */}
                     <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
                         {compiledState.error ? (
-                            <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-semibold">
+                            <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-semibold min-w-0">
                                 <AlertTriangle className="w-4 h-4 shrink-0" />
                                 <span className="truncate">{compiledState.error}</span>
                             </div>
                         ) : compiled ? (
-                            <div className="flex flex-wrap items-center gap-3 text-slate-600 dark:text-slate-300">
+                            <div className="flex flex-wrap items-center gap-2.5 text-slate-600 dark:text-slate-300">
                                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                     Live AST Synced
@@ -747,74 +729,75 @@ export default function OpenapiToTypescript() {
                                 )}
                             </div>
                         ) : null}
-                        <span className="text-slate-400 font-mono">
-                            {inputLineCount} lines • {rawSpecText.length.toLocaleString()} chars
-                        </span>
                     </div>
                 </div>
 
-                {/* RIGHT WINDOW: REAL-TIME CONVERTED CODE OUTPUT STUDIO */}
-                <div className="lg:col-span-7 flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden min-w-0">
-                    {/* Right Window Top Output Tabs */}
-                    <div className="px-3 pt-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center justify-between gap-2 mb-2.5 px-1">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <Code2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
-                                    2. Instant Converted Code &amp; Mock Output
-                                </h2>
-                            </div>
-
-                            <div className="flex items-center gap-1.5 shrink-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowLineNumbers((v) => !v)}
-                                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-200/70 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition"
-                                >
-                                    {showLineNumbers ? 'Hide # Lines' : 'Show # Lines'}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleCopyOutput}
-                                    disabled={!compiled}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition shadow-sm"
-                                >
-                                    {copiedOutput ? (
-                                        <>
-                                            <Check className="w-3.5 h-3.5" />
-                                            <span>Copied!</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Copy className="w-3.5 h-3.5" />
-                                            <span>Copy Code</span>
-                                        </>
-                                    )}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={handleDownloadArtifact}
-                                    disabled={!compiled}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-semibold transition shadow-sm"
-                                >
-                                    <Download className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline">{currentOutputArtifact.filename}</span>
-                                    <span className="sm:hidden">Save</span>
-                                </button>
-                            </div>
+                {/* RIGHT WINDOW: CONVERTED SOLUTION OUTPUT (WITH COPY & DOWNLOAD IN HEADER) */}
+                <div className="flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden min-w-0">
+                    {/* Output Window Header */}
+                    <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Code2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                Converted Solution Output
+                            </h2>
                         </div>
 
-                        {/* 6 Output Tabs (Horizontally scrollable on mobile) */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-2 no-scrollbar">
+                        {/* Copy, Download File & Excel Export in Output Header */}
+                        <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                            <button
+                                type="button"
+                                onClick={handleCopyOutput}
+                                disabled={!compiled}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-xs font-semibold transition shadow-xs"
+                            >
+                                {copiedOutput ? (
+                                    <>
+                                        <Check className="w-3.5 h-3.5" />
+                                        <span>Copied!</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="w-3.5 h-3.5" />
+                                        <span>Copy Code</span>
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDownloadArtifact}
+                                disabled={!compiled}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-semibold transition shadow-xs"
+                                title={`Download ${currentOutputArtifact.filename}`}
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Download {currentOutputArtifact.filename}</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDownloadXlsx}
+                                disabled={!compiled}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold transition shadow-xs"
+                                title="Download 3-Sheet Excel (.xlsx) API Contract Inventory"
+                            >
+                                <FileSpreadsheet className="w-3.5 h-3.5" />
+                                <span>.XLSX</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 6 Output Format Tabs Bar */}
+                    <div className="px-3 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain no-scrollbar">
                             {[
                                 { id: 'typescript', label: 'TypeScript', badge: '.ts' },
                                 { id: 'zod', label: 'Zod Schemas', badge: 'z.infer' },
                                 { id: 'msw', label: 'MSW v2 Mocks', badge: 'http.*' },
-                                { id: 'client', label: 'Fetch + TanStack v5', badge: 'SDK' },
+                                { id: 'client', label: 'Fetch + TanStack', badge: 'SDK' },
                                 { id: 'mock_json', label: 'Mock JSON', badge: 'Seed' },
-                                { id: 'openapi_31', label: 'OpenAPI 3.1', badge: 'Norm' },
+                                { id: 'openapi_31', label: 'OpenAPI 3.1', badge: 'JSON' },
                             ].map((tab) => {
                                 const active = activeOutputTab === tab.id;
                                 return (
@@ -822,16 +805,16 @@ export default function OpenapiToTypescript() {
                                         key={tab.id}
                                         type="button"
                                         onClick={() => setActiveOutputTab(tab.id as OutputArtifactTab)}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition shrink-0 ${active
-                                                ? 'bg-indigo-600 text-white shadow-sm'
-                                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold whitespace-nowrap transition shrink-0 ${active
+                                                ? 'bg-indigo-600 text-white shadow-xs'
+                                                : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700'
                                             }`}
                                     >
                                         <span>{tab.label}</span>
                                         <span
-                                            className={`px-1.5 py-0.2 rounded text-[10px] font-mono ${active
-                                                    ? 'bg-indigo-700 text-indigo-100'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                            className={`px-1 py-0.2 rounded text-[10px] font-mono ${active
+                                                    ? 'bg-indigo-800 text-indigo-100'
+                                                    : 'bg-slate-900 text-slate-400'
                                                 }`}
                                         >
                                             {tab.badge}
@@ -840,34 +823,27 @@ export default function OpenapiToTypescript() {
                                 );
                             })}
                         </div>
-                    </div>
 
-                    {/* Active Output Subheader Banner */}
-                    <div className="px-4 py-2 bg-slate-900 text-slate-300 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <FileCode2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                            <span className="font-mono font-semibold text-white truncate">
-                                {currentOutputArtifact.filename}
-                            </span>
-                            <span className="text-slate-500 hidden sm:inline">—</span>
-                            <span className="text-slate-400 truncate hidden sm:inline">
-                                {currentOutputArtifact.label}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400 shrink-0">
-                            <span>{outputLines.length} lines</span>
+                        <div className="hidden sm:flex items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setShowLineNumbers((v) => !v)}
+                                className="text-[11px] font-mono text-slate-400 hover:text-white transition"
+                            >
+                                {showLineNumbers ? 'Hide #' : 'Show #'}
+                            </button>
                             <button
                                 type="button"
                                 onClick={handleDownloadCsv}
-                                className="text-indigo-400 hover:text-indigo-300 underline"
+                                className="text-[11px] font-mono text-indigo-400 hover:text-indigo-300 underline"
                             >
-                                Export Endpoints .CSV
+                                .CSV
                             </button>
                         </div>
                     </div>
 
                     {/* Right Window Monospace Code Output Viewer */}
-                    <div className="relative flex-1 bg-slate-950 text-slate-100 font-mono text-xs sm:text-[13px] leading-relaxed overflow-x-auto overscroll-x-contain overflow-y-auto min-h-[420px] lg:min-h-[520px] max-h-[640px] p-4">
+                    <div className="relative flex-1 bg-slate-950 text-slate-100 font-mono text-xs sm:text-[13px] leading-relaxed overflow-x-auto overscroll-x-contain overflow-y-auto min-h-[460px] lg:min-h-[540px] max-h-[640px] p-4">
                         <table className="w-full border-collapse">
                             <tbody>
                                 {outputLines.map((line, idx) => (
@@ -889,18 +865,18 @@ export default function OpenapiToTypescript() {
                     {/* Right Window Bottom Verification Summary Bar */}
                     {compiled && (
                         <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-800/70 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <div className="flex flex-wrap items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-2.5">
                                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                                     <ShieldCheck className="w-4 h-4" />
                                     {compiled.invariantVerification.checks.filter((c) => c.passed).length}/
-                                    {compiled.invariantVerification.checks.length} AST Invariants Passed
+                                    {compiled.invariantVerification.checks.length} Invariants Verified
                                 </span>
                                 <span className="text-slate-400">•</span>
-                                <span className="text-slate-600 dark:text-slate-300">
-                                    Topological Order:{' '}
+                                <span className="text-slate-600 dark:text-slate-300 truncate max-w-[260px] sm:max-w-none">
+                                    Order:{' '}
                                     <strong className="font-mono">
-                                        {compiled.topologicalOrder.slice(0, 4).join(' → ')}
-                                        {compiled.topologicalOrder.length > 4 ? ' …' : ''}
+                                        {compiled.topologicalOrder.slice(0, 3).join(' → ')}
+                                        {compiled.topologicalOrder.length > 3 ? ' …' : ''}
                                     </strong>
                                 </span>
                             </div>
@@ -913,7 +889,7 @@ export default function OpenapiToTypescript() {
                                 >
                                     <AlertTriangle className="w-3.5 h-3.5" />
                                     <span>
-                                        {compiled.danglingRefs.length} Dangling $ref (Fallback Active) — Click to Auto-Fix
+                                        {compiled.danglingRefs.length} Dangling $ref — Click to Auto-Fix
                                     </span>
                                 </button>
                             )}
@@ -922,17 +898,18 @@ export default function OpenapiToTypescript() {
                 </div>
             </div>
 
-            {/* ROW 3: RESPONSIVE BOTTOM INSPECTOR (VISUAL EXPLORER, 10-POINT LINTER & 5-POINT AST INVARIANTS) */}
+            {/* ============================================================================
+                ROW 4: RESPONSIVE BOTTOM INSPECTOR (VISUAL EXPLORER, 10-POINT LINTER & 5-POINT AST INVARIANTS)
+                ============================================================================ */}
             {compiled && (
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Bottom Inspector Navigation Bar */}
                     <div className="px-4 sm:px-6 pt-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain pb-3 no-scrollbar">
                             <button
                                 type="button"
                                 onClick={() => setActiveBottomTab('explorer')}
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${activeBottomTab === 'explorer'
-                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
                                         : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100'
                                     }`}
                             >
@@ -946,7 +923,7 @@ export default function OpenapiToTypescript() {
                                 type="button"
                                 onClick={() => setActiveBottomTab('linter')}
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${activeBottomTab === 'linter'
-                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
                                         : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100'
                                     }`}
                             >
@@ -960,7 +937,7 @@ export default function OpenapiToTypescript() {
                                 type="button"
                                 onClick={() => setActiveBottomTab('verification')}
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${activeBottomTab === 'verification'
-                                        ? 'bg-indigo-600 text-white shadow-sm'
+                                        ? 'bg-indigo-600 text-white shadow-xs'
                                         : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100'
                                     }`}
                             >
@@ -973,10 +950,8 @@ export default function OpenapiToTypescript() {
                     </div>
 
                     <div className="p-4 sm:p-6">
-                        {/* TAB 1: VISUAL ENDPOINT & SCHEMA DEPENDENCY EXPLORER */}
                         {activeBottomTab === 'explorer' && (
                             <div className="space-y-6">
-                                {/* Search & Method Filter Bar */}
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="relative flex-1 max-w-md">
                                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -1007,7 +982,6 @@ export default function OpenapiToTypescript() {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                                    {/* Endpoints Table / Cards (7 cols) */}
                                     <div className="lg:col-span-7 space-y-3 min-w-0">
                                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                             <Terminal className="w-3.5 h-3.5 text-indigo-500" />
@@ -1070,7 +1044,6 @@ export default function OpenapiToTypescript() {
                                         </div>
                                     </div>
 
-                                    {/* Topological Schema Graph Inspector (5 cols) */}
                                     <div className="lg:col-span-5 space-y-3 min-w-0">
                                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                                             <GitBranch className="w-3.5 h-3.5 text-emerald-500" />
@@ -1163,7 +1136,6 @@ export default function OpenapiToTypescript() {
                             </div>
                         )}
 
-                        {/* TAB 2: 10-POINT OPENAPI LINTER & 1-CLICK AUTO-FIX */}
                         {activeBottomTab === 'linter' && (
                             <div className="space-y-4">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800">
@@ -1192,7 +1164,7 @@ export default function OpenapiToTypescript() {
                                         <button
                                             type="button"
                                             onClick={handleAutoFixSpec}
-                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold transition shrink-0 shadow-sm"
+                                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold transition shrink-0 shadow-xs"
                                         >
                                             <Wrench className="w-4 h-4" />
                                             <span>1-Click Auto-Fix All Fixable Issues</span>
@@ -1249,7 +1221,6 @@ export default function OpenapiToTypescript() {
                             </div>
                         )}
 
-                        {/* TAB 3: 5-POINT AST & DEPENDENCY GRAPH INVARIANT VERIFICATION */}
                         {activeBottomTab === 'verification' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {compiled.invariantVerification.checks.map((chk) => (
