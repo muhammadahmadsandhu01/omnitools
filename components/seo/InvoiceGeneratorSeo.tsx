@@ -113,30 +113,30 @@ export default function InvoiceGeneratorSeo() {
             name: 'How to Create and Download a Professional Tax-Compliant PDF Invoice Online',
             description: 'Step-by-step guide to building a custom commercial invoice with multi-currency formatting, line-item taxes, discounts, company logo, and vector PDF export.',
             step: [
-      {
-        '@type': 'HowToStep',
-        position: 1,
-        name: 'Add Business Branding & Client Details',
-        text: 'Upload your company logo (PNG, JPG, WebP), enter your business name, tax/VAT ID, billing address, and client recipient details.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 2,
-        name: 'Configure Invoice Number, Dates & Currency',
-        text: 'Set your invoice number, issue date, payment due date, and choose from 150+ ISO currencies with automatic locale formatting.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 3,
-        name: 'Enter Line Items, Taxes & Discounts',
-        text: 'Add products or services with quantities, unit prices, per-item or subtotal tax rates (GST, VAT, Sales Tax), discounts, and shipping fees.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 4,
-        name: 'Generate Print-Ready PDF or Export CSV/JSON',
-        text: 'Preview the live A4/Letter invoice layout, download a high-resolution PDF, or export a CWE-1236 formula-safe CSV/JSON backup.',
-      }
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Add Business Branding & Client Details',
+                text: 'Upload your company logo (PNG, JPG, WebP), enter your business name, tax/VAT ID, billing address, and client recipient details.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Configure Invoice Number, Dates & Currency',
+                text: 'Set your invoice number, issue date, payment due date, and choose from 150+ ISO currencies with automatic locale formatting.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Enter Line Items, Taxes & Discounts',
+                text: 'Add products or services with quantities, unit prices, per-item or subtotal tax rates (GST, VAT, Sales Tax), discounts, and shipping fees.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Generate Print-Ready PDF or Export CSV/JSON',
+                text: 'Preview the live A4/Letter invoice layout, download a high-resolution PDF, or export a CWE-1236 formula-safe CSV/JSON backup.',
+              }
             ],
           }),
         }}
@@ -418,7 +418,7 @@ export default function InvoiceGeneratorSeo() {
       </section>
 
       {/* 8. FAQs */}
-            {/* Competitor Comparison Section */}
+      {/* Competitor Comparison Section */}
       <section aria-labelledby="invoice-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
         <h2 id="invoice-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Invoice Generator Comparison: KivaroTools vs. Commercial Invoicing Apps
@@ -553,54 +553,66 @@ export default function InvoiceGeneratorSeo() {
             >
               Precious Metals Scrap Calculator &rarr;
             </Link>
+
+            <Link
+              href="/finance/saas-burn-rate-calculator"
+              className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
+            >
+              <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+                SaaS Burn Rate, Runway &amp; SAFE Dilution Simulator →
+              </div>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Model 60-month SaaS &amp; AI cash runway, Default Alive breakeven, YC Post-Money SAFE v1.1 dilution, and M&amp;A exit waterfalls locally.
+              </p>
+            </Link>
           </div>
         </div>
       </section>
-    
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            Free PDF Invoice Generator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free invoice generator pdf no signup</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online invoice maker with logo</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance contractor invoice template pdf</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">multi currency invoice generator vat gst</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial billing invoice creator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">printable a4 pdf invoice generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private client side invoice maker</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice to pdf csv json</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">proforma invoice receipt generator free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">b2b tax invoice generator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free online invoice generator with logo download pdf</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">tax invoice generator with gst and vat line items</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">printable commercial invoice template no watermarks</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side pdf invoice generator 100 private</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance invoice maker multi currency usd eur gbp</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">itemized contractor invoice generator with discounts</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">automated invoice subtotal tax and shipping calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">create invoice online free without email registration</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">proforma invoice generator with due date and payment terms</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">recurring consulting invoice generator pdf download</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">professional service invoice generator with hourly rates</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">small business billing receipt generator free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">digital invoice maker with custom tax rates per item</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice line items to formula safe csv</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">print ready a4 invoice generator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero upload private invoice generator in browser</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">custom invoice number and po number generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">invoice payment reminder due date calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">invoice generator with company tax id and bank details</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">simple sales receipt maker with discount calculation</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vector graphic invoice pdf generator no blur</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice data to json backup</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">contractor labor and material invoice generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance graphic design invoice template online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">b2b commercial export invoice generator pdf</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">modern clean invoice generator dark mode ready</span>
-          </div>
-        </section>
-      </article>
+
+      {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+      <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          Free PDF Invoice Generator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free invoice generator pdf no signup</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online invoice maker with logo</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance contractor invoice template pdf</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">multi currency invoice generator vat gst</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial billing invoice creator online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">printable a4 pdf invoice generator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private client side invoice maker</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice to pdf csv json</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">proforma invoice receipt generator free</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">b2b tax invoice generator online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free online invoice generator with logo download pdf</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">tax invoice generator with gst and vat line items</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">printable commercial invoice template no watermarks</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side pdf invoice generator 100 private</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance invoice maker multi currency usd eur gbp</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">itemized contractor invoice generator with discounts</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">automated invoice subtotal tax and shipping calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">create invoice online free without email registration</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">proforma invoice generator with due date and payment terms</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">recurring consulting invoice generator pdf download</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">professional service invoice generator with hourly rates</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">small business billing receipt generator free</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">digital invoice maker with custom tax rates per item</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice line items to formula safe csv</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">print ready a4 invoice generator online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero upload private invoice generator in browser</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">custom invoice number and po number generator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">invoice payment reminder due date calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">invoice generator with company tax id and bank details</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">simple sales receipt maker with discount calculation</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vector graphic invoice pdf generator no blur</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export invoice data to json backup</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">contractor labor and material invoice generator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">freelance graphic design invoice template online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">b2b commercial export invoice generator pdf</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">modern clean invoice generator dark mode ready</span>
+        </div>
+      </section>
+    </article>
   );
 }

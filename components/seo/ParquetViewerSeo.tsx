@@ -1532,6 +1532,18 @@ ecommerce_orders_v2_schema = pa.schema([
               Build llmstxt.org v2 compliant llms.txt &amp; llms-full.txt indexes, configure 45 AI crawler bots, fix RFC 9309 leaks, and export W3C tdmrep.json locally.
             </p>
           </Link>
+
+          <Link
+            href="/finance/saas-burn-rate-calculator"
+            className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
+          >
+            <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+              SaaS Burn Rate, Runway &amp; SAFE Dilution Simulator →
+            </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Model 60-month SaaS &amp; AI cash runway, Default Alive breakeven, YC Post-Money SAFE v1.1 dilution, and M&amp;A exit waterfalls locally.
+            </p>
+          </Link>
         </div>
       </section>
     </article>

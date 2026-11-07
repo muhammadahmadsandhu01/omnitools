@@ -38,6 +38,7 @@ import {
     parseSqliteOrDuckDbFile,
     parseSqliteWalBytes,
     exportBinarySqliteDatabase,
+    syncWorkspaceBinaryTelemetry,
     executeSqlQuery,
     profileTableColumns,
     discoverAllForeignKeys,
@@ -200,6 +201,13 @@ export default function SqliteExplorer() {
         [workspace.tables, workspace.activeTableName]
     );
 
+    const gridColumns = useMemo(() => {
+        if (!liveQueryExecution.error && liveQueryExecution.columns.length > 0) {
+            return liveQueryExecution.columns;
+        }
+        return activeTableObj ? activeTableObj.columns.map((c) => c.name) : [];
+    }, [liveQueryExecution, activeTableObj]);
+
     const filteredDisplayRows = useMemo(() => {
         const sourceRows = liveQueryExecution.error ? activeTableObj?.rows || [] : liveQueryExecution.rows;
         let rows = sourceRows;
@@ -319,13 +327,12 @@ export default function SqliteExplorer() {
         if (!sqlToRun) return;
         const { result, updatedWorkspace } = executeSqlQuery(workspace, sqlToRun);
         if (result.isMutation && !result.error) {
-            const nextBin = exportBinarySqliteDatabase(updatedWorkspace);
-            setWorkspace({
-                ...updatedWorkspace,
-                fileByteSize: nextBin.byteLength,
-                sha256Hex: updatedWorkspace.sha256Hex,
-                activeSqlQuery: sqlToRun,
-            });
+            setWorkspace(
+                syncWorkspaceBinaryTelemetry({
+                    ...updatedWorkspace,
+                    activeSqlQuery: sqlToRun,
+                })
+            );
             setManualQueryResult(result);
             setRowActionNotice(`Executed SQL mutation (${result.rowsAffected} row(s) affected) in ${result.executionTimeMs} ms!`);
         } else {
@@ -380,11 +387,13 @@ export default function SqliteExplorer() {
             t.name === activeTableObj.name ? { ...t, rows: [newRow, ...t.rows] } : t
         );
         const nextSelectSql = `SELECT * FROM ${activeTableObj.name} LIMIT 50;`;
-        setWorkspace((prev) => ({
-            ...prev,
-            tables: nextTables,
-            activeSqlQuery: nextSelectSql,
-        }));
+        setWorkspace((prev) =>
+            syncWorkspaceBinaryTelemetry({
+                ...prev,
+                tables: nextTables,
+                activeSqlQuery: nextSelectSql,
+            })
+        );
         setManualQueryResult(null);
         setNewRowInputs({});
         setRecentlyAddedRowIndex(0);
@@ -428,12 +437,14 @@ export default function SqliteExplorer() {
         };
 
         const nextSql = `SELECT * FROM ${cleanName} LIMIT 50;`;
-        setWorkspace((prev) => ({
-            ...prev,
-            tables: [...prev.tables, newTbl],
-            activeTableName: cleanName,
-            activeSqlQuery: nextSql,
-        }));
+        setWorkspace((prev) =>
+            syncWorkspaceBinaryTelemetry({
+                ...prev,
+                tables: [...prev.tables, newTbl],
+                activeTableName: cleanName,
+                activeSqlQuery: nextSql,
+            })
+        );
         setManualQueryResult(null);
         setNewTableNameInput('');
         const msg = `Created table "${cleanName}" with 4 columns and 1 starter row!`;
@@ -863,7 +874,7 @@ export default function SqliteExplorer() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                     {/* Left Column: Table Browser Sidebar & Quick Table Creator */}
                     <div className="min-w-0 lg:col-span-4 space-y-4">
-                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3 text-xs">
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm space-y-3 text-xs overflow-hidden min-w-0">
                             <div className="flex items-center justify-between gap-2">
                                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                     <TableIcon className="w-4 h-4 text-indigo-600 shrink-0" />
@@ -960,11 +971,11 @@ export default function SqliteExplorer() {
                             </div>
 
                             {/* Create New Table Form */}
-                            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2 min-w-0">
                                 <label className="block font-bold text-slate-700 dark:text-slate-300">
                                     Create New Table in Memory:
                                 </label>
-                                <div className="flex flex-col sm:flex-row gap-2">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full min-w-0">
                                     <input
                                         type="text"
                                         value={newTableNameInput}
@@ -976,14 +987,14 @@ export default function SqliteExplorer() {
                                             }
                                         }}
                                         placeholder="e.g. api_keys or events"
-                                        className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                                        className="min-w-0 w-full sm:flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono text-xs"
                                     />
                                     <button
                                         type="button"
                                         onClick={handleCreateQuickTable}
-                                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                                        className="w-full sm:w-auto px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold inline-flex items-center justify-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
                                     >
-                                        <Plus className="w-3.5 h-3.5" />
+                                        <Plus className="w-3.5 h-3.5 shrink-0" />
                                         <span>Add Table</span>
                                     </button>
                                 </div>
@@ -1073,8 +1084,21 @@ export default function SqliteExplorer() {
                             )}
 
                             {liveQueryExecution.error && (
-                                <div className="rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-rose-800 dark:text-rose-200 text-[11px] font-mono">
-                                    SQL Error: {liveQueryExecution.error}
+                                <div className="rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-rose-800 dark:text-rose-200 text-[11px] font-mono flex flex-wrap items-center justify-between gap-2">
+                                    <span className="min-w-0 break-words">
+                                        SQL Error: {liveQueryExecution.error} (Showing fallback rows from &quot;{activeTableObj?.name}&quot; below)
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const resetSql = `SELECT * FROM ${activeTableObj?.name || 'users'} LIMIT 50;`;
+                                            setWorkspace((p) => ({ ...p, activeSqlQuery: resetSql }));
+                                            setManualQueryResult(null);
+                                        }}
+                                        className="px-2 py-0.5 rounded bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100 font-sans font-bold shrink-0 cursor-pointer"
+                                    >
+                                        Reset Query
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -1093,21 +1117,21 @@ export default function SqliteExplorer() {
                                     )}
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <div className="relative">
+                                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto min-w-0">
+                                    <div className="relative flex-1 sm:flex-initial min-w-0">
                                         <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
                                         <input
                                             type="text"
                                             value={rowSearchFilter}
                                             onChange={(e) => setRowSearchFilter(e.target.value)}
                                             placeholder="Filter grid rows..."
-                                            className="pl-8 pr-3 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
+                                            className="w-full sm:w-48 min-w-0 pl-8 pr-3 py-1 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"
                                         />
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            const csv = exportDatabaseCsv(filteredDisplayRows, liveQueryExecution.columns, true);
+                                            const csv = exportDatabaseCsv(filteredDisplayRows, gridColumns, true);
                                             triggerDownload(csv, `${workspace.activeTableName || 'query'}_export.csv`, 'text/csv;charset=utf-8');
                                         }}
                                         className="px-2.5 py-1 rounded-lg font-bold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 cursor-pointer"
@@ -1139,7 +1163,7 @@ export default function SqliteExplorer() {
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                         {activeTableObj.columns.map((col) => (
-                                            <div key={col.name}>
+                                            <div key={col.name} className="min-w-0">
                                                 <label className="block text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 mb-0.5 truncate">
                                                     {col.name} ({col.rawType})
                                                 </label>
@@ -1156,7 +1180,7 @@ export default function SqliteExplorer() {
                                                         }
                                                     }}
                                                     placeholder={col.isPrimaryKey ? 'Auto ID' : `Enter ${col.name}...`}
-                                                    className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-[11px]"
+                                                    className="w-full min-w-0 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-[11px]"
                                                 />
                                             </div>
                                         ))}
@@ -1179,11 +1203,11 @@ export default function SqliteExplorer() {
 
                             {/* Scrollable Data Grid with Forensic Timestamp Badges & Inline Editing */}
                             <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-200 dark:border-slate-800 max-h-[440px]">
-                                <table className="min-w-[640px] w-full text-left border-collapse text-xs">
+                                <table className="w-full text-left border-collapse text-xs">
                                     <thead className="bg-slate-50 dark:bg-slate-800/90 text-[11px] text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10">
                                         <tr>
                                             <th className="py-2.5 px-3 font-mono w-10">#</th>
-                                            {liveQueryExecution.columns.map((col) => {
+                                            {gridColumns.map((col) => {
                                                 const isSorted = gridSortColumn === col;
                                                 return (
                                                     <th
@@ -1235,7 +1259,7 @@ export default function SqliteExplorer() {
                                                     }
                                                 >
                                                     <td className="py-2 px-3 font-mono text-[11px] text-slate-400">{rIdx + 1}</td>
-                                                    {liveQueryExecution.columns.map((col) => {
+                                                    {gridColumns.map((col) => {
                                                         const val = row[col];
                                                         const tsDecoded = decodeForensicTimestamp(val);
                                                         return (
@@ -1252,24 +1276,26 @@ export default function SqliteExplorer() {
                                                                                 : /^-?\d+(?:\.\d+)?$/.test(raw)
                                                                                     ? Number(raw)
                                                                                     : raw;
-                                                                        setWorkspace((prev) => ({
-                                                                            ...prev,
-                                                                            tables: prev.tables.map((t) =>
-                                                                                t.name === activeTableObj.name
-                                                                                    ? {
-                                                                                        ...t,
-                                                                                        rows: t.rows.map((origRow, idx) =>
-                                                                                            matchesTargetRow(origRow, idx)
-                                                                                                ? { ...origRow, [col]: parsedVal }
-                                                                                                : origRow
-                                                                                        ),
-                                                                                    }
-                                                                                    : t
-                                                                            ),
-                                                                        }));
+                                                                        setWorkspace((prev) =>
+                                                                            syncWorkspaceBinaryTelemetry({
+                                                                                ...prev,
+                                                                                tables: prev.tables.map((t) =>
+                                                                                    t.name === activeTableObj.name
+                                                                                        ? {
+                                                                                            ...t,
+                                                                                            rows: t.rows.map((origRow, idx) =>
+                                                                                                matchesTargetRow(origRow, idx)
+                                                                                                    ? { ...origRow, [col]: parsedVal }
+                                                                                                    : origRow
+                                                                                            ),
+                                                                                        }
+                                                                                        : t
+                                                                                ),
+                                                                            })
+                                                                        );
                                                                         setManualQueryResult(null);
                                                                     }}
-                                                                    className="w-full min-w-[100px] bg-transparent border-b border-transparent focus:border-indigo-500 outline-none text-slate-900 dark:text-slate-100"
+                                                                    className="w-full min-w-[72px] bg-transparent border-b border-transparent focus:border-indigo-500 outline-none text-slate-900 dark:text-slate-100"
                                                                 />
                                                                 {tsDecoded.isoString && tsDecoded.category !== 'ISO8601_DATETIME' && (
                                                                     <span
@@ -1288,17 +1314,19 @@ export default function SqliteExplorer() {
                                                             title="Delete row"
                                                             onClick={() => {
                                                                 if (!activeTableObj) return;
-                                                                setWorkspace((prev) => ({
-                                                                    ...prev,
-                                                                    tables: prev.tables.map((t) =>
-                                                                        t.name === activeTableObj.name
-                                                                            ? {
-                                                                                ...t,
-                                                                                rows: t.rows.filter((origRow, idx) => !matchesTargetRow(origRow, idx)),
-                                                                            }
-                                                                            : t
-                                                                    ),
-                                                                }));
+                                                                setWorkspace((prev) =>
+                                                                    syncWorkspaceBinaryTelemetry({
+                                                                        ...prev,
+                                                                        tables: prev.tables.map((t) =>
+                                                                            t.name === activeTableObj.name
+                                                                                ? {
+                                                                                    ...t,
+                                                                                    rows: t.rows.filter((origRow, idx) => !matchesTargetRow(origRow, idx)),
+                                                                                }
+                                                                                : t
+                                                                        ),
+                                                                    })
+                                                                );
                                                                 setManualQueryResult(null);
                                                                 setRowActionNotice(`Deleted row from "${activeTableObj.name}".`);
                                                             }}
@@ -1699,11 +1727,7 @@ export default function SqliteExplorer() {
                                     type="button"
                                     onClick={() => {
                                         const { updatedWorkspace } = executeSqlQuery(workspace, 'VACUUM;');
-                                        const bin = exportBinarySqliteDatabase(updatedWorkspace);
-                                        setWorkspace({
-                                            ...updatedWorkspace,
-                                            fileByteSize: bin.byteLength,
-                                        });
+                                        setWorkspace(syncWorkspaceBinaryTelemetry(updatedWorkspace));
                                         const msg = 'Executed VACUUM: defragmented all B-tree pages and zero-wiped unallocated freelist slack!';
                                         setForensicActionNotice(msg);
                                         setStatusBanner(msg);

@@ -1521,6 +1521,22 @@ export function exportBinarySqliteDatabase(workspace: SqliteWorkspaceState): Uin
 // 5. SQL DUMP, CSV, JSON & DUCKDB FILE PARSER
 // ============================================================================
 
+export function syncWorkspaceBinaryTelemetry(workspace: SqliteWorkspaceState): SqliteWorkspaceState {
+    const binBytes = exportBinarySqliteDatabase(workspace);
+    const reparsed = parseBinarySqlite3(binBytes, workspace.fileName);
+    return {
+        ...workspace,
+        fileByteSize: binBytes.byteLength,
+        sha256Hex: reparsed.sha256Hex,
+        headerInfo: {
+            ...reparsed.headerInfo,
+            firstFreelistTrunkPage: workspace.headerInfo.firstFreelistTrunkPage,
+            totalFreelistPages: workspace.headerInfo.totalFreelistPages,
+        },
+        pageMap: reparsed.pageMap,
+    };
+}
+
 export function parseSqliteOrDuckDbFile(
     input: Uint8Array | string,
     fileName = 'database.sqlite'
@@ -3406,12 +3422,17 @@ export function anonymizeDatabasePii(workspace: SqliteWorkspaceState): SqliteWor
         return { ...t, rows: cleanRows };
     });
 
-    return {
+    return syncWorkspaceBinaryTelemetry({
         ...workspace,
         tables: nextTables,
+        headerInfo: {
+            ...workspace.headerInfo,
+            firstFreelistTrunkPage: 0,
+            totalFreelistPages: 0,
+        },
         recoveredArtifacts: [],
         piiScrubbedCount: workspace.piiScrubbedCount + Math.max(1, scrubbedCount),
-    };
+    });
 }
 
 export function compareSqliteDatabases(

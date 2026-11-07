@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 // ============================================================
 // Tool Functional Components
 // ============================================================
+import SaasBurnRateCalculator from '@/components/tools/SaasBurnRateCalculator';
 import PreciousMetals from '@/components/tools/PreciousMetals';
 import EmiCalculator from '@/components/tools/EmiCalculator';
 import MortgageCalculator from '@/components/tools/MortgageCalculator';
@@ -42,6 +43,7 @@ import MetaGenerator from '@/components/tools/MetaGenerator';
 // ============================================================
 // SEO Landing Page Content Components
 // ============================================================
+import SaasBurnRateCalculatorSeo from '@/components/seo/SaasBurnRateCalculatorSeo';
 import PreciousMetalsSeo from '@/components/seo/PreciousMetalsSeo';
 import EmiCalculatorSeo from '@/components/seo/EmiCalculatorSeo';
 import MortgageCalculatorSeo from '@/components/seo/MortgageCalculatorSeo';
@@ -93,6 +95,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'crypto-converter': CryptoConverter,
   'currency-converter': CryptoConverter, // Alias
   'invoice-generator': InvoiceGenerator,
+  'saas-burn-rate-calculator': SaasBurnRateCalculator,
+  'startup-runway-calculator': SaasBurnRateCalculator, // Alias
+  'safe-dilution-calculator': SaasBurnRateCalculator, // Alias
+  'cap-table-simulator': SaasBurnRateCalculator, // Alias
+  'default-alive-calculator': SaasBurnRateCalculator, // Alias
+  'burn-multiple-calculator': SaasBurnRateCalculator, // Alias
+  'liquidation-preference-calculator': SaasBurnRateCalculator, // Alias
 
   // Developer
   'json-formatter': JsonFormatter,
@@ -191,6 +200,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'crypto-converter': CryptoConverterSeo,
   'currency-converter': CryptoConverterSeo, // Alias
   'invoice-generator': InvoiceGeneratorSeo,
+  'saas-burn-rate-calculator': SaasBurnRateCalculatorSeo,
+  'startup-runway-calculator': SaasBurnRateCalculatorSeo, // Alias
+  'safe-dilution-calculator': SaasBurnRateCalculatorSeo, // Alias
+  'cap-table-simulator': SaasBurnRateCalculatorSeo, // Alias
+  'default-alive-calculator': SaasBurnRateCalculatorSeo, // Alias
+  'burn-multiple-calculator': SaasBurnRateCalculatorSeo, // Alias
+  'liquidation-preference-calculator': SaasBurnRateCalculatorSeo, // Alias
 
   // Developer
   'json-formatter': JsonFormatterSeo,

@@ -99,7 +99,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                     slug === 'sqlite-erd-generator' ||
                                     slug === 'sqlite-to-postgres'
                                     ? 'sqlite-viewer'
-                                    : slug;
+                                    : slug === 'startup-runway-calculator' ||
+                                      slug === 'safe-dilution-calculator' ||
+                                      slug === 'cap-table-simulator' ||
+                                      slug === 'default-alive-calculator' ||
+                                      slug === 'burn-multiple-calculator' ||
+                                      slug === 'liquidation-preference-calculator'
+                                      ? 'saas-burn-rate-calculator'
+                                      : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -119,13 +126,15 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           ? 'media'
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
-            : resolvedSlug === 'parquet-viewer' ||
-              resolvedSlug === 'har-analyzer' ||
-              resolvedSlug === 'sqlite-viewer'
-              ? 'developer'
-              : resolvedSlug === 'llms-txt-generator'
-                ? 'seo'
-                : category;
+            : resolvedSlug === 'saas-burn-rate-calculator'
+              ? 'finance'
+              : resolvedSlug === 'parquet-viewer' ||
+                resolvedSlug === 'har-analyzer' ||
+                resolvedSlug === 'sqlite-viewer'
+                ? 'developer'
+                : resolvedSlug === 'llms-txt-generator'
+                  ? 'seo'
+                  : category;
 
   return { resolvedCategory, resolvedSlug };
 }
