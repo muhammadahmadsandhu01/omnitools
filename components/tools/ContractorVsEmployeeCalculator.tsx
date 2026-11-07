@@ -85,12 +85,23 @@ const QUICK_SCENARIO_PRESETS: {
     ];
 
 export default function ContractorVsEmployeeCalculator() {
-    const [activePresetId, setActivePresetId] = useState<ContractorScenarioPresetId | null>(
-        'us_w2_1099_scorp'
-    );
-    const [inputs, setInputs] = useState<ContractorVsEmployeeInputs>(() =>
-        getContractorScenarioPreset('us_w2_1099_scorp')
-    );
+    const [activePresetId, setActivePresetId] = useState<ContractorScenarioPresetId | null>(null);
+    const [inputs, setInputs] = useState<ContractorVsEmployeeInputs>(() => ({
+        ...getContractorScenarioPreset('us_w2_1099_scorp'),
+        employeeBaseSalaryAnnual: 0,
+        employeeAnnualBonus: 0,
+        employerHealthInsuranceAnnual: 0,
+        employerRetirementMatchPercent: 0,
+        employeeRetirementContributionPercent: 0,
+        paidVacationAndHolidaysDays: 0,
+        paidSickDays: 0,
+        employerOtherPerksAnnual: 0,
+        contractorRateInput: 0,
+        deductibleBusinessExpensesAnnual: 0,
+        contractorSelfFundedHealthAnnual: 0,
+        contractorRetirementContributionAnnual: 0,
+        entityAccountingAndUmbrellaFeesAnnual: 0,
+    }));
 
     const [activeDeepDiveTab, setActiveDeepDiveTab] = useState<DeepDiveTab>('three_way_waterfall');
     const [canonicalAnnualGross, setCanonicalAnnualGross] = useState<number | null>(null);
@@ -152,18 +163,24 @@ export default function ContractorVsEmployeeCalculator() {
 
     const handleResetToZero = () => {
         setActivePresetId(null);
+        setCanonicalAnnualGross(null);
         setInputs((prev) => ({
             ...prev,
             employeeBaseSalaryAnnual: 0,
             employeeAnnualBonus: 0,
             employerHealthInsuranceAnnual: 0,
+            employerRetirementMatchPercent: 0,
+            employeeRetirementContributionPercent: 0,
+            paidVacationAndHolidaysDays: 0,
+            paidSickDays: 0,
             employerOtherPerksAnnual: 0,
             contractorRateInput: 0,
             deductibleBusinessExpensesAnnual: 0,
             contractorSelfFundedHealthAnnual: 0,
             contractorRetirementContributionAnnual: 0,
+            entityAccountingAndUmbrellaFeesAnnual: 0,
         }));
-        setStatusNotice('Reset monetary inputs to 0. Click any Quick Scenario Preset chip to load sample numbers.');
+        setStatusNotice('Reset all values to 0. Click any Quick Scenario Preset chip or enter your own values.');
     };
 
     const triggerDownload = (content: Uint8Array | string, fileName: string, mimeType: string) => {
@@ -1256,14 +1273,14 @@ export default function ContractorVsEmployeeCalculator() {
                             </div>
                         </div>
 
-                        {/* 2x2 SUMMARY METRIC CARDS (Exact Match to EMI Calculator 2x2 Grid) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex items-center justify-between gap-2">
-                                <div>
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium block">
+                        {/* 4 FULL-WIDTH SUMMARY METRIC ROWS (Zero Boundary Overflow on Desktop & Mobile) */}
+                        <div className="grid grid-cols-1 gap-2.5 text-xs min-w-0">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 min-w-0 overflow-hidden">
+                                <div className="min-w-0">
+                                    <span className="text-slate-700 dark:text-slate-200 font-semibold block break-words">
                                         1. {report.employeeRegime.regimeTitle}
                                     </span>
-                                    <span className="text-[11px] text-slate-400">
+                                    <span className="text-[11px] text-slate-400 block">
                                         +{cur}
                                         {report.employeeRegime.monetizedBenefitsAndRetirementValueAnnual.toLocaleString()}{' '}
                                         benefits ({employeeTakeHomePctOfGross}% net)
@@ -1275,12 +1292,12 @@ export default function ContractorVsEmployeeCalculator() {
                                 </span>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex items-center justify-between gap-2">
-                                <div>
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium block">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 min-w-0 overflow-hidden">
+                                <div className="min-w-0">
+                                    <span className="text-slate-700 dark:text-slate-200 font-semibold block break-words">
                                         2. {report.standardContractorRegime.regimeTitle}
                                     </span>
-                                    <span className="text-[11px] text-slate-400">
+                                    <span className="text-[11px] text-slate-400 block">
                                         Tax: {cur}
                                         {report.standardContractorRegime.totalTaxesAndStatutoryDeductionsAnnual.toLocaleString()}{' '}
                                         ({report.standardContractorRegime.effectiveTaxRatePercent}%)
@@ -1292,12 +1309,12 @@ export default function ContractorVsEmployeeCalculator() {
                                 </span>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex items-center justify-between gap-2">
-                                <div>
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium block">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 min-w-0 overflow-hidden">
+                                <div className="min-w-0">
+                                    <span className="text-slate-700 dark:text-slate-200 font-semibold block break-words">
                                         3. {report.optimizedEntityRegime.regimeTitle}
                                     </span>
-                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block">
                                         Saves {cur}
                                         {Math.max(
                                             0,
@@ -1312,16 +1329,16 @@ export default function ContractorVsEmployeeCalculator() {
                                 </span>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex items-center justify-between gap-2">
-                                <div>
-                                    <span className="text-slate-500 dark:text-slate-400 font-medium block">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 px-4 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 min-w-0 overflow-hidden">
+                                <div className="min-w-0">
+                                    <span className="text-slate-700 dark:text-slate-200 font-semibold block break-words">
                                         Target Rate (+15% Bench Buffer)
                                     </span>
-                                    <span className="text-[11px] text-slate-400">
+                                    <span className="text-[11px] text-slate-400 block">
                                         Covers unpaid bench &amp; B2B risk
                                     </span>
                                 </div>
-                                <span className="font-mono text-sm font-extrabold text-amber-600 dark:text-amber-400 shrink-0">
+                                <span className="font-mono text-sm font-extrabold text-amber-600 dark:text-amber-400 shrink-0 text-right">
                                     {cur}
                                     {report.recommendedHourlyRateWithBuffer}/hr ({cur}
                                     {report.recommendedDailyRateWithBuffer}/d)

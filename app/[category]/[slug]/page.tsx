@@ -113,7 +113,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                         slug === 't4-vs-incorporated-calculator' ||
                                         slug === 'eor-cost-calculator'
                                         ? 'contractor-vs-employee-calculator'
-                                        : slug;
+                                        : slug === 'openapi-to-zod' ||
+                                          slug === 'swagger-to-typescript' ||
+                                          slug === 'swagger-to-zod' ||
+                                          slug === 'openapi-mock-generator' ||
+                                          slug === 'openapi-msw-generator' ||
+                                          slug === 'openapi-tanstack-query-generator'
+                                          ? 'openapi-to-typescript'
+                                          : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -140,7 +147,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
               ? 'finance'
               : resolvedSlug === 'parquet-viewer' ||
                 resolvedSlug === 'har-analyzer' ||
-                resolvedSlug === 'sqlite-viewer'
+                resolvedSlug === 'sqlite-viewer' ||
+                resolvedSlug === 'openapi-to-typescript'
                 ? 'developer'
                 : resolvedSlug === 'llms-txt-generator'
                   ? 'seo'

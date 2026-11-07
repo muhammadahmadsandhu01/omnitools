@@ -14,6 +14,7 @@ import SalaryCalculator from '@/components/tools/SalaryCalculator';
 import CryptoConverter from '@/components/tools/CryptoConverter';
 import InvoiceGenerator from '@/components/tools/InvoiceGenerator';
 import JsonFormatter from '@/components/tools/JsonFormatter';
+import OpenapiToTypescript from '@/components/tools/OpenapiToTypescript';
 import SvgOptimizer from '@/components/tools/SvgOptimizer';
 import PasswordGenerator from '@/components/tools/PasswordGenerator';
 import JsonConverter from '@/components/tools/JsonConverter';
@@ -55,6 +56,7 @@ import SalaryCalculatorSeo from '@/components/seo/SalaryCalculatorSeo';
 import CryptoConverterSeo from '@/components/seo/CryptoConverterSeo';
 import InvoiceGeneratorSeo from '@/components/seo/InvoiceGeneratorSeo';
 import JsonFormatterSeo from '@/components/seo/JsonFormatterSeo';
+import OpenapiToTypescriptSeo from '@/components/seo/OpenapiToTypescriptSeo';
 import SvgOptimizerSeo from '@/components/seo/SvgOptimizerSeo';
 import PasswordGeneratorSeo from '@/components/seo/PasswordGeneratorSeo';
 import JsonConverterSeo from '@/components/seo/JsonConverterSeo';
@@ -142,6 +144,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'db-file-viewer': SqliteExplorer, // Alias
   'sqlite-erd-generator': SqliteExplorer, // Alias
   'sqlite-to-postgres': SqliteExplorer, // Alias
+  'openapi-to-typescript': OpenapiToTypescript,
+  'openapi-to-zod': OpenapiToTypescript, // Alias
+  'swagger-to-typescript': OpenapiToTypescript, // Alias
+  'swagger-to-zod': OpenapiToTypescript, // Alias
+  'openapi-mock-generator': OpenapiToTypescript, // Alias
+  'openapi-msw-generator': OpenapiToTypescript, // Alias
+  'openapi-tanstack-query-generator': OpenapiToTypescript, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -254,6 +263,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'db-file-viewer': SqliteExplorerSeo, // Alias
   'sqlite-erd-generator': SqliteExplorerSeo, // Alias
   'sqlite-to-postgres': SqliteExplorerSeo, // Alias
+  'openapi-to-typescript': OpenapiToTypescriptSeo,
+  'openapi-to-zod': OpenapiToTypescriptSeo, // Alias
+  'swagger-to-typescript': OpenapiToTypescriptSeo, // Alias
+  'swagger-to-zod': OpenapiToTypescriptSeo, // Alias
+  'openapi-mock-generator': OpenapiToTypescriptSeo, // Alias
+  'openapi-msw-generator': OpenapiToTypescriptSeo, // Alias
+  'openapi-tanstack-query-generator': OpenapiToTypescriptSeo, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,

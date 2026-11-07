@@ -289,10 +289,10 @@ for (const tool of tools) {
 // ============================================================
 console.log('• Checking sitemap scope and statutory routes...');
 const publishedTools = getPublishedTools();
-if (publishedTools.length !== 37) {
+if (publishedTools.length !== 38) {
   errors.push({
     field: 'getPublishedTools.length',
-    message: `Expected 37 published tools, got ${publishedTools.length}.`,
+    message: `Expected 38 published tools, got ${publishedTools.length}.`,
   });
 }
 
@@ -334,7 +334,7 @@ console.log(`  • Coming Soon:  ${comingSoonCount}`);
 console.log(`  • Draft:        ${draftCount}`);
 console.log(`Total Categories:         ${categories.length}`);
 console.log(`Statutory Salary Routes:  ${COUNTRY_SLUGS.length}`);
-console.log(`Expected Total Routes: ${1 + 4 + categories.length + publishedCount + COUNTRY_SLUGS.length} (70)\n`);
+console.log(`Expected Total Routes: ${1 + 4 + categories.length + publishedCount + COUNTRY_SLUGS.length} (71)\n`);
 
 if (errors.length > 0) {
   console.error(`❌ REGISTRY VALIDATION FAILED with ${errors.length} error(s):\n`);
