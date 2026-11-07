@@ -6,6 +6,7 @@ import type { ComponentType } from 'react';
 import SaasBurnRateCalculator from '@/components/tools/SaasBurnRateCalculator';
 import PreciousMetals from '@/components/tools/PreciousMetals';
 import EmiCalculator from '@/components/tools/EmiCalculator';
+import ContractorVsEmployeeCalculator from '@/components/tools/ContractorVsEmployeeCalculator';
 import MortgageCalculator from '@/components/tools/MortgageCalculator';
 import CompoundInterest from '@/components/tools/CompoundInterest';
 import SipCalculator from '@/components/tools/SipCalculator';
@@ -46,6 +47,7 @@ import MetaGenerator from '@/components/tools/MetaGenerator';
 import SaasBurnRateCalculatorSeo from '@/components/seo/SaasBurnRateCalculatorSeo';
 import PreciousMetalsSeo from '@/components/seo/PreciousMetalsSeo';
 import EmiCalculatorSeo from '@/components/seo/EmiCalculatorSeo';
+import ContractorVsEmployeeSeo from '@/components/seo/ContractorVsEmployeeSeo';
 import MortgageCalculatorSeo from '@/components/seo/MortgageCalculatorSeo';
 import CompoundInterestSeo from '@/components/seo/CompoundInterestSeo';
 import SipCalculatorSeo from '@/components/seo/SipCalculatorSeo';
@@ -102,6 +104,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'default-alive-calculator': SaasBurnRateCalculator, // Alias
   'burn-multiple-calculator': SaasBurnRateCalculator, // Alias
   'liquidation-preference-calculator': SaasBurnRateCalculator, // Alias
+  'contractor-vs-employee-calculator': ContractorVsEmployeeCalculator,
+  '1099-vs-w2-calculator': ContractorVsEmployeeCalculator, // Alias
+  'w2-to-1099-calculator': ContractorVsEmployeeCalculator, // Alias
+  'ir35-calculator': ContractorVsEmployeeCalculator, // Alias
+  's-corp-tax-calculator': ContractorVsEmployeeCalculator, // Alias
+  't4-vs-incorporated-calculator': ContractorVsEmployeeCalculator, // Alias
+  'eor-cost-calculator': ContractorVsEmployeeCalculator, // Alias
 
   // Developer
   'json-formatter': JsonFormatter,
@@ -207,6 +216,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'default-alive-calculator': SaasBurnRateCalculatorSeo, // Alias
   'burn-multiple-calculator': SaasBurnRateCalculatorSeo, // Alias
   'liquidation-preference-calculator': SaasBurnRateCalculatorSeo, // Alias
+  'contractor-vs-employee-calculator': ContractorVsEmployeeSeo,
+  '1099-vs-w2-calculator': ContractorVsEmployeeSeo, // Alias
+  'w2-to-1099-calculator': ContractorVsEmployeeSeo, // Alias
+  'ir35-calculator': ContractorVsEmployeeSeo, // Alias
+  's-corp-tax-calculator': ContractorVsEmployeeSeo, // Alias
+  't4-vs-incorporated-calculator': ContractorVsEmployeeSeo, // Alias
+  'eor-cost-calculator': ContractorVsEmployeeSeo, // Alias
 
   // Developer
   'json-formatter': JsonFormatterSeo,

@@ -106,7 +106,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                       slug === 'burn-multiple-calculator' ||
                                       slug === 'liquidation-preference-calculator'
                                       ? 'saas-burn-rate-calculator'
-                                      : slug;
+                                      : slug === '1099-vs-w2-calculator' ||
+                                        slug === 'w2-to-1099-calculator' ||
+                                        slug === 'ir35-calculator' ||
+                                        slug === 's-corp-tax-calculator' ||
+                                        slug === 't4-vs-incorporated-calculator' ||
+                                        slug === 'eor-cost-calculator'
+                                        ? 'contractor-vs-employee-calculator'
+                                        : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -126,7 +133,10 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           ? 'media'
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
-            : resolvedSlug === 'saas-burn-rate-calculator'
+            : resolvedSlug === 'saas-burn-rate-calculator' ||
+              resolvedSlug === 'contractor-vs-employee-calculator' ||
+              resolvedSlug === 'mortgage-calculator' ||
+              resolvedSlug === 'emi-calculator'
               ? 'finance'
               : resolvedSlug === 'parquet-viewer' ||
                 resolvedSlug === 'har-analyzer' ||
