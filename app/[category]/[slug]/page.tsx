@@ -92,7 +92,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                   slug === 'ai-crawler-generator' ||
                                   slug === 'tdmrep-generator'
                                   ? 'llms-txt-generator'
-                                  : slug;
+                                  : slug === 'sqlite-browser' ||
+                                    slug === 'duckdb-viewer' ||
+                                    slug === 'sqlite-online' ||
+                                    slug === 'db-file-viewer' ||
+                                    slug === 'sqlite-erd-generator' ||
+                                    slug === 'sqlite-to-postgres'
+                                    ? 'sqlite-viewer'
+                                    : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -113,7 +120,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
           : category === 'seo' && resolvedSlug === 'regex-tester'
             ? 'developer'
             : resolvedSlug === 'parquet-viewer' ||
-              resolvedSlug === 'har-analyzer'
+              resolvedSlug === 'har-analyzer' ||
+              resolvedSlug === 'sqlite-viewer'
               ? 'developer'
               : resolvedSlug === 'llms-txt-generator'
                 ? 'seo'

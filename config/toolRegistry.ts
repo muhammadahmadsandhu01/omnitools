@@ -15,6 +15,7 @@ import JsonFormatter from '@/components/tools/JsonFormatter';
 import SvgOptimizer from '@/components/tools/SvgOptimizer';
 import PasswordGenerator from '@/components/tools/PasswordGenerator';
 import JsonConverter from '@/components/tools/JsonConverter';
+import SqliteExplorer from '@/components/tools/SqliteExplorer';
 import Base64Encoder from '@/components/tools/Base64Encoder';
 import SqlFormatter from '@/components/tools/SqlFormatter';
 import RegexTester from '@/components/tools/RegexTester';
@@ -53,6 +54,7 @@ import JsonFormatterSeo from '@/components/seo/JsonFormatterSeo';
 import SvgOptimizerSeo from '@/components/seo/SvgOptimizerSeo';
 import PasswordGeneratorSeo from '@/components/seo/PasswordGeneratorSeo';
 import JsonConverterSeo from '@/components/seo/JsonConverterSeo';
+import SqliteExplorerSeo from '@/components/seo/SqliteExplorerSeo';
 import Base64EncoderSeo from '@/components/seo/Base64EncoderSeo';
 import SqlFormatterSeo from '@/components/seo/SqlFormatterSeo';
 import RegexTesterSeo from '@/components/seo/RegexTesterSeo';
@@ -115,6 +117,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'har-to-playwright': HarAnalyzer, // Alias
   'har-to-openapi': HarAnalyzer, // Alias
   'saml-har-analyzer': HarAnalyzer, // Alias 
+  'sqlite-viewer': SqliteExplorer,
+  'sqlite-browser': SqliteExplorer, // Alias
+  'duckdb-viewer': SqliteExplorer, // Alias
+  'sqlite-online': SqliteExplorer, // Alias
+  'db-file-viewer': SqliteExplorer, // Alias
+  'sqlite-erd-generator': SqliteExplorer, // Alias
+  'sqlite-to-postgres': SqliteExplorer, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -206,6 +215,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'har-to-playwright': HarAnalyzerSeo, // Alias
   'har-to-openapi': HarAnalyzerSeo, // Alias
   'saml-har-analyzer': HarAnalyzerSeo, // Alias
+  'sqlite-viewer': SqliteExplorerSeo,
+  'sqlite-browser': SqliteExplorerSeo, // Alias
+  'duckdb-viewer': SqliteExplorerSeo, // Alias
+  'sqlite-online': SqliteExplorerSeo, // Alias
+  'db-file-viewer': SqliteExplorerSeo, // Alias
+  'sqlite-erd-generator': SqliteExplorerSeo, // Alias
+  'sqlite-to-postgres': SqliteExplorerSeo, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,
