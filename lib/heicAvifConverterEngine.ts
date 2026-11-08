@@ -410,7 +410,9 @@ const CONTAINER_SUB_BOXES = new Set([
 
 export function inspectImageContainerBinary(
     rawBytes: Uint8Array,
-    originalFileName: string
+    originalFileName: string,
+    fallbackWidth = 0,
+    fallbackHeight = 0
 ): ContainerForensicReport {
     const extMatch = /\.([a-zA-Z0-9]+)$/.exec(originalFileName.trim());
     const declaredExtension = extMatch ? extMatch[1].toLowerCase() : '';
@@ -735,8 +737,8 @@ export function inspectImageContainerBinary(
     }
 
     if (width <= 0 || height <= 0) {
-        width = 1200;
-        height = 900;
+        width = fallbackWidth > 0 ? fallbackWidth : 1200;
+        height = fallbackHeight > 0 ? fallbackHeight : 900;
     }
 
     const exifPreview = parseExifAndGpsFromBuffer(rawBytes, 'PRESERVE_ALL');
@@ -1290,10 +1292,37 @@ export function buildSanitizedTiffBlock(
     pos += 2;
     heapCursor = pos + exifEntries * 12 + 4;
 
-    const expOff = writeRationalToHeap(1, 120); // 1/120 sec
-    const fnumOff = writeRationalToHeap(178, 100); // f/1.78
+    // Parse actual ExposureTime (e.g. "1/250 sec" or "0.008"), FNumber (e.g. "f/2.8"), and FocalLength (e.g. "24 mm") from sourceExif
+    let expNum = 1;
+    let expDen = 120;
+    const fracMatch = /(\d+)\s*\/\s*(\d+)/.exec(sourceExif.exposureTime || '');
+    if (fracMatch) {
+        expNum = Math.max(1, Number(fracMatch[1]) || 1);
+        expDen = Math.max(1, Number(fracMatch[2]) || 120);
+    } else if (sourceExif.exposureTime) {
+        const decExp = parseFloat(sourceExif.exposureTime);
+        if (!Number.isNaN(decExp) && decExp > 0) {
+            expNum = Math.max(1, Math.round(decExp * 10000));
+            expDen = 10000;
+        }
+    }
+
+    let fnumHundredths = 178;
+    const fMatch = /([0-9]+(?:\.[0-9]+)?)/.exec(sourceExif.fNumber || '');
+    if (fMatch) {
+        fnumHundredths = Math.max(50, Math.round(parseFloat(fMatch[1]) * 100));
+    }
+
+    let focalHundredths = 677;
+    const flMatch = /([0-9]+(?:\.[0-9]+)?)/.exec(sourceExif.focalLengthMm || '');
+    if (flMatch) {
+        focalHundredths = Math.max(100, Math.round(parseFloat(flMatch[1]) * 100));
+    }
+
+    const expOff = writeRationalToHeap(expNum, expDen);
+    const fnumOff = writeRationalToHeap(fnumHundredths, 100);
     const dtOrigHeap = writeAsciiToHeap(dateStr);
-    const focalOff = writeRationalToHeap(677, 100); // 6.77 mm
+    const focalOff = writeRationalToHeap(focalHundredths, 100);
     const lensHeap = writeAsciiToHeap(lensStr);
 
     writeIfdEntry(0x829a, 5, 1, expOff);
@@ -1329,10 +1358,18 @@ export function buildSanitizedTiffBlock(
         const absLon = Math.abs(lon);
 
         const toDms = (degVal: number): [number, number, number] => {
-            const d = Math.floor(degVal);
+            let d = Math.floor(degVal);
             const mFloat = (degVal - d) * 60;
-            const m = Math.floor(mFloat);
-            const s = Math.round((mFloat - m) * 60 * 100);
+            let m = Math.floor(mFloat);
+            let s = Math.round((mFloat - m) * 60 * 100);
+            if (s >= 6000) {
+                s -= 6000;
+                m += 1;
+            }
+            if (m >= 60) {
+                m -= 60;
+                d += 1;
+            }
             return [d, m, s];
         };
 
@@ -2550,7 +2587,8 @@ export function formatOutputFileName(
     outW: number,
     outH: number,
     pattern: BatchRenamePatternId,
-    prefix: string
+    prefix: string,
+    exifDateTimeOriginal = ''
 ): string {
     const baseNoExt = originalFileName
         .replace(/\.[^.]+$/, '')
@@ -2574,7 +2612,9 @@ export function formatOutputFileName(
         return `${cleanPrefix}-${paddedIdx}.${ext}`;
     }
     if (pattern === 'DATE_ORIGINAL') {
-        return `2026-05-14_${baseNoExt}.${ext}`;
+        const m = /^(\d{4})[:\-](\d{2})[:\-](\d{2})/.exec((exifDateTimeOriginal || '').trim());
+        const datePrefix = m ? `${m[1]}-${m[2]}-${m[3]}` : '2026-05-14';
+        return `${datePrefix}_${baseNoExt}.${ext}`;
     }
     if (pattern === 'BRAND_DIM_INDEX') {
         const cleanBrand = containerBrand.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'img';
@@ -2635,7 +2675,12 @@ export function convertSingleImageItem(
 ): ConvertedImageResult {
     const startMs = Date.now();
     const effectiveFormat = item.perFileFormatOverride || options.targetFormat;
-    const containerForensics = inspectImageContainerBinary(item.rawBytes, item.originalFileName);
+    const containerForensics = inspectImageContainerBinary(
+        item.rawBytes,
+        item.originalFileName,
+        item.decodedRgba?.width || 0,
+        item.decodedRgba?.height || 0
+    );
     const inputExifForensics = parseExifAndGpsFromBuffer(item.rawBytes, options.exifPrivacyMode);
 
     const totalRotationCw = ((containerForensics.totalAutoRotationDegreesClockwise +
@@ -2680,7 +2725,7 @@ export function convertSingleImageItem(
     // (e.g., PASSPORT_600X600 physically produces a 1:1 square raster!)
     const targetAspect = outW / Math.max(1, outH);
     const maxWorkEdge = item.decodedRgba
-        ? Math.min(outW, outH, 1200)
+        ? Math.min(Math.max(outW, outH), 1600)
         : options.dimensionPreset === 'PASSPORT_600X600'
             ? 144
             : Math.max(orientedRgba.width, orientedRgba.height);
@@ -2746,7 +2791,7 @@ export function convertSingleImageItem(
         }
         if (effectiveFormat === 'PDF') {
             outputMimeType = 'application/pdf';
-            const pageJpg = encodeRgbaToJpegBinary(scaledBuf, q, null);
+            const pageJpg = encodeRgbaToJpegBinary(scaledBuf, q, sanitizedTiff);
             return encodeBatchToPdfDocument([
                 {
                     fileName: item.originalFileName,
@@ -2767,26 +2812,42 @@ export function convertSingleImageItem(
     // Binary-search Target Max File Size (KB) Auto-Tuner
     const targetMaxBytes = options.targetMaxKb > 0 ? options.targetMaxKb * 1024 : 0;
     if (targetMaxBytes > 0 && outputBytes.byteLength > targetMaxBytes) {
-        let lowQ = 5;
-        let highQ = options.qualityPercent;
         let bestBytes = outputBytes;
         let bestQ = options.qualityPercent;
-        for (let iter = 0; iter < 6; iter++) {
-            const midQ = Math.floor((lowQ + highQ) / 2);
-            const candidate = encodeAtQualityAndScale(midQ, 1.0);
-            if (candidate.byteLength <= targetMaxBytes) {
-                bestBytes = candidate;
-                bestQ = midQ;
-                lowQ = midQ + 1;
-            } else {
-                highQ = midQ - 1;
+
+        if (effectiveFormat !== 'PNG') {
+            let lowQ = 5;
+            let highQ = options.qualityPercent;
+            for (let iter = 0; iter < 6; iter++) {
+                const midQ = Math.floor((lowQ + highQ) / 2);
+                const candidate = encodeAtQualityAndScale(midQ, 1.0);
+                if (candidate.byteLength <= targetMaxBytes) {
+                    bestBytes = candidate;
+                    bestQ = midQ;
+                    lowQ = midQ + 1;
+                } else {
+                    highQ = midQ - 1;
+                }
             }
         }
+
         if (bestBytes.byteLength > targetMaxBytes) {
-            for (const scale of [0.75, 0.55, 0.4, 0.25]) {
-                const candidate = encodeAtQualityAndScale(Math.max(10, bestQ), scale);
+            // Compute analytical scale ceiling for uncompressed/lossless streams + progressive step-down
+            const estScale = Math.sqrt(
+                Math.max(2048, targetMaxBytes - 900) /
+                Math.max(1, processedRgba.width * processedRgba.height * 4.2)
+            );
+            const candidateScales = [0.75, 0.55, 0.4, 0.28, 0.2, 0.14, 0.1, estScale * 0.95]
+                .filter((s) => s > 0.02 && s < 1.0)
+                .sort((a, b) => b - a);
+
+            for (const scale of candidateScales) {
+                const candidate = encodeAtQualityAndScale(
+                    effectiveFormat === 'PNG' ? options.qualityPercent : Math.max(10, bestQ),
+                    scale
+                );
                 bestBytes = candidate;
-                bestQ = Math.max(10, bestQ);
+                if (effectiveFormat !== 'PNG') bestQ = Math.max(10, bestQ);
                 if (candidate.byteLength <= targetMaxBytes) break;
             }
         }
@@ -2798,10 +2859,34 @@ export function convertSingleImageItem(
         targetMaxBytes === 0 || outputBytes.byteLength <= targetMaxBytes;
 
     // Compute REAL mathematical PSNR (dB) and Wang-Bovik SSIM over the actual pixel buffers!
-    const reconstructedBuffer =
-        effectiveFormat === 'PNG'
-            ? finalEncodedRgba
-            : reconstructJpegQuantizedRgba(finalEncodedRgba, effectiveQualityUsed);
+    let reconstructedBuffer: RgbaImageBuffer;
+    if (effectiveFormat === 'PNG') {
+        reconstructedBuffer = finalEncodedRgba;
+    } else if (effectiveFormat === 'WEBP') {
+        const qStep =
+            effectiveQualityUsed >= 95
+                ? 1
+                : Math.max(1, Math.round((100 - effectiveQualityUsed) / 6));
+        if (qStep === 1) {
+            reconstructedBuffer = finalEncodedRgba;
+        } else {
+            const webpPixels = new Uint8Array(finalEncodedRgba.pixels.length);
+            for (let i = 0; i < finalEncodedRgba.pixels.length; i += 4) {
+                webpPixels[i] = Math.min(255, Math.round(finalEncodedRgba.pixels[i] / qStep) * qStep);
+                webpPixels[i + 1] = Math.min(255, Math.round(finalEncodedRgba.pixels[i + 1] / qStep) * qStep);
+                webpPixels[i + 2] = Math.min(255, Math.round(finalEncodedRgba.pixels[i + 2] / qStep) * qStep);
+                webpPixels[i + 3] = finalEncodedRgba.pixels[i + 3];
+            }
+            reconstructedBuffer = {
+                width: finalEncodedRgba.width,
+                height: finalEncodedRgba.height,
+                pixels: webpPixels,
+            };
+        }
+    } else {
+        reconstructedBuffer = reconstructJpegQuantizedRgba(finalEncodedRgba, effectiveQualityUsed);
+    }
+
     const { psnrDb: psnrDbEstimate, ssim: ssimEstimate } = computeRealPsnrAndSsim(
         processedRgba,
         reconstructedBuffer
@@ -2821,7 +2906,8 @@ export function convertSingleImageItem(
         outW,
         outH,
         options.batchRenamePattern,
-        options.batchRenamePrefix
+        options.batchRenamePrefix,
+        inputExifForensics.dateTimeOriginal
     );
 
     const originalByteLength = item.rawBytes.byteLength;
@@ -2941,21 +3027,50 @@ export function runBatchConversion(
         totalFilesCount > 0
             ? encodeBatchToPdfDocument(
                 results.map((r) => {
+                    if (r.effectiveTargetFormat === 'JPG') {
+                        return {
+                            fileName: r.outputFileName,
+                            jpegBytes: r.outputBytes,
+                            width: r.encodedRasterWidth,
+                            height: r.encodedRasterHeight,
+                            containerBrand: r.containerForensics.ftypMajorBrand,
+                            exifPrivacyStatus: options.exifPrivacyMode,
+                        };
+                    }
                     const srcItem = items.find((it) => it.id === r.id);
-                    const fallbackRgba = decodeImageBufferToRgba(
+                    const rawRgba = decodeImageBufferToRgba(
                         srcItem?.rawBytes || new Uint8Array(0),
                         r.containerForensics,
                         r.originalFileName,
                         srcItem?.decodedRgba
                     );
+                    const totalRotCw = ((r.containerForensics.totalAutoRotationDegreesClockwise +
+                        (srcItem?.userRotateDegrees || 0)) %
+                        360) as 0 | 90 | 180 | 270;
+                    const effFlipH =
+                        Boolean(srcItem?.userFlipHorizontal) !==
+                        (r.containerForensics.imirAxis === 'HORIZONTAL');
+                    const effFlipV =
+                        Boolean(srcItem?.userFlipVertical) !==
+                        (r.containerForensics.imirAxis === 'VERTICAL');
+                    const oriented = rotateAndFlipRgbaBuffer(rawRgba, totalRotCw, effFlipH, effFlipV);
+                    const resized = resizeRgbaBufferBilinear(
+                        oriented,
+                        r.encodedRasterWidth,
+                        r.encodedRasterHeight
+                    );
+                    const { buffer: mattedForPdf } = applyDisplayP3ToSrgbGamutMapAndMatte(
+                        resized,
+                        r.containerForensics.isWideGamutDisplayP3,
+                        options.colorGamutMode,
+                        true,
+                        options.alphaMatteHex
+                    );
                     return {
                         fileName: r.outputFileName,
-                        jpegBytes:
-                            r.effectiveTargetFormat === 'JPG'
-                                ? r.outputBytes
-                                : encodeRgbaToJpegBinary(fallbackRgba, 85, null),
-                        width: r.encodedRasterWidth,
-                        height: r.encodedRasterHeight,
+                        jpegBytes: encodeRgbaToJpegBinary(mattedForPdf, 85, null),
+                        width: mattedForPdf.width,
+                        height: mattedForPdf.height,
                         containerBrand: r.containerForensics.ftypMajorBrand,
                         exifPrivacyStatus: options.exifPrivacyMode,
                     };

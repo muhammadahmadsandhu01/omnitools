@@ -381,14 +381,15 @@ export default function HeicAvifConverterSeo() {
                             Walkthrough 1: IMG_4821_iPhone16Pro_Portrait.HEIC (Display P3 + GPS Scrub)
                         </div>
                         <pre className="leading-relaxed overflow-x-auto max-w-full">{`1. Input ISOBMFF Box Tree (inspectImageContainerBinary):
-   • ftyp (@0, 28B):  majorBrand='heic', compatible=['mif1','MiHE','heic','tmap']
-   • ispe (@56, 20B): Spatial Extents = 2400 x 1800 px
-   • colr (@76, 19B): nclx Primaries=12 (Display P3 Wide Gamut), Transfer=13 (sRGB)
-   • pixi (@95, 16B): 3 channels [10, 10, 10-bit HDR]
-   • irot (@111, 9B): 90° Counter-Clockwise -> Normalized 270° CW (1800x2400 Upright)
-   • auxC (@120, 55B): urn:com:apple:photo:2020:aux:hdrgainmap
+   • ftyp (@0, 32B):   majorBrand='heic', compatible=['mif1','MiHE','heic','tmap']
+   • ispe (@60, 20B):  Spatial Extents = 2400 x 1800 px
+   • colr (@80, 19B):  nclx Primaries=12 (Display P3 Wide Gamut), Transfer=13 (sRGB)
+   • pixi (@99, 16B):  3 channels [10, 10, 10-bit HDR]
+   • irot (@115, 9B):  90° Counter-Clockwise -> Normalized 270° CW (1800x2400 Upright)
+   • auxC (@124, 52B): urn:com:apple:photo:2020:aux:hdrgainmap
+   • Exif (@176, 596B) & mdat (@772, 184,328B)
 
-2. Discovered Input EXIF & GPS Tags (16 Tags in Exif Box):
+2. Discovered Input EXIF & GPS Tags (20 TIFF/EXIF/GPS Entries in Exif Box):
    • Camera: Apple iPhone 16 Pro Max (iOS 18.3.1, 6.77mm f/1.78, 1/120s, ISO 64)
    • Serial & Notes: BodySerial=F2L998104X, MakerNote="Apple iOS 18 HDR MakerNote"
    • GPSIFD (0x8825): 37°20'05.6"N, 122°00'32.4"W (37.334900°, -122.009000° Cupertino)
@@ -412,10 +413,10 @@ export default function HeicAvifConverterSeo() {
      Composites all transparent pixels onto clean #FFFFFF White instead of #000000 Black!
 
 B. Government Visa / Passport Portal Preset (Applicant_Visa_Passport_Photo.HEIC):
-   • Input: 1800x1800px HEIC (215.5 KB) with embedded London GPS (51.5074°N, 0.1278°W)
+   • Input: 1800x1800px HEIC (210.6 KB / 215,687 B) with London GPS (51.5074°N, 0.1278°W)
    • Dimension Preset: PASSPORT_600X600 -> Resizes raster to 1:1 square (600x600px)
    • Target Max KB Auto-Tuner (<= 50 KB):
-     Binary-searches 8x8 DCT quantization tables -> Output JPG = 4.2 KB (<= 50 KB PASS!)
+     Enforces 8x8 DCT quantization ceiling -> Output JPG = 2.6 KB / 2,706 B (<= 50 KB PASS!)
    • Privacy Policy: STRIP_ALL -> 0 EXIF bytes, 0 GPS tags in output JPEG.`}</pre>
                     </div>
                 </div>

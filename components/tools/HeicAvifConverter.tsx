@@ -96,63 +96,90 @@ function formatBytesHuman(bytes: number): string {
  * or `HTMLImageElement` + `<canvas>` so real user photos convert with 100% authentic pixels!
  */
 async function decodeUploadedFileToRgbaBrowser(
-    file: File
+    file: File,
+    rawBytes?: Uint8Array
 ): Promise<RgbaImageBuffer | undefined> {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
         return undefined;
     }
-    try {
-        let width = 0;
-        let height = 0;
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return undefined;
+    const decodeBlobToRgba = async (blobSource: Blob): Promise<RgbaImageBuffer | undefined> => {
+        try {
+            let width = 0;
+            let height = 0;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return undefined;
 
-        if (typeof createImageBitmap === 'function') {
-            const bmp = await createImageBitmap(file);
-            const scale = Math.min(1, 1200 / Math.max(1, bmp.width, bmp.height));
-            width = Math.max(16, Math.round(bmp.width * scale));
-            height = Math.max(16, Math.round(bmp.height * scale));
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(bmp, 0, 0, width, height);
-            bmp.close?.();
-        } else {
-            const url = URL.createObjectURL(file);
-            try {
-                const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-                    const el = new Image();
-                    el.onload = () => resolve(el);
-                    el.onerror = (err) => reject(err);
-                    el.src = url;
-                });
-                const scale = Math.min(
-                    1,
-                    1200 / Math.max(1, img.naturalWidth || 800, img.naturalHeight || 600)
-                );
-                width = Math.max(16, Math.round((img.naturalWidth || 800) * scale));
-                height = Math.max(16, Math.round((img.naturalHeight || 600) * scale));
+            if (typeof createImageBitmap === 'function') {
+                const bmp = await createImageBitmap(blobSource);
+                const scale = Math.min(1, 1600 / Math.max(1, bmp.width, bmp.height));
+                width = Math.max(16, Math.round(bmp.width * scale));
+                height = Math.max(16, Math.round(bmp.height * scale));
                 canvas.width = width;
                 canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-            } finally {
-                URL.revokeObjectURL(url);
+                ctx.drawImage(bmp, 0, 0, width, height);
+                bmp.close?.();
+            } else {
+                const url = URL.createObjectURL(blobSource);
+                try {
+                    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+                        const el = new Image();
+                        el.onload = () => resolve(el);
+                        el.onerror = (err) => reject(err);
+                        el.src = url;
+                    });
+                    const scale = Math.min(
+                        1,
+                        1600 / Math.max(1, img.naturalWidth || 800, img.naturalHeight || 600)
+                    );
+                    width = Math.max(16, Math.round((img.naturalWidth || 800) * scale));
+                    height = Math.max(16, Math.round((img.naturalHeight || 600) * scale));
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                } finally {
+                    URL.revokeObjectURL(url);
+                }
+            }
+
+            const imgData = ctx.getImageData(0, 0, width, height);
+            return {
+                width,
+                height,
+                pixels: new Uint8Array(
+                    imgData.data.buffer,
+                    imgData.data.byteOffset,
+                    imgData.data.byteLength
+                ),
+            };
+        } catch {
+            return undefined;
+        }
+    };
+
+    const directDecoded = await decodeBlobToRgba(file);
+    if (directDecoded) return directDecoded;
+
+    // Fallback: if browser could not decode .heic directly, check if rawBytes is a misnamed JPEG/PNG/WebP or contains an embedded JPEG preview stream (FF D8 FF ... FF D9)
+    if (rawBytes && rawBytes.length > 32) {
+        for (let i = 0; i + 4 < rawBytes.length; i++) {
+            if (rawBytes[i] === 0xff && rawBytes[i + 1] === 0xd8 && rawBytes[i + 2] === 0xff) {
+                // Find last FF D9
+                for (let j = rawBytes.length - 2; j > i + 16; j--) {
+                    if (rawBytes[j] === 0xff && rawBytes[j + 1] === 0xd9) {
+                        const jpegSlice = rawBytes.subarray(i, j + 2);
+                        const recovered = await decodeBlobToRgba(
+                            new Blob([jpegSlice as unknown as BlobPart], { type: 'image/jpeg' })
+                        );
+                        if (recovered) return recovered;
+                        break;
+                    }
+                }
+                break;
             }
         }
-
-        const imgData = ctx.getImageData(0, 0, width, height);
-        return {
-            width,
-            height,
-            pixels: new Uint8Array(
-                imgData.data.buffer,
-                imgData.data.byteOffset,
-                imgData.data.byteLength
-            ),
-        };
-    } catch {
-        return undefined;
     }
+    return undefined;
 }
 
 export default function HeicAvifConverter() {
@@ -212,11 +239,12 @@ export default function HeicAvifConverter() {
         for (let i = 0; i < fileList.length; i++) {
             const f = fileList[i];
             const ab = await f.arrayBuffer();
-            const decodedRgba = await decodeUploadedFileToRgbaBrowser(f);
+            const rawUint8 = new Uint8Array(ab);
+            const decodedRgba = await decodeUploadedFileToRgbaBrowser(f, rawUint8);
             loadedItems.push({
                 id: `upload-${Date.now()}-${i}-${f.name}`,
                 originalFileName: f.name,
-                rawBytes: new Uint8Array(ab),
+                rawBytes: rawUint8,
                 userRotateDegrees: 0,
                 userFlipHorizontal: false,
                 userFlipVertical: false,
@@ -431,8 +459,8 @@ export default function HeicAvifConverter() {
                                         type="button"
                                         onClick={() => handleLoadSamplePreset(preset.id)}
                                         className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition border text-left cursor-pointer ${isSelected
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                                             }`}
                                     >
                                         {preset.label}
@@ -456,8 +484,8 @@ export default function HeicAvifConverter() {
                         }}
                         onClick={() => fileInputRef.current?.click()}
                         className={`rounded-2xl border-2 border-dashed p-4 text-center transition cursor-pointer ${isDraggingOver
-                                ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40'
-                                : 'border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-blue-500'
+                            ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40'
+                            : 'border-slate-300 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40 hover:border-blue-500'
                             }`}
                     >
                         <input
@@ -506,15 +534,15 @@ export default function HeicAvifConverter() {
                                         }))
                                     }
                                     className={`p-2 rounded-xl border text-center transition cursor-pointer ${options.targetFormat === fmt.code
-                                            ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                                         }`}
                                 >
                                     <div className="text-xs font-extrabold">{fmt.label}</div>
                                     <div
                                         className={`text-[10px] ${options.targetFormat === fmt.code
-                                                ? 'text-blue-100'
-                                                : 'text-slate-400'
+                                            ? 'text-blue-100'
+                                            : 'text-slate-400'
                                             }`}
                                     >
                                         {fmt.sub}
@@ -601,8 +629,8 @@ export default function HeicAvifConverter() {
                                         }))
                                     }
                                     className={`py-1.5 px-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer ${options.targetMaxKb === item.kb
-                                            ? 'bg-blue-600 text-white border-blue-600'
-                                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                        ? 'bg-blue-600 text-white border-blue-600'
+                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                                         }`}
                                 >
                                     {item.label}
@@ -752,8 +780,8 @@ export default function HeicAvifConverter() {
                                                 }))
                                             }
                                             className={`px-2 py-1 rounded-lg text-[11px] font-bold border cursor-pointer ${options.alphaMatteHex.toUpperCase() === sw.hex
-                                                    ? 'bg-blue-600 text-white border-blue-600'
-                                                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                ? 'bg-blue-600 text-white border-blue-600'
+                                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                                 }`}
                                         >
                                             {sw.label}
@@ -1069,6 +1097,9 @@ export default function HeicAvifConverter() {
                         <button
                             type="button"
                             onClick={() => {
+                                if (report.items.length === 0) {
+                                    handleLoadSamplePreset('multi_photo_batch_mix');
+                                }
                                 const csvText = exportAuditManifestCsv(
                                     report.items.length > 0
                                         ? report
@@ -1168,8 +1199,8 @@ export default function HeicAvifConverter() {
                                 type="button"
                                 onClick={() => setActiveDeepDiveTab(tab.id)}
                                 className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-xs font-bold border-b-2 transition cursor-pointer ${isActive
-                                        ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900'
-                                        : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                    ? 'border-blue-600 text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900'
+                                    : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                     }`}
                             >
                                 <Icon className="w-3.5 h-3.5" />
@@ -1220,7 +1251,7 @@ export default function HeicAvifConverter() {
                                                 <img
                                                     src={item.previewSvgDataUri}
                                                     alt={item.outputFileName}
-                                                    className="w-32 h-22 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs"
+                                                    className="w-32 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-2xs"
                                                 />
                                                 <div className="space-y-1 min-w-0 flex-1">
                                                     <div className="flex flex-wrap items-center gap-1.5">
@@ -1401,8 +1432,8 @@ export default function HeicAvifConverter() {
                                                 type="button"
                                                 onClick={() => setSelectedFileIndex(idx)}
                                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${idx === selectedFileIndex
-                                                        ? 'bg-blue-600 text-white border-blue-600'
-                                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                                     }`}
                                             >
                                                 #{it.indexOneBased}: {it.originalFileName}
@@ -1413,8 +1444,8 @@ export default function HeicAvifConverter() {
                                     {/* GPS Location Alert Card */}
                                     <div
                                         className={`rounded-2xl border p-4 flex flex-wrap items-center justify-between gap-4 ${inspectedItem.inputExifForensics.gps.hasGpsCoordinates
-                                                ? 'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30'
-                                                : 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30'
+                                            ? 'border-amber-300 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/30'
+                                            : 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30'
                                             }`}
                                     >
                                         <div className="space-y-1">
@@ -1535,8 +1566,8 @@ export default function HeicAvifConverter() {
                                                                     <td className="py-2 px-3 whitespace-nowrap">
                                                                         <span
                                                                             className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${tag.actionInCurrentMode === 'STRIPPED'
-                                                                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                                                                                    : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
+                                                                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                                                                                : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                                                                                 }`}
                                                                         >
                                                                             {tag.actionInCurrentMode}
@@ -1589,8 +1620,8 @@ export default function HeicAvifConverter() {
                                                         }))
                                                     }
                                                     className={`px-2.5 py-1 rounded-lg font-bold border cursor-pointer ${options.alphaMatteHex === sw.hex && options.targetFormat === 'JPG'
-                                                            ? 'bg-blue-600 text-white border-blue-600'
-                                                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                                         }`}
                                                 >
                                                     {sw.label} ({sw.hex})
@@ -1702,8 +1733,8 @@ export default function HeicAvifConverter() {
                                         type="button"
                                         onClick={() => setManifestPreviewFormat('json')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${manifestPreviewFormat === 'json'
-                                                ? 'bg-blue-600 text-white border-blue-600'
-                                                : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                             }`}
                                     >
                                         JSON SHA-256 Audit Certificate (.json)
@@ -1712,8 +1743,8 @@ export default function HeicAvifConverter() {
                                         type="button"
                                         onClick={() => setManifestPreviewFormat('csv')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${manifestPreviewFormat === 'csv'
-                                                ? 'bg-blue-600 text-white border-blue-600'
-                                                : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                             }`}
                                     >
                                         CWE-1236 Safe Audit Table (.csv)
