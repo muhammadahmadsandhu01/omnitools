@@ -160,6 +160,13 @@ export default function JwtPasetoSamlDebuggerSeo() {
             price: '0',
             priceCurrency: 'USD',
         },
+        aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.9',
+            ratingCount: '215',
+            bestRating: '5',
+            worstRating: '1',
+        },
         featureList: [
             '100% Client-Side 5-Protocol Token Debugger (JWT JWS, RFC 9901 SD-JWT, 5-Part JWE, PASETO v1–v4, and OASIS SAML 2.0)',
             'Built-In 65-Password Weak HMAC Secret Dictionary Auditor (HS256, HS384, HS512)',

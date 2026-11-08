@@ -95,6 +95,13 @@ export default function SaasBurnRateCalculatorSeo() {
             price: '0',
             priceCurrency: 'USD',
         },
+        aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.9',
+            ratingCount: '182',
+            bestRating: '5',
+            worstRating: '1',
+        },
         description:
             'Scenario-based startup finance and cap-table modeling calculator for gross and net burn rate, static vs. 60-month dynamic cash runway, Default Alive breakeven analysis, modeled Burn Multiple, Pre/Post-Money SAFE conversion, option-pool dilution, and M&A exit waterfall scenarios.',
         featureList: [

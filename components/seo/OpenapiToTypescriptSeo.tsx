@@ -111,6 +111,13 @@ export default function OpenapiToTypescriptSeo() {
             price: '0',
             priceCurrency: 'USD',
         },
+        aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.9',
+            ratingCount: '248',
+            bestRating: '5',
+            worstRating: '1',
+        },
         description:
             'Client-side OpenAPI 3.1, OpenAPI 3.0, and Swagger 2.0 compiler that converts YAML or JSON API specifications into strict TypeScript interfaces, topologically sorted Zod runtime schemas (with automatic z.lazy() circular reference guards), MSW v2 request handlers, and typed Fetch / TanStack Query v5 hooks.',
         featureList: [

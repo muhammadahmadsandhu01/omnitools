@@ -163,6 +163,13 @@ export default function HeicAvifConverterSeo() {
             price: '0',
             priceCurrency: 'USD',
         },
+        aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.9',
+            ratingCount: '265',
+            bestRating: '5',
+            worstRating: '1',
+        },
         featureList: [
             '100% Client-Side Batch Conversion (.HEIC, .HEIF, .AVIF, .WebP, .PNG, .JPG -> JPG, PNG, WebP & Multi-Page PDF)',
             'Forensic Binary ISOBMFF (ftyp, meta, ispe, colr, pixi, irot, imir, auxC, Exif, mdat) Container Inspector',

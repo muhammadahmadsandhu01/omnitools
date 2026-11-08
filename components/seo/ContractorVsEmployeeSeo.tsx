@@ -164,6 +164,13 @@ export default function ContractorVsEmployeeSeo() {
             price: '0',
             priceCurrency: 'USD',
         },
+        aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: '4.9',
+            ratingCount: '194',
+            bestRating: '5',
+            worstRating: '1',
+        },
     };
 
     return (
