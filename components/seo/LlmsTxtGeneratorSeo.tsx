@@ -1162,6 +1162,18 @@ Disallow: /`}</pre>
                             Transform structured crawl inventories, JSON-LD entities, and sitemap feeds into spreadsheets locally.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/developer/jwt-debugger"
+                        className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
+                    >
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+                            JWT, PASETO &amp; SAML 2.0 Security Debugger →
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Decode and verify JWT (JWS/JWE/SD-JWT), PASETO v1–v4, and SAML 2.0 Deflate/Base64 messages and audit 16 SSO security rules locally.
+                        </p>
+                    </Link>
                 </div>
             </section>
         </article>

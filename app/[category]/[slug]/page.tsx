@@ -127,7 +127,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                             slug === 'avif-converter' ||
                                             slug === 'heif-to-jpg'
                                             ? 'heic-to-jpg'
-                                            : slug;
+                                            : slug === 'paseto-debugger' ||
+                                              slug === 'saml-decoder' ||
+                                              slug === 'saml-debugger' ||
+                                              slug === 'jwe-debugger' ||
+                                              slug === 'jwk-to-pem' ||
+                                              slug === 'jwt-decoder'
+                                              ? 'jwt-debugger'
+                                              : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -145,21 +152,22 @@ export function resolveCanonicalRoute(category: string, slug: string): {
         ? 'document'
         : category === 'image' || resolvedSlug === 'heic-to-jpg'
           ? 'media'
-    : category === 'seo' && resolvedSlug === 'regex-tester'
-      ? 'developer'
-      : resolvedSlug === 'saas-burn-rate-calculator' ||
-        resolvedSlug === 'contractor-vs-employee-calculator' ||
-        resolvedSlug === 'mortgage-calculator' ||
-        resolvedSlug === 'emi-calculator'
-        ? 'finance'
-        : resolvedSlug === 'parquet-viewer' ||
-          resolvedSlug === 'har-analyzer' ||
-          resolvedSlug === 'sqlite-viewer' ||
-          resolvedSlug === 'openapi-to-typescript'
-          ? 'developer'
-          : resolvedSlug === 'llms-txt-generator'
-            ? 'seo'
-            : category;
+          : category === 'seo' && resolvedSlug === 'regex-tester'
+            ? 'developer'
+            : resolvedSlug === 'saas-burn-rate-calculator' ||
+              resolvedSlug === 'contractor-vs-employee-calculator' ||
+              resolvedSlug === 'mortgage-calculator' ||
+              resolvedSlug === 'emi-calculator'
+              ? 'finance'
+              : resolvedSlug === 'parquet-viewer' ||
+                resolvedSlug === 'har-analyzer' ||
+                resolvedSlug === 'sqlite-viewer' ||
+                resolvedSlug === 'openapi-to-typescript' ||
+                resolvedSlug === 'jwt-debugger'
+                ? 'developer'
+                : resolvedSlug === 'llms-txt-generator'
+                  ? 'seo'
+                  : category;
 
   return { resolvedCategory, resolvedSlug };
 }

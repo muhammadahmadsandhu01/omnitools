@@ -36,6 +36,7 @@ import PdfToJpg from '@/components/tools/PdfToJpg';
 import PdfCompressor from '@/components/tools/PdfCompressor';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
 import HeicAvifConverter from '@/components/tools/HeicAvifConverter';
+import JwtPasetoSamlDebugger from '@/components/tools/JwtPasetoSamlDebugger';
 import ImageCompressor from '@/components/tools/ImageCompressor';
 import QrGenerator from '@/components/tools/QrGenerator';
 import LlmsTxtGenerator from '@/components/tools/LlmsTxtGenerator';
@@ -79,6 +80,7 @@ import PdfToJpgSeo from '@/components/seo/PdfToJpgSeo';
 import PdfCompressorSeo from '@/components/seo/PdfCompressorSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
 import HeicAvifConverterSeo from '@/components/seo/HeicAvifConverterSeo';
+import JwtPasetoSamlDebuggerSeo from '@/components/seo/JwtPasetoSamlDebuggerSeo';
 import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
 import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
 import LlmsTxtGeneratorSeo from '@/components/seo/LlmsTxtGeneratorSeo';
@@ -153,6 +155,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'openapi-mock-generator': OpenapiToTypescript, // Alias
   'openapi-msw-generator': OpenapiToTypescript, // Alias
   'openapi-tanstack-query-generator': OpenapiToTypescript, // Alias
+  'jwt-debugger': JwtPasetoSamlDebugger,
+  'paseto-debugger': JwtPasetoSamlDebugger, // Alias
+  'saml-decoder': JwtPasetoSamlDebugger, // Alias
+  'saml-debugger': JwtPasetoSamlDebugger, // Alias
+  'jwe-debugger': JwtPasetoSamlDebugger, // Alias
+  'jwk-to-pem': JwtPasetoSamlDebugger, // Alias
+  'jwt-decoder': JwtPasetoSamlDebugger, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -279,6 +288,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'openapi-mock-generator': OpenapiToTypescriptSeo, // Alias
   'openapi-msw-generator': OpenapiToTypescriptSeo, // Alias
   'openapi-tanstack-query-generator': OpenapiToTypescriptSeo, // Alias
+  'jwt-debugger': JwtPasetoSamlDebuggerSeo,
+  'paseto-debugger': JwtPasetoSamlDebuggerSeo, // Alias
+  'saml-decoder': JwtPasetoSamlDebuggerSeo, // Alias
+  'saml-debugger': JwtPasetoSamlDebuggerSeo, // Alias
+  'jwe-debugger': JwtPasetoSamlDebuggerSeo, // Alias
+  'jwk-to-pem': JwtPasetoSamlDebuggerSeo, // Alias
+  'jwt-decoder': JwtPasetoSamlDebuggerSeo, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,
