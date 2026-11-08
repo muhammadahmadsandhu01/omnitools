@@ -925,6 +925,18 @@ export default function JwtPasetoSamlDebuggerSeo() {
                             Generate llmstxt.org v2 documentation indexes and RFC 9309 AI crawler governance rules for developer portals.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/developer/cron-expression-generator"
+                        className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
+                    >
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+                            7-Dialect Cron Expression Generator &amp; DST Simulator →
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Build, explain, and simulate POSIX, Kubernetes, Quartz, AWS EventBridge, and Jenkins cron schedules across 12 timezones locally.
+                        </p>
+                    </Link>
                 </div>
             </section>
         </article>

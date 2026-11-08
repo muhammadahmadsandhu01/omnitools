@@ -134,7 +134,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                               slug === 'jwk-to-pem' ||
                                               slug === 'jwt-decoder'
                                               ? 'jwt-debugger'
-                                              : slug;
+                                              : slug === 'cron-generator' ||
+                                                slug === 'crontab-guru' ||
+                                                slug === 'quartz-cron-generator' ||
+                                                slug === 'aws-eventbridge-cron' ||
+                                                slug === 'kubernetes-cronjob-generator' ||
+                                                slug === 'cron-to-systemd'
+                                                ? 'cron-expression-generator'
+                                                : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -163,7 +170,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                 resolvedSlug === 'har-analyzer' ||
                 resolvedSlug === 'sqlite-viewer' ||
                 resolvedSlug === 'openapi-to-typescript' ||
-                resolvedSlug === 'jwt-debugger'
+                resolvedSlug === 'jwt-debugger' ||
+                resolvedSlug === 'cron-expression-generator'
                 ? 'developer'
                 : resolvedSlug === 'llms-txt-generator'
                   ? 'seo'

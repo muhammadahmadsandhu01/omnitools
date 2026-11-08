@@ -16,6 +16,7 @@ import InvoiceGenerator from '@/components/tools/InvoiceGenerator';
 import JsonFormatter from '@/components/tools/JsonFormatter';
 import OpenapiToTypescript from '@/components/tools/OpenapiToTypescript';
 import SvgOptimizer from '@/components/tools/SvgOptimizer';
+import CronExpressionGenerator from '@/components/tools/CronExpressionGenerator';
 import PasswordGenerator from '@/components/tools/PasswordGenerator';
 import JsonConverter from '@/components/tools/JsonConverter';
 import SqliteExplorer from '@/components/tools/SqliteExplorer';
@@ -60,6 +61,7 @@ import InvoiceGeneratorSeo from '@/components/seo/InvoiceGeneratorSeo';
 import JsonFormatterSeo from '@/components/seo/JsonFormatterSeo';
 import OpenapiToTypescriptSeo from '@/components/seo/OpenapiToTypescriptSeo';
 import SvgOptimizerSeo from '@/components/seo/SvgOptimizerSeo';
+import CronExpressionGeneratorSeo from '@/components/seo/CronExpressionGeneratorSeo';
 import PasswordGeneratorSeo from '@/components/seo/PasswordGeneratorSeo';
 import JsonConverterSeo from '@/components/seo/JsonConverterSeo';
 import SqliteExplorerSeo from '@/components/seo/SqliteExplorerSeo';
@@ -162,6 +164,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'jwe-debugger': JwtPasetoSamlDebugger, // Alias
   'jwk-to-pem': JwtPasetoSamlDebugger, // Alias
   'jwt-decoder': JwtPasetoSamlDebugger, // Alias
+  'cron-expression-generator': CronExpressionGenerator,
+  'cron-generator': CronExpressionGenerator, // Alias
+  'crontab-guru': CronExpressionGenerator, // Alias
+  'quartz-cron-generator': CronExpressionGenerator, // Alias
+  'aws-eventbridge-cron': CronExpressionGenerator, // Alias
+  'kubernetes-cronjob-generator': CronExpressionGenerator, // Alias
+  'cron-to-systemd': CronExpressionGenerator, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplit,
@@ -295,6 +304,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'jwe-debugger': JwtPasetoSamlDebuggerSeo, // Alias
   'jwk-to-pem': JwtPasetoSamlDebuggerSeo, // Alias
   'jwt-decoder': JwtPasetoSamlDebuggerSeo, // Alias
+  'cron-expression-generator': CronExpressionGeneratorSeo,
+  'cron-generator': CronExpressionGeneratorSeo, // Alias
+  'crontab-guru': CronExpressionGeneratorSeo, // Alias
+  'quartz-cron-generator': CronExpressionGeneratorSeo, // Alias
+  'aws-eventbridge-cron': CronExpressionGeneratorSeo, // Alias
+  'kubernetes-cronjob-generator': CronExpressionGeneratorSeo, // Alias
+  'cron-to-systemd': CronExpressionGeneratorSeo, // Alias
 
   // Document
   'pdf-merge-split': PdfMergeSplitSeo,
