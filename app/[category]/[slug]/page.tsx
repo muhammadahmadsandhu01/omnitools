@@ -120,7 +120,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                           slug === 'openapi-msw-generator' ||
                                           slug === 'openapi-tanstack-query-generator'
                                           ? 'openapi-to-typescript'
-                                          : slug;
+                                          : slug === 'heic-to-png' ||
+                                            slug === 'avif-to-jpg' ||
+                                            slug === 'avif-to-png' ||
+                                            slug === 'heic-converter' ||
+                                            slug === 'avif-converter' ||
+                                            slug === 'heif-to-jpg'
+                                            ? 'heic-to-jpg'
+                                            : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -136,23 +143,23 @@ export function resolveCanonicalRoute(category: string, slug: string): {
       ? 'document'
       : category === 'pdf'
         ? 'document'
-        : category === 'image'
+        : category === 'image' || resolvedSlug === 'heic-to-jpg'
           ? 'media'
-          : category === 'seo' && resolvedSlug === 'regex-tester'
-            ? 'developer'
-            : resolvedSlug === 'saas-burn-rate-calculator' ||
-              resolvedSlug === 'contractor-vs-employee-calculator' ||
-              resolvedSlug === 'mortgage-calculator' ||
-              resolvedSlug === 'emi-calculator'
-              ? 'finance'
-              : resolvedSlug === 'parquet-viewer' ||
-                resolvedSlug === 'har-analyzer' ||
-                resolvedSlug === 'sqlite-viewer' ||
-                resolvedSlug === 'openapi-to-typescript'
-                ? 'developer'
-                : resolvedSlug === 'llms-txt-generator'
-                  ? 'seo'
-                  : category;
+    : category === 'seo' && resolvedSlug === 'regex-tester'
+      ? 'developer'
+      : resolvedSlug === 'saas-burn-rate-calculator' ||
+        resolvedSlug === 'contractor-vs-employee-calculator' ||
+        resolvedSlug === 'mortgage-calculator' ||
+        resolvedSlug === 'emi-calculator'
+        ? 'finance'
+        : resolvedSlug === 'parquet-viewer' ||
+          resolvedSlug === 'har-analyzer' ||
+          resolvedSlug === 'sqlite-viewer' ||
+          resolvedSlug === 'openapi-to-typescript'
+          ? 'developer'
+          : resolvedSlug === 'llms-txt-generator'
+            ? 'seo'
+            : category;
 
   return { resolvedCategory, resolvedSlug };
 }

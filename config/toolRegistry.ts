@@ -35,6 +35,7 @@ import PdfToPpt from '@/components/tools/PdfToPpt';
 import PdfToJpg from '@/components/tools/PdfToJpg';
 import PdfCompressor from '@/components/tools/PdfCompressor';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
+import HeicAvifConverter from '@/components/tools/HeicAvifConverter';
 import ImageCompressor from '@/components/tools/ImageCompressor';
 import QrGenerator from '@/components/tools/QrGenerator';
 import LlmsTxtGenerator from '@/components/tools/LlmsTxtGenerator';
@@ -77,6 +78,7 @@ import PdfToPptSeo from '@/components/seo/PdfToPptSeo';
 import PdfToJpgSeo from '@/components/seo/PdfToJpgSeo';
 import PdfCompressorSeo from '@/components/seo/PdfCompressorSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
+import HeicAvifConverterSeo from '@/components/seo/HeicAvifConverterSeo';
 import ImageCompressorSeo from '@/components/seo/ImageCompressorSeo';
 import QrGeneratorSeo from '@/components/seo/QrGeneratorSeo';
 import LlmsTxtGeneratorSeo from '@/components/seo/LlmsTxtGeneratorSeo';
@@ -186,6 +188,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'webp-to-jpg-png': WebpToJpgPng,
   'webp-converter': WebpToJpgPng, // Alias
   'image-compressor': ImageCompressor,
+  'heic-to-jpg': HeicAvifConverter,
+  'heic-to-png': HeicAvifConverter, // Alias
+  'avif-to-jpg': HeicAvifConverter, // Alias
+  'avif-to-png': HeicAvifConverter, // Alias
+  'heic-converter': HeicAvifConverter, // Alias
+  'avif-converter': HeicAvifConverter, // Alias
+  'heif-to-jpg': HeicAvifConverter, // Alias
 
   // SEO & Text
   'qr-generator': QrGenerator,
@@ -306,6 +315,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'webp-to-jpg-png': WebpToJpgPngSeo,
   'webp-converter': WebpToJpgPngSeo, // Alias
   'image-compressor': ImageCompressorSeo,
+  'heic-to-jpg': HeicAvifConverterSeo,
+  'heic-to-png': HeicAvifConverterSeo, // Alias
+  'avif-to-jpg': HeicAvifConverterSeo, // Alias
+  'avif-to-png': HeicAvifConverterSeo, // Alias
+  'heic-converter': HeicAvifConverterSeo, // Alias
+  'avif-converter': HeicAvifConverterSeo, // Alias
+  'heif-to-jpg': HeicAvifConverterSeo, // Alias
 
   // SEO & Text
   'qr-generator': QrGeneratorSeo,
