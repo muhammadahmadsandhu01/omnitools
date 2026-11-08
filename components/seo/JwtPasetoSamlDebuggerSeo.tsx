@@ -126,7 +126,7 @@ export default function JwtPasetoSamlDebuggerSeo() {
                 '@type': 'HowToStep',
                 position: 1,
                 name: 'Paste Your Token, Bearer Header, or SAML Message (Or Click a Preset)',
-                text: 'Paste any JWT, SD-JWT, 5-part JWE, PASETO (v1–v4), Authorization: Bearer header, or SAML 2.0 (Base64 / HTTP-Redirect DEFLATE / Raw XML) into the left panel, or click one of the 5 real cryptographic presets.',
+                text: 'Paste any JWT, SD-JWT, 5-part JWE, PASETO (v1–v4), Authorization: Bearer header, or SAML 2.0 (Base64 / HTTP-Redirect DEFLATE / Raw XML) into the top token workbench, or click one of the 6 real cryptographic presets.',
             },
             {
                 '@type': 'HowToStep',
@@ -222,7 +222,7 @@ export default function JwtPasetoSamlDebuggerSeo() {
                         Modern enterprise Identity and Access Management (IAM) pipelines rarely rely on a single token format. A typical B2B SaaS login flow begins with an enterprise Identity Provider (Okta, Microsoft Entra ID, PingFederate, or Keycloak) issuing an <strong>OASIS SAML 2.0 <code>&lt;samlp:Response&gt;</code></strong> over HTTP-POST or an <strong><code>&lt;samlp:AuthnRequest&gt;</code></strong> compressed with raw <code>DEFLATE</code> over HTTP-Redirect. Your identity broker then exchanges that SAML assertion for an <strong>OpenID Connect <code>id_token</code> / OAuth 2.0 <code>access_token</code> (JWT JWS or 5-part encrypted JWE)</strong> or a microservice <strong>PASETO <code>v4.public</code> / <code>v4.local</code></strong> session token.
                     </p>
                     <p>
-                        Previously, debugging that pipeline forced engineers to bounce between four disconnected websites—one for 3-part JWTs, another for 5-part JWEs or JWK-to-PEM conversion, a third for PASETO tokens, and a fourth for SAML Base64/Deflate decoding—none of which audited for cryptographic misconfigurations or translated claims across protocols. Our deterministic engine (<code>lib/jwtPasetoSamlEngine.ts</code> v5.0) unifies all five specifications into a single workbench.
+                        Previously, debugging that pipeline forced engineers to bounce between four disconnected websites—one for 3-part JWTs, another for 5-part JWEs or JWK-to-PEM conversion, a third for PASETO tokens, and a fourth for SAML Base64/Deflate decoding—none of which audited for cryptographic misconfigurations or translated claims across protocols. Our deterministic engine (<code>lib/jwtPasetoSamlEngine.ts</code> v5.1) unifies all five specifications into a single workbench.
                     </p>
                 </div>
 
@@ -375,7 +375,7 @@ export default function JwtPasetoSamlDebuggerSeo() {
                         <div className="text-blue-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                             Walkthrough 1: PASETO v4.public Pre-Authentication Encoding (LE64 PAE)
                         </div>
-                        <pre className="leading-relaxed overflow-x-auto max-w-full">{`1. Token Components (Preset #3):
+                        <pre className="leading-relaxed overflow-x-auto max-w-full">{`1. Token Components (Preset #4 — PASETO v4.public):
    • Header (h):    "v4.public." (10 bytes ASCII)
    • Payload (m):   {"iss":"https://auth.kivarotools.com","sub":"svc_payment..."}
    • Footer (f):    {"kid":"k4.pid.9f8e7d6c5b4a3210","wpk":"kivaro-ed25519-prod"}
@@ -392,7 +392,7 @@ export default function JwtPasetoSamlDebuggerSeo() {
                         <div className="text-emerald-400 font-bold mb-2 pb-1.5 border-b border-slate-800">
                             Walkthrough 2: SAML 2.0 XML Signature Wrapping (XSW) &amp; NameID Truncation
                         </div>
-                        <pre className="leading-relaxed overflow-x-auto max-w-full">{`1. Input SAMLResponse Analysis (Preset #5):
+                        <pre className="leading-relaxed overflow-x-auto max-w-full">{`1. Input SAMLResponse Analysis (Preset #6 — SAML 2.0 XSW):
    • Assertion #1 (Unsigned): ID="_evil_unsigned_xsw_assertion"
      <saml:NameID>admin@kivarotools.com<!--XSW_TRUNC-->.attacker.org</saml:NameID>
      <saml:SubjectConfirmationData Recipient="https://wrong-sp.attacker.org/acs"/>
@@ -669,7 +669,7 @@ export default function JwtPasetoSamlDebuggerSeo() {
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                             <strong>Pitfall:</strong> Validating <code>&lt;ds:Signature&gt;</code> on one node while reading <code>{'//saml:Assertion[1]/saml:Subject'}</code> allows attackers to inject an unsigned admin assertion.
                             <br />
-                            <strong>Fix:</strong> Load Preset #5 and inspect Rule 12 (<code>SAML-XSW-012</code>) in Tab 2.
+                            <strong>Fix:</strong> Load Preset #6 and inspect Rule 12 (<code>SAML-XSW-012</code>) in Tab 2.
                         </p>
                     </div>
 
