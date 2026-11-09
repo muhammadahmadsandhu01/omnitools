@@ -318,7 +318,7 @@ export default function CronExpressionGeneratorSeo() {
                                 <td className="py-2.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">L &amp; L-N</td>
                                 <td className="py-2.5 px-4">DOM, DOW</td>
                                 <td className="py-2.5 px-4">Quartz, AWS EventBridge</td>
-                                <td className="py-2.5 px-4">In DOM, <code>L</code> matches the last day of the month (28/29/30/31) and <code>L-3</code> is 3 days prior. In DOW, <code>5L</code> matches the last Friday.</td>
+                                <td className="py-2.5 px-4">In DOM, <code>L</code> matches the last day of the month (28/29/30/31) and <code>L-3</code> is 3 days prior. In DOW, <code>6L</code> / <code>FRIL</code> (Quartz/EventBridge 1–7) or <code>5L</code> (POSIX 0–6) matches the last Friday.</td>
                             </tr>
                             <tr>
                                 <td className="py-2.5 px-4 font-mono font-bold text-indigo-600 dark:text-indigo-400">nW &amp; LW</td>
@@ -348,8 +348,12 @@ export default function CronExpressionGeneratorSeo() {
           ======================================================================== */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs space-y-5">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                    Worked Multi-Dialect Examples: Calendar Math, Transpilation &amp; Compute Budget Traces
+                    4 Worked Multi-Dialect Examples: Calendar Math, Transpilation, DST &amp; Auto-Fix Traces
                 </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Every trace below corresponds directly to the built-in 1-Click Scenario Presets at the top of the workbench so
+                    you can verify each calculation live in your browser:
+                </p>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 p-4 space-y-2 min-w-0">
@@ -358,7 +362,7 @@ export default function CronExpressionGeneratorSeo() {
                         </div>
                         <pre className="text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed overflow-x-auto max-w-full">{`Input Expression : 0 30 17 LW * ? *
 Detected Dialect : QUARTZ_6_7 (7-Field Java Quartz)
-Plain English    : At 17:30:00, on the last weekday (Mon-Fri) of the month.
+Plain English    : At 17:30, on the last weekday (Mon–Fri) of the month (LW).
 
 May 2026 Calendar Evaluation:
 - Total Days in May 2026 : 31 (May 31, 2026 is a Sunday)
@@ -369,30 +373,64 @@ May 2026 Calendar Evaluation:
 
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 p-4 space-y-2 min-w-0">
                         <div className="text-xs font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                            Worked Example 2: POSIX to AWS EventBridge Weekday Transpilation
+                            Worked Example 2: POSIX to AWS EventBridge Weekday Transpilation (Preset #1)
                         </div>
                         <pre className="text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed overflow-x-auto max-w-full">{`Source POSIX (5-Field)     : */15 9-17 * * 1-5
-1. Minute & Hour           : */15 (0,15,30,45) | 9-17 (09:00..17:59)
+1. Minute & Hour           : */15 (0,15,30,45) | 9-17 (09:00..17:59 = 36 runs/day)
 2. Mutual Exclusion (?)    : DOM "*" -> "?" (since DOW is restricted)
 3. Weekday Shift (0-6->1-7): POSIX "1-5" (Mon-Fri) -> "2-6" (or MON-FRI)
 4. Append Year Field       : "*"
 Target AWS EventBridge     : cron(*/15 9-17 ? * 2-6 *)
-Monthly Compute (30s/run)  : 792 runs/mo * 0.5m = 396 mins (19.8% GHA Free Tier)`}</pre>
+May 2026 Compute (30s/run) : 756 runs (21 weekdays) * 0.5m = 378 mins (18.9% GHA)`}</pre>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 p-4 space-y-2 min-w-0">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                            Worked Example 3: AWS EventBridge 3rd Friday to systemd Timer (Preset #5)
+                        </div>
+                        <pre className="text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed overflow-x-auto max-w-full">{`Input Expression : cron(15 22 ? * 6#3 *)
+Stripped Clean   : 15 22 ? * 6#3 * (AWS_EVENTBRIDGE_6)
+Plain English    : At 22:15, on the 3rd Friday of the month.
+
+Nth-Weekday Calendar & Transpilation Math:
+- EventBridge DOW "6#3"  : 6 = Friday (1=Sun..7=Sat), #3 = 3rd occurrence
+- May 2026 Fridays       : May 1 (#1), May 8 (#2), May 15 (#3 -> MATCH!)
+- Systemd Date Window    : 3rd occurrence always falls in days 15..21
+- Systemd Equivalent     : OnCalendar=Fri *-*-15..21 22:15:00`}</pre>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950 p-4 space-y-2 min-w-0">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-rose-600 dark:text-rose-400">
+                            Worked Example 4: 1-Click Auto-Fix on Vulnerable Cron (Preset #2)
+                        </div>
+                        <pre className="text-xs font-mono text-slate-800 dark:text-slate-200 leading-relaxed overflow-x-auto max-w-full">{`Vulnerable Input : * 2 13 * 5 (TZ: America/New_York, Duration: 120s)
+Command Input    : /usr/local/bin/archive.sh --date=$(date +%Y-%m-%d)
+Initial Score    : 0 / 100 (Grade F — 4 Critical, 2 Warnings)
+
+1-Click Auto-Fix Remediation Pipeline:
+1. CRON-MIN-002  : Minute "*" -> "7" (stops 60x/hr flood & :00 spike)
+2. CRON-OR-003   : DOM "13" -> "*" (removes POSIX DOM+DOW OR union bug)
+3. CRON-DST-007  : Timezone "America/New_York" -> "UTC" (02:00 DST-safe)
+4. CRON-SHL-012  : Escapes "%" -> "date +\%Y-\%m-\%d" (Score: 100/100 A+)`}</pre>
                     </div>
                 </div>
             </div>
 
             {/* ========================================================================
-          SECTION 5: STEP-BY-STEP USER WORKFLOW GUIDE
+          SECTION 5: HOW THE ENGINE WORKS & STEP-BY-STEP USER WORKFLOW GUIDE
           ======================================================================== */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs space-y-5">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                    How to Use the Cron Expression Generator, Visual Builder &amp; Simulator
+                    How Our 7-Dialect Cron Engine Works &amp; How to Get Your Exact Schedule Output
                 </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Under the hood, the workbench runs a 5-stage deterministic pipeline in browser memory: (1) <strong>Wrapper &amp; Macro Normalization</strong> strips <code>cron(...)</code>, <code>@Scheduled(...)</code>, YAML prefixes, and trailing crontab shell commands while expanding POSIX macros (<code>@hourly</code>, <code>@daily</code>, <code>@reboot</code>); (2) <strong>7-Dialect AST Tokenization</strong> resolves Jenkins CRC-32 <code>H</code> hash-jitter tokens and parses ranges, steps, and calendar modifiers (<code>L</code>, <code>L-N</code>, <code>W</code>, <code>LW</code>, <code>#</code>, <code>?</code>); (3) <strong>Zoned Wall-Clock Simulation</strong> uses <code>Intl.DateTimeFormat</code> two-pass offset resolution to compute the next 15 runs across 12 IANA timezones while detecting nonexistent Spring-Forward <code>02:00</code> DST gaps; (4) <strong>14-Rule Reliability Auditing</strong> scores the schedule from 0 to 100; and (5) <strong>Multi-Target Code Generation</strong> transpiles the AST into 7 cron dialects, 10 DevOps configs, RFC 5545 <code>.ics</code> calendars, and CWE-1236 safe <code>.xlsx</code>/<code>.csv</code> reports.
+                </p>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-1">
                         <div className="font-bold text-slate-900 dark:text-white">
-                            Step 1: Load a Preset, Paste a Schedule, or Type Plain English
+                            Step 1: Load a Preset, Paste Any Schedule, or Type Plain English
                         </div>
                         <p className="text-slate-600 dark:text-slate-400">
                             Click any of the 6 Scenario Presets at the top, paste an existing crontab line or{' '}
@@ -402,31 +440,32 @@ Monthly Compute (30s/run)  : 792 runs/mo * 0.5m = 396 mins (19.8% GHA Free Tier)
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-1">
                         <div className="font-bold text-slate-900 dark:text-white">
-                            Step 2: Refine Tokens Visually &amp; Set Timezone / Job Duration
+                            Step 2: Customize Tokens Visually &amp; Set Timezone / Job Duration
                         </div>
                         <p className="text-slate-600 dark:text-slate-400">
                             Click any field card in the Color-Coded AST Breakdown or select a field tab in the Interactive Visual
-                            Builder to apply step values, weekday ranges, or <code>L / LW / W / # / H</code> modifiers.
+                            Builder to apply step values, weekday ranges, or <code>L / LW / 15W / 6#3 / 6L / H/15</code> modifiers,
+                            and select your target IANA timezone and estimated job duration.
                         </p>
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-1">
                         <div className="font-bold text-slate-900 dark:text-white">
-                            Step 3: Audit 14 Reliability Rules &amp; Remediate in 1 Click
+                            Step 3: Audit 14 Reliability Rules, Check Collisions &amp; Auto-Fix
                         </div>
                         <p className="text-slate-600 dark:text-slate-400">
-                            Open Tab 2 to inspect the 14-Rule Reliability Linter for accidental minute floods, <code>DOM+DOW</code>{' '}
-                            Boolean OR traps, DST skips, or job overlaps, and click <strong>1-Click Auto-Fix</strong> to reach a
-                            100/100 Grade A+ schedule.
+                            Inspect the Monthly Calendar Heatmap and 6-Region World Clock in Tab 1, or open Tab 2 to check for
+                            accidental minute floods, <code>DOM+DOW</code> Boolean OR traps, DST skips, and secondary job overlaps,
+                            then click <strong>1-Click Auto-Fix</strong> to reach 100/100 (Grade A+).
                         </p>
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-1">
                         <div className="font-bold text-slate-900 dark:text-white">
-                            Step 4: Compile DevOps Manifests or Export .ICS / .XLSX
+                            Step 4: Copy DevOps Manifests or Export .ICS Calendar &amp; .XLSX Audit
                         </div>
                         <p className="text-slate-600 dark:text-slate-400">
-                            Use Tab 3 and Tab 4 to copy production Kubernetes <code>CronJob</code> YAML, <code>systemd</code>{' '}
-                            <code>.timer</code> units, or Terraform code, or open Tab 5 to export an RFC 5545 <code>.ics</code>{' '}
-                            calendar or CWE-1236 safe <code>.xlsx</code> audit sheet.
+                            Use Tab 3 to transpile between POSIX, Quartz, EventBridge, and <code>systemd OnCalendar</code>, use Tab 4
+                            to copy ready-to-deploy Kubernetes CronJob YAML, Terraform HCL, or <code>flock</code> crontab lines, or
+                            open Tab 5 to download RFC 5545 <code>.ics</code> and Excel <code>.xlsx</code> files.
                         </p>
                     </div>
                 </div>
@@ -532,10 +571,10 @@ Monthly Compute (30s/run)  : 792 runs/mo * 0.5m = 396 mins (19.8% GHA Free Tier)
                             </div>
                             <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${sev === 'CRITICAL'
-                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                                        : sev === 'WARNING'
-                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                            : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
+                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                    : sev === 'WARNING'
+                                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                        : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
                                     }`}
                             >
                                 {sev}
@@ -580,7 +619,77 @@ Monthly Compute (30s/run)  : 792 runs/mo * 0.5m = 396 mins (19.8% GHA Free Tier)
             </div>
 
             {/* ========================================================================
-          SECTION 9: 16 INTERACTIVE FREQUENTLY ASKED QUESTIONS (FAQS)
+          SECTION 9: SEARCH INTENT & WORKFLOW COVERAGE (33 TARGET LONG-TAIL WORKFLOWS)
+          ======================================================================== */}
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs space-y-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                    Supported Cron, Kubernetes, Quartz, AWS EventBridge &amp; systemd Workflows (33 Search Intents)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Every workflow below is executed 100% locally in your browser by our 7-dialect AST engine:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                    <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                            POSIX, Linux Crontab &amp; Visual Building (11 Workflows)
+                        </h4>
+                        <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+                            <li>cron expression generator and plain english explainer</li>
+                            <li>convert plain english schedule to cron expression online</li>
+                            <li>visual 5-field and 7-field cron expression builder</li>
+                            <li>crontab dom and dow boolean or trap checker</li>
+                            <li>detect accidental every minute cron flood (* 2 * * *)</li>
+                            <li>linux crontab percent sign (%) newline escape linter</li>
+                            <li>linux crontab flock -n overlap lock generator</li>
+                            <li>cron schedule next 15 execution timestamps simulator</li>
+                            <li>monthly cron execution density calendar heatmap</li>
+                            <li>two cron jobs maintenance window collision detector</li>
+                            <li>export cron schedule to google calendar rfc 5545 .ics</li>
+                        </ul>
+                    </div>
+
+                    <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                            Quartz, AWS EventBridge, Spring &amp; Jenkins (11 Workflows)
+                        </h4>
+                        <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+                            <li>7-field java quartz cron expression generator online</li>
+                            <li>aws eventbridge 6-field cron expression validator</li>
+                            <li>convert posix 5-field cron to aws eventbridge cron</li>
+                            <li>quartz and eventbridge last weekday of month (lw) tester</li>
+                            <li>nearest weekday cron modifier (15w and 1w) calculator</li>
+                            <li>nth weekday of month cron generator (6#3 third friday)</li>
+                            <li>shift posix 0-6 weekday to quartz 1-7 weekday online</li>
+                            <li>spring boot @scheduled 6-field cron expression tester</li>
+                            <li>jenkins pipeline hash jitter (h/15) crc-32 simulator</li>
+                            <li>aws eventbridge scheduler terraform hcl generator</li>
+                            <li>export cron reliability audit to cwe-1236 safe .xlsx</li>
+                        </ul>
+                    </div>
+
+                    <div className="p-4 rounded-2xl border border-slate-200/70 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/30 space-y-1.5 min-w-0">
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                            Kubernetes, GitHub Actions, systemd &amp; DST (11 Workflows)
+                        </h4>
+                        <ul className="space-y-1 text-slate-600 dark:text-slate-400 list-disc pl-4">
+                            <li>kubernetes batch/v1 cronjob yaml generator with timezone</li>
+                            <li>kubernetes cronjob concurrencypolicy forbid calculator</li>
+                            <li>convert crontab to linux systemd timer oncalendar=</li>
+                            <li>systemd timer persistent=true and service unit generator</li>
+                            <li>cron daylight saving time (dst) 02:00 skip scanner</li>
+                            <li>multi-timezone cron execution simulator (12 iana zones)</li>
+                            <li>github actions on.schedule utc cron validator</li>
+                            <li>github actions monthly compute minutes budget calculator</li>
+                            <li>vercel cron json and cloudflare wrangler toml generator</li>
+                            <li>node.js croner and python celery beat crontab generator</li>
+                            <li>golang robfig/cron v3 skipifstillrunning code generator</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {/* ========================================================================
+          SECTION 10: 16 INTERACTIVE FREQUENTLY ASKED QUESTIONS (FAQS)
           ======================================================================== */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-xs space-y-4">
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">

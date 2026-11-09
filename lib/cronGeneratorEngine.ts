@@ -430,8 +430,10 @@ export function compileEnglishToCron(
     const month = '*';
     let dow = '*';
 
-    // Detect specific time like "9:30 am", "17:45", "2 am", "10pm"
-    const timeMatch = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/.exec(q);
+    // Detect specific time like "9:30 am", "17:45", "2 am", "10pm", "at 9"
+    const colonTimeMatch = /\b(\d{1,2}):(\d{2})\s*(am|pm)?\b/i.exec(q);
+    const amPmTimeMatch = /\b(\d{1,2})\s*(am|pm)\b/i.exec(q);
+    const atHourMatch = /\bat\s+(\d{1,2})\b/i.exec(q);
     const everyMinMatch = /every\s+(\d+)\s*min/i.exec(q);
     const everyHourMatch = /every\s+(\d+)\s*hour/i.exec(q);
     const everySecMatch = /every\s+(\d+)\s*sec/i.exec(q);
@@ -461,10 +463,20 @@ export function compileEnglishToCron(
     } else if (q.includes('noon') || q.includes('midday')) {
         min = '0';
         hour = '12';
-    } else if (timeMatch && !everyMinMatch && !everyHourMatch) {
-        let h = Number(timeMatch[1]);
-        const m = timeMatch[2] !== undefined ? Number(timeMatch[2]) : 0;
-        const ampm = timeMatch[3];
+    } else if ((colonTimeMatch || amPmTimeMatch || atHourMatch) && !everyMinMatch && !everyHourMatch) {
+        let h = 0;
+        let m = 0;
+        let ampm: string | undefined;
+        if (colonTimeMatch) {
+            h = Number(colonTimeMatch[1]);
+            m = Number(colonTimeMatch[2]);
+            ampm = colonTimeMatch[3]?.toLowerCase();
+        } else if (amPmTimeMatch) {
+            h = Number(amPmTimeMatch[1]);
+            ampm = amPmTimeMatch[2]?.toLowerCase();
+        } else if (atHourMatch) {
+            h = Number(atHourMatch[1]);
+        }
         if (ampm === 'pm' && h < 12) h += 12;
         if (ampm === 'am' && h === 12) h = 0;
         if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
@@ -489,8 +501,10 @@ export function compileEnglishToCron(
         dom = 'L';
         dow = '?';
     } else if (q.includes('nearest weekday')) {
-        const dMatch = /(\d{1,2})(?:st|nd|rd|th)?/.exec(q);
-        dom = `${dMatch ? dMatch[1] : '15'}W`;
+        const ordDayMatch = /\b(\d{1,2})(?:st|nd|rd|th)\b/i.exec(q);
+        const toDayMatch = /(?:to|on|day)\s+(?:the\s+)?(\d{1,2})\b/i.exec(q);
+        const targetD = ordDayMatch ? ordDayMatch[1] : toDayMatch ? toDayMatch[1] : '15';
+        dom = `${targetD}W`;
         dow = '?';
     } else if (/(first|1st|second|2nd|third|3rd|fourth|4th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/.test(q)) {
         const m = /(first|1st|second|2nd|third|3rd|fourth|4th)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/.exec(q)!;
@@ -520,7 +534,11 @@ export function compileEnglishToCron(
         }
     }
 
-    if (q.includes('first day of every month') || q.includes('1st of every month') || q.includes('monthly')) {
+    const specificDomMatch = /\b(?:on\s+(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)|on\s+day\s+(\d{1,2}))\b/i.exec(q);
+    if (specificDomMatch && dom === '*') {
+        const dNum = Number(specificDomMatch[1] || specificDomMatch[2]);
+        if (dNum >= 1 && dNum <= 31) dom = String(dNum);
+    } else if (q.includes('first day of every month') || q.includes('1st of every month') || q.includes('monthly')) {
         if (dom === '*') dom = '1';
     }
 
@@ -584,7 +602,7 @@ function normalizeTextNames(token: string, isMonth: boolean, isDow: boolean, isQ
     if (isDow) {
         for (const [name, num0Sun] of Object.entries(DOW_NAMES_0SUN_MAP)) {
             const targetNum = isQuartzOrAwsDow ? num0Sun + 1 : num0Sun;
-            out = out.replace(new RegExp(`\\b${name}\\b`, 'g'), String(targetNum));
+            out = out.replace(new RegExp(`\\b${name}(?=\\b|L)`, 'g'), String(targetNum));
         }
     }
     return out;
@@ -1186,13 +1204,13 @@ export function explainCronFieldsInPlainEnglish(
         );
     } else if (domRestricted) {
         if (domField.isLastWeekdayLW || domField.isLastDayL || domField.nearestWeekdayTarget !== null) {
-            parts.push(summarizeFieldHuman(domField, 'dayOfMonth').toLowerCase());
+            parts.push(summarizeFieldHuman(domField, 'dayOfMonth').replace(/^On\b/, 'on'));
         } else {
             parts.push(`on day ${summarizeFieldHuman(domField, 'dayOfMonth')} of the month`);
         }
     } else if (dowRestricted) {
         if (dowField.nthWeekday || dowField.lastWeekdayOfType !== null) {
-            parts.push(summarizeFieldHuman(dowField, 'dayOfWeek').toLowerCase());
+            parts.push(summarizeFieldHuman(dowField, 'dayOfWeek').replace(/^On\b/, 'on'));
         } else {
             parts.push(`on ${summarizeFieldHuman(dowField, 'dayOfWeek')}`);
         }
@@ -1269,9 +1287,11 @@ export function buildCrossDialectTranslations(
                 ? shiftDowTokenBetweenUnixAndQuartz(rawDowWithoutHash, false)
                 : rawDowWithoutHash;
 
-    // Enforce ? mutual exclusion for Quartz & AWS EventBridge
-    let qDom = domToken;
-    let qDow = sourceIsQuartzOrAws ? dowToken : shiftDowTokenBetweenUnixAndQuartz(dowToken, true);
+    // Enforce ? mutual exclusion for Quartz & AWS EventBridge (resolving any Jenkins H token first)
+    const resolvedDomForQ = resolveJenkinsHashToken(domToken, 1, 31, jenkinsSeed, 3);
+    const resolvedDowForQ = resolveJenkinsHashToken(dowToken, 0, 7, jenkinsSeed, 5);
+    let qDom = resolvedDomForQ;
+    let qDow = sourceIsQuartzOrAws ? resolvedDowForQ : shiftDowTokenBetweenUnixAndQuartz(resolvedDowForQ, true);
     if (qDom !== '?' && qDow !== '?') {
         if (qDom === '*' && qDow !== '*') {
             qDom = '?';
@@ -1284,11 +1304,11 @@ export function buildCrossDialectTranslations(
         qDom = '*';
     }
 
-    if (!sourceIsQuartzOrAws && /\b[0-7]\b/.test(dowToken)) {
+    if (!sourceIsQuartzOrAws && qDow !== '?' && /\b[0-7]\b/.test(resolvedDowForQ)) {
         notes.push(
-            `Shifted numeric Day-of-Week "${dowToken}" (POSIX 0=Sun..6=Sat) → "${qDow}" (Quartz/EventBridge 1=Sun..7=Sat).`
+            `Shifted numeric Day-of-Week "${resolvedDowForQ}" (POSIX 0=Sun..6=Sat) → "${qDow}" (Quartz/EventBridge 1=Sun..7=Sat).`
         );
-    } else if (sourceIsQuartzOrAws && /\b[1-7]\b/.test(rawDowWithoutHash)) {
+    } else if (sourceIsQuartzOrAws && posixDow !== '*' && /\b[1-7]\b/.test(rawDowWithoutHash)) {
         notes.push(
             `Shifted numeric Day-of-Week "${rawDowWithoutHash}" (Quartz/EventBridge 1=Sun..7=Sat) → "${posixDow}" (POSIX 0=Sun..6=Sat).`
         );
@@ -1326,7 +1346,19 @@ export function buildCrossDialectTranslations(
 
     const sysDow = toSystemdDow(posixDow);
     const sysMonth = toSystemdField(cleanMonth, 2);
-    const sysDom = domToken === 'L' || domToken === 'LW' ? '~01' : toSystemdField(cleanDomPosix, 2);
+    const nthMatchSys = /#([1-5])$/.exec(dowToken.trim());
+    const isLastDowSys = /^[0-7A-Z]+L$/i.test(dowToken.trim()) && dowToken.trim().toUpperCase() !== 'L';
+    let sysDom = toSystemdField(cleanDomPosix, 2);
+    if (domToken === 'L' || domToken === 'LW') {
+        sysDom = '~01';
+    } else if (nthMatchSys) {
+        const nthNum = Number(nthMatchSys[1]);
+        const rStart = String((nthNum - 1) * 7 + 1).padStart(2, '0');
+        const rEnd = String(Math.min(31, nthNum * 7)).padStart(2, '0');
+        sysDom = `${rStart}..${rEnd}`;
+    } else if (isLastDowSys) {
+        sysDom = '~01..07';
+    }
     const sysHour = toSystemdField(cleanHour, 2);
     const sysMin = toSystemdField(cleanMin, 2);
     const sysSec = toSystemdField(secToken || '0', 2);
@@ -1687,12 +1719,20 @@ export function analyzeAndSimulateCron(
         }
     }
 
-    // Resolve active dialect
+    // Resolve active dialect (auto-upgrading if expression has 6/7 fields or explicit wrapper/modifiers incompatible with 5-field mode)
     let detectedDialect: ResolvedCronDialect = 'UNIX_5';
-    if (inputs.selectedDialect !== 'AUTO') {
-        detectedDialect = inputs.selectedDialect;
-    } else if (autoDetectedDialect) {
+    if (autoDetectedDialect) {
         detectedDialect = autoDetectedDialect;
+    } else if (
+        inputs.selectedDialect !== 'AUTO' &&
+        !(
+            (inputs.selectedDialect === 'UNIX_5' ||
+                inputs.selectedDialect === 'K8S_CRONJOB' ||
+                inputs.selectedDialect === 'GITHUB_ACTIONS') &&
+            (cronTokens.length >= 6 || cronTokens.some((t) => t === '?' || /L|W|#/.test(t)))
+        )
+    ) {
+        detectedDialect = inputs.selectedDialect;
     } else if (cronTokens.some((t) => /\bH\b|^H[/(]/i.test(t))) {
         detectedDialect = 'JENKINS_HASH';
     } else if (cronTokens.length === 7) {
@@ -1830,7 +1870,7 @@ export function analyzeAndSimulateCron(
         const sortedHours = Array.from(hourField.valuesSet).sort((a, b) => a - b);
         const sortedMins = Array.from(minField.valuesSet).sort((a, b) => a - b);
         const secValues = Array.from(secField.valuesSet).sort((a, b) => a - b);
-        const activeSecList = secValues.length > 0 ? secValues.slice(0, 4) : [0];
+        const activeSecList = secValues.length > 0 ? secValues : [0];
 
         const refZoned = extractZonedParts(refMs, tz);
         const baseLocalMidnightUtcMs = Date.UTC(refZoned.year, refZoned.month - 1, refZoned.day, 0, 0, 0);
@@ -2032,7 +2072,12 @@ export function analyzeAndSimulateCron(
 
     let minIntervalSeconds = 86400;
     if (upcomingRuns.length >= 2) {
-        minIntervalSeconds = Math.max(1, Math.round((upcomingRuns[1].epochMs - upcomingRuns[0].epochMs) / 1000));
+        let smallestGapSec = Infinity;
+        for (let i = 1; i < upcomingRuns.length; i++) {
+            const gapSec = Math.max(1, Math.round((upcomingRuns[i].epochMs - upcomingRuns[i - 1].epochMs) / 1000));
+            if (gapSec < smallestGapSec) smallestGapSec = gapSec;
+        }
+        minIntervalSeconds = Number.isFinite(smallestGapSec) ? smallestGapSec : 86400;
     } else if (dailyRunsWhenDayMatches > 1) {
         minIntervalSeconds = Math.max(1, Math.round(86400 / dailyRunsWhenDayMatches));
     }
@@ -2261,7 +2306,7 @@ export function analyzeAndSimulateCron(
     }
 
     // Rule 11: Top-of-Hour Thundering Herd (`0 * * * *` or `0 0 * * *`)
-    if (minField.rawToken === '0' && secField.rawToken === '0' && detectedDialect !== 'JENKINS_HASH') {
+    if (!isRebootMacro && minField.rawToken === '0' && secField.rawToken === '0' && detectedDialect !== 'JENKINS_HASH') {
         lintFindings.push({
             ruleId: 'CRON-JIT-011_TOP_OF_HOUR_THUNDERING_HERD',
             ruleNumber: 11,
@@ -2359,7 +2404,7 @@ export function analyzeAndSimulateCron(
         engineVersion: CRON_ENGINE_VERSION,
         isIdleEmpty: false,
         rawInput: inputs.rawExpressionInput,
-        cleanCronExpression: cronTokens.join(' '),
+        cleanCronExpression: isRebootMacro ? '@reboot' : cronTokens.join(' '),
         expandedMacroFrom,
         isRebootMacro,
         extractedShellCommand,
@@ -2392,8 +2437,8 @@ export function autoFixCronPitfalls(
     inputs: CronGeneratorInputs
 ): { nextInputs: CronGeneratorInputs; fixSummary: string } {
     const report = analyzeAndSimulateCron(inputs);
-    if (report.isIdleEmpty) {
-        return { nextInputs: inputs, fixSummary: 'No active cron expression to fix.' };
+    if (report.isIdleEmpty || report.isRebootMacro) {
+        return { nextInputs: inputs, fixSummary: report.isRebootMacro ? '@reboot macro is already valid (100/100 Grade A+).' : 'No active cron expression to fix.' };
     }
 
     const fixesApplied: string[] = [];

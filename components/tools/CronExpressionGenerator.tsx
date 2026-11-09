@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
     Clock,
     Calendar as CalendarIcon,
@@ -171,7 +171,7 @@ const VISUAL_FIELD_QUICK_CHIPS: Record<
         { label: 'Weekends POSIX (0,6)', token: '0,6' },
         { label: 'Sunday POSIX (0)', token: '0' },
         { label: '3rd Friday Quartz/AWS (6#3)', token: '6#3' },
-        { label: 'Last Friday (5L)', token: '5L' },
+        { label: 'Last Friday Quartz/AWS (6L)', token: '6L' },
         { label: 'Quartz/AWS Excluded (?)', token: '?' },
     ],
     year: [
@@ -253,6 +253,23 @@ export default function CronExpressionGenerator() {
 
     const deepDiveRef = useRef<HTMLDivElement | null>(null);
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const params = new URLSearchParams(window.location.search);
+        const sharedCron = params.get('cron');
+        const sharedTz = params.get('tz');
+        if (sharedCron && sharedCron.trim()) {
+            setInputs((prev) => ({
+                ...prev,
+                rawExpressionInput: sharedCron.trim(),
+                targetTimezone:
+                    sharedTz && SUPPORTED_IANA_TIMEZONES.some((t) => t.id === sharedTz)
+                        ? sharedTz
+                        : prev.targetTimezone,
+            }));
+        }
+    }, []);
+
     const report = useMemo(() => analyzeAndSimulateCron(inputs), [inputs]);
 
     const copyText = (text: string, id: string) => {
@@ -303,6 +320,8 @@ export default function CronExpressionGenerator() {
         setInputs((prev) => ({
             ...prev,
             rawExpressionInput: compiled.cronExpression,
+            selectedDialect:
+                compiled.cronExpression.split(/\s+/).length >= 6 ? 'AUTO' : prev.selectedDialect,
         }));
         setStatusNotice(`${compiled.matchedRuleSummary} → "${compiled.cronExpression}"`);
     };
@@ -536,8 +555,8 @@ export default function CronExpressionGenerator() {
                                     type="button"
                                     onClick={() => handleSelectPreset(preset.id)}
                                     className={`min-w-0 text-left p-3.5 rounded-xl border transition group cursor-pointer ${isSelected
-                                            ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/25 shadow-xs'
-                                            : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/40'
+                                        ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/25 shadow-xs'
+                                        : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/40'
                                         }`}
                                 >
                                     <div className="flex items-start justify-between gap-2 mb-1">
@@ -546,8 +565,8 @@ export default function CronExpressionGenerator() {
                                         </span>
                                         <span
                                             className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${isSelected
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                                                 }`}
                                         >
                                             {isSelected ? '✓ Active' : 'Load'}
@@ -592,12 +611,12 @@ export default function CronExpressionGenerator() {
           ============================================================================ */}
             <div
                 className={`rounded-2xl border p-4 sm:p-5 shadow-sm transition ${!isLoaded
-                        ? 'border-slate-200 dark:border-slate-800 bg-slate-900 text-white'
-                        : !report.isValidSyntax || report.criticalFindingsCount > 0
-                            ? 'border-rose-500/40 bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white'
-                            : report.warningFindingsCount > 0
-                                ? 'border-amber-500/40 bg-gradient-to-r from-amber-950 via-slate-900 to-slate-900 text-white'
-                                : 'border-emerald-500/40 bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 text-white'
+                    ? 'border-slate-200 dark:border-slate-800 bg-slate-900 text-white'
+                    : !report.isValidSyntax || report.criticalFindingsCount > 0
+                        ? 'border-rose-500/40 bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white'
+                        : report.warningFindingsCount > 0
+                            ? 'border-amber-500/40 bg-gradient-to-r from-amber-950 via-slate-900 to-slate-900 text-white'
+                            : 'border-emerald-500/40 bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 text-white'
                     }`}
             >
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -605,10 +624,10 @@ export default function CronExpressionGenerator() {
                         <div className="flex flex-wrap items-center gap-2">
                             <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${!isLoaded
-                                        ? 'bg-slate-800 text-slate-300'
-                                        : report.isValidSyntax && report.criticalFindingsCount === 0
-                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                                            : 'bg-rose-500/25 text-rose-200 border border-rose-400/40'
+                                    ? 'bg-slate-800 text-slate-300'
+                                    : report.isValidSyntax && report.criticalFindingsCount === 0
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                                        : 'bg-rose-500/25 text-rose-200 border border-rose-400/40'
                                     }`}
                             >
                                 {isLoaded && report.isValidSyntax && report.criticalFindingsCount === 0 ? (
@@ -677,12 +696,12 @@ export default function CronExpressionGenerator() {
                             <div className="flex items-baseline gap-2 mt-0.5">
                                 <span
                                     className={`text-lg font-black font-mono ${!isLoaded
-                                            ? 'text-slate-300'
-                                            : report.reliabilityScore >= 90
-                                                ? 'text-emerald-400'
-                                                : report.reliabilityScore >= 70
-                                                    ? 'text-amber-300'
-                                                    : 'text-rose-400'
+                                        ? 'text-slate-300'
+                                        : report.reliabilityScore >= 90
+                                            ? 'text-emerald-400'
+                                            : report.reliabilityScore >= 70
+                                                ? 'text-amber-300'
+                                                : 'text-rose-400'
                                         }`}
                                 >
                                     {isLoaded ? `${report.reliabilityScore}/100 (${report.reliabilityGrade})` : '0 / 100'}
@@ -739,8 +758,8 @@ export default function CronExpressionGenerator() {
                                             setInputs((prev) => ({ ...prev, selectedDialect: d.id }))
                                         }
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border cursor-pointer ${isSelected
-                                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
-                                                : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                            : 'bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
                                             }`}
                                     >
                                         {d.label}
@@ -913,8 +932,8 @@ export default function CronExpressionGenerator() {
                                     type="button"
                                     onClick={() => setActiveFieldEditorKey(tab.key)}
                                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${activeFieldEditorKey === tab.key
-                                            ? 'bg-indigo-600 text-white'
-                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                                         }`}
                                 >
                                     {tab.label}
@@ -1072,10 +1091,10 @@ export default function CronExpressionGenerator() {
                     </div>
                     <div
                         className={`text-sm font-extrabold font-mono shrink-0 ${!isLoaded
-                                ? 'text-slate-900 dark:text-white'
-                                : report.frequencyBudget.hasSelfOverlapRisk
-                                    ? 'text-rose-600 dark:text-rose-400'
-                                    : 'text-slate-900 dark:text-white'
+                            ? 'text-slate-900 dark:text-white'
+                            : report.frequencyBudget.hasSelfOverlapRisk
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : 'text-slate-900 dark:text-white'
                             }`}
                     >
                         {isLoaded
@@ -1096,10 +1115,10 @@ export default function CronExpressionGenerator() {
                     </div>
                     <div
                         className={`text-sm font-extrabold font-mono shrink-0 ${!isLoaded
-                                ? 'text-slate-900 dark:text-white'
-                                : report.dstHazard.springForwardSkipRisk || report.criticalFindingsCount > 0
-                                    ? 'text-amber-600 dark:text-amber-400'
-                                    : 'text-emerald-600 dark:text-emerald-400'
+                            ? 'text-slate-900 dark:text-white'
+                            : report.dstHazard.springForwardSkipRisk || report.criticalFindingsCount > 0
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
                             }`}
                     >
                         {isLoaded
@@ -1123,8 +1142,8 @@ export default function CronExpressionGenerator() {
                         type="button"
                         onClick={() => setActiveStudioTab('timeline_heatmap_collision')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeStudioTab === 'timeline_heatmap_collision'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
@@ -1135,8 +1154,8 @@ export default function CronExpressionGenerator() {
                         type="button"
                         onClick={() => setActiveStudioTab('reliability_linter_14')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeStudioTab === 'reliability_linter_14'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
@@ -1147,8 +1166,8 @@ export default function CronExpressionGenerator() {
                         type="button"
                         onClick={() => setActiveStudioTab('cross_dialect_transpiler')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeStudioTab === 'cross_dialect_transpiler'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
@@ -1159,8 +1178,8 @@ export default function CronExpressionGenerator() {
                         type="button"
                         onClick={() => setActiveStudioTab('devops_config_compiler')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeStudioTab === 'devops_config_compiler'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <Terminal className="w-3.5 h-3.5 shrink-0" />
@@ -1171,8 +1190,8 @@ export default function CronExpressionGenerator() {
                         type="button"
                         onClick={() => setActiveStudioTab('calendar_audit_exports')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeStudioTab === 'calendar_audit_exports'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
@@ -1250,10 +1269,10 @@ export default function CronExpressionGenerator() {
                                                 <div
                                                     key={dayCell.dateIso}
                                                     className={`rounded-xl border p-2.5 min-w-0 transition ${dayCell.hasCollision
-                                                            ? 'border-rose-400 bg-rose-50/80 dark:bg-rose-950/40'
-                                                            : dayCell.primaryRunsCount > 0
-                                                                ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30'
-                                                                : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 opacity-65'
+                                                        ? 'border-rose-400 bg-rose-50/80 dark:bg-rose-950/40'
+                                                        : dayCell.primaryRunsCount > 0
+                                                            ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/30'
+                                                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40 opacity-65'
                                                         }`}
                                                 >
                                                     <div className="flex items-center justify-between gap-1">
@@ -1262,8 +1281,8 @@ export default function CronExpressionGenerator() {
                                                         </span>
                                                         <span
                                                             className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${dayCell.primaryRunsCount > 0
-                                                                    ? 'bg-emerald-600 text-white'
-                                                                    : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                                                ? 'bg-emerald-600 text-white'
+                                                                : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                                                                 }`}
                                                         >
                                                             {dayCell.primaryRunsCount}x
@@ -1384,20 +1403,20 @@ export default function CronExpressionGenerator() {
                                         <div
                                             key={f.ruleId}
                                             className={`rounded-xl border p-4 space-y-2 ${f.severity === 'CRITICAL'
-                                                    ? 'border-rose-300 dark:border-rose-900/80 bg-rose-50/60 dark:bg-rose-950/25'
-                                                    : f.severity === 'WARNING'
-                                                        ? 'border-amber-300 dark:border-amber-900/80 bg-amber-50/60 dark:bg-amber-950/25'
-                                                        : 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20'
+                                                ? 'border-rose-300 dark:border-rose-900/80 bg-rose-50/60 dark:bg-rose-950/25'
+                                                : f.severity === 'WARNING'
+                                                    ? 'border-amber-300 dark:border-amber-900/80 bg-amber-50/60 dark:bg-amber-950/25'
+                                                    : 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20'
                                                 }`}
                                         >
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${f.severity === 'CRITICAL'
-                                                                ? 'bg-rose-600 text-white'
-                                                                : f.severity === 'WARNING'
-                                                                    ? 'bg-amber-500 text-slate-950'
-                                                                    : 'bg-indigo-600 text-white'
+                                                            ? 'bg-rose-600 text-white'
+                                                            : f.severity === 'WARNING'
+                                                                ? 'bg-amber-500 text-slate-950'
+                                                                : 'bg-indigo-600 text-white'
                                                             }`}
                                                     >
                                                         {f.severity}
@@ -1512,6 +1531,19 @@ export default function CronExpressionGenerator() {
                                     </div>
                                 ))}
                             </div>
+
+                            {report.crossDialectTranslations.conversionNotes.length > 0 && (
+                                <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/25 p-3.5 space-y-1 text-xs">
+                                    <div className="font-bold text-indigo-900 dark:text-indigo-200">
+                                        AST Dialect Normalization Notes:
+                                    </div>
+                                    <ul className="list-disc pl-4 space-y-0.5 text-slate-700 dark:text-slate-300">
+                                        {report.crossDialectTranslations.conversionNotes.map((note, idx) => (
+                                            <li key={idx}>{note}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -1528,8 +1560,8 @@ export default function CronExpressionGenerator() {
                                             type="button"
                                             onClick={() => setSelectedDevOpsPlatform(plat.id)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${selectedDevOpsPlatform === plat.id
-                                                    ? 'bg-indigo-600 text-white'
-                                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                                                 }`}
                                         >
                                             {plat.label}
