@@ -175,6 +175,7 @@ export interface ComprehensiveCronReport {
     detectedDialect: ResolvedCronDialect;
     isValidSyntax: boolean;
     syntaxErrorMessage: string | null;
+    secondaryCronError?: string | null;
     plainEnglishDescription: string;
     fieldBreakdowns: CronFieldBreakdown[];
     reliabilityScore: number; // 0..100
@@ -281,9 +282,100 @@ export const SUPPORTED_IANA_TIMEZONES: {
         },
         {
             id: 'Australia/Sydney',
-            label: 'Australia/Sydney (AEST/AEDT)',
+            label: 'Australia/Sydney (Australia Eastern — AEST/AEDT)',
             observesDst: true,
             springDstDate: '2026-10-04 02:00 → 03:00 (1st Sunday in October)',
+            fallDstDate: '2026-04-05 02:00–02:59 Repeats (1st Sunday in April)',
+        },
+        {
+            id: 'America/Toronto',
+            label: 'America/Toronto (Canada Eastern — EST/EDT)',
+            observesDst: true,
+            springDstDate: '2026-03-08 02:00 → 03:00 (2nd Sunday in March)',
+            fallDstDate: '2026-11-01 01:00–01:59 Repeats (1st Sunday in November)',
+        },
+        {
+            id: 'America/Mexico_City',
+            label: 'America/Mexico_City (Central Standard — CST UTC-6)',
+            observesDst: false,
+            springDstDate: 'None (Mexico City abolished seasonal DST in 2022)',
+            fallDstDate: 'None (Fixed UTC-06:00 year-round)',
+        },
+        {
+            id: 'America/Sao_Paulo',
+            label: 'America/Sao_Paulo (Brazil — BRT UTC-3)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC-03:00 year-round)',
+            fallDstDate: 'None (Fixed UTC-03:00 year-round)',
+        },
+        {
+            id: 'Europe/Paris',
+            label: 'Europe/Paris (Western/Central Europe — CET/CEST)',
+            observesDst: true,
+            springDstDate: '2026-03-29 02:00 → 03:00 (Last Sunday in March)',
+            fallDstDate: '2026-10-25 02:00–02:59 Repeats (Last Sunday in October)',
+        },
+        {
+            id: 'Europe/Istanbul',
+            label: 'Europe/Istanbul (Turkey Time — TRT UTC+3)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+03:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+03:00 year-round)',
+        },
+        {
+            id: 'Africa/Cairo',
+            label: 'Africa/Cairo (Egypt Standard/Summer — EET/EEST)',
+            observesDst: true,
+            springDstDate: '2026-04-24 00:00 → 01:00 (Last Friday in April)',
+            fallDstDate: '2026-10-29 23:00–23:59 Repeats (Last Thursday in October)',
+        },
+        {
+            id: 'Africa/Johannesburg',
+            label: 'Africa/Johannesburg (South Africa Standard — SAST UTC+2)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+02:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+02:00 year-round)',
+        },
+        {
+            id: 'Asia/Riyadh',
+            label: 'Asia/Riyadh (Arabia Standard Time — AST UTC+3)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+03:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+03:00 year-round)',
+        },
+        {
+            id: 'Asia/Dhaka',
+            label: 'Asia/Dhaka (Bangladesh Standard Time — BST UTC+6)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+06:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+06:00 year-round)',
+        },
+        {
+            id: 'Asia/Bangkok',
+            label: 'Asia/Bangkok (Indochina Time — ICT UTC+7)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+07:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+07:00 year-round)',
+        },
+        {
+            id: 'Asia/Shanghai',
+            label: 'Asia/Shanghai (China Standard Time — CST UTC+8)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+08:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+08:00 year-round)',
+        },
+        {
+            id: 'Asia/Seoul',
+            label: 'Asia/Seoul (Korea Standard Time — KST UTC+9)',
+            observesDst: false,
+            springDstDate: 'None (Fixed UTC+09:00 year-round)',
+            fallDstDate: 'None (Fixed UTC+09:00 year-round)',
+        },
+        {
+            id: 'Pacific/Auckland',
+            label: 'Pacific/Auckland (New Zealand — NZST/NZDT)',
+            observesDst: true,
+            springDstDate: '2026-09-27 02:00 → 03:00 (Last Sunday in September)',
             fallDstDate: '2026-04-05 02:00–02:59 Repeats (1st Sunday in April)',
         },
     ];
@@ -414,12 +506,89 @@ export function getDayOfWeek0Sun(year: number, month1to12: number, day1to31: num
 export function compileEnglishToCron(
     phrase: string,
     targetDialect: ResolvedCronDialect = 'UNIX_5'
-): { cronExpression: string; matchedRuleSummary: string } {
+): {
+    cronExpression: string;
+    matchedRuleSummary: string;
+    isValidEnglish?: boolean;
+    errorMessage?: string;
+} {
     const q = (phrase || '').trim().toLowerCase();
     if (!q) {
         return {
             cronExpression: '0 2 * * *',
             matchedRuleSummary: 'Default daily schedule at 02:00.',
+            isValidEnglish: false,
+            errorMessage: 'Please enter a plain-English schedule phrase (e.g., "every 15 mins during business hours on weekdays").',
+        };
+    }
+
+    // Validate out-of-range intervals or invalid clock times before compiling
+    const rawSecCheck = /every\s+(\d+)\s*sec/i.exec(q);
+    if (rawSecCheck && (Number(rawSecCheck[1]) < 1 || Number(rawSecCheck[1]) > 59)) {
+        return {
+            cronExpression: '',
+            matchedRuleSummary: '',
+            isValidEnglish: false,
+            errorMessage: `Invalid seconds interval "${rawSecCheck[1]}" — must be between 1 and 59 seconds.`,
+        };
+    }
+    const rawMinCheck = /every\s+(\d+)\s*min/i.exec(q);
+    if (rawMinCheck && (Number(rawMinCheck[1]) < 1 || Number(rawMinCheck[1]) > 59)) {
+        return {
+            cronExpression: '',
+            matchedRuleSummary: '',
+            isValidEnglish: false,
+            errorMessage: `Invalid minute interval "${rawMinCheck[1]}" — must be between 1 and 59 minutes (use hours for >= 60m).`,
+        };
+    }
+    const rawHourCheck = /every\s+(\d+)\s*hour/i.exec(q);
+    if (rawHourCheck && (Number(rawHourCheck[1]) < 1 || Number(rawHourCheck[1]) > 23)) {
+        return {
+            cronExpression: '',
+            matchedRuleSummary: '',
+            isValidEnglish: false,
+            errorMessage: `Invalid hour interval "${rawHourCheck[1]}" — must be between 1 and 23 hours.`,
+        };
+    }
+    const rawColonCheck = /\b(\d{1,3}):(\d{1,3})\s*(am|pm)?\b/i.exec(q);
+    if (rawColonCheck) {
+        const ch = Number(rawColonCheck[1]);
+        const cm = Number(rawColonCheck[2]);
+        const campm = rawColonCheck[3]?.toLowerCase();
+        if (cm > 59 || (campm ? ch < 1 || ch > 12 : ch > 23)) {
+            return {
+                cronExpression: '',
+                matchedRuleSummary: '',
+                isValidEnglish: false,
+                errorMessage: `Invalid clock time "${rawColonCheck[0].trim()}" — hours must be ${campm ? '1–12 with AM/PM' : '0–23'} and minutes 00–59.`,
+            };
+        }
+    }
+    const rawAmPmCheck = /\b(\d{1,3})\s*(am|pm)\b/i.exec(q);
+    if (!rawColonCheck && rawAmPmCheck) {
+        const ah = Number(rawAmPmCheck[1]);
+        if (ah < 1 || ah > 12) {
+            return {
+                cronExpression: '',
+                matchedRuleSummary: '',
+                isValidEnglish: false,
+                errorMessage: `Invalid 12-hour time "${rawAmPmCheck[0]}" — must be between 1 AM/PM and 12 AM/PM.`,
+            };
+        }
+    }
+
+    const hasRecognizedIntent =
+        Boolean(rawSecCheck || rawMinCheck || rawHourCheck || rawColonCheck || rawAmPmCheck) ||
+        /\b(?:every|hourly|daily|weekly|monthly|yearly|annually|midnight|noon|midday|business\s+hours|working\s+hours|9\s*to\s*5|9am\s*to\s*5pm|weekday|weekdays|weekend|weekends|mon-fri|sunday|monday|tuesday|wednesday|thursday|friday|saturday|last\s+day|last\s+weekday|nearest\s+weekday|first\s+day|1st\s+of|on\s+day\s+\d+|on\s+(?:the\s+)?\d+(?:st|nd|rd|th)|at\s+\d{1,2})\b/i.test(
+            q
+        );
+
+    if (!hasRecognizedIntent) {
+        return {
+            cronExpression: '',
+            matchedRuleSummary: '',
+            isValidEnglish: false,
+            errorMessage: `Could not recognize a schedule pattern in "${phrase}". Try e.g. "every 15 mins during business hours on weekdays", "every day at 2:30 am", or "on the last weekday of every month at 5:30 pm".`,
         };
     }
 
@@ -549,6 +718,7 @@ export function compileEnglishToCron(
         return {
             cronExpression: `${sec} ${min} ${hour} ${qDom} ${month} ${qDow} *`,
             matchedRuleSummary: `Compiled "${phrase}" to 7-field Quartz syntax.`,
+            isValidEnglish: true,
         };
     }
     if (targetDialect === 'AWS_EVENTBRIDGE_6') {
@@ -557,18 +727,21 @@ export function compileEnglishToCron(
         return {
             cronExpression: `${min} ${hour} ${eDom} ${month} ${eDow} *`,
             matchedRuleSummary: `Compiled "${phrase}" to 6-field AWS EventBridge syntax.`,
+            isValidEnglish: true,
         };
     }
     if (targetDialect === 'SPRING_6') {
         return {
             cronExpression: `${sec} ${min} ${hour} ${dom === '?' ? '*' : dom} ${month} ${dow === '?' ? '*' : dow}`,
             matchedRuleSummary: `Compiled "${phrase}" to 6-field Spring @Scheduled syntax.`,
+            isValidEnglish: true,
         };
     }
 
     return {
         cronExpression: `${min} ${hour} ${dom === '?' ? '*' : dom} ${month} ${dow === '?' ? '*' : dow}`,
         matchedRuleSummary: `Compiled "${phrase}" to 5-field POSIX/Kubernetes Cron syntax.`,
+        isValidEnglish: true,
     };
 }
 
@@ -1793,11 +1966,12 @@ export function analyzeAndSimulateCron(
     ];
 
     const fieldBreakdowns: CronFieldBreakdown[] = [];
+    const fieldErrorMessages: string[] = [];
     let idxCounter = 1;
     for (const item of allParsed) {
         if (!item.include) continue;
-        if (!item.f.isValid && !syntaxErrorMessage) {
-            syntaxErrorMessage = item.f.errorDetail || `Invalid syntax in ${item.label}`;
+        if (!item.f.isValid) {
+            fieldErrorMessages.push(`${item.label}: ${item.f.errorDetail || 'Invalid token'}`);
         }
         const sortedVals = Array.from(item.f.valuesSet).sort((a, b) => a - b);
         const samplePreview =
@@ -1826,6 +2000,37 @@ export function analyzeAndSimulateCron(
         });
     }
 
+    if (!syntaxErrorMessage && fieldErrorMessages.length > 0) {
+        syntaxErrorMessage = fieldErrorMessages.join(' • ');
+    }
+
+    // Check for Impossible Calendar Dates (e.g. Feb 30/31 or Apr/Jun/Sep/Nov 31)
+    if (
+        !syntaxErrorMessage &&
+        !domField.isWildcard &&
+        !domField.isQuestionMark &&
+        !domField.isLastDayL &&
+        !domField.isLastWeekdayLW &&
+        domField.nearestWeekdayTarget === null &&
+        !monthField.isWildcard &&
+        !monthField.isQuestionMark
+    ) {
+        let anyValidMonthDayPair = false;
+        for (const m of monthField.valuesSet) {
+            const maxDaysInLeapYear = daysInMonth(2024, m);
+            for (const d of domField.valuesSet) {
+                if (d <= maxDaysInLeapYear) {
+                    anyValidMonthDayPair = true;
+                    break;
+                }
+            }
+            if (anyValidMonthDayPair) break;
+        }
+        if (!anyValidMonthDayPair) {
+            syntaxErrorMessage = `Impossible calendar date: Day-of-Month "${domTok}" never exists in Month "${monthTok}" (February has at most 29 days; Apr, Jun, Sep, and Nov have at most 30 days).`;
+        }
+    }
+
     const isValidSyntax = syntaxErrorMessage === null;
     const plainEnglishDescription = isValidSyntax
         ? explainCronFieldsInPlainEnglish(
@@ -1851,15 +2056,40 @@ export function analyzeAndSimulateCron(
     let secMonthField: ParsedCronField | null = null;
     let secDowField: ParsedCronField | null = null;
 
+    let secondaryCronError: string | null = null;
     if (inputs.secondaryCronExpression && inputs.secondaryCronExpression.trim()) {
-        const st = inputs.secondaryCronExpression.trim().split(/\s+/);
-        if (st.length >= 5) {
-            const offset = st.length === 5 ? 0 : 1;
-            secMinField = parseSingleCronField(st[offset], 0, 59, 'minutes', 'UNIX_5', jenkinsSeed, 1);
-            secHourField = parseSingleCronField(st[offset + 1], 0, 23, 'hours', 'UNIX_5', jenkinsSeed, 2);
-            secDomField = parseSingleCronField(st[offset + 2], 1, 31, 'dayOfMonth', 'UNIX_5', jenkinsSeed, 3);
-            secMonthField = parseSingleCronField(st[offset + 3], 1, 12, 'month', 'UNIX_5', jenkinsSeed, 4);
-            secDowField = parseSingleCronField(st[offset + 4], 0, 7, 'dayOfWeek', 'UNIX_5', jenkinsSeed, 5);
+        const cleanedSecRaw = inputs.secondaryCronExpression
+            .trim()
+            .replace(/^cron\(\s*([^)]+)\s*\)$/i, '$1')
+            .trim();
+        const st = (POSIX_MACROS[cleanedSecRaw.toLowerCase()] || cleanedSecRaw).split(/\s+/).filter(Boolean);
+        if (st.length < 5 || st.length > 7) {
+            secondaryCronError = `Invalid Secondary Cron: Expected 5, 6, or 7 fields, but found ${st.length} field(s) in "${inputs.secondaryCronExpression.trim()}".`;
+        } else {
+            const isSecAws = st.length === 6 && /^(?:19\d\d|20\d\d|\*)$/.test(st[5]) && st.some((t) => t === '?');
+            const secDialect: ResolvedCronDialect =
+                st.length === 7 ? 'QUARTZ_6_7' : isSecAws ? 'AWS_EVENTBRIDGE_6' : st.length === 6 ? 'SPRING_6' : 'UNIX_5';
+            const offset = st.length === 5 || isSecAws ? 0 : 1;
+            secMinField = parseSingleCronField(st[offset], 0, 59, 'minutes', secDialect, jenkinsSeed, 1);
+            secHourField = parseSingleCronField(st[offset + 1], 0, 23, 'hours', secDialect, jenkinsSeed, 2);
+            secDomField = parseSingleCronField(st[offset + 2], 1, 31, 'dayOfMonth', secDialect, jenkinsSeed, 3);
+            secMonthField = parseSingleCronField(st[offset + 3], 1, 12, 'month', secDialect, jenkinsSeed, 4);
+            secDowField = parseSingleCronField(st[offset + 4], 0, 7, 'dayOfWeek', secDialect, jenkinsSeed, 5);
+            const invalidSecFields = [
+                !secMinField.isValid ? `Minutes (${secMinField.errorDetail})` : '',
+                !secHourField.isValid ? `Hours (${secHourField.errorDetail})` : '',
+                !secDomField.isValid ? `Day-of-Month (${secDomField.errorDetail})` : '',
+                !secMonthField.isValid ? `Month (${secMonthField.errorDetail})` : '',
+                !secDowField.isValid ? `Day-of-Week (${secDowField.errorDetail})` : '',
+            ].filter(Boolean);
+            if (invalidSecFields.length > 0) {
+                secondaryCronError = `Invalid Secondary Cron: ${invalidSecFields.join(' • ')}`;
+                secMinField = null;
+                secHourField = null;
+                secDomField = null;
+                secMonthField = null;
+                secDowField = null;
+            }
         }
     }
 
@@ -2109,8 +2339,26 @@ export function analyzeAndSimulateCron(
         githubActionsFreeTierPercent,
     };
 
-    // DST Transition Hazard Analysis
-    const tzMeta = SUPPORTED_IANA_TIMEZONES.find((t) => t.id === tz) || SUPPORTED_IANA_TIMEZONES[0];
+    // DST Transition Hazard Analysis (Supports all 24 listed zones + dynamic Intl detection for any global browser IANA timezone)
+    const knownTzMeta = SUPPORTED_IANA_TIMEZONES.find((t) => t.id === tz);
+    const tzMeta = (() => {
+        if (knownTzMeta) return knownTzMeta;
+        if (tz === 'UTC') return SUPPORTED_IANA_TIMEZONES[0];
+        const janUtc = Date.UTC(heatYear, 0, 15, 12, 0, 0);
+        const julUtc = Date.UTC(heatYear, 6, 15, 12, 0, 0);
+        const janP = extractZonedParts(janUtc, tz);
+        const julP = extractZonedParts(julUtc, tz);
+        const janOffsetMin = Math.round((Date.UTC(janP.year, janP.month - 1, janP.day, janP.hour, janP.minute) - janUtc) / 60000);
+        const julOffsetMin = Math.round((Date.UTC(julP.year, julP.month - 1, julP.day, julP.hour, julP.minute) - julUtc) / 60000);
+        const observesDynamicDst = janOffsetMin !== julOffsetMin;
+        return {
+            id: tz,
+            label: `${tz} (Browser IANA Timezone)`,
+            observesDst: observesDynamicDst,
+            springDstDate: observesDynamicDst ? 'Seasonal DST Spring-Forward Transition (02:00 → 03:00)' : 'None (Fixed UTC offset year-round)',
+            fallDstDate: observesDynamicDst ? 'Seasonal DST Fall-Back Transition (01:00–02:59 Repeats)' : 'None (Fixed UTC offset year-round)',
+        };
+    })();
     const touchesHour2 = !hourField.isWildcard && hourField.valuesSet.has(2);
     const touchesHour1 = !hourField.isWildcard && hourField.valuesSet.has(1);
     const springForwardSkipRisk = tzMeta.observesDst && touchesHour2;
@@ -2374,7 +2622,7 @@ export function analyzeAndSimulateCron(
     const optFindingsCount = lintFindings.filter((f) => f.severity === 'OPTIMIZATION').length;
 
     const deduction = criticalFindingsCount * 24 + warningFindingsCount * 10 + optFindingsCount * 3;
-    const reliabilityScore = Math.max(0, Math.min(100, 100 - deduction));
+    const reliabilityScore = !isValidSyntax ? 0 : Math.max(0, Math.min(100, 100 - deduction));
     const reliabilityGrade: ComprehensiveCronReport['reliabilityGrade'] =
         reliabilityScore >= 95
             ? 'A+'
@@ -2411,6 +2659,7 @@ export function analyzeAndSimulateCron(
         detectedDialect,
         isValidSyntax,
         syntaxErrorMessage,
+        secondaryCronError,
         plainEnglishDescription,
         fieldBreakdowns,
         reliabilityScore,
@@ -2468,6 +2717,41 @@ export function autoFixCronPitfalls(
         }
     } else if (toks.length === 7) {
         [sec, min, hour, dom, month, dow, year] = toks;
+    } else {
+        fixesApplied.push(`Normalized malformed ${toks.length}-field input to valid 5-field schedule`);
+    }
+
+    // Repair any individual field with invalid syntax or out-of-bounds numbers
+    for (const fb of report.fieldBreakdowns) {
+        if (!fb.isValid) {
+            if (fb.fieldKey === 'seconds') {
+                sec = '0';
+                fixesApplied.push(`Repaired invalid Seconds token "${fb.rawToken}" → "0"`);
+            } else if (fb.fieldKey === 'minutes') {
+                min = fb.rawToken.includes('/') ? '*/15' : '7';
+                fixesApplied.push(`Repaired invalid Minutes token "${fb.rawToken}" → "${min}"`);
+            } else if (fb.fieldKey === 'hours') {
+                hour = '2';
+                fixesApplied.push(`Repaired invalid Hours token "${fb.rawToken}" → "2"`);
+            } else if (fb.fieldKey === 'dayOfMonth') {
+                dom = '*';
+                fixesApplied.push(`Repaired invalid Day-of-Month token "${fb.rawToken}" → "*"`);
+            } else if (fb.fieldKey === 'month') {
+                month = '*';
+                fixesApplied.push(`Repaired invalid Month token "${fb.rawToken}" → "*"`);
+            } else if (fb.fieldKey === 'dayOfWeek') {
+                dow = nextDialect === 'QUARTZ_6_7' || nextDialect === 'AWS_EVENTBRIDGE_6' ? '?' : '*';
+                fixesApplied.push(`Repaired invalid Day-of-Week token "${fb.rawToken}" → "${dow}"`);
+            } else if (fb.fieldKey === 'year') {
+                year = '*';
+                fixesApplied.push(`Repaired invalid Year token "${fb.rawToken}" → "*"`);
+            }
+        }
+    }
+
+    if (report.secondaryCronError) {
+        nextSecondary = '';
+        fixesApplied.push('Cleared malformed Secondary Cron expression');
     }
 
     // Fix 1: Accidental minute wildcard flood (* 2 * * *)

@@ -108,7 +108,7 @@ export default function CronExpressionGeneratorSeo() {
         featureList: [
             '7-Dialect Cron AST Parser: POSIX/Linux (5-Field), Kubernetes CronJob, GitHub Actions, Spring @Scheduled (6-Field), Java Quartz (6/7-Field with L, W, LW, #, ?), AWS EventBridge, and Jenkins H Hash-Jitter',
             'Bidirectional Visual Field Builder + Plain-English to Cron Compiler + Crontab.guru Style Human Explainer',
-            'Multi-Timezone Execution Simulator across 12 IANA Timezones + 6-Region Global World Clock Matrix',
+            'Multi-Timezone Execution Simulator across 24+ Global IANA Timezones + 6-Region Global World Clock Matrix',
             'Monthly Execution Density Calendar Heatmap & Two-Job Schedule Collision Detector',
             '14-Rule Production Cron Reliability & DST Pitfall Linter with Deterministic 1-Click Auto-Fixer',
             'Cross-Dialect AST Transpiler (POSIX <-> Quartz <-> AWS EventBridge <-> Spring <-> Jenkins <-> systemd OnCalendar)',
@@ -206,7 +206,7 @@ export default function CronExpressionGeneratorSeo() {
                     Our deterministic engine (<code>lib/cronGeneratorEngine.ts</code> v5.2) unifies all seven scheduling dialects
                     into a single, 100% client-side workbench. Whether you type a raw cron string, click interactive visual field
                     pills, or describe your schedule in plain English, the studio parses the Abstract Syntax Tree (AST), simulates
-                    upcoming executions across 12 IANA timezones, audits 14 production reliability rules, and compiles ready-to-ship
+                    upcoming executions across 24+ Global IANA timezones, audits 14 production reliability rules, and compiles ready-to-ship
                     infrastructure manifests in under 2 milliseconds.
                 </p>
             </div>
@@ -424,7 +424,7 @@ Initial Score    : 0 / 100 (Grade F — 4 Critical, 2 Warnings)
                     How Our 7-Dialect Cron Engine Works &amp; How to Get Your Exact Schedule Output
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Under the hood, the workbench runs a 5-stage deterministic pipeline in browser memory: (1) <strong>Wrapper &amp; Macro Normalization</strong> strips <code>cron(...)</code>, <code>@Scheduled(...)</code>, YAML prefixes, and trailing crontab shell commands while expanding POSIX macros (<code>@hourly</code>, <code>@daily</code>, <code>@reboot</code>); (2) <strong>7-Dialect AST Tokenization</strong> resolves Jenkins CRC-32 <code>H</code> hash-jitter tokens and parses ranges, steps, and calendar modifiers (<code>L</code>, <code>L-N</code>, <code>W</code>, <code>LW</code>, <code>#</code>, <code>?</code>); (3) <strong>Zoned Wall-Clock Simulation</strong> uses <code>Intl.DateTimeFormat</code> two-pass offset resolution to compute the next 15 runs across 12 IANA timezones while detecting nonexistent Spring-Forward <code>02:00</code> DST gaps; (4) <strong>14-Rule Reliability Auditing</strong> scores the schedule from 0 to 100; and (5) <strong>Multi-Target Code Generation</strong> transpiles the AST into 7 cron dialects, 10 DevOps configs, RFC 5545 <code>.ics</code> calendars, and CWE-1236 safe <code>.xlsx</code>/<code>.csv</code> reports.
+                    Under the hood, the workbench runs a 5-stage deterministic pipeline in browser memory: (1) <strong>Wrapper &amp; Macro Normalization</strong> strips <code>cron(...)</code>, <code>@Scheduled(...)</code>, YAML prefixes, and trailing crontab shell commands while expanding POSIX macros (<code>@hourly</code>, <code>@daily</code>, <code>@reboot</code>); (2) <strong>7-Dialect AST Tokenization</strong> resolves Jenkins CRC-32 <code>H</code> hash-jitter tokens and parses ranges, steps, and calendar modifiers (<code>L</code>, <code>L-N</code>, <code>W</code>, <code>LW</code>, <code>#</code>, <code>?</code>); (3) <strong>Zoned Wall-Clock Simulation</strong> uses <code>Intl.DateTimeFormat</code> two-pass offset resolution to compute the next 15 runs across 24+ Global IANA timezones while detecting nonexistent Spring-Forward <code>02:00</code> DST gaps; (4) <strong>14-Rule Reliability Auditing</strong> scores the schedule from 0 to 100; and (5) <strong>Multi-Target Code Generation</strong> transpiles the AST into 7 cron dialects, 10 DevOps configs, RFC 5545 <code>.ics</code> calendars, and CWE-1236 safe <code>.xlsx</code>/<code>.csv</code> reports.
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
@@ -508,7 +508,7 @@ Initial Score    : 0 / 100 (Grade F — 4 Critical, 2 Warnings)
                             <tr>
                                 <td className="py-2.5 px-4 font-semibold">Multi-Timezone &amp; Annual DST Skip Scanner</td>
                                 <td className="py-2.5 px-4 font-bold text-emerald-600 dark:text-emerald-400">
-                                    12 IANA Timezones + 6-Region World Clock + DST Audit
+                                    24+ Global IANA Timezones + 6-Region World Clock + DST Audit
                                 </td>
                                 <td className="py-2.5 px-4">Local Browser Clock Only</td>
                                 <td className="py-2.5 px-4">UTC Only</td>
@@ -677,7 +677,7 @@ Initial Score    : 0 / 100 (Grade F — 4 Critical, 2 Warnings)
                             <li>convert crontab to linux systemd timer oncalendar=</li>
                             <li>systemd timer persistent=true and service unit generator</li>
                             <li>cron daylight saving time (dst) 02:00 skip scanner</li>
-                            <li>multi-timezone cron execution simulator (12 iana zones)</li>
+                            <li>multi-timezone cron execution simulator (24+ global iana zones)</li>
                             <li>github actions on.schedule utc cron validator</li>
                             <li>github actions monthly compute minutes budget calculator</li>
                             <li>vercel cron json and cloudflare wrangler toml generator</li>
