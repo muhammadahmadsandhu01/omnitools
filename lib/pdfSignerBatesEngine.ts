@@ -538,11 +538,163 @@ export function buildCleanSamplePdfBytes(params: {
     return utf8ToBytes(pdf);
 }
 
+function inflatePdfFlateStream(bytes: Uint8Array): string | null {
+    let startByte = 0;
+    if (
+        bytes.length >= 6 &&
+        (bytes[0] & 0x0f) === 8 &&
+        (((bytes[0] << 8) | bytes[1]) % 31 === 0)
+    ) {
+        startByte = 2;
+    }
+    const FIXED_LIT = new Uint8Array(288);
+    for (let i = 0; i <= 143; i++) FIXED_LIT[i] = 8;
+    for (let i = 144; i <= 255; i++) FIXED_LIT[i] = 9;
+    for (let i = 256; i <= 279; i++) FIXED_LIT[i] = 7;
+    for (let i = 280; i <= 287; i++) FIXED_LIT[i] = 8;
+    const FIXED_DIST = new Uint8Array(32);
+    FIXED_DIST.fill(5);
+    const LEN_BASE = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258];
+    const LEN_EXTRA = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
+    const DIST_BASE = [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
+    const DIST_EXTRA = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+    const CL_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+
+    const buildTable = (lengths: Uint8Array) => {
+        let maxBits = 0;
+        const blCount = new Int32Array(16);
+        for (let i = 0; i < lengths.length; i++) {
+            const l = lengths[i];
+            if (l > 0) {
+                blCount[l]++;
+                if (l > maxBits) maxBits = l;
+            }
+        }
+        if (maxBits === 0) return { map: new Map<number, number>(), maxBits: 0 };
+        const nextCode = new Int32Array(16);
+        let code = 0;
+        for (let bits = 1; bits <= 15; bits++) {
+            code = (code + blCount[bits - 1]) << 1;
+            nextCode[bits] = code;
+        }
+        const map = new Map<number, number>();
+        for (let n = 0; n < lengths.length; n++) {
+            const len = lengths[n];
+            if (len !== 0) map.set((len << 16) | (nextCode[len]++), n);
+        }
+        return { map, maxBits };
+    };
+
+    let bitPos = startByte * 8;
+    const totalBits = bytes.length * 8;
+    const readBits = (n: number): number => {
+        let val = 0;
+        for (let i = 0; i < n; i++) {
+            if (bitPos >= totalBits) throw new Error('EOF');
+            val |= ((bytes[bitPos >>> 3] >>> (bitPos & 7)) & 1) << i;
+            bitPos++;
+        }
+        return val;
+    };
+    const decodeSym = (t: { map: Map<number, number>; maxBits: number }): number => {
+        let code = 0;
+        for (let len = 1; len <= t.maxBits; len++) {
+            if (bitPos >= totalBits) throw new Error('EOF');
+            code = (code << 1) | ((bytes[bitPos >>> 3] >>> (bitPos & 7)) & 1);
+            bitPos++;
+            const sym = t.map.get((len << 16) | code);
+            if (sym !== undefined) return sym;
+        }
+        throw new Error('Invalid code');
+    };
+
+    try {
+        const out: number[] = [];
+        let isFinal = 0;
+        while (!isFinal) {
+            isFinal = readBits(1);
+            const btype = readBits(2);
+            if (btype === 0) {
+                bitPos = (bitPos + 7) & ~7;
+                const bIdx = bitPos >>> 3;
+                if (bIdx + 4 > bytes.length) return null;
+                const len = bytes[bIdx] | (bytes[bIdx + 1] << 8);
+                const nlen = bytes[bIdx + 2] | (bytes[bIdx + 3] << 8);
+                if (((len ^ nlen) & 0xffff) !== 0xffff) return null;
+                bitPos += 32;
+                const dStart = bitPos >>> 3;
+                if (dStart + len > bytes.length) return null;
+                for (let i = 0; i < len; i++) out.push(bytes[dStart + i]);
+                bitPos += len * 8;
+            } else if (btype === 1 || btype === 2) {
+                let litT = btype === 1 ? buildTable(FIXED_LIT) : { map: new Map<number, number>(), maxBits: 0 };
+                let distT = btype === 1 ? buildTable(FIXED_DIST) : { map: new Map<number, number>(), maxBits: 0 };
+                if (btype === 2) {
+                    const hlit = readBits(5) + 257;
+                    const hdist = readBits(5) + 1;
+                    const hclen = readBits(4) + 4;
+                    const clLens = new Uint8Array(19);
+                    for (let i = 0; i < hclen; i++) clLens[CL_ORDER[i]] = readBits(3);
+                    const clT = buildTable(clLens);
+                    const allLens = new Uint8Array(hlit + hdist);
+                    let idx = 0;
+                    while (idx < hlit + hdist) {
+                        const s = decodeSym(clT);
+                        if (s < 16) allLens[idx++] = s;
+                        else if (s === 16) {
+                            const prev = idx > 0 ? allLens[idx - 1] : 0;
+                            const rep = readBits(2) + 3;
+                            for (let r = 0; r < rep && idx < allLens.length; r++) allLens[idx++] = prev;
+                        } else if (s === 17) {
+                            const rep = readBits(3) + 3;
+                            for (let r = 0; r < rep && idx < allLens.length; r++) allLens[idx++] = 0;
+                        } else if (s === 18) {
+                            const rep = readBits(7) + 11;
+                            for (let r = 0; r < rep && idx < allLens.length; r++) allLens[idx++] = 0;
+                        }
+                    }
+                    litT = buildTable(allLens.subarray(0, hlit));
+                    distT = buildTable(allLens.subarray(hlit));
+                }
+                while (true) {
+                    const sym = decodeSym(litT);
+                    if (sym < 256) out.push(sym);
+                    else if (sym === 256) break;
+                    else {
+                        const lIdx = sym - 257;
+                        if (lIdx < 0 || lIdx >= LEN_BASE.length) return null;
+                        const length = LEN_BASE[lIdx] + (LEN_EXTRA[lIdx] ? readBits(LEN_EXTRA[lIdx]) : 0);
+                        const dSym = decodeSym(distT);
+                        if (dSym < 0 || dSym >= DIST_BASE.length) return null;
+                        const dist = DIST_BASE[dSym] + (DIST_EXTRA[dSym] ? readBits(DIST_EXTRA[dSym]) : 0);
+                        if (dist > out.length) return null;
+                        const startCopy = out.length - dist;
+                        for (let i = 0; i < length; i++) out.push(out[startCopy + i]);
+                    }
+                }
+            } else {
+                return null;
+            }
+        }
+        return bytesToLatin1(new Uint8Array(out));
+    } catch {
+        return null;
+    }
+}
+
 export function parseSinglePdfBytes(
     rawBytes: Uint8Array,
     fileName: string,
     idSuffix = '1'
 ): PdfInputFileItem {
+    if (!rawBytes || rawBytes.length < 16) {
+        throw new Error(`File "${fileName}" is empty or too small to be a valid PDF document.`);
+    }
+    const headerSlice = bytesToLatin1(rawBytes.subarray(0, Math.min(1024, rawBytes.length)));
+    if (!headerSlice.includes('%PDF-')) {
+        throw new Error(`Invalid file format in "${fileName}": Missing ISO 32000-1 "%PDF-" header.`);
+    }
+
     const rawStr = bytesToLatin1(rawBytes);
     const pageMatches = rawStr.match(/\/Type\s*\/Page\b(?!s)/g);
     const pageCount = Math.max(1, pageMatches ? pageMatches.length : 1);
@@ -555,17 +707,36 @@ export function parseSinglePdfBytes(
         pageHeightPt = Math.max(200, Number(mediaBoxM[4]) - Number(mediaBoxM[2]));
     }
 
-    // Extract readable text lines per page from stream blocks
+    // Extract readable text lines per page from both uncompressed and FlateDecode stream blocks (supporting Tj and TJ arrays)
     const extractedPageTexts: string[] = [];
-    const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+    const objStreamRegex = /(<<[\s\S]*?>>)\s*stream\r?\n([\s\S]*?)\r?\nendstream/g;
     let sm: RegExpExecArray | null;
-    while ((sm = streamRegex.exec(rawStr)) !== null) {
-        const body = sm[1];
+    while ((sm = objStreamRegex.exec(rawStr)) !== null) {
+        const dictStr = sm[1];
+        let body = sm[2];
+        if (/\/Filter\s*(?:\[\s*)?\/FlateDecode/i.test(dictStr)) {
+            const rawStreamBytes = new Uint8Array(body.length);
+            for (let i = 0; i < body.length; i++) rawStreamBytes[i] = body.charCodeAt(i) & 0xff;
+            const inflated = inflatePdfFlateStream(rawStreamBytes);
+            if (inflated) body = inflated;
+        }
         const tjMatches: string[] = [];
         const tjRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj/g;
         let tm: RegExpExecArray | null;
         while ((tm = tjRe.exec(body)) !== null) {
             tjMatches.push(tm[1].replace(/\\([()])/g, '$1'));
+        }
+        const tjArrRe = /\[([^\]]+)\]\s*TJ/g;
+        let tam: RegExpExecArray | null;
+        while ((tam = tjArrRe.exec(body)) !== null) {
+            const inner = tam[1];
+            const parts: string[] = [];
+            const litRe = /\(([^)\\]*(?:\\.[^)\\]*)*)\)/g;
+            let lm: RegExpExecArray | null;
+            while ((lm = litRe.exec(inner)) !== null) {
+                parts.push(lm[1].replace(/\\([()])/g, '$1'));
+            }
+            if (parts.length > 0) tjMatches.push(parts.join(''));
         }
         if (tjMatches.length > 0) {
             extractedPageTexts.push(tjMatches.join(' | '));
@@ -796,12 +967,13 @@ export function compileStampedPdfBatch(
             }
 
             if (config.enableBatesStamping && config.confidentialityFooterText.trim()) {
+                const confX = config.batesPosition === 'BOTTOM_LEFT' ? 220 : 36;
                 fgOps.push(
                     'q',
                     '0.45 0.12 0.15 rg',
                     'BT',
                     '/F2 8.5 Tf',
-                    '36 18 Td',
+                    `${confX} 18 Td`,
                     `(${escapePdfStringLiteral(config.confidentialityFooterText.trim())}) Tj`,
                     'ET',
                     'Q'
@@ -1039,7 +1211,7 @@ export function compileStampedPdfBatch(
 
             const byteRangeDigestHex = computeSha256Hex(combinedSignedBytes).toUpperCase();
             const sealMacHex = computeSha256Hex(
-                utf8ToBytes(`${byteRangeDigestHex}:KIVARO-PKCS7-SEAL`)
+                utf8ToBytes(`${byteRangeDigestHex}:${config.signingSecretPassphrase || 'KIVARO-PKCS7-SEAL'}`)
             ).toUpperCase();
             pkcs7DetachedSignatureHex = `${byteRangeDigestHex}${sealMacHex}`; // 128 hex chars (first 64 = exact ByteRange SHA-256, next 64 = seal MAC)
             pdfOut = pdfOut.replace(`<${CONTENTS_PLACEHOLDER}>`, `<${pkcs7DetachedSignatureHex}>`);
@@ -1159,7 +1331,8 @@ export function renderPagePreviewDataUri(
     config: PdfStudioConfig,
     sampleBatesId: string,
     resolvedWatermark: string,
-    fileName: string
+    fileName: string,
+    pageRecord?: StampedPageBatesRecord
 ): string {
     const width = 220;
     const height = 284;
@@ -1240,19 +1413,41 @@ export function renderPagePreviewDataUri(
         }
     }
 
+    const showExhibitOnPreview = pageRecord
+        ? pageRecord.exhibitLabelApplied !== '—'
+        : config.enableExhibitStickerPage1;
+    const showFullSigOnPreview = pageRecord
+        ? pageRecord.hasFullSignatureBox
+        : config.enableDigitalSignature;
+    const showInitialsOnPreview = pageRecord ? pageRecord.hasInitialsStamp : false;
+
     // 3. Page 1 Court Exhibit Sticker (Top Right)
-    if (config.enableExhibitStickerPage1) {
+    if (showExhibitOnPreview) {
         fillRect(width - 68, 8, 58, 24, 254, 243, 199, 0.95);
         fillRect(width - 64, 13, 48, 5, 180, 35, 24, 0.9);
         fillRect(width - 64, 22, 38, 4, 71, 85, 105, 0.8);
     }
 
-    // 4. Digital Signature, Initials & Corporate Round Seal Box (Bottom Right above Bates)
-    if (config.enableDigitalSignature) {
+    // 4A. Intermediate Page Initials Stamp Box (Bottom Right above Bates)
+    if (showInitialsOnPreview) {
+        const [sr, sg, sb] = getRgbTuple0to1(config.signatureColor).map((c) => Math.round(c * 255));
+        fillRect(width - 62, height - 48, 48, 20, 238, 242, 255, 0.95);
+        fillRect(width - 56, height - 41, 36, 5, sr, sg, sb, 0.9);
+    }
+
+    // 4B. Full Digital Signature & Corporate Round Seal Box (Bottom Right above Bates)
+    if (showFullSigOnPreview) {
         const [sr, sg, sb] = getRgbTuple0to1(config.signatureColor).map((c) => Math.round(c * 255));
         fillRect(width - 98, height - 66, 84, 36, 239, 246, 255, 0.96);
-        if (config.signatureStyle === 'CORPORATE_ROUND_SEAL') {
-            // Draw crimson/navy corporate seal emblem on right side of signature box
+        if (config.drawnSignaturePoints && config.drawnSignaturePoints.length > 0) {
+            for (const stroke of config.drawnSignaturePoints) {
+                for (let k = 0; k < stroke.length; k++) {
+                    const px = width - 92 + Math.round((stroke[k].x / 340) * 68);
+                    const py = height - 62 + Math.round((stroke[k].y / 110) * 18);
+                    fillRect(px, py, 2, 2, sr, sg, sb, 0.95);
+                }
+            }
+        } else if (config.signatureStyle === 'CORPORATE_ROUND_SEAL') {
             fillRect(width - 38, height - 60, 20, 20, 220, 38, 38, 0.88);
             fillRect(width - 34, height - 56, 12, 12, 254, 242, 242, 0.95);
         } else if (config.signatureStyle === 'TYPOGRAPHIC_EXECUTIVE') {
@@ -1612,7 +1807,8 @@ export function analyzeAndCompilePdfStudio(
         config,
         selectedPageRecord ? selectedPageRecord.assignedBatesId : 'CASE-000001',
         selectedPageRecord ? selectedPageRecord.resolvedWatermarkText : config.watermarkText,
-        files[0].fileName
+        selectedPageRecord ? selectedPageRecord.fileName : files[0].fileName,
+        selectedPageRecord
     );
 
     return {
@@ -1847,21 +2043,40 @@ export function exportBatesProductionXlsx(report: ComprehensivePdfStudioReport):
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
 
-    const sheetRows: string[][] = [
+    const buildSheetXml = (rows: string[][]) => {
+        const rowXml = rows
+            .map((r, rIdx) => {
+                const cells = r
+                    .map((c, cIdx) => {
+                        const colLetter = String.fromCharCode(65 + cIdx);
+                        return `<c r="${colLetter}${rIdx + 1}" t="inlineStr"><is><t>${escXml(c)}</t></is></c>`;
+                    })
+                    .join('');
+                return `<row r="${rIdx + 1}">${cells}</row>`;
+            })
+            .join('');
+        return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rowXml}</sheetData></worksheet>`;
+    };
+
+    // Sheet 1: Bates Production Log
+    const sheet1Rows: string[][] = [
         [
             'Global Page',
+            'File #',
             'File Name',
             'Page in File',
             'Bates Number',
             'Exhibit Label',
             'Watermark Applied',
             'Digital Signature Status',
+            'Margin Protection',
         ],
     ];
 
     for (const r of report.pageBatesIndex) {
-        sheetRows.push([
+        sheet1Rows.push([
             String(r.globalPageNumber),
+            String(r.fileIndex),
             r.fileName,
             String(r.pageNumberInFile),
             r.assignedBatesId,
@@ -1872,38 +2087,92 @@ export function exportBatesProductionXlsx(report: ComprehensivePdfStudioReport):
                 : r.hasInitialsStamp
                     ? 'Initialed'
                     : '—',
+            r.shrinkToFitApplied ? '94% Safe MarginBox' : 'Unscaled',
         ]);
     }
 
+    // Sheet 2: Cryptographic Audit Manifest
+    const sheet2Rows: string[][] = [
+        [
+            'Output Document File Name',
+            'Original File Name',
+            'Pages (In -> Out)',
+            'First Bates ID',
+            'Last Bates ID',
+            'Original SHA-256 Digest',
+            'Sealed SHA-256 Digest',
+            'ISO 32000-1 /ByteRange',
+            'Detached Signature Hex (Preview)',
+            'Signing Timestamp (ISO)',
+        ],
+    ];
+
     for (const sf of report.stampedFiles) {
-        sheetRows.push([
-            'SHA256_SEAL',
+        sheet2Rows.push([
             sf.outputFileName,
-            `${sf.outputPageCount} Pages`,
-            `${sf.firstBatesNumber}..${sf.lastBatesNumber}`,
+            sf.originalFileName,
+            `${sf.originalPageCount} -> ${sf.outputPageCount}`,
+            sf.firstBatesNumber,
+            sf.lastBatesNumber,
             sf.originalSha256Hex,
             sf.stampedSha256Hex,
+            `[${sf.byteRangeArray.join(', ')}]`,
+            sf.pkcs7DetachedSignatureHex.slice(0, 64),
             sf.signingTimestampIso,
         ]);
     }
 
-    const rowXml = sheetRows
-        .map((r, rIdx) => {
-            const cells = r
-                .map((c, cIdx) => {
-                    const colLetter = String.fromCharCode(65 + cIdx);
-                    return `<c r="${colLetter}${rIdx + 1}" t="inlineStr"><is><t>${escXml(c)}</t></is></c>`;
-                })
-                .join('');
-            return `<row r="${rIdx + 1}">${cells}</row>`;
-        })
-        .join('');
+    // Sheet 3: 12-Rule Compliance Audit
+    const sheet3Rows: string[][] = [
+        [
+            'Rule #',
+            'Rule ID',
+            'Severity',
+            'Category',
+            'Finding Title',
+            'Forensic Evidence',
+            'Remediation Action',
+        ],
+        [
+            'SUMMARY',
+            `ENGINE_${report.engineVersion}`,
+            `GRADE_${report.complianceGrade}`,
+            `SCORE_${report.complianceScore}_OF_100`,
+            `${report.criticalFindingsCount} Critical / ${report.warningFindingsCount} Warnings`,
+            `Global Bates Range: ${report.globalFirstBatesId} .. ${report.globalLastBatesId}`,
+            report.signatureVerification.verificationSummary,
+        ],
+    ];
+
+    if (report.lintFindings.length === 0) {
+        sheet3Rows.push([
+            'ALL_12_PASSED',
+            'PDF-BATES-COMPLIANCE-OK',
+            'PASS',
+            'ALL_CATEGORIES',
+            'All 12 PDF Signing, Watermark & Bates Compliance Rules Passed',
+            '0 margin collisions, 0 metadata leaks, 100% /ByteRange integrity',
+            'Ready for court e-Discovery production or executive execution',
+        ]);
+    } else {
+        for (const f of report.lintFindings) {
+            sheet3Rows.push([
+                String(f.ruleNumber),
+                f.ruleId,
+                f.severity,
+                f.category,
+                f.title,
+                f.evidence,
+                f.remediation,
+            ]);
+        }
+    }
 
     return buildStoredZipArchive([
         {
             name: '[Content_Types].xml',
             data: utf8ToBytes(
-                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`
+                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`
             ),
         },
         {
@@ -1915,20 +2184,26 @@ export function exportBatesProductionXlsx(report: ComprehensivePdfStudioReport):
         {
             name: 'xl/_rels/workbook.xml.rels',
             data: utf8ToBytes(
-                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>`
+                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/></Relationships>`
             ),
         },
         {
             name: 'xl/workbook.xml',
             data: utf8ToBytes(
-                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Bates Production Log" sheetId="1" r:id="rId1"/></sheets></workbook>`
+                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Bates Production Log" sheetId="1" r:id="rId1"/><sheet name="Cryptographic Audit Manifest" sheetId="2" r:id="rId2"/><sheet name="12-Rule Compliance Audit" sheetId="3" r:id="rId3"/></sheets></workbook>`
             ),
         },
         {
             name: 'xl/worksheets/sheet1.xml',
-            data: utf8ToBytes(
-                `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${rowXml}</sheetData></worksheet>`
-            ),
+            data: utf8ToBytes(buildSheetXml(sheet1Rows)),
+        },
+        {
+            name: 'xl/worksheets/sheet2.xml',
+            data: utf8ToBytes(buildSheetXml(sheet2Rows)),
+        },
+        {
+            name: 'xl/worksheets/sheet3.xml',
+            data: utf8ToBytes(buildSheetXml(sheet3Rows)),
         },
     ]);
 }

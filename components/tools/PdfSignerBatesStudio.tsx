@@ -26,6 +26,7 @@ import {
     Eye,
     Trash2,
     Archive,
+    AlertTriangle,
 } from 'lucide-react';
 
 import {
@@ -137,10 +138,12 @@ export default function PdfSignerBatesStudio() {
     const [simulateTamperTest, setSimulateTamperTest] = useState<boolean>(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [statusNotice, setStatusNotice] = useState<string | null>(null);
+    const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
     const pdfInputRef = useRef<HTMLInputElement | null>(null);
     const sigImgInputRef = useRef<HTMLInputElement | null>(null);
     const sigCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const activeStrokeRef = useRef<{ x: number; y: number }[]>([]);
 
     const report = useMemo(() => analyzeAndCompilePdfStudio(files, config), [files, config]);
 
@@ -169,6 +172,7 @@ export default function PdfSignerBatesStudio() {
     const handleSelectPreset = (presetId: PdfPresetScenarioId) => {
         const scenario = getPresetPdfStudioScenario(presetId);
         setActivePresetId(presetId);
+        setErrorNotice(null);
         setFiles(scenario.files);
         setConfig(scenario.config);
         if (presetId === 'compliance_defect_linter_demo') {
@@ -183,6 +187,7 @@ export default function PdfSignerBatesStudio() {
 
     const handleResetToZero = () => {
         setActivePresetId(null);
+        setErrorNotice(null);
         setFiles([]);
         setConfig(getDefaultPdfStudioConfig());
         setWetInkRemovedPixels(0);
@@ -194,15 +199,21 @@ export default function PdfSignerBatesStudio() {
     const handlePdfFilesSelected = async (fileList: FileList | null) => {
         if (!fileList || fileList.length === 0) return;
         const loaded: PdfInputFileItem[] = [];
+        const errors: string[] = [];
         for (let i = 0; i < fileList.length; i++) {
             const f = fileList[i];
             try {
                 const ab = await f.arrayBuffer();
                 const parsed = parseSinglePdfBytes(new Uint8Array(ab), f.name, `${Date.now()}_${i}`);
                 loaded.push(parsed);
-            } catch {
-                // skip unreadable file
+            } catch (err) {
+                errors.push(err instanceof Error ? err.message : `Could not parse "${f.name}" as a valid PDF.`);
             }
+        }
+        if (errors.length > 0) {
+            setErrorNotice(errors.join(' • '));
+        } else {
+            setErrorNotice(null);
         }
         if (loaded.length > 0) {
             setActivePresetId(null);
@@ -243,12 +254,13 @@ export default function PdfSignerBatesStudio() {
                 );
             }
         } catch {
-            setStatusNotice('Could not decode signature image file.');
+            setErrorNotice('Invalid signature image file — please upload a valid PNG, JPG, or WebP image.');
         }
         e.target.value = '';
     };
 
     const handleAutoFix = () => {
+        setErrorNotice(null);
         const { nextConfig, fixSummary } = autoFixPdfSigningIssues(config);
         setConfig(nextConfig);
         setStatusNotice(fixSummary);
@@ -318,26 +330,36 @@ export default function PdfSignerBatesStudio() {
         );
     };
 
-    // HTML5 Signature Pad Drawing Handlers
+    // HTML5 Signature Pad Drawing Handlers (with exact CSS-to-Canvas coordinate scaling & full stroke point recording)
+    const getScaledCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / Math.max(1, rect.width);
+        const scaleY = canvas.height / Math.max(1, rect.height);
+        return {
+            x: Number(((e.clientX - rect.left) * scaleX).toFixed(1)),
+            y: Number(((e.clientY - rect.top) * scaleY).toFixed(1)),
+        };
+    };
+
     const handlePadPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = sigCanvasRef.current;
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const pt = getScaledCanvasCoords(e, canvas);
+        activeStrokeRef.current = [pt];
         setIsDrawingPad(true);
         setConfig((prev) => ({
             ...prev,
             signatureStyle: 'DRAWN_CURSIVE_VECTOR',
-            drawnSignaturePoints: [...prev.drawnSignaturePoints, [{ x, y }]],
+            drawnSignaturePoints: [...prev.drawnSignaturePoints, [pt]],
         }));
         const ctx = canvas.getContext('2d');
         if (ctx) {
             ctx.strokeStyle = '#1e3a8a';
             ctx.lineWidth = 2.4;
             ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
             ctx.beginPath();
-            ctx.moveTo(x, y);
+            ctx.moveTo(pt.x, pt.y);
         }
     };
 
@@ -345,18 +367,30 @@ export default function PdfSignerBatesStudio() {
         if (!isDrawingPad) return;
         const canvas = sigCanvasRef.current;
         if (!canvas) return;
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const pt = getScaledCanvasCoords(e, canvas);
+        activeStrokeRef.current.push(pt);
         const ctx = canvas.getContext('2d');
         if (ctx) {
-            ctx.lineTo(x, y);
+            ctx.lineTo(pt.x, pt.y);
             ctx.stroke();
         }
     };
 
     const handlePadPointerUp = () => {
+        if (!isDrawingPad) return;
         setIsDrawingPad(false);
+        const finishedStroke = [...activeStrokeRef.current];
+        if (finishedStroke.length > 0) {
+            setConfig((prev) => {
+                const copy = [...prev.drawnSignaturePoints];
+                if (copy.length > 0) {
+                    copy[copy.length - 1] = finishedStroke;
+                } else {
+                    copy.push(finishedStroke);
+                }
+                return { ...prev, drawnSignaturePoints: copy };
+            });
+        }
     };
 
     const handleClearSignaturePad = () => {
@@ -365,8 +399,14 @@ export default function PdfSignerBatesStudio() {
             const ctx = canvas.getContext('2d');
             ctx?.clearRect(0, 0, canvas.width, canvas.height);
         }
+        activeStrokeRef.current = [];
         setConfig((prev) => ({ ...prev, drawnSignaturePoints: [] }));
     };
+
+    const activePreviewPageRec =
+        report.pageBatesIndex[
+        Math.max(0, Math.min(report.pageBatesIndex.length - 1, config.previewPageIndex || 0))
+        ] || report.pageBatesIndex[0];
 
     const isLoaded = !report.isIdleEmpty;
 
@@ -462,8 +502,8 @@ export default function PdfSignerBatesStudio() {
                                     type="button"
                                     onClick={() => handleSelectPreset(preset.id)}
                                     className={`min-w-0 text-left p-3.5 rounded-xl border transition group cursor-pointer ${isSelected
-                                            ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/25 shadow-xs'
-                                            : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/40'
+                                        ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/25 shadow-xs'
+                                        : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/40'
                                         }`}
                                 >
                                     <div className="flex items-start justify-between gap-2 mb-1">
@@ -472,8 +512,8 @@ export default function PdfSignerBatesStudio() {
                                         </span>
                                         <span
                                             className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${isSelected
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                                                 }`}
                                         >
                                             {isSelected ? '✓ Active' : 'Load'}
@@ -495,6 +535,25 @@ export default function PdfSignerBatesStudio() {
                         })}
                     </div>
                 </div>
+
+                {errorNotice && (
+                    <div
+                        role="alert"
+                        className="rounded-xl border border-rose-300 dark:border-rose-900/80 bg-rose-50/90 dark:bg-rose-950/40 px-3.5 py-2.5 flex items-start sm:items-center justify-between gap-3 text-xs text-rose-950 dark:text-rose-200"
+                    >
+                        <div className="flex items-start sm:items-center gap-2 min-w-0">
+                            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5 sm:mt-0" />
+                            <span className="font-semibold break-words">{errorNotice}</span>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setErrorNotice(null)}
+                            className="text-rose-700 dark:text-rose-300 hover:underline font-bold shrink-0 cursor-pointer"
+                        >
+                            Dismiss
+                        </button>
+                    </div>
+                )}
 
                 {statusNotice && (
                     <div className="rounded-xl border border-indigo-200 dark:border-indigo-900/80 bg-indigo-50/80 dark:bg-indigo-950/40 px-3.5 py-2.5 flex items-start sm:items-center justify-between gap-3 text-xs text-indigo-950 dark:text-indigo-200">
@@ -518,12 +577,12 @@ export default function PdfSignerBatesStudio() {
           ============================================================================ */}
             <div
                 className={`rounded-2xl border p-4 sm:p-5 shadow-sm transition ${!isLoaded
-                        ? 'border-slate-200 dark:border-slate-800 bg-slate-900 text-white'
-                        : report.criticalFindingsCount > 0
-                            ? 'border-rose-500/40 bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white'
-                            : report.warningFindingsCount > 0
-                                ? 'border-amber-500/40 bg-gradient-to-r from-amber-950 via-slate-900 to-slate-900 text-white'
-                                : 'border-emerald-500/40 bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 text-white'
+                    ? 'border-slate-200 dark:border-slate-800 bg-slate-900 text-white'
+                    : report.criticalFindingsCount > 0
+                        ? 'border-rose-500/40 bg-gradient-to-r from-rose-950 via-slate-900 to-rose-950 text-white'
+                        : report.warningFindingsCount > 0
+                            ? 'border-amber-500/40 bg-gradient-to-r from-amber-950 via-slate-900 to-slate-900 text-white'
+                            : 'border-emerald-500/40 bg-gradient-to-r from-indigo-950 via-slate-900 to-emerald-950 text-white'
                     }`}
             >
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -531,10 +590,10 @@ export default function PdfSignerBatesStudio() {
                         <div className="flex flex-wrap items-center gap-2">
                             <span
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${!isLoaded
-                                        ? 'bg-slate-800 text-slate-300'
-                                        : report.criticalFindingsCount === 0
-                                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                                            : 'bg-rose-500/25 text-rose-200 border border-rose-400/40'
+                                    ? 'bg-slate-800 text-slate-300'
+                                    : report.criticalFindingsCount === 0
+                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                                        : 'bg-rose-500/25 text-rose-200 border border-rose-400/40'
                                     }`}
                             >
                                 {isLoaded && report.criticalFindingsCount === 0 ? (
@@ -599,12 +658,12 @@ export default function PdfSignerBatesStudio() {
                             <div className="flex items-baseline gap-2 mt-0.5">
                                 <span
                                     className={`text-lg font-black font-mono ${!isLoaded
-                                            ? 'text-slate-300'
-                                            : report.complianceScore >= 90
-                                                ? 'text-emerald-400'
-                                                : report.complianceScore >= 70
-                                                    ? 'text-amber-300'
-                                                    : 'text-rose-400'
+                                        ? 'text-slate-300'
+                                        : report.complianceScore >= 90
+                                            ? 'text-emerald-400'
+                                            : report.complianceScore >= 70
+                                                ? 'text-amber-300'
+                                                : 'text-rose-400'
                                         }`}
                                 >
                                     {isLoaded ? `${report.complianceScore}/100 (${report.complianceGrade})` : '0 / 100'}
@@ -646,8 +705,8 @@ export default function PdfSignerBatesStudio() {
                                     setConfig((p) => ({ ...p, enableDigitalSignature: !p.enableDigitalSignature }))
                                 }
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${config.enableDigitalSignature
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 {config.enableDigitalSignature ? '✓ ' : ''}1. Digital Signature &amp; /ByteRange Seal
@@ -657,8 +716,8 @@ export default function PdfSignerBatesStudio() {
                                 type="button"
                                 onClick={() => setConfig((p) => ({ ...p, enableWatermark: !p.enableWatermark }))}
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${config.enableWatermark
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 {config.enableWatermark ? '✓ ' : ''}2. Diagonal / Tiled Watermark
@@ -670,8 +729,8 @@ export default function PdfSignerBatesStudio() {
                                     setConfig((p) => ({ ...p, enableBatesStamping: !p.enableBatesStamping }))
                                 }
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${config.enableBatesStamping
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 {config.enableBatesStamping ? '✓ ' : ''}3. Sequential Bates Numbering
@@ -686,8 +745,8 @@ export default function PdfSignerBatesStudio() {
                                     }))
                                 }
                                 className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer ${config.enableExhibitStickerPage1
-                                        ? 'bg-indigo-600 text-white border-indigo-600'
-                                        : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                     }`}
                             >
                                 {config.enableExhibitStickerPage1 ? '✓ ' : ''}4. Page 1 Court Exhibit Sticker
@@ -748,8 +807,8 @@ export default function PdfSignerBatesStudio() {
                                                         setConfig((p) => ({ ...p, previewPageIndex: idx }))
                                                     }
                                                     className={`px-2 py-1 rounded text-[10px] font-bold transition cursor-pointer ${isActivePg
-                                                            ? 'bg-indigo-600 text-white'
-                                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
+                                                        ? 'bg-indigo-600 text-white'
+                                                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
                                                         }`}
                                                 >
                                                     Pg {pgRec.globalPageNumber}
@@ -767,25 +826,33 @@ export default function PdfSignerBatesStudio() {
                                     />
                                 </div>
 
-                                {/* Live Stamp Telemetry Badges on Preview */}
+                                {/* Live Stamp Telemetry Badges on Preview (Reflects Selected Page) */}
                                 <div className="space-y-1.5 text-[11px]">
                                     <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                                        <span className="font-semibold text-slate-500">Bates Stamp:</span>
+                                        <span className="font-semibold text-slate-500">
+                                            Page #{activePreviewPageRec?.globalPageNumber || 1} Bates ID:
+                                        </span>
                                         <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 break-all">
-                                            {report.globalFirstBatesId} ({config.batesPosition})
+                                            {activePreviewPageRec?.assignedBatesId || '—'} ({config.batesPosition})
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                                        <span className="font-semibold text-slate-500">Exhibit Sticker:</span>
+                                        <span className="font-semibold text-slate-500">Exhibit &amp; Execution:</span>
                                         <span className="font-mono font-bold text-rose-600 dark:text-rose-400 break-all">
-                                            {config.enableExhibitStickerPage1 ? config.exhibitStickerLabel : 'Disabled'}
+                                            {activePreviewPageRec?.exhibitLabelApplied && activePreviewPageRec.exhibitLabelApplied !== '—'
+                                                ? activePreviewPageRec.exhibitLabelApplied
+                                                : activePreviewPageRec?.hasFullSignatureBox
+                                                    ? 'Full Signature + Seal'
+                                                    : activePreviewPageRec?.hasInitialsStamp
+                                                        ? `Initialed (${config.signerInitials || 'EV'})`
+                                                        : 'Standard Page'}
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                         <span className="font-semibold text-slate-500">Watermark Layer:</span>
                                         <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
                                             {config.enableWatermark
-                                                ? `${config.watermarkOpacityPercent}% (${config.watermarkLayer === 'UNDERLAY_BEHIND_TEXT' ? 'Underlay' : 'Overlay'
+                                                ? `${config.watermarkOpacityPercent}% • ${config.watermarkRotationDeg}° (${config.watermarkLayer === 'UNDERLAY_BEHIND_TEXT' ? 'Underlay' : 'Overlay'
                                                 })`
                                                 : 'Disabled'}
                                         </span>
@@ -804,31 +871,54 @@ export default function PdfSignerBatesStudio() {
                                     <Stamp className="w-3.5 h-3.5 shrink-0" />
                                     <span>A. Legal Bates Numbering, Shrink-to-Fit &amp; Court Exhibit Sticker</span>
                                 </span>
-                                <label className="inline-flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={config.shrinkPageToFitSafeMargins}
-                                        onChange={(e) =>
-                                            setConfig((p) => ({ ...p, shrinkPageToFitSafeMargins: e.target.checked }))
-                                        }
-                                        className="rounded accent-emerald-600"
-                                    />
-                                    <span>Shrink Page 94% (Prevent Footnote Collision)</span>
-                                </label>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <label className="inline-flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={config.shrinkPageToFitSafeMargins}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({ ...p, shrinkPageToFitSafeMargins: e.target.checked }))
+                                            }
+                                            className="rounded accent-emerald-600"
+                                        />
+                                        <span>Shrink Page 94% (Margin Safe)</span>
+                                    </label>
+                                    <label className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={config.skipFirstCoverPageForBates}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({ ...p, skipFirstCoverPageForBates: e.target.checked }))
+                                            }
+                                            className="rounded accent-indigo-600"
+                                        />
+                                        <span>Skip Cover Page 1</span>
+                                    </label>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                 <div>
                                     <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                        Bates Prefix
+                                        Bates Prefix &amp; Suffix
                                     </label>
-                                    <input
-                                        type="text"
-                                        value={config.batesPrefix}
-                                        onChange={(e) => setConfig((p) => ({ ...p, batesPrefix: e.target.value }))}
-                                        placeholder="ACME-PROD-"
-                                        className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-1.5 font-mono"
-                                    />
+                                    <div className="flex gap-1.5">
+                                        <input
+                                            type="text"
+                                            value={config.batesPrefix}
+                                            onChange={(e) => setConfig((p) => ({ ...p, batesPrefix: e.target.value }))}
+                                            placeholder="Prefix (ACME-)"
+                                            className="w-2/3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1.5 font-mono"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={config.batesSuffix}
+                                            onChange={(e) => setConfig((p) => ({ ...p, batesSuffix: e.target.value }))}
+                                            placeholder="Suffix"
+                                            title="Optional Bates suffix (e.g. -CONF)"
+                                            className="w-1/3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1.5 font-mono"
+                                        />
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">
@@ -1028,7 +1118,7 @@ export default function PdfSignerBatesStudio() {
                                     <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Opacity ({config.watermarkOpacityPercent}%) &amp; Angle ({config.watermarkRotationDeg}°)
                                     </label>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                         <input
                                             type="range"
                                             min={5}
@@ -1040,7 +1130,22 @@ export default function PdfSignerBatesStudio() {
                                                     watermarkOpacityPercent: Number(e.target.value) || 22,
                                                 }))
                                             }
-                                            className="w-full accent-violet-600 cursor-pointer"
+                                            title="Watermark opacity (%)"
+                                            className="w-3/5 accent-violet-600 cursor-pointer"
+                                        />
+                                        <input
+                                            type="number"
+                                            min={-90}
+                                            max={90}
+                                            value={config.watermarkRotationDeg}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({
+                                                    ...p,
+                                                    watermarkRotationDeg: Math.max(-90, Math.min(90, Number(e.target.value) || 0)),
+                                                }))
+                                            }
+                                            title="Watermark rotation angle (-90° to +90°)"
+                                            className="w-2/5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-1.5 py-1 font-mono text-center"
                                         />
                                     </div>
                                 </div>
@@ -1054,7 +1159,7 @@ export default function PdfSignerBatesStudio() {
                                     <FileSignature className="w-3.5 h-3.5 shrink-0" />
                                     <span>C. Digital Signature, Page Initials &amp; SHA-256 Audit Certificate</span>
                                 </span>
-                                <div className="flex flex-wrap items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-2.5">
                                     <label className="inline-flex items-center gap-1 font-semibold cursor-pointer">
                                         <input
                                             type="checkbox"
@@ -1064,7 +1169,7 @@ export default function PdfSignerBatesStudio() {
                                             }
                                             className="rounded accent-emerald-600"
                                         />
-                                        <span>Initial All Pages ({config.signerInitials})</span>
+                                        <span>Initial Pages ({config.signerInitials})</span>
                                     </label>
                                     <label className="inline-flex items-center gap-1 font-semibold cursor-pointer">
                                         <input
@@ -1078,7 +1183,35 @@ export default function PdfSignerBatesStudio() {
                                             }
                                             className="rounded accent-emerald-600"
                                         />
-                                        <span>Append SHA-256 Audit Page</span>
+                                        <span>Audit Cert Page</span>
+                                    </label>
+                                    <label className="inline-flex items-center gap-1 font-semibold cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={config.flattenFormFieldsAndAnnotations}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({
+                                                    ...p,
+                                                    flattenFormFieldsAndAnnotations: e.target.checked,
+                                                }))
+                                            }
+                                            className="rounded accent-emerald-600"
+                                        />
+                                        <span>Flatten AcroForm</span>
+                                    </label>
+                                    <label className="inline-flex items-center gap-1 font-semibold cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={config.scrubDocumentInfoMetadata}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({
+                                                    ...p,
+                                                    scrubDocumentInfoMetadata: e.target.checked,
+                                                }))
+                                            }
+                                            className="rounded accent-emerald-600"
+                                        />
+                                        <span>Scrub /Info</span>
                                     </label>
                                 </div>
                             </div>
@@ -1119,7 +1252,7 @@ export default function PdfSignerBatesStudio() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                 <div>
                                     <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">
                                         Visual Signature &amp; Seal Style
@@ -1159,6 +1292,43 @@ export default function PdfSignerBatesStudio() {
                                         <option value="FIRST_PAGE_ONLY">First Cover Page Only</option>
                                         <option value="ALL_PAGES">Full Signature Block on Every Page</option>
                                     </select>
+                                </div>
+
+                                <div>
+                                    <label className="block font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                                        Stamp Ink Color &amp; Initials
+                                    </label>
+                                    <div className="flex gap-1.5">
+                                        <select
+                                            value={config.signatureColor}
+                                            onChange={(e) => {
+                                                const col = e.target.value as StampColorPreset;
+                                                setConfig((p) => ({
+                                                    ...p,
+                                                    signatureColor: col,
+                                                    batesColor: col,
+                                                }));
+                                            }}
+                                            className="w-2/3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1.5"
+                                        >
+                                            {STAMP_COLORS.map((sc) => (
+                                                <option key={sc.id} value={sc.id}>
+                                                    {sc.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            type="text"
+                                            maxLength={5}
+                                            value={config.signerInitials}
+                                            onChange={(e) =>
+                                                setConfig((p) => ({ ...p, signerInitials: e.target.value }))
+                                            }
+                                            placeholder="EV"
+                                            title="Signer Initials for Intermediate Pages"
+                                            className="w-1/3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-1.5 font-mono text-center"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1247,10 +1417,10 @@ export default function PdfSignerBatesStudio() {
                     </div>
                     <div
                         className={`text-sm font-extrabold font-mono shrink-0 ${!isLoaded
-                                ? 'text-slate-900 dark:text-white'
-                                : report.complianceScore >= 90
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-rose-600 dark:text-rose-400'
+                            ? 'text-slate-900 dark:text-white'
+                            : report.complianceScore >= 90
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
                             }`}
                     >
                         {isLoaded ? `${report.complianceScore}/100 (Grade ${report.complianceGrade})` : '0 / 100'}
@@ -1267,8 +1437,8 @@ export default function PdfSignerBatesStudio() {
                         type="button"
                         onClick={() => setActiveDeepTab('signature_pad_seal')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeDeepTab === 'signature_pad_seal'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <PenTool className="w-3.5 h-3.5 shrink-0" />
@@ -1279,8 +1449,8 @@ export default function PdfSignerBatesStudio() {
                         type="button"
                         onClick={() => setActiveDeepTab('bates_batch_index')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeDeepTab === 'bates_batch_index'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <Stamp className="w-3.5 h-3.5 shrink-0" />
@@ -1291,8 +1461,8 @@ export default function PdfSignerBatesStudio() {
                         type="button"
                         onClick={() => setActiveDeepTab('compliance_linter_12')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeDeepTab === 'compliance_linter_12'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
@@ -1303,8 +1473,8 @@ export default function PdfSignerBatesStudio() {
                         type="button"
                         onClick={() => setActiveDeepTab('byterange_sha256_verifier')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeDeepTab === 'byterange_sha256_verifier'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
@@ -1315,8 +1485,8 @@ export default function PdfSignerBatesStudio() {
                         type="button"
                         onClick={() => setActiveDeepTab('ediscovery_audit_exports')}
                         className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${activeDeepTab === 'ediscovery_audit_exports'
-                                ? 'bg-indigo-600 text-white shadow-2xs'
-                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
+                            ? 'bg-indigo-600 text-white shadow-2xs'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                             }`}
                     >
                         <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
@@ -1517,16 +1687,20 @@ export default function PdfSignerBatesStudio() {
                                         <div
                                             key={f.ruleId}
                                             className={`rounded-xl border p-4 space-y-1.5 ${f.severity === 'CRITICAL'
-                                                    ? 'border-rose-300 dark:border-rose-900/80 bg-rose-50/60 dark:bg-rose-950/25'
-                                                    : 'border-amber-300 dark:border-amber-900/80 bg-amber-50/60 dark:bg-amber-950/25'
+                                                ? 'border-rose-300 dark:border-rose-900/80 bg-rose-50/60 dark:bg-rose-950/25'
+                                                : f.severity === 'WARNING'
+                                                    ? 'border-amber-300 dark:border-amber-900/80 bg-amber-50/60 dark:bg-amber-950/25'
+                                                    : 'border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20'
                                                 }`}
                                         >
                                             <div className="flex flex-wrap items-center justify-between gap-2">
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <span
                                                         className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${f.severity === 'CRITICAL'
-                                                                ? 'bg-rose-600 text-white'
-                                                                : 'bg-amber-500 text-slate-950'
+                                                            ? 'bg-rose-600 text-white'
+                                                            : f.severity === 'WARNING'
+                                                                ? 'bg-amber-500 text-slate-950'
+                                                                : 'bg-indigo-600 text-white'
                                                             }`}
                                                     >
                                                         {f.severity}
@@ -1566,8 +1740,8 @@ export default function PdfSignerBatesStudio() {
                                             type="button"
                                             onClick={() => setSimulateTamperTest((prev) => !prev)}
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${simulateTamperTest
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-rose-600 hover:bg-rose-500 text-white'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-rose-600 hover:bg-rose-500 text-white'
                                                 }`}
                                         >
                                             {simulateTamperTest
@@ -1582,8 +1756,8 @@ export default function PdfSignerBatesStudio() {
                                         <span className="text-slate-500 block">ByteRange Digest Verification Status</span>
                                         <span
                                             className={`font-mono font-bold break-words ${activeVerification.isByteRangeIntactAndTamperFree
-                                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                                    : 'text-rose-600 dark:text-rose-400'
+                                                ? 'text-emerald-600 dark:text-emerald-400'
+                                                : 'text-rose-600 dark:text-rose-400'
                                                 }`}
                                         >
                                             {activeVerification.verificationSummary}
@@ -1619,7 +1793,7 @@ export default function PdfSignerBatesStudio() {
               TAB 5: EXPORT STAMPED .PDF, BATCH .ZIP, BATES .XLSX/.CSV & .JSON
               ==================================================================== */}
                     {activeDeepTab === 'ediscovery_audit_exports' && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
                             <button
                                 type="button"
                                 onClick={handleDownloadPrimaryPdf}
@@ -1677,6 +1851,21 @@ export default function PdfSignerBatesStudio() {
                                 </div>
                                 <p className="text-[11px] text-slate-600 dark:text-slate-400">
                                     UTF-8 BOM CSV with page-by-page Bates IDs and SHA-256 digests.
+                                </p>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDownloadAuditJson}
+                                disabled={!isLoaded}
+                                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-4 text-left hover:border-slate-500 disabled:opacity-40 transition cursor-pointer space-y-1"
+                            >
+                                <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-slate-200">
+                                    <FileCode className="w-4 h-4 text-slate-600 shrink-0" />
+                                    <span>Export Audit .JSON</span>
+                                </div>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                                    Cryptographic /ByteRange verification &amp; SHA-256 audit certificate.
                                 </p>
                             </button>
                         </div>
