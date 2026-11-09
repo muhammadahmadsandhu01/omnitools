@@ -177,16 +177,27 @@ const footerCategories = [
 
 const popularFooterTools = [
   { name: 'Salary Calculator (22 Countries)', href: '/finance/salary-calculator' },
+  { name: 'Contractor vs. Employee (W2/1099/IR35)', href: '/finance/contractor-vs-employee-calculator' },
+  { name: 'SaaS Burn Rate & SAFE Dilution', href: '/finance/saas-burn-rate-calculator' },
   { name: 'Mortgage Calculator (PITI & PMI)', href: '/finance/mortgage-calculator' },
   { name: 'Compound Interest & Drawdown', href: '/finance/compound-interest' },
   { name: 'Free PDF Invoice Generator', href: '/finance/invoice-generator' },
   { name: 'JSON Formatter & Tree Viewer', href: '/developer/json-formatter' },
+  { name: 'SQLite & DuckDB Browser Studio', href: '/developer/sqlite-viewer' },
+  { name: 'JWT, PASETO & SAML 2.0 Debugger', href: '/developer/jwt-debugger' },
+  { name: 'Cron Expression Generator & Simulator', href: '/developer/cron-expression-generator' },
+  { name: 'HAR File Analyzer & Secret Sanitizer', href: '/developer/har-analyzer' },
+  { name: 'Parquet, Avro & Feather Viewer', href: '/developer/parquet-viewer' },
+  { name: 'OpenAPI to TypeScript & Zod', href: '/developer/openapi-to-typescript' },
   { name: 'SQL Query Formatter (19 Dialects)', href: '/developer/sql-formatter' },
+  { name: 'PDF Signer, Watermark & Bates Stamper', href: '/document/pdf-signer-bates-stamper' },
+  { name: 'PDF Statement & Invoice Scrubber', href: '/document/pdf-scrubber' },
   { name: 'PDF Merge & Split (750 MB)', href: '/document/pdf-merge-split' },
   { name: 'PDF to Word (.DOCX Converter)', href: '/document/pdf-to-word' },
   { name: 'Compress PDF (Target KB)', href: '/document/compress-pdf' },
-  { name: 'PDF Statement & Invoice Scrubber', href: '/document/pdf-scrubber' },
+  { name: 'HEIC & AVIF Batch Converter', href: '/media/heic-to-jpg' },
   { name: 'Image Compressor (Target KB)', href: '/media/image-compressor' },
+  { name: 'llms.txt & AI Crawler Generator', href: '/seo/llms-txt-generator' },
   { name: 'Word Counter & Grammar Coach', href: '/seo/text-analyzer' },
   { name: 'Custom QR Code Generator', href: '/seo/qr-generator' },
 ];
@@ -500,14 +511,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta
-          name="google-site-verification"
-          content="_ouivC-YA-UT_rTiGPnWkZBsDyN7imgIjWFVWrTNL0I"
-        />
-        <meta
-          name="gridinsoft-key"
-          content="ipguy8rm3ru7m3g8pwzf13fls6a93wn2lfvrp6syhuxcpvj8pmh19fcpohjk92nz"
-        />
+
         {/* Google tag (gtag.js) */}
         <script
           async

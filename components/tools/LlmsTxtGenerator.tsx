@@ -149,7 +149,7 @@ const SAMPLE_HTML_DOC_SNIPPET = `<!DOCTYPE html>
 <head>
   <title>Webhooks & HMAC Signature Verification | AcmeCloud Docs</title>
   <meta name="description" content="Verify incoming AcmeCloud webhook payloads using SHA-256 HMAC signatures and replay-protection timestamps." />
-  <link rel="canonical" href="https://docs.acmecloud.dev/api/webhooks" />
+  <link rel="canonical" href="https://kivarotools.com/api/webhooks" />
 </head>
 <body>
   <nav>Top Navigation Menu — Home | Pricing | Login</nav>
@@ -176,22 +176,22 @@ function verifyWebhook(rawBody, secret, signatureHeader) {
 const SAMPLE_SITEMAP_XML_SNIPPET = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://docs.acmecloud.dev/docs/edge-kv-storage</loc>
+    <loc>https://kivarotools.com/docs/edge-kv-storage</loc>
     <lastmod>2026-10-29</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://docs.acmecloud.dev/api/rate-limits-and-quotas</loc>
+    <loc>https://kivarotools.com/api/rate-limits-and-quotas</loc>
     <lastmod>2026-10-28</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://docs.acmecloud.dev/guides/migrating-from-aws-lambda</loc>
+    <loc>https://kivarotools.com/guides/migrating-from-aws-lambda</loc>
     <lastmod>2026-10-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://docs.acmecloud.dev/legal/dpa-subprocessors</loc>
+    <loc>https://kivarotools.com/legal/dpa-subprocessors</loc>
     <lastmod>2026-10-10</lastmod>
     <priority>0.3</priority>
   </url>
@@ -231,7 +231,7 @@ export default function LlmsTxtGenerator() {
 
     // Tab 4: HTML-to-Markdown Compiler State
     const [htmlSourceInput, setHtmlSourceInput] = useState<string>(SAMPLE_HTML_DOC_SNIPPET);
-    const [htmlPageUrl, setHtmlPageUrl] = useState<string>('https://docs.acmecloud.dev/api/webhooks');
+    const [htmlPageUrl, setHtmlPageUrl] = useState<string>('https://kivarotools.com/api/webhooks');
     const [htmlTargetSection, setHtmlTargetSection] = useState<string>('API & SDK Reference');
 
     // Tab 5: Export Studio Preview Format
@@ -623,8 +623,8 @@ export default function LlmsTxtGenerator() {
                                     type="button"
                                     onClick={() => handleSelectSample(s.id)}
                                     className={`min-w-0 text-left p-3.5 rounded-xl border transition group ${isSelected
-                                            ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/30 shadow-xs'
-                                            : 'border-slate-200 dark:border-slate-700/80 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/50'
+                                        ? 'border-indigo-600 dark:border-indigo-400 bg-indigo-50/90 dark:bg-indigo-950/60 ring-2 ring-indigo-500/30 shadow-xs'
+                                        : 'border-slate-200 dark:border-slate-700/80 hover:border-indigo-500 dark:hover:border-indigo-500 bg-slate-50/60 dark:bg-slate-800/50'
                                         }`}
                                 >
                                     <div className="flex items-center justify-between gap-1 mb-1">
@@ -633,8 +633,8 @@ export default function LlmsTxtGenerator() {
                                         </span>
                                         <span
                                             className={`px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 ${isSelected
-                                                    ? 'bg-emerald-600 text-white'
-                                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                                                 }`}
                                         >
                                             {isSelected ? '✓ Active' : 'Load'}
@@ -790,8 +790,8 @@ export default function LlmsTxtGenerator() {
                                 type="button"
                                 onClick={() => handlePresetSelect(preset.id)}
                                 className={`min-w-0 text-left p-3 rounded-xl border transition ${isActive
-                                        ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 ring-1 ring-indigo-500/40'
-                                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-800/30'
+                                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 ring-1 ring-indigo-500/40'
+                                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/40 dark:bg-slate-800/30'
                                     }`}
                             >
                                 <div className="flex items-center justify-between gap-2 mb-1">
@@ -800,8 +800,8 @@ export default function LlmsTxtGenerator() {
                                     </span>
                                     <span
                                         className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${isActive
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                                             }`}
                                     >
                                         {preset.shortBadge}
@@ -822,10 +822,10 @@ export default function LlmsTxtGenerator() {
                     <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">GEO &amp; Spec Score</div>
                     <div
                         className={`text-sm font-bold mt-0.5 truncate ${compiled.healthScore >= 85
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : compiled.healthScore >= 60
-                                    ? 'text-amber-600 dark:text-amber-400'
-                                    : 'text-rose-600 dark:text-rose-400'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : compiled.healthScore >= 60
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-rose-600 dark:text-rose-400'
                             }`}
                     >
                         {compiled.healthScore} / 100 ({compiled.lintIssues.length === 0 ? 'Valid v2' : `${compiled.lintIssues.length} Alerts`})
@@ -896,8 +896,8 @@ export default function LlmsTxtGenerator() {
                     type="button"
                     onClick={() => setActiveTab('llms_builder')}
                     className={`w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${activeTab === 'llms_builder'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                         }`}
                 >
                     <span className="inline-flex items-center gap-2">
@@ -913,8 +913,8 @@ export default function LlmsTxtGenerator() {
                     type="button"
                     onClick={() => setActiveTab('crawler_matrix')}
                     className={`w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${activeTab === 'crawler_matrix'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                         }`}
                 >
                     <span className="inline-flex items-center gap-2">
@@ -930,8 +930,8 @@ export default function LlmsTxtGenerator() {
                     type="button"
                     onClick={() => setActiveTab('validator_linter')}
                     className={`w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${activeTab === 'validator_linter'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                         }`}
                 >
                     <span className="inline-flex items-center gap-2">
@@ -947,8 +947,8 @@ export default function LlmsTxtGenerator() {
                     type="button"
                     onClick={() => setActiveTab('full_txt_compiler')}
                     className={`w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${activeTab === 'full_txt_compiler'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                         }`}
                 >
                     <span className="inline-flex items-center gap-2">
@@ -964,8 +964,8 @@ export default function LlmsTxtGenerator() {
                     type="button"
                     onClick={() => setActiveTab('export_studio')}
                     className={`w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition ${activeTab === 'export_studio'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                         }`}
                 >
                     <span className="inline-flex items-center gap-2">
@@ -1186,7 +1186,7 @@ export default function LlmsTxtGenerator() {
                                                     handleAddManualLink();
                                                 }
                                             }}
-                                            placeholder="https://docs.acmecloud.dev/api/webhooks or /docs/webhooks"
+                                            placeholder="https://kivarotools.com/api/webhooks or /docs/webhooks"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
                                         />
                                     </div>
@@ -1258,8 +1258,8 @@ export default function LlmsTxtGenerator() {
                                     <div
                                         key={link.id}
                                         className={`p-3 rounded-xl border transition space-y-2 ${recentlyAddedLinkId === link.id
-                                                ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/30 ring-2 ring-emerald-500/30'
-                                                : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950'
+                                            ? 'border-emerald-500 dark:border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/30 ring-2 ring-emerald-500/30'
+                                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-950'
                                             }`}
                                     >
                                         <div className="space-y-2">
@@ -1452,8 +1452,8 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() => setBuilderPreviewMode('llms_txt')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${builderPreviewMode === 'llms_txt'
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                                             }`}
                                     >
                                         llms.txt (~{compiled.tokenBudget.llmsTxtTokens} tok)
@@ -1462,8 +1462,8 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() => setBuilderPreviewMode('llms_full_txt')}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${builderPreviewMode === 'llms_full_txt'
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                                             }`}
                                     >
                                         llms-full.txt (~{compiled.tokenBudget.llmsFullTxtTokens} tok)
@@ -1777,8 +1777,8 @@ export default function LlmsTxtGenerator() {
                                         <div
                                             key={bot.id}
                                             className={`p-3 rounded-xl border transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 ${isAllowed
-                                                    ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/20 dark:bg-emerald-950/15'
-                                                    : 'border-rose-200 dark:border-rose-900/60 bg-rose-50/20 dark:bg-rose-950/15'
+                                                ? 'border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/20 dark:bg-emerald-950/15'
+                                                : 'border-rose-200 dark:border-rose-900/60 bg-rose-50/20 dark:bg-rose-950/15'
                                                 }`}
                                         >
                                             <div className="min-w-0 space-y-1">
@@ -1791,8 +1791,8 @@ export default function LlmsTxtGenerator() {
                                                     </span>
                                                     <span
                                                         className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${bot.role === 'AI_SEARCH_CITATION' || bot.role === 'USER_TRIGGERED_FETCHER'
-                                                                ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
-                                                                : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                                                            ? 'bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300'
+                                                            : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
                                                             }`}
                                                     >
                                                         {bot.role.replace(/_/g, ' ')}
@@ -1817,8 +1817,8 @@ export default function LlmsTxtGenerator() {
                                                             }))
                                                         }
                                                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${bot.permission === 'ALLOW'
-                                                                ? 'bg-emerald-600 text-white'
-                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                                            ? 'bg-emerald-600 text-white'
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                                                             }`}
                                                     >
                                                         ALLOW
@@ -1834,8 +1834,8 @@ export default function LlmsTxtGenerator() {
                                                             }))
                                                         }
                                                         className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${bot.permission === 'BLOCK'
-                                                                ? 'bg-rose-600 text-white'
-                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                                            ? 'bg-rose-600 text-white'
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                                                             }`}
                                                     >
                                                         BLOCK
@@ -1860,8 +1860,8 @@ export default function LlmsTxtGenerator() {
                                                             }))
                                                         }
                                                         className={`px-2 py-1 rounded-lg text-[11px] font-bold transition ${bot.permission === 'CUSTOM_PATHS'
-                                                                ? 'bg-indigo-600 text-white'
-                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                                            ? 'bg-indigo-600 text-white'
+                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                                                             }`}
                                                     >
                                                         CUSTOM
@@ -1956,7 +1956,7 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() =>
                                             setImportRobotsText(
-                                                'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.acmecloud.dev/sitemap.xml'
+                                                'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://kivarotools.com/sitemap.xml'
                                             )
                                         }
                                         className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -1976,7 +1976,7 @@ export default function LlmsTxtGenerator() {
                                     onClick={() => {
                                         const rawToParse =
                                             importRobotsText.trim() ||
-                                            'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.acmecloud.dev/sitemap.xml';
+                                            'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://kivarotools.com/sitemap.xml';
                                         const parsedRob = parseExistingRobotsTxt(rawToParse, workspace.bots);
                                         setWorkspace((p) => ({
                                             ...p,
@@ -2057,8 +2057,8 @@ export default function LlmsTxtGenerator() {
                                     <div
                                         key={issue.id}
                                         className={`p-4 rounded-xl border text-xs space-y-2 min-w-0 ${issue.severity === 'CRITICAL'
-                                                ? 'border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/20'
-                                                : 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20'
+                                            ? 'border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/20'
+                                            : 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20'
                                             }`}
                                     >
                                         <div className="flex items-center justify-between gap-2">
@@ -2089,7 +2089,7 @@ export default function LlmsTxtGenerator() {
                                     type="button"
                                     onClick={() =>
                                         setImportLlmsText(
-                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.'
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.'
                                         )
                                     }
                                     className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -2110,7 +2110,7 @@ export default function LlmsTxtGenerator() {
                                     onClick={() => {
                                         const rawToValidate =
                                             importLlmsText.trim() ||
-                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.\n- [Read more](https://docs.acmecloud.dev/api/auth): Duplicate link.';
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.';
                                         const parsed = parseExistingLlmsTxt(rawToValidate, workspace.siteUrl);
                                         setWorkspace((p) => ({
                                             ...p,
@@ -2220,7 +2220,7 @@ export default function LlmsTxtGenerator() {
                                 type="button"
                                 onClick={() => {
                                     setHtmlSourceInput(SAMPLE_HTML_DOC_SNIPPET);
-                                    setHtmlPageUrl('https://docs.acmecloud.dev/api/webhooks');
+                                    setHtmlPageUrl('https://kivarotools.com/api/webhooks');
                                 }}
                                 className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
                             >
@@ -2390,8 +2390,8 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() => setExportFormat(item.id)}
                                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${exportFormat === item.id
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                                             }`}
                                     >
                                         {item.label}

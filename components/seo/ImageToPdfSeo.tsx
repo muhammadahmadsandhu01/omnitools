@@ -580,7 +580,7 @@ export default function ImageToPdfSeo() {
           </Link>
 
           <Link
-            href="/image/heic-to-jpg"
+            href="/media/heic-to-jpg"
             className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
           >
             <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">

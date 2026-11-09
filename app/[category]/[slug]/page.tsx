@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { ChevronRight, Home } from 'lucide-react';
+import { ChevronRight, Home, CheckCircle2, ShieldCheck, Globe } from 'lucide-react';
 
 import { categories, tools, getRelatedTools } from '@/config/toolsData';
 import AdUnit from '@/components/ads/AdUnit';
@@ -16,6 +16,39 @@ type PageProps = {
     slug: string;
   }>;
 };
+
+const CATEGORY_TO_SCHEMA_APP_CATEGORY: Record<string, string> = {
+  finance: 'FinanceApplication',
+  developer: 'DeveloperApplication',
+  document: 'BusinessApplication',
+  media: 'MultimediaApplication',
+  seo: 'UtilitiesApplication',
+};
+
+const SALARY_COUNTRIES = [
+  { slug: 'united-states', name: 'United States (IRS Federal, FICA & State)' },
+  { slug: 'united-kingdom', name: 'United Kingdom (HMRC PAYE & NI)' },
+  { slug: 'germany', name: 'Germany (Brutto-Netto & Steuerklasse)' },
+  { slug: 'canada', name: 'Canada (CRA Federal, Provincial, CPP & EI)' },
+  { slug: 'australia', name: 'Australia (ATO Stage 3, Medicare & Super)' },
+  { slug: 'india', name: 'India (Section 115BAC New vs Old Regime)' },
+  { slug: 'pakistan', name: 'Pakistan (FBR Salaried Slabs & Surcharge)' },
+  { slug: 'united-arab-emirates', name: 'United Arab Emirates (Tax-Free & Gratuity)' },
+  { slug: 'saudi-arabia', name: 'Saudi Arabia (GOSI & Expat Net Pay)' },
+  { slug: 'singapore', name: 'Singapore (IRAS Resident & CPF Board)' },
+  { slug: 'france', name: 'France (Salaire Brut en Net & CSG/CRDS)' },
+  { slug: 'japan', name: 'Japan (National/Prefectural Tax & Social Ins.)' },
+  { slug: 'switzerland', name: 'Switzerland (Federal, Cantonal & AHV/IV)' },
+  { slug: 'netherlands', name: 'Netherlands (Box 1 & 30% Expat Ruling)' },
+  { slug: 'ireland', name: 'Ireland (PAYE, USC & PRSI Waterfall)' },
+  { slug: 'new-zealand', name: 'New Zealand (IRD Brackets, ACC & KiwiSaver)' },
+  { slug: 'spain', name: 'Spain (IRPF & Seguridad Social)' },
+  { slug: 'italy', name: 'Italy (IRPEF, Regional & INPS)' },
+  { slug: 'south-africa', name: 'South Africa (SARS PAYE, Rebates & UIF)' },
+  { slug: 'brazil', name: 'Brazil (IRPF & INSS Progressive Deduction)' },
+  { slug: 'mexico', name: 'Mexico (ISR & IMSS Payroll Withholding)' },
+  { slug: 'south-korea', name: 'South Korea (NTS Progressive Tax & 4 Major Ins.)' },
+] as const;
 
 export function generateStaticParams() {
   return tools
@@ -150,40 +183,22 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                                   ? 'pdf-signer-bates-stamper'
                                                   : slug;
 
-  const resolvedCategory =
-    resolvedSlug === 'image-to-pdf' ||
-      resolvedSlug === 'pdf-merge-split' ||
-      resolvedSlug === 'pdf-to-word' ||
-      resolvedSlug === 'word-to-pdf' ||
-      resolvedSlug === 'pdf-to-excel' ||
-      resolvedSlug === 'excel-to-pdf' ||
-      resolvedSlug === 'pdf-to-ppt' ||
-      resolvedSlug === 'pdf-to-jpg' ||
-      resolvedSlug === 'compress-pdf' ||
-      resolvedSlug === 'pdf-scrubber' ||
-      resolvedSlug === 'pdf-signer-bates-stamper'
+  // Deterministic lookup of canonical categoryId directly from toolsData.ts
+  const canonicalTool = tools.find(
+    (item) => item.slug === resolvedSlug && item.status === 'published' && !item.hidden
+  );
+
+  const resolvedCategory = canonicalTool
+    ? canonicalTool.categoryId
+    : category === 'pdf' || category === 'legal'
       ? 'document'
-      : category === 'pdf'
-        ? 'document'
-        : category === 'image' || resolvedSlug === 'heic-to-jpg'
-          ? 'media'
-          : category === 'seo' && resolvedSlug === 'regex-tester'
-            ? 'developer'
-            : resolvedSlug === 'saas-burn-rate-calculator' ||
-              resolvedSlug === 'contractor-vs-employee-calculator' ||
-              resolvedSlug === 'mortgage-calculator' ||
-              resolvedSlug === 'emi-calculator'
-              ? 'finance'
-              : resolvedSlug === 'parquet-viewer' ||
-                resolvedSlug === 'har-analyzer' ||
-                resolvedSlug === 'sqlite-viewer' ||
-                resolvedSlug === 'openapi-to-typescript' ||
-                resolvedSlug === 'jwt-debugger' ||
-                resolvedSlug === 'cron-expression-generator'
-                ? 'developer'
-                : resolvedSlug === 'llms-txt-generator'
-                  ? 'seo'
-                  : category;
+      : category === 'image' || category === 'photo'
+        ? 'media'
+        : category === 'dev' || category === 'security' || category === 'auth' || category === 'devops'
+          ? 'developer'
+          : category === 'payroll' || category === 'tax'
+            ? 'finance'
+            : category;
 
   return { resolvedCategory, resolvedSlug };
 }
@@ -197,29 +212,28 @@ export async function generateMetadata({
   const { category, slug } = await params;
 
   if (category === 'health' || slug === 'bmi-calculator') {
-    return {
-      title: 'Health Calculator',
-      robots: { index: false, follow: false },
-    };
+    permanentRedirect('/');
   }
 
   const { resolvedCategory, resolvedSlug } = resolveCanonicalRoute(category, slug);
 
   const tool =
-    tools.find((item) => item.slug === slug && item.categoryId === category) ||
-    tools.find((item) => item.slug === resolvedSlug && item.categoryId === resolvedCategory);
+    tools.find((item) => item.slug === resolvedSlug && item.categoryId === resolvedCategory) ||
+    tools.find((item) => item.slug === slug && item.categoryId === category);
 
-  if (!tool) {
+  if (!tool || tool.status !== 'published' || tool.hidden) {
     return {
       title: 'Tool Not Found',
       description: 'The requested KivaroTools tool could not be found.',
+      robots: {
+        index: false,
+        follow: true,
+      },
     };
   }
 
   const metaTitle = tool.seoTitle || tool.name;
   const metaDescription = tool.seoDescription || tool.description;
-
-  const isPublicAndPublished = !tool.hidden && tool.status === 'published';
   const canonicalUrl = `${SITE_URL}/${resolvedCategory}/${resolvedSlug}`;
 
   return {
@@ -229,15 +243,10 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
     },
-    robots: isPublicAndPublished
-      ? {
-        index: true,
-        follow: true,
-      }
-      : {
-        index: false,
-        follow: true,
-      },
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: `${metaTitle} — KivaroTools`,
       description: metaDescription,
@@ -273,33 +282,33 @@ export default async function ToolPage({ params }: PageProps) {
   }
 
   const tool =
-    tools.find((item) => item.slug === slug && item.categoryId === category) ||
-    tools.find((item) => item.slug === resolvedSlug && item.categoryId === resolvedCategory);
+    tools.find((item) => item.slug === resolvedSlug && item.categoryId === resolvedCategory) ||
+    tools.find((item) => item.slug === slug && item.categoryId === category);
 
   const categoryData =
-    categories.find((item) => item.id === category) ||
-    categories.find((item) => item.id === resolvedCategory);
+    categories.find((item) => item.id === resolvedCategory) ||
+    categories.find((item) => item.id === category);
 
-  if (!tool || !categoryData || tool.status !== 'published') {
+  if (!tool || !categoryData || tool.status !== 'published' || tool.hidden) {
     notFound();
   }
 
-  const relatedTools = getRelatedTools(tool);
+  const relatedTools = getRelatedTools(tool, 8);
 
   const ToolComponent =
-    toolComponents[slug] ||
+    toolComponents[resolvedSlug] ||
     toolComponents[tool.slug] ||
-    toolComponents[resolvedSlug];
+    toolComponents[slug];
 
   const SeoComponent =
-    seoComponents[slug] ||
+    seoComponents[resolvedSlug] ||
     seoComponents[tool.slug] ||
-    seoComponents[resolvedSlug];
+    seoComponents[slug];
 
   const metaDescription = tool.seoDescription || tool.description;
   const canonicalUrl = `${SITE_URL}/${resolvedCategory}/${resolvedSlug}`;
-  const topAdSlot = process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || "";
-  const bottomAdSlot = process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || "";
+  const topAdSlot = process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || '';
+  const bottomAdSlot = process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || '';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -315,7 +324,7 @@ export default async function ToolPage({ params }: PageProps) {
     <main className="w-full min-w-0 overflow-x-clip">
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
 
-        {/* Structured Data (GEO / AEO) */}
+        {/* Structured Data (GEO / AEO — Includes aggregateRating & review required by Google/Semrush) */}
         {tool.status === 'published' && (
           <>
             <SchemaMarkup
@@ -422,6 +431,76 @@ export default async function ToolPage({ params }: PageProps) {
 
         {/* Bottom Advertisement */}
         <AdUnit slotId={bottomAdSlot} />
+
+        {/* Server-Rendered Key Capabilities & Privacy Summary (Boosts SSR Text-to-HTML Ratio & AI Search Clarity) */}
+        {tool.featureList && tool.featureList.length > 0 && (
+          <section
+            aria-labelledby="tool-capabilities-summary"
+            className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-7"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2
+                id="tool-capabilities-summary"
+                className="text-xl font-bold tracking-tight text-slate-900 dark:text-white"
+              >
+                {tool.seoTitle || tool.name} — Core Capabilities &amp; Client-Side Architecture
+              </h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                100% In-Browser • Zero Server Upload
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
+              {tool.name} is an enterprise-grade {categoryData.name.toLowerCase()} utility on KivaroTools engineered for instant, privacy-first execution directly inside your web browser. Every calculation, file transformation, and diagnostic check runs locally in client memory without uploading sensitive payloads to external servers.
+            </p>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {tool.featureList.map((feature, index) => (
+                <li
+                  key={index}
+                  className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs leading-relaxed text-slate-700 dark:border-slate-800/80 dark:bg-slate-800/40 dark:text-slate-300"
+                >
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* 22 Country Statutory Salary Calculators Hub (Eliminates Orphan Pages & Boosts Crawl Discovery) */}
+        {resolvedSlug === 'salary-calculator' && (
+          <section
+            aria-labelledby="country-salary-calculators-heading"
+            className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-7"
+          >
+            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-1">
+              <Globe className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                22 Statutory Country Tax Engines
+              </span>
+            </div>
+            <h2
+              id="country-salary-calculators-heading"
+              className="text-xl font-bold tracking-tight text-slate-900 dark:text-white"
+            >
+              Explore Dedicated Country Salary &amp; Take-Home Pay Calculators
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400 mb-4">
+              Select any country below to open its dedicated 2026 statutory income tax, social security withholding, and gross-to-net paycheck calculator:
+            </p>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {SALARY_COUNTRIES.map((country) => (
+                <Link
+                  key={country.slug}
+                  href={`/finance/salary-calculator/${country.slug}`}
+                  className="rounded-xl border border-slate-200 bg-slate-50/60 px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:border-blue-600 dark:hover:text-blue-400"
+                >
+                  {country.name} &rarr;
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* SEO Content */}
         {SeoComponent && (

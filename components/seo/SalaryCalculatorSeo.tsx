@@ -137,30 +137,30 @@ export default function SalaryCalculatorSeo() {
             name: 'How to Calculate Net Take-Home Pay, Income Tax & Payroll Deductions Across 22 Countries',
             description: 'Step-by-step guide to calculating gross-to-net salary, progressive income tax brackets, social security contributions, and employer payroll costs across 22 jurisdictions.',
             step: [
-      {
-        '@type': 'HowToStep',
-        position: 1,
-        name: 'Select Country Tax Jurisdiction',
-        text: 'Choose from 22 statutory country tax engines including the United States, United Kingdom, Canada, Germany, Australia, India, Pakistan, UAE, and Singapore.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 2,
-        name: 'Enter Gross Salary & Pay Frequency',
-        text: 'Input your annual, monthly, bi-weekly, weekly, or hourly compensation and configure standard working hours.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 3,
-        name: 'Configure Filing Status, Allowances & Pre-Tax Deductions',
-        text: 'Select your marital/filing status, regional state/province/tax code, and optional pre-tax pension or retirement contributions (401k, RRSP, Superannuation, EPF).',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 4,
-        name: 'Inspect Progressive Tax Brackets & Export Payslip Breakdown',
-        text: 'Review your net take-home pay across all pay periods, marginal vs. effective tax rates, bracket-by-bracket tax table, and total employer cost.',
-      }
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Select Country Tax Jurisdiction',
+                text: 'Choose from 22 statutory country tax engines including the United States, United Kingdom, Canada, Germany, Australia, India, Pakistan, UAE, and Singapore.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Enter Gross Salary & Pay Frequency',
+                text: 'Input your annual, monthly, bi-weekly, weekly, or hourly compensation and configure standard working hours.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Configure Filing Status, Allowances & Pre-Tax Deductions',
+                text: 'Select your marital/filing status, regional state/province/tax code, and optional pre-tax pension or retirement contributions (401k, RRSP, Superannuation, EPF).',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Inspect Progressive Tax Brackets & Export Payslip Breakdown',
+                text: 'Review your net take-home pay across all pay periods, marginal vs. effective tax rates, bracket-by-bracket tax table, and total employer cost.',
+              },
             ],
           }),
         }}
@@ -341,7 +341,8 @@ export default function SalaryCalculatorSeo() {
           individual payroll cycles, localized municipal taxes, specialized tax codes, and personal filing elections.
         </div>
       </section>
-          {/* Competitor Comparison Section */}
+
+      {/* Competitor Comparison Section */}
       <section aria-labelledby="salary-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
         <h2 id="salary-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
           Global Salary Calculator Comparison: KivaroTools vs. Market Portals
@@ -401,51 +402,95 @@ export default function SalaryCalculatorSeo() {
         </div>
       </section>
 
-    
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            Global Salary &amp; Take-Home Pay Hub — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">salary calculator take home pay</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator by country</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">paycheck calculator after taxes</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">us irs fica paycheck tax calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uk hmrc paye national insurance calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto steuerklasse calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india new vs old tax regime 115bac calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salaried income tax calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada cra cpp ei payroll calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia ato stage 3 tax super calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator with progressive tax brackets</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">take home pay calculator after income tax and national insurance</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reverse salary calculator target net to required gross salary</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united states paycheck salary calculator federal and state</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united kingdom paye salary calculator with student loan</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada salary calculator federal cpp and provincial tax</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto gehaltsrechner steuerklasse</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia salary take home calculator with superannuation</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india new tax regime 115bac salary calculator with standard deduction</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salary tax calculator with eobi contribution</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uae salary calculator tax free take home and end of service</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">saudi arabia salary calculator gosi social insurance</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">singapore salary calculator iras resident and cpf board</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">france salaire brut en net calcul cotisations sociales</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">switzerland salary calculator cantonal and federal tax</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands salary calculator 30 percent ruling tax</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland salary calculator paye usc and prsi contributions</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">new zealand salary calculator with kiwisaver contribution</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">spain sueldo neto calculo irpf y seguridad social</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">italy stipendio netto calcolo irpef regionale e inps</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">employer total payroll cost calculator with benefits</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">hourly to annual salary conversion with overtime calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bonus tax withholding calculator net take home</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">biweekly vs semi monthly paycheck take home calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pre tax 401k rrsp superannuation tax savings calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export payslip salary deduction breakdown to csv</span>
-          </div>
-        </section>
-      </article>
+      {/* Related Finance & Compensation Calculators */}
+      <section aria-labelledby="salary-calculator-related-finance-tools" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="salary-calculator-related-finance-tools" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+          Related Compensation, Tax &amp; Financial Calculators
+        </h2>
+        <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-2">
+          <li>
+            <Link href="/finance/contractor-vs-employee-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Universal Contractor vs. Full-Time Employee Calculator (W-2 / 1099 / S-Corp / IR35)
+            </Link>{' '}
+            &mdash; Compare full-time employment against independent contracting across 153 ISO currencies with an exact break-even hourly/daily rate solver.
+          </li>
+          <li>
+            <Link href="/finance/saas-burn-rate-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              SaaS Burn Rate, Cash Runway &amp; SAFE Equity Dilution Calculator
+            </Link>{' '}
+            &mdash; Model startup hiring plans, gross/net burn rate, 60-month runway, and Pre/Post-Money SAFE dilution.
+          </li>
+          <li>
+            <Link href="/finance/mortgage-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Mortgage &amp; Home Loan Amortization Calculator (PITI + PMI)
+            </Link>{' '}
+            &mdash; Calculate monthly or biweekly mortgage payments with property tax escrow, HOA, and automatic 80% LTV PMI drop-off.
+          </li>
+          <li>
+            <Link href="/finance/emi-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Loan EMI &amp; Prepayment Curtailment Calculator
+            </Link>{' '}
+            &mdash; Compare tenure reduction vs. payment recast prepayments across 42 currencies.
+          </li>
+          <li>
+            <Link href="/finance/compound-interest" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Compound Interest &amp; Retirement Drawdown Calculator
+            </Link>{' '}
+            &mdash; Project wealth accumulation with step-up contributions, inflation adjustment, and 2,000-path Monte Carlo simulations.
+          </li>
+          <li>
+            <Link href="/finance/invoice-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Free Professional PDF Invoice Generator
+            </Link>{' '}
+            &mdash; Create print-ready A4 PDF invoices with custom logos, VAT/GST tax allocation, and 30+ currencies.
+          </li>
+        </ul>
+      </section>
+
+      {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+      <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          Global Salary &amp; Take-Home Pay Hub — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">salary calculator take home pay</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator by country</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">paycheck calculator after taxes</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">us irs fica paycheck tax calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uk hmrc paye national insurance calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto steuerklasse calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india new vs old tax regime 115bac calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salaried income tax calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada cra cpp ei payroll calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia ato stage 3 tax super calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">gross to net salary calculator tax brackets</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">take home pay after tax and national insurance</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reverse salary calculator net to gross pay</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united states paycheck salary calculator federal and state</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">united kingdom paye salary calculator with student loan</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">canada salary calculator federal cpp and provincial tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">germany brutto netto gehaltsrechner steuerklasse</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">australia salary take home calculator with superannuation</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">india 115bac salary calculator standard deduction</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pakistan fbr salary tax calculator with eobi contribution</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">uae salary calculator tax free take home and end of service</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">saudi arabia salary calculator gosi social insurance</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">singapore salary calculator iras resident and cpf board</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">france salaire brut en net calcul cotisations sociales</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">switzerland salary calculator cantonal and federal tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">netherlands salary calculator 30 percent ruling tax</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ireland salary calculator paye usc and prsi contributions</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">new zealand salary calculator with kiwisaver contribution</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">spain sueldo neto calculo irpf y seguridad social</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">italy stipendio netto calcolo irpef regionale e inps</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">employer total payroll cost calculator with benefits</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">hourly to annual salary conversion with overtime calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bonus tax withholding calculator net take home</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">biweekly vs semi monthly paycheck take home calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pre tax 401k rrsp superannuation tax savings calculator</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export payslip salary deduction breakdown to csv</span>
+        </div>
+      </section>
+    </article>
   );
 }

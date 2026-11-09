@@ -7,16 +7,61 @@ import {
   Home,
   ShieldCheck,
   CheckCircle2,
+  Globe,
 } from 'lucide-react';
 
 import { categories, tools } from '@/config/toolsData';
 import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
+
+const PDF_SCRUBBER_GSC_TOKENS = new Set([
+  'Title',
+  'Annots',
+  'OCGs',
+  'AcroForm',
+  'Thumb',
+  'AA',
+  'URI',
+  'EmbeddedFiles',
+  'OpenAction',
+  'Launch',
+  'JavaScript',
+  'Info',
+  'Metadata',
+  'Outlines',
+]);
+const PDF_WORD_GSC_TOKENS = new Set(['WinAnsiEncoding', 'FlateDecode']);
+const LLMS_GSC_TOKENS = new Set(['admin', 'checkout', 'ai.txt', 'llms-full.txt', 'llms-ctx.txt']);
 
 type CategoryPageProps = {
   params: Promise<{
     category: string;
   }>;
 };
+
+const FINANCE_COUNTRY_LINKS = [
+  { slug: 'united-states', name: 'United States Salary Calculator' },
+  { slug: 'united-kingdom', name: 'United Kingdom PAYE & NI Calculator' },
+  { slug: 'germany', name: 'Germany Brutto-Netto Calculator' },
+  { slug: 'canada', name: 'Canada Federal & Provincial Calculator' },
+  { slug: 'australia', name: 'Australia ATO & Super Calculator' },
+  { slug: 'india', name: 'India New vs Old Tax Regime Calculator' },
+  { slug: 'pakistan', name: 'Pakistan FBR Salaried Tax Calculator' },
+  { slug: 'united-arab-emirates', name: 'UAE Gratuity & Net Pay Calculator' },
+  { slug: 'saudi-arabia', name: 'Saudi Arabia GOSI Salary Calculator' },
+  { slug: 'singapore', name: 'Singapore IRAS & CPF Calculator' },
+  { slug: 'france', name: 'France Salaire Brut en Net Calculator' },
+  { slug: 'japan', name: 'Japan Income & Social Insurance Calculator' },
+  { slug: 'switzerland', name: 'Switzerland Cantonal Tax Calculator' },
+  { slug: 'netherlands', name: 'Netherlands Box 1 & 30% Ruling Calculator' },
+  { slug: 'ireland', name: 'Ireland PAYE, USC & PRSI Calculator' },
+  { slug: 'new-zealand', name: 'New Zealand PAYE & KiwiSaver Calculator' },
+  { slug: 'spain', name: 'Spain IRPF & Seguridad Social Calculator' },
+  { slug: 'italy', name: 'Italy IRPEF & INPS Salary Calculator' },
+  { slug: 'south-africa', name: 'South Africa SARS PAYE Calculator' },
+  { slug: 'brazil', name: 'Brazil IRPF & INSS Salary Calculator' },
+  { slug: 'mexico', name: 'Mexico ISR & IMSS Payroll Calculator' },
+  { slug: 'south-korea', name: 'South Korea NTS Net Pay Calculator' },
+] as const;
 
 export function generateStaticParams() {
   return categories
@@ -31,21 +76,48 @@ export async function generateMetadata({
 }: CategoryPageProps): Promise<Metadata> {
   const { category: categorySlug } = await params;
 
+  if (
+    categorySlug === '$' ||
+    categorySlug === '&' ||
+    categorySlug === '%24' ||
+    categorySlug === '%26' ||
+    categorySlug === 'health'
+  ) {
+    permanentRedirect('/');
+  }
+  if (PDF_SCRUBBER_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/document/pdf-scrubber');
+  }
+  if (PDF_WORD_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/document/pdf-to-word');
+  }
+  if (LLMS_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/seo/llms-txt-generator');
+  }
+
   const resolvedCategorySlug =
-    categorySlug === 'image'
+    categorySlug === 'image' || categorySlug === 'photo'
       ? 'media'
-      : categorySlug === 'pdf'
-      ? 'document'
-      : categorySlug;
+      : categorySlug === 'pdf' || categorySlug === 'legal'
+        ? 'document'
+        : categorySlug === 'dev'
+          ? 'developer'
+          : categorySlug === 'tax' || categorySlug === 'payroll'
+            ? 'finance'
+            : categorySlug;
 
   const category = categories.find(
     (item) => item.id === resolvedCategorySlug
   );
 
-  if (!category) {
+  if (!category || category.hidden) {
     return {
       title: 'Category Not Found',
       description: 'The requested KivaroTools category could not be found.',
+      robots: {
+        index: false,
+        follow: true,
+      },
     };
   }
 
@@ -72,15 +144,10 @@ export async function generateMetadata({
     alternates: {
       canonical: canonicalUrl,
     },
-    robots: category.hidden
-      ? {
-          index: false,
-          follow: true,
-        }
-      : {
-          index: true,
-          follow: true,
-        },
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: `${categoryTitle} — KivaroTools`,
       description: categoryDescription,
@@ -111,12 +178,27 @@ export default async function CategoryPage({
   if (categorySlug === 'health') {
     permanentRedirect('/');
   }
+  if (PDF_SCRUBBER_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/document/pdf-scrubber');
+  }
+  if (PDF_WORD_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/document/pdf-to-word');
+  }
+  if (LLMS_GSC_TOKENS.has(categorySlug)) {
+    permanentRedirect('/seo/llms-txt-generator');
+  }
 
-  if (categorySlug === 'image') {
+  if (categorySlug === 'image' || categorySlug === 'photo') {
     permanentRedirect('/media');
   }
-  if (categorySlug === 'pdf') {
+  if (categorySlug === 'pdf' || categorySlug === 'legal') {
     permanentRedirect('/document');
+  }
+  if (categorySlug === 'dev') {
+    permanentRedirect('/developer');
+  }
+  if (categorySlug === 'tax' || categorySlug === 'payroll') {
+    permanentRedirect('/finance');
   }
 
   const category = categories.find(
@@ -305,10 +387,10 @@ export default async function CategoryPage({
 
                     {tool.featureList && tool.featureList.length > 0 && (
                       <ul className="mt-4 space-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                        {tool.featureList.slice(0, 2).map((feat, idx) => (
+                        {tool.featureList.slice(0, 3).map((feat, idx) => (
                           <li key={idx} className="flex items-start gap-1.5">
                             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
-                            <span className="line-clamp-1">{feat}</span>
+                            <span className="line-clamp-2">{feat}</span>
                           </li>
                         ))}
                       </ul>
@@ -328,6 +410,35 @@ export default async function CategoryPage({
               ))}
             </div>
 
+            {/* 22 Country Statutory Salary Calculators Directory on /finance Category Hub */}
+            {category.id === 'finance' && (
+              <div className="mt-12 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                  <Globe className="h-5 w-5" />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Global Statutory Payroll &amp; Tax Engines
+                  </span>
+                </div>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  22 Country Salary &amp; Net Take-Home Pay Calculators
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                  Calculate gross-to-net paycheck take-home pay, progressive income tax brackets, social security deductions, and employer payroll cost across 22 jurisdictions:
+                </p>
+                <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {FINANCE_COUNTRY_LINKS.map((country) => (
+                    <Link
+                      key={country.slug}
+                      href={`/finance/salary-calculator/${country.slug}`}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
+                    >
+                      {country.name} &rarr;
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Category Architecture & Cross-Category Hub Links */}
             <div className="mt-14 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-2.5 text-blue-600 dark:text-blue-400">
@@ -340,7 +451,7 @@ export default async function CategoryPage({
                 Why Professionals Choose KivaroTools for {category.name}
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {category.description} Every utility in our {category.name.toLowerCase()} suite includes comprehensive methodology documentation, formula verification tables, and interactive FAQs directly below the workspace.
+                {category.description} Every utility in our {category.name.toLowerCase()} suite executes locally inside your browser memory with zero server uploads and includes comprehensive methodology documentation, formula verification tables, and interactive FAQs directly below the workspace.
               </p>
               <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
                 {categories

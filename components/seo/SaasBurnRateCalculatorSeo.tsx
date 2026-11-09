@@ -948,7 +948,7 @@ export default function SaasBurnRateCalculatorSeo() {
                     </Link>
 
                     <Link
-                        href="/developer/llms-txt-generator"
+                        href="/seo/llms-txt-generator"
                         className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
                     >
                         <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">

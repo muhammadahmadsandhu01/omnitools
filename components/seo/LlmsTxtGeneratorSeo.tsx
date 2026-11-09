@@ -480,11 +480,11 @@ export default function LlmsTxtGeneratorSeo() {
 
 ## Core Documentation
 
-- [Quickstart & CLI Installation](https://docs.acmecloud.dev/docs/quickstart): Install acme-cli and deploy edge functions.
+- [Quickstart & CLI Installation](https://kivarotools.com/docs/quickstart): Install acme-cli and deploy edge functions.
 
 ## API & SDK Reference
 
-- [REST API v2 Authentication](https://docs.acmecloud.dev/api/authentication): Bearer RS256 JWT tokens and HMAC webhooks.`}</pre>
+- [REST API v2 Authentication](https://kivarotools.com/api/authentication): Bearer RS256 JWT tokens and HMAC webhooks.`}</pre>
                         </div>
                     </div>
                 </div>

@@ -113,30 +113,30 @@ export default function JsonFormatterSeo() {
             name: 'How to Format, Validate, Minify, and Query JSON with JSONPath Online',
             description: 'Step-by-step guide to validating RFC 8259 JSON syntax, pinpointing line/column errors, repairing malformed JSON5, and running JSONPath queries in your browser.',
             step: [
-      {
-        '@type': 'HowToStep',
-        position: 1,
-        name: 'Paste Raw or Minified JSON',
-        text: 'Paste your JSON payload into the editor, upload a .json file, or load a sample payload.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 2,
-        name: 'Validate Syntax & Auto-Repair Common Errors',
-        text: 'Inspect real-time RFC 8259 validation with exact line and column error pointers, or click Auto-Repair to strip trailing commas, comments, and single quotes.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 3,
-        name: 'Format, Minify, or Sort Object Keys',
-        text: 'Choose 2-space, 4-space, or tab indentation, minify for production transport, or recursively sort object keys alphabetically for clean Git diffs.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 4,
-        name: 'Explore Interactive Tree & Run JSONPath Queries',
-        text: 'Switch to the collapsible Tree View or run JSONPath filter expressions to extract deeply nested values and export TypeScript interfaces.',
-      }
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Paste Raw or Minified JSON',
+                text: 'Paste your JSON payload into the editor, upload a .json file, or load a sample payload.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Validate Syntax & Auto-Repair Common Errors',
+                text: 'Inspect real-time RFC 8259 validation with exact line and column error pointers, or click Auto-Repair to strip trailing commas, comments, and single quotes.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Format, Minify, or Sort Object Keys',
+                text: 'Choose 2-space, 4-space, or tab indentation, minify for production transport, or recursively sort object keys alphabetically for clean Git diffs.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Explore Interactive Tree & Run JSONPath Queries',
+                text: 'Switch to the collapsible Tree View or run JSONPath filter expressions to extract deeply nested values and export TypeScript interfaces.',
+              }
             ],
           }),
         }}
@@ -376,67 +376,67 @@ export default function JsonFormatterSeo() {
         </section>
 
         {/* Zone 6: Frequently Asked Questions */}
-              {/* Competitor Comparison Section */}
-      <section aria-labelledby="json-formatter-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h2 id="json-formatter-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          JSON Formatter Comparison: KivaroTools vs. Developer Portals
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
-          See why software engineers choose KivaroTools for large API payload validation and debugging:
-        </p>
-        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
-          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">JSONLint</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">CodeBeautify</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">JSONFormatter.org</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">In-Browser File Capacity</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Up to 25 MB (60,000-Node Virtual Tree &amp; BigInt Guard)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Crashes above 5 MB</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Freezes on 10 MB</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Slow above 2 MB</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Malformed JSON Auto-Repair</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Fixes unquoted keys, single quotes &amp; trailing commas)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None (Errors only)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic repair</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic repair</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Interactive JSONPath Evaluator</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Real-time query filters &amp; tree search)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate page</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">TypeScript &amp; Schema Generator</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant TypeScript Interfaces &amp; JSON Schema</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate tool</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">API Key &amp; Token Privacy</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser Memory (Zero Network Calls)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Server-side validation</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Cloud logging</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Cloud storage</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        {/* Competitor Comparison Section */}
+        <section aria-labelledby="json-formatter-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+          <h2 id="json-formatter-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            JSON Formatter Comparison: KivaroTools vs. Developer Portals
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+            See why software engineers choose KivaroTools for large API payload validation and debugging:
+          </p>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+            <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">JSONLint</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">CodeBeautify</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">JSONFormatter.org</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">In-Browser File Capacity</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Up to 25 MB (60,000-Node Virtual Tree &amp; BigInt Guard)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Crashes above 5 MB</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Freezes on 10 MB</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Slow above 2 MB</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Malformed JSON Auto-Repair</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Fixes unquoted keys, single quotes &amp; trailing commas)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None (Errors only)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Basic repair</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Basic repair</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Interactive JSONPath Evaluator</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Real-time query filters &amp; tree search)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Separate page</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">TypeScript &amp; Schema Generator</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant TypeScript Interfaces &amp; JSON Schema</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Separate tool</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">API Key &amp; Token Privacy</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser Memory (Zero Network Calls)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Server-side validation</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Cloud logging</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Cloud storage</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      <section aria-labelledby="json-formatter-frequently-asked-questions" className="mb-8">
+        <section aria-labelledby="json-formatter-frequently-asked-questions" className="mb-8">
           <h2 id="json-formatter-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
           </h2>
@@ -503,10 +503,52 @@ export default function JsonFormatterSeo() {
               </Link>{' '}
               — Strip bloated vector metadata, prune unused defs, and minify SVG markup with sandboxed preview.
             </li>
+            <li>
+              <Link href="/developer/parquet-viewer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Parquet, Avro &amp; Feather Viewer
+              </Link>{' '}
+              — Inspect binary columnar schemas, Row Group statistics, and convert Parquet/Avro files to CSV or Excel.
+            </li>
+            <li>
+              <Link href="/developer/har-analyzer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                HAR File Analyzer &amp; Secret Sanitizer
+              </Link>{' '}
+              — Analyze 7-phase HTTP waterfalls, scrub JWTs and session cookies across 14 surfaces, and export k6/Playwright scripts.
+            </li>
+            <li>
+              <Link href="/developer/sqlite-viewer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQLite &amp; DuckDB In-Browser Explorer
+              </Link>{' '}
+              — Query .sqlite, .db, and .duckdb files locally, generate ER diagrams, and export to Drizzle, Prisma, or PostgreSQL.
+            </li>
+            <li>
+              <Link href="/developer/openapi-to-typescript" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                OpenAPI (Swagger) to TypeScript, Zod &amp; MSW Generator
+              </Link>{' '}
+              — Compile OpenAPI 3.1/3.0 specs into strict TypeScript interfaces, topologically sorted Zod schemas, and MSW v2 mocks.
+            </li>
+            <li>
+              <Link href="/developer/jwt-debugger" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                JWT, PASETO &amp; SAML 2.0 Debugger
+              </Link>{' '}
+              — Decode, verify, and audit JWS, 5-part JWE, SD-JWT, PASETO v1–v4, and SAML 2.0 assertions against 16 security rules.
+            </li>
+            <li>
+              <Link href="/developer/cron-expression-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Cron Expression Generator &amp; 7-Dialect Simulator
+              </Link>{' '}
+              — Build and simulate POSIX, Kubernetes, Quartz, AWS EventBridge, and Jenkins cron schedules across 12 IANA timezones.
+            </li>
+            <li>
+              <Link href="/seo/llms-txt-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                llms.txt &amp; AI Crawler (robots.txt) Generator
+              </Link>{' '}
+              — Author llmstxt.org v2 documentation indexes and RFC 9309 AI bot rules for 45 verified AI crawlers.
+            </li>
           </ul>
         </section>
-      
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+
+        {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
         <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
           <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
             JSON Formatter, Validator &amp; Tree Viewer — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
@@ -523,7 +565,7 @@ export default function JsonFormatterSeo() {
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">large 25mb json viewer client side</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">unescape stringified json online</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online json formatter and validator with line column errors</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">auto repair malformed json unquoted keys and trailing commas</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">auto repair json unquoted keys trailing commas</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">minify json online for api payload compression</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">jsonpath evaluator and query filter tester online</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">compare two json files visual diff viewer online</span>

@@ -32,8 +32,8 @@ const COUNTRY_SLUGS = [
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const siteUrl = SITE_URL;
-  // Stable release audit timestamp to prevent artificial, daily date churn
-  const lastModified = new Date('2026-10-20T00:00:00.000Z');
+  // Updated release audit timestamp so Googlebot crawls all 42 published tools & 74 canonical routes
+  const lastModified = new Date('2026-11-09T00:00:00.000Z');
 
   // 1. Homepage
   const homeEntry: MetadataRoute.Sitemap = [
@@ -106,11 +106,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const countrySalaryEntries: MetadataRoute.Sitemap = includeSalaryCalculators
     ? COUNTRY_SLUGS.map((slug) => ({
-        url: `${siteUrl}/finance/salary-calculator/${slug}`,
-        lastModified,
-        changeFrequency: 'weekly',
-        priority: 0.85,
-      }))
+      url: `${siteUrl}/finance/salary-calculator/${slug}`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.85,
+    }))
     : [];
 
   return [

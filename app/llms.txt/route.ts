@@ -27,35 +27,60 @@ const COUNTRY_SLUGS = [
 ];
 
 export async function GET() {
-  let markdown = `# KivaroTools — Enterprise-Grade Client-Side Web Utilities\n\n`;
-  markdown += `> Powerful Tools. Private by Design. KivaroTools (${SITE_URL}) provides 30+ free enterprise-grade online tools and 22 statutory country salary calculators (52+ total specialized utilities). 100% of file conversions, cryptographic operations, code formatting, and financial calculations execute locally in the user's browser with zero server uploads and zero registration walls.\n\n`;
+  let markdown = `# KivaroTools — Enterprise-Grade Client-Side Web Utilities
 
-  markdown += `## Core Architecture & Privacy Guarantees\n\n`;
-  markdown += `- **100% Client-Side Execution:** Built on Web Workers, Web Cryptography API, HTML5 Canvas, OffscreenCanvas, and WebAssembly.\n`;
-  markdown += `- **Zero Server Data Retention:** Confidential files (PDFs, Word/Excel/PowerPoint OpenXML archives, images, JSON datasets, SQL schemas, passwords, invoices, and salary figures) never leave the client device.\n`;
-  markdown += `- **Deterministic & Standards-Compliant:** Implements ECMA-376 OpenXML (.docx, .xlsx, .pptx), RFC 8259 (JSON), RFC 4648 (Base64/Base64URL), RFC 4180 (CSV with CWE-1236 formula injection defense), ISO 4217 (160+ currencies), BIPM/NIST (precious metals metrology), and official statutory tax schedules.\n\n`;
+`;
+  markdown += `> Powerful Tools. Private by Design. KivaroTools (${SITE_URL}) provides 42 free enterprise-grade online tools and 22 statutory country salary calculators (64 total specialized utilities). 100% of file conversions, binary database inspections, cryptographic token debugging, PDF redaction/signing/Bates stamping, code formatting, and financial calculations execute locally in the user's browser with zero server uploads and zero registration walls.
+
+`;
+
+  markdown += `## Core Architecture & Privacy Guarantees
+
+`;
+  markdown += `- **100% Client-Side Execution:** Built on Web Workers, Web Cryptography API, HTML5 Canvas, OffscreenCanvas, and WebAssembly.
+`;
+  markdown += `- **Zero Server Data Retention:** Confidential files (PDF contracts, bank statements, SQLite/DuckDB databases, Apache Parquet/Avro/Feather files, HAR network captures, JWT/PASETO/SAML tokens, OpenAPI specs, HEIC/AVIF photos, Word/Excel/PowerPoint OpenXML archives, and salary figures) never leave the client device.
+`;
+  markdown += `- **Deterministic & Standards-Compliant:** Implements ISO 32000-1 PDF 1.7 (/Type /Sig /ByteRange & 12-surface Deep CDR redaction), ECMA-376 OpenXML (.docx, .xlsx, .pptx), RFC 8259 (JSON), RFC 7519/7516/9901 (JWT/JWE/SD-JWT), OASIS SAML 2.0, PASETO v1–v4, SQLite 3 B-Tree, Apache Parquet/Avro/Arrow IPC, RFC 4180 (CSV with CWE-1236 formula injection defense), ISO 4217 (160+ currencies), and 2026–2027 statutory tax schedules.
+
+`;
 
   for (const cat of categories.filter((c) => !c.hidden)) {
-    markdown += `## ${cat.name} (${SITE_URL}/${cat.id})\n\n`;
+    markdown += `## ${cat.name} (${SITE_URL}/${cat.id})
+
+`;
     const catTools = tools.filter((t) => t.categoryId === cat.id && t.status === 'published' && !t.hidden);
     for (const tool of catTools) {
       const topKws = tool.keywords && tool.keywords.length > 0 ? ` (Keywords: ${tool.keywords.slice(0, 6).join(', ')})` : '';
-      markdown += `- [${tool.name}](${SITE_URL}/${tool.categoryId}/${tool.slug}): ${tool.description}${topKws}\n`;
+      markdown += `- [${tool.name}](${SITE_URL}/${tool.categoryId}/${tool.slug}): ${tool.description}${topKws}
+`;
     }
-    markdown += `\n`;
+    markdown += `
+`;
   }
 
-  markdown += `## 22 Statutory Country Salary & Take-Home Pay Calculators (${SITE_URL}/finance/salary-calculator)\n\n`;
+  markdown += `## 22 Statutory Country Salary & Take-Home Pay Calculators (${SITE_URL}/finance/salary-calculator)
+
+`;
   for (const c of COUNTRY_SLUGS) {
-    markdown += `- [${c.name}](${SITE_URL}/finance/salary-calculator/${c.slug})\n`;
+    markdown += `- [${c.name}](${SITE_URL}/finance/salary-calculator/${c.slug})
+`;
   }
 
-  markdown += `\n## Company & Legal Documentation\n\n`;
-  markdown += `- [About KivaroTools](${SITE_URL}/about)\n`;
-  markdown += `- [Contact & Support](${SITE_URL}/contact)\n`;
-  markdown += `- [Privacy Policy](${SITE_URL}/privacy)\n`;
-  markdown += `- [Terms of Service](${SITE_URL}/terms)\n`;
-  markdown += `- [XML Sitemap](${SITE_URL}/sitemap.xml)\n`;
+  markdown += `
+## Company & Legal Documentation
+
+`;
+  markdown += `- [About KivaroTools](${SITE_URL}/about)
+`;
+  markdown += `- [Contact & Support](${SITE_URL}/contact)
+`;
+  markdown += `- [Privacy Policy](${SITE_URL}/privacy)
+`;
+  markdown += `- [Terms of Service](${SITE_URL}/terms)
+`;
+  markdown += `- [XML Sitemap](${SITE_URL}/sitemap.xml)
+`;
 
   return new Response(markdown, {
     headers: {

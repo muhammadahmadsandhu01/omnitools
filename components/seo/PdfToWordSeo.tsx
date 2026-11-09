@@ -5,7 +5,7 @@ export const PDF_TO_WORD_FAQS = [
   {
     question: 'How does KivaroTools convert PDF to Word (.docx) 100% in the browser without uploading files?',
     answer:
-      'KivaroTools uses an in-browser PDF coordinate extraction engine (lib/pdfClientEngine.ts) combined with an ECMA-376 OpenXML (.docx) package builder powered by JSZip and pdf-lib. Instead of transmitting your confidential PDF to a third-party cloud server, your browser decompresses /FlateDecode streams, tokenizes glyph positioning operators (BT/ET, Tf, Td/TD/Tm, Tj/TJ), calculates Cartesian X/Y coordinates, and serializes native WordprocessingML XML directly inside local memory.',
+      'KivaroTools uses an in-browser PDF coordinate extraction engine (lib/pdfClientEngine.ts) combined with an ECMA-376 OpenXML (.docx) package builder powered by JSZip and pdf-lib. Instead of transmitting your confidential PDF to a third-party cloud server, your browser decompresses FlateDecode streams, tokenizes glyph positioning operators (BT/ET, Tf, Td/TD/Tm, Tj/TJ), calculates Cartesian X/Y coordinates, and serializes native WordprocessingML XML directly inside local memory.',
   },
   {
     question: 'Does the PDF to Word converter preserve tables, headings, and multi-line paragraphs?',
@@ -65,7 +65,7 @@ export const PDF_TO_WORD_FAQS = [
   {
     question: 'Can I convert password-protected or encrypted PDF documents into Word (.docx)?',
     answer:
-      'Encrypted or password-protected PDFs (isEncrypted: true) restrict direct reading of internal /Contents and /FlateDecode streams. For security and cryptographic integrity, remove the PDF owner/user password before uploading. Corrupted files missing the standard %PDF- header are flagged immediately with a clear diagnostic message.',
+      'Encrypted or password-protected PDFs (isEncrypted: true) restrict direct reading of internal PDF Contents and FlateDecode streams. For security and cryptographic integrity, remove the PDF owner/user password before uploading. Corrupted files missing the standard %PDF- header are flagged immediately with a clear diagnostic message.',
   },
   {
     question: 'Why are there zero daily task limits, subscription fees, or watermarks on KivaroTools?',
@@ -149,7 +149,7 @@ export default function PdfToWordSeo() {
 
       <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800/60 not-italic">
         <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-          <strong>Zero-Server Architecture &amp; Absolute Privacy:</strong> Every operation—from <code>/FlateDecode</code> stream inflation to geometric glyph clustering and OpenXML compilation—executes locally in your browser sandbox. Confidential NDAs, executive board memos, employment agreements, patient health records (HIPAA), and tax filings remain completely private and offline-capable.
+          <strong>Zero-Server Architecture &amp; Absolute Privacy:</strong> Every operation—from <code>PDF FlateDecode</code> stream inflation to geometric glyph clustering and OpenXML compilation—executes locally in your browser sandbox. Confidential NDAs, executive board memos, employment agreements, patient health records (HIPAA), and tax filings remain completely private and offline-capable.
         </p>
       </blockquote>
 
@@ -161,7 +161,7 @@ export default function PdfToWordSeo() {
       </p>
       <ol>
         <li>
-          <strong>Content Stream Inflation &amp; Tokenization:</strong> The engine decompresses <code>/FlateDecode</code> byte streams and tokenizes glyph runs, tracking transformation matrices (<code>Tm</code>) to compute exact physical point positions (<code>x</code>, <code>y</code>) and rendered font sizes.
+          <strong>Content Stream Inflation &amp; Tokenization:</strong> The engine decompresses <code>PDF FlateDecode</code> byte streams and tokenizes glyph runs, tracking transformation matrices (<code>Tm</code>) to compute exact physical point positions (<code>x</code>, <code>y</code>) and rendered font sizes.
         </li>
         <li>
           <strong>Baseline Y-Coordinate Clustering:</strong> Text runs sharing the same vertical baseline within a vertical tolerance of <code>0.45 &times; fontSize</code> are grouped into coherent horizontal text lines, sorted left-to-right by ascending <code>x</code>.
@@ -419,6 +419,18 @@ export default function PdfToWordSeo() {
           &mdash; Typeset edited Word documents, Markdown guides, and plain text notes into print-ready A4/Letter vector PDF files.
         </li>
         <li>
+          <Link href="/document/pdf-scrubber" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            PDF Bank Statement &amp; Invoice Data Scrubber (12-Surface PII Redactor)
+          </Link>{' '}
+          &mdash; Permanently excise IBANs, card PANs, tax IDs, and hidden XMP metadata from financial PDFs before sharing.
+        </li>
+        <li>
+          <Link href="/document/pdf-signer-bates-stamper" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+            PDF Digital Signer, Watermark &amp; Legal Bates Stamper
+          </Link>{' '}
+          &mdash; Sign contracts with SHA-256 audit pages, apply diagonal tiled watermarks, and stamp sequential Bates numbers.
+        </li>
+        <li>
           <Link href="/document/pdf-to-excel" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
             PDF to Excel &amp; CSV Converter (.XLSX, .CSV, .JSON Table Extractor)
           </Link>{' '}
@@ -449,46 +461,46 @@ export default function PdfToWordSeo() {
           &mdash; Rasterize PDF pages into high-definition JPG, lossless PNG, or modern WebP images with batch ZIP export.
         </li>
       </ul>
-    
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (31 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            PDF to Word (.DOCX) Converter — Supported Workflows &amp; Long-Tail Search Coverage (31 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to word converter online free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert pdf to editable docx client side</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to markdown md converter</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">extract text and tables from pdf to word</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private pdf to docx no server upload</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reconstruct pdf headings paragraphs to word</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">live edit pdf text before downloading docx</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ecma 376 openxml docx generator browser</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert legal contract pdf to word privately</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to txt utf8 extractor online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to word converter 250mb limit</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf baseline line merger to word</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf column gap table detector to word</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">clean word document from pdf without text boxes</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">browser native pdf to docx engine</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to markdown md converter online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to txt utf8 extractor online free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf baseline line merger to word document</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf column gap table detector to word docx</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">browser native pdf to docx engine webassembly</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert scanned pdf text to editable docx</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free pdf to docx converter no email registration</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert resume pdf to editable word document</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">preserve formatting pdf to word converter online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert multi page pdf to docx in seconds</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">best free alternative to adobe acrobat pdf to word</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">offline pdf to word converter in browser memory</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert bank statement pdf to word document</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export pdf to google docs compatible docx</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side pdf to word converter without watermarks</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">secure confidential pdf to docx converter online</span>
-          </div>
-        </section>
-      </article>
+
+      {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (31 Intents) */}
+      <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
+          PDF to Word (.DOCX) Converter — Supported Workflows &amp; Long-Tail Search Coverage (31 Intents)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to word converter online free</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert pdf to editable docx client side</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to markdown md converter</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">extract text and tables from pdf to word</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private pdf to docx no server upload</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reconstruct pdf headings paragraphs to word</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">live edit pdf text before downloading docx</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ecma 376 openxml docx generator browser</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert legal contract pdf to word privately</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to txt utf8 extractor online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to word converter 250mb limit</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf baseline line merger to word</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf column gap table detector to word</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">clean word document from pdf without text boxes</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">browser native pdf to docx engine</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to markdown md converter online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf to txt utf8 extractor online free</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf baseline line merger to word document</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">pdf column gap table detector to word docx</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">browser native pdf to docx engine webassembly</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert scanned pdf text to editable docx</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free pdf to docx converter no email registration</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert resume pdf to editable word document</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">preserve formatting pdf to word converter online</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert multi page pdf to docx in seconds</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">best free alternative to adobe acrobat pdf to word</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">offline pdf to word converter in browser memory</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">convert bank statement pdf to word document</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">export pdf to google docs compatible docx</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">client side pdf to word converter without watermarks</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">secure confidential pdf to docx converter online</span>
+        </div>
+      </section>
+    </article>
   );
 }

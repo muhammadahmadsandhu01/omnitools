@@ -761,10 +761,10 @@ After 1-Click Auto-Fix  : All 10 defects remediated -> 100 / 100 (Grade A+)`}</p
                             </div>
                             <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${sev === 'CRITICAL'
-                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                                        : sev === 'WARNING'
-                                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                            : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
+                                    ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                                    : sev === 'WARNING'
+                                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                        : 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300'
                                     }`}
                             >
                                 {sev}
@@ -1039,7 +1039,7 @@ After 1-Click Auto-Fix  : All 10 defects remediated -> 100 / 100 (Grade A+)`}</p
                     </Link>
 
                     <Link
-                        href="/image/heic-to-jpg"
+                        href="/media/heic-to-jpg"
                         className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
                     >
                         <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">

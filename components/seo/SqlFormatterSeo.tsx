@@ -110,33 +110,33 @@ export default function SqlFormatterSeo() {
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'HowTo',
-            name: 'How to Format, Beautify, and Minify SQL Queries Across 8 Database Dialects Online',
+            name: 'How to Format, Beautify, and Minify SQL Queries Across 19 Database Dialects Online',
             description: 'Step-by-step guide to pretty-printing complex SQL queries, CTEs, JOINs, and subqueries for PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, and SQLite.',
             step: [
-      {
-        '@type': 'HowToStep',
-        position: 1,
-        name: 'Select Target SQL Dialect',
-        text: 'Choose Standard SQL, PostgreSQL, MySQL, MariaDB, MS SQL Server (T-SQL), Oracle PL/SQL, Google BigQuery, Snowflake, or SQLite.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 2,
-        name: 'Paste Raw or Minified SQL Query',
-        text: 'Paste your SQL script into the input editor or upload a local .sql file.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 3,
-        name: 'Configure Keyword Casing & Indentation Style',
-        text: 'Select UPPERCASE, lowercase, or Capitalize keyword rules, indentation width (2 or 4 spaces), and comma placement style.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 4,
-        name: 'Copy Beautified or Minified SQL Output',
-        text: 'Inspect the formatted query with preserved comments and string literals, then copy to clipboard or download as a .sql file.',
-      }
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Select Target SQL Dialect',
+                text: 'Choose Standard SQL, PostgreSQL, MySQL, MariaDB, MS SQL Server (T-SQL), Oracle PL/SQL, Google BigQuery, Snowflake, DuckDB, or SQLite.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Paste Raw or Minified SQL Query',
+                text: 'Paste your SQL script into the input editor or upload a local .sql file.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Configure Keyword Casing & Indentation Style',
+                text: 'Select UPPERCASE, lowercase, or Preserve keyword rules, indentation width (2 or 4 spaces, Tabular Left/Right), and comma placement style.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Copy Beautified or Minified SQL Output',
+                text: 'Inspect the formatted query with preserved comments and string literals, audit anti-patterns in the Linter tab, and copy or download as a .sql file.',
+              },
             ],
           }),
         }}
@@ -382,68 +382,67 @@ export default function SqlFormatterSeo() {
           </div>
         </section>
 
-        {/* Zone 6: Frequently Asked Questions */}
-              {/* Competitor Comparison Section */}
-      <section aria-labelledby="sql-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h2 id="sql-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          SQL Formatter Comparison: KivaroTools vs. Query Beautifiers
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
-          See why database administrators and back-end engineers choose KivaroTools:
-        </p>
-        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
-          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">SQLFormat.org</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Poor Man&apos;s T-SQL</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">CodeBeautify</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Dialects Supported</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">19 Dialects (PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, DuckDB)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Standard SQL only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">T-SQL only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Generic SQL</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">SQL Linter &amp; Security Scanner</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Flags SELECT *, WHERE 1=1 &amp; tautologies)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic syntax only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Query Complexity Metrics</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Counts Tables, JOINs, CTEs &amp; Subqueries</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic lines only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Safe Query Minifier</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Preserves comments &amp; string literals safely</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Crude regex replace</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Confidential Database Privacy</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser RAM (Queries Never Uploaded)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Transmitted over HTTP</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Server upload</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Server logging</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+        {/* Competitor Comparison Section */}
+        <section aria-labelledby="sql-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+          <h2 id="sql-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            SQL Formatter Comparison: KivaroTools vs. Query Beautifiers
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+            See why database administrators and back-end engineers choose KivaroTools:
+          </p>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+            <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">SQLFormat.org</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Poor Man&apos;s T-SQL</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">CodeBeautify</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Dialects Supported</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">19 Dialects (PostgreSQL, MySQL, BigQuery, Snowflake, T-SQL, Oracle, DuckDB)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Standard SQL only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">T-SQL only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Generic SQL</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">SQL Linter &amp; Security Scanner</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Flags SELECT *, WHERE 1=1 &amp; tautologies)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Basic syntax only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Query Complexity Metrics</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Counts Tables, JOINs, CTEs &amp; Subqueries</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Basic lines only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Safe Query Minifier</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Preserves comments &amp; string literals safely</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Formatting only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Crude regex replace</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Confidential Database Privacy</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser RAM (Queries Never Uploaded)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Transmitted over HTTP</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Server upload</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Server logging</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-      <section aria-labelledby="sql-formatter-frequently-asked-questions" className="mb-8">
+        <section aria-labelledby="sql-formatter-frequently-asked-questions" className="mb-8">
           <h2 id="sql-formatter-frequently-asked-questions" className="text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
           </h2>
@@ -475,6 +474,18 @@ export default function SqlFormatterSeo() {
           </p>
           <ul className="list-disc pl-5 mt-2 space-y-1 text-sm text-slate-600 dark:text-slate-400">
             <li>
+              <Link href="/developer/sqlite-viewer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                SQLite &amp; DuckDB In-Browser Explorer
+              </Link>{' '}
+              — Execute SQLite and DuckDB SQL queries directly against .sqlite, .db, and .duckdb files with ER diagrams.
+            </li>
+            <li>
+              <Link href="/developer/parquet-viewer" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                Parquet, Avro &amp; Feather Viewer
+              </Link>{' '}
+              — Inspect binary columnar schemas and generate CREATE TABLE SQL DDL for Snowflake, BigQuery, and PostgreSQL.
+            </li>
+            <li>
               <Link href="/developer/json-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
                 JSON to CSV &amp; Excel Converter
               </Link>{' '}
@@ -485,6 +496,12 @@ export default function SqlFormatterSeo() {
                 JSON Formatter, Validator &amp; Tree Viewer
               </Link>{' '}
               — Format, validate, and inspect JSONB columns and API payloads with 64-bit BigInt detection.
+            </li>
+            <li>
+              <Link href="/developer/openapi-to-typescript" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                OpenAPI (Swagger) to TypeScript &amp; Zod Generator
+              </Link>{' '}
+              — Compile REST API specifications into strict TypeScript interfaces and runtime Zod schemas.
             </li>
             <li>
               <Link href="/developer/regex-tester" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
@@ -512,8 +529,8 @@ export default function SqlFormatterSeo() {
             </li>
           </ul>
         </section>
-      
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
+
+        {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
         <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
           <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
             SQL Query Formatter &amp; Linter — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
@@ -554,7 +571,7 @@ export default function SqlFormatterSeo() {
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">database administrator sql query formatting utility</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free sql beautifier tool dark mode code editor</span>
             <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private sql formatter for confidential enterprise queries</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online sql pretty printer for documentation and pull requests</span>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">online sql pretty printer for pull requests</span>
           </div>
         </section>
       </article>

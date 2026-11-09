@@ -245,7 +245,7 @@ export default function ImageCompressorSeo() {
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Choosing the right format is as crucial as setting the compression ratio. The following matrix details the technical trade-offs across modern codecs:
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 overscroll-x-contain">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6">
           <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
@@ -397,7 +397,7 @@ export default function ImageCompressorSeo() {
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
           Most online image compressors upload your sensitive media to remote cloud clusters, impose harsh 5 MB file caps, or limit batch sizes to force paid subscriptions. KivaroTools executes 100% client-side in your browser memory:
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 overscroll-x-contain">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6">
           <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200">
@@ -687,7 +687,7 @@ export default function ImageCompressorSeo() {
           </Link>
 
           <Link
-            href="/image/heic-to-jpg"
+            href="/media/heic-to-jpg"
             className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-blue-400 dark:border-slate-800 dark:hover:border-blue-700 min-w-0"
           >
             <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
@@ -729,7 +729,7 @@ export default function ImageCompressorSeo() {
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">compress passport photo for government portal upload</span>
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">optimize website images for google core web vitals</span>
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">batch compress multiple pictures online free</span>
-          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">compare original vs compressed image byte savings percentage</span>
+          <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">compare original vs compressed image byte size</span>
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">compress high resolution dslr photos for email attachment</span>
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">lossless png compression preset for logos and icons</span>
           <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">smart lossy image compression for blog articles</span>

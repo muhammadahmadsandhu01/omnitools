@@ -2520,13 +2520,13 @@ export function generateSampleGeoProject(
     if (sampleId === 'saas_dev_platform') {
         const base: GeoWorkspaceState = {
             projectName: 'AcmeCloud Edge Runtime & SDK',
-            siteUrl: 'https://docs.acmecloud.dev',
+            siteUrl: 'https://kivarotools.com',
             summaryBlockquote:
                 'Serverless WebAssembly compute platform, TypeScript SDK, REST API reference, and distributed Postgres storage for edge applications.',
             overviewParagraphs: [
                 'AcmeCloud provides sub-millisecond serverless isolates across 310 global edge locations. Use the documentation links below to configure authentication, deploy workers via CLI, and inspect REST API schemas.',
             ],
-            sitemapUrl: 'https://docs.acmecloud.dev/sitemap.xml',
+            sitemapUrl: 'https://kivarotools.com/sitemap.xml',
             activePreset: 'geo_max_visibility',
             globalDisallowPaths: ['/admin/', '/api/internal/', '/console/billing/'],
             globalAllowPaths: ['/', '/docs/', '/api/'],
@@ -2544,7 +2544,7 @@ export function generateSampleGeoProject(
             w3cTdmRep: {
                 enabled: true,
                 reservation: 1,
-                policyUrl: 'https://docs.acmecloud.dev/legal/ai-policy',
+                policyUrl: 'https://kivarotools.com/legal/ai-policy',
                 contactEmail: 'legal@acmecloud.dev',
                 licenseSpdx: 'Apache-2.0',
             },
@@ -2553,7 +2553,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_1',
                     title: 'Quickstart & CLI Installation',
-                    url: 'https://docs.acmecloud.dev/docs/quickstart',
+                    url: 'https://kivarotools.com/docs/quickstart',
                     description: 'Install the acme-cli package, authenticate via OAuth2, and deploy your first TypeScript edge function in 60 seconds.',
                     section: 'Core Documentation',
                     includedInLlmsTxt: true,
@@ -2565,7 +2565,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_2',
                     title: 'Runtime Architecture & Limits',
-                    url: 'https://docs.acmecloud.dev/docs/architecture',
+                    url: 'https://kivarotools.com/docs/architecture',
                     description: 'Execution limits, CPU time quotas, Web Crypto API support, and regional failover behavior.',
                     section: 'Core Documentation',
                     includedInLlmsTxt: true,
@@ -2577,7 +2577,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_3',
                     title: 'REST API v2 Authentication & Bearer JWTs',
-                    url: 'https://docs.acmecloud.dev/api/authentication',
+                    url: 'https://kivarotools.com/api/authentication',
                     description: 'Authenticate API requests using Bearer RS256 JWT tokens, scoped service keys, and HMAC webhook signatures.',
                     section: 'API & SDK Reference',
                     includedInLlmsTxt: true,
@@ -2589,7 +2589,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_4',
                     title: 'Deployments & Rollbacks Endpoint (/v2/deployments)',
-                    url: 'https://docs.acmecloud.dev/api/deployments',
+                    url: 'https://kivarotools.com/api/deployments',
                     description: 'POST, GET, and DELETE endpoints for atomic zero-downtime edge deployments and instant version rollbacks.',
                     section: 'API & SDK Reference',
                     includedInLlmsTxt: true,
@@ -2601,7 +2601,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_5',
                     title: 'Next.js 16 & Vinext Edge Adapter Guide',
-                    url: 'https://docs.acmecloud.dev/guides/nextjs-edge',
+                    url: 'https://kivarotools.com/guides/nextjs-edge',
                     description: 'Configure Next.js App Router, Server Actions, and incremental cache revalidation on AcmeCloud.',
                     section: 'Guides & Tutorials',
                     includedInLlmsTxt: true,
@@ -2613,7 +2613,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_6',
                     title: 'Usage-Based Pricing & Free Tier Quotas',
-                    url: 'https://docs.acmecloud.dev/pricing',
+                    url: 'https://kivarotools.com/pricing',
                     description: 'Transparent per-million request pricing, free tier allowances (100,000 requests/day), and enterprise SLA tiers.',
                     section: 'Product & Pricing',
                     includedInLlmsTxt: true,
@@ -2625,7 +2625,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_7',
                     title: 'Release Notes & SDK Changelog',
-                    url: 'https://docs.acmecloud.dev/changelog',
+                    url: 'https://kivarotools.com/changelog',
                     description: 'Historical release notes, deprecations, and minor patch versions for the CLI and runtime.',
                     section: 'Optional',
                     includedInLlmsTxt: true,
@@ -2637,7 +2637,7 @@ export function generateSampleGeoProject(
                 {
                     id: 'link_8',
                     title: 'Terms of Service & Privacy Policy',
-                    url: 'https://docs.acmecloud.dev/legal/privacy',
+                    url: 'https://kivarotools.com/legal/privacy',
                     description: 'GDPR Data Processing Addendum (DPA), SOC 2 Type II compliance report details, and subprocessor list.',
                     section: 'Optional',
                     includedInLlmsTxt: true,

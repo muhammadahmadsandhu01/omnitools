@@ -919,7 +919,7 @@ assertTest(compiledAiTxt.includes('Allow-AI-Training: no'), 'T-1920', 'ai.txt de
 const compiledTdmRep = compileTdmRepJson(baseWorkspace);
 const parsedTdm = JSON.parse(compiledTdmRep);
 assertTest(parsedTdm[0]['tdm-reservation'] === 1, 'T-1921', 'tdmrep.json tdm-reservation is 1');
-assertTest(parsedTdm[0]['tdm-policy'] === 'https://docs.acmecloud.dev/legal/ai-policy', 'T-1922', 'tdmrep.json policy URL matches');
+assertTest(parsedTdm[0]['tdm-policy'] === 'https://kivarotools.com/legal/ai-policy', 'T-1922', 'tdmrep.json policy URL matches');
 
 // 7. compileNextJsRoutesCode
 const nextJsCode = compileNextJsRoutesCode(baseWorkspace);
@@ -1011,19 +1011,19 @@ assertTest(liveHtml.includes('Next.js') && liveHtml.includes('route.ts'), 'T-217
 const cdataXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc><![CDATA[https://docs.acmecloud.dev/api/v2/cdata-endpoint?key=1&mode=test]]></loc>
+    <loc><![CDATA[https://kivarotools.com/api/v2/cdata-endpoint?key=1&mode=test]]></loc>
     <lastmod>2026-11-01</lastmod>
     <priority>0.9</priority>
   </url>
 </urlset>`;
-const cdataParsed = parseSitemapXmlOrUrlList(cdataXml, 'https://docs.acmecloud.dev');
+const cdataParsed = parseSitemapXmlOrUrlList(cdataXml, 'https://kivarotools.com');
 assertTest(cdataParsed.length === 1, 'T-2171', 'parseSitemapXmlOrUrlList successfully extracts CDATA-wrapped URL');
 assertTest(cdataParsed[0].url.includes('cdata-endpoint'), 'T-2172', 'CDATA URL path intact');
 assertTest(cdataParsed[0].section === 'API & SDK Reference', 'T-2173', 'CDATA URL classified as API Reference');
 
 for (let i = 2174; i <= 2190; i++) {
-    const customXml = `<urlset><url><loc><![CDATA[https://docs.acmecloud.dev/guides/cdata-doc-${i}]]></loc></url></urlset>`;
-    const parsed = parseSitemapXmlOrUrlList(customXml, 'https://docs.acmecloud.dev');
+    const customXml = `<urlset><url><loc><![CDATA[https://kivarotools.com/guides/cdata-doc-${i}]]></loc></url></urlset>`;
+    const parsed = parseSitemapXmlOrUrlList(customXml, 'https://kivarotools.com');
     assertTest(
         parsed.length === 1 && parsed[0].section === 'Guides & Tutorials',
         `T-${i}`,

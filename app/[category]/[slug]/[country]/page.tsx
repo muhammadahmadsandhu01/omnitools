@@ -518,7 +518,7 @@ export function buildCountryProgrammaticKeywords(
 ): string[] {
   const lower = String(countryName || '').toLowerCase();
   const curLower = String(currency || '').toLowerCase();
-  const cleanAuth = String(authority || '').replace(/[()]/g, '').trim();
+  const cleanAuth = String(authority || '').replace(/[()]/g, '').trim().slice(0, 18);
   return [
     `${countryName} salary calculator`,
     `${countryName} take home pay ${taxYear}`,
@@ -528,36 +528,24 @@ export function buildCountryProgrammaticKeywords(
     `${lower} gross to net salary ${currency}`,
     `${lower} paycheck tax calculator`,
     `${lower} payroll cost calculator`,
-    `${lower} salary calculator`,
-    `${lower} take home pay calculator ${taxYear}`,
-    `${lower} income tax calculator ${taxYear}`,
-    `${lower} gross to net salary calculator ${curLower}`,
-    `${lower} net salary calculator after tax and social security`,
-    `${lower} paycheck calculator monthly biweekly weekly daily hourly`,
-    `${lower} total employer cost of employment ctc calculator`,
-    `${lower} progressive tax brackets and marginal vs effective tax rate`,
-    `${lower} statutory payroll deduction ledger ${rulesetId.toLowerCase()}`,
-    `${lower} salary after tax ${currency} ${taxYear} ${cleanAuth.toLowerCase()}`,
-    `calculate net take home pay in ${lower} from gross salary`,
-    `${lower} employee social security and employer payroll contribution calculator`,
-    `${lower} annual to monthly and hourly net wage converter`,
-    `${lower} tax free allowance and progressive slab breakdown ${taxYear}`,
-    `free client side ${lower} salary and payroll tax calculator no signup`,
-    `${lower} expatriate and resident net salary comparison ${currency}`,
-    `${lower} job offer gross to net paycheck estimator ${taxYear}`,
-    `${lower} biweekly 26 pay periods vs monthly 12 pay periods calculator`,
-    `${lower} daily rate 260 working days and hourly rate 2080 hours tax`,
-    `${lower} statutory income tax reconciliation table csv export`,
-    `how much tax do i pay on my salary in ${lower} ${taxYear}`,
-    `${lower} effective tax rate vs marginal tax bracket calculator`,
-    `${lower} employer social insurance surcharge and payroll overhead`,
-    `${lower} private in-browser salary tax calculator zero data logging`,
-    `${lower} talent.com and adp paycheck calculator free alternative`,
-    `${lower} glassdoor and payscale gross to net take home alternative`,
-    `${lower} statutory tax ruleset ${rulesetId} verified payroll model`,
-    `${lower} remote worker and software engineer net salary calculator`,
-    `${lower} overtime bonus and gross compensation tax withholding`,
-    `${lower} ${currency} payslip generator and tax audit breakdown ${taxYear}`,
+    `${lower} take home pay ${taxYear}`,
+    `${lower} gross to net ${curLower}`,
+    `${lower} net salary after tax`,
+    `${lower} monthly biweekly paycheck`,
+    `${lower} employer cost ctc calculator`,
+    `${lower} marginal vs effective tax`,
+    `${lower} payroll ledger ${rulesetId.toLowerCase()}`,
+    `${lower} salary tax ${currency} ${cleanAuth.toLowerCase()}`,
+    `net take home pay in ${lower}`,
+    `${lower} social security tax calculator`,
+    `${lower} annual to monthly net wage`,
+    `${lower} tax brackets ${taxYear}`,
+    `free ${lower} salary tax calculator`,
+    `${lower} expat net salary ${currency}`,
+    `${lower} job offer paycheck estimator`,
+    `${lower} biweekly vs monthly pay`,
+    `${lower} hourly rate 2080 hours tax`,
+    `${lower} income tax table csv export`,
   ];
 }
 
@@ -667,6 +655,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: 'Not Found',
       description: 'The requested salary calculator could not be found.',
+      robots: {
+        index: false,
+        follow: true,
+      },
     };
   }
 
@@ -675,6 +667,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {
       title: 'Jurisdiction Not Found',
       description: 'The requested country salary calculator is not supported.',
+      robots: {
+        index: false,
+        follow: true,
+      },
     };
   }
 
@@ -833,7 +829,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           </nav>
 
           {/* Top Advertisement */}
-          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || ""} />
+          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_TOP_SLOT || ''} />
 
           {/* Page Header */}
           <header className="mx-auto my-8 max-w-4xl text-center">
@@ -852,7 +848,48 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           </main>
 
           {/* Bottom Advertisement */}
-          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || ""} />
+          <AdUnit slotId={process.env.NEXT_PUBLIC_ADSENSE_BOTTOM_SLOT || ''} />
+
+          {/* Server-Rendered Statutory Jurisdiction Summary (Boosts SSR Text-to-HTML Ratio & AI Search Indexing) */}
+          <section
+            aria-labelledby="statutory-jurisdiction-summary-heading"
+            className="mt-10 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 sm:p-8"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h2
+                id="statutory-jurisdiction-summary-heading"
+                className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl"
+              >
+                {entry.meta.flag} {entry.name} ({entry.meta.currency}) Statutory Payroll &amp; Tax Engine Specification ({taxYear})
+              </h2>
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-mono font-semibold text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                Ruleset: {entry.meta.rulesetId}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
+              The <strong>KivaroTools {entry.name} Salary Calculator ({taxYear})</strong> computes exact gross-to-net take-home pay in{' '}
+              <strong>{entry.meta.currency} ({entry.meta.symbol})</strong> using statutory income tax brackets, personal tax-free allowances, employee social security caps, and employer payroll surcharges codified from the{' '}
+              <strong>{entry.meta.sourceAuthority}</strong>. All calculations execute 100% client-side in your browser across 7 synchronized pay frequencies: Annual (1), Monthly (12), Semi-Monthly (24), Biweekly (26), Weekly (52), Daily (260 working days), and Hourly (2,080 hours).
+            </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 text-xs">
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="font-semibold text-slate-900 dark:text-white">Tax Authority</div>
+                <div className="mt-1 text-slate-600 dark:text-slate-400">{entry.meta.sourceAuthority}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="font-semibold text-slate-900 dark:text-white">Currency &amp; Symbol</div>
+                <div className="mt-1 text-slate-600 dark:text-slate-400">{entry.meta.currency} ({entry.meta.symbol}) • ISO 4217</div>
+              </div>
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="font-semibold text-slate-900 dark:text-white">Statutory Tax Year</div>
+                <div className="mt-1 text-slate-600 dark:text-slate-400">{taxYear} ({entry.meta.rulesetId})</div>
+              </div>
+              <div className="rounded-xl border border-slate-200/80 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-slate-800/40">
+                <div className="font-semibold text-slate-900 dark:text-white">Execution Privacy</div>
+                <div className="mt-1 text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser • Zero Upload</div>
+              </div>
+            </div>
+          </section>
 
           {/* Country SEO & Educational Methodology Component */}
           <section className="mt-12" aria-label="Statutory Methodology and Ruleset Documentation">
@@ -862,7 +899,7 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
           {/* Explore All 22 Country Salary & Tax Calculators */}
           <section className="mt-16 border-t border-slate-200 dark:border-slate-800 pt-10" aria-label="Global Salary & Tax Calculators">
             <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-2xl mb-4">
-              Explore All 22 Country Salary & Tax Calculators
+              Explore All 22 Country Salary &amp; Tax Calculators
             </h2>
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
               Compare take-home pay, statutory income tax brackets, social contributions, and payroll overhead across global jurisdictions:
@@ -872,11 +909,10 @@ export default async function CountrySalaryCalculatorPage({ params }: PageProps)
                 <Link
                   key={item.slug}
                   href={`/finance/salary-calculator/${item.slug}`}
-                  className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all ${
-                    item.slug === entry.slug
+                  className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all ${item.slug === entry.slug
                       ? 'border-blue-600 bg-blue-50/50 text-blue-700 dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-400 font-semibold shadow-xs'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:text-blue-400'
-                  }`}
+                    }`}
                 >
                   <span className="text-base leading-none">{item.meta.flag}</span>
                   <span className="truncate">{item.name}</span>
