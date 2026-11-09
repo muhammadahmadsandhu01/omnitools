@@ -35,6 +35,7 @@ import ExcelToPdf from '@/components/tools/ExcelToPdf';
 import PdfToPpt from '@/components/tools/PdfToPpt';
 import PdfToJpg from '@/components/tools/PdfToJpg';
 import PdfCompressor from '@/components/tools/PdfCompressor';
+import PdfSignerBatesStudio from '@/components/tools/PdfSignerBatesStudio';
 import WebpToJpgPng from '@/components/tools/WebpToJpgPng';
 import HeicAvifConverter from '@/components/tools/HeicAvifConverter';
 import JwtPasetoSamlDebugger from '@/components/tools/JwtPasetoSamlDebugger';
@@ -80,6 +81,7 @@ import ExcelToPdfSeo from '@/components/seo/ExcelToPdfSeo';
 import PdfToPptSeo from '@/components/seo/PdfToPptSeo';
 import PdfToJpgSeo from '@/components/seo/PdfToJpgSeo';
 import PdfCompressorSeo from '@/components/seo/PdfCompressorSeo';
+import PdfSignerBatesStudioSeo from '@/components/seo/PdfSignerBatesStudioSeo';
 import WebpToJpgPngSeo from '@/components/seo/WebpToJpgPngSeo';
 import HeicAvifConverterSeo from '@/components/seo/HeicAvifConverterSeo';
 import JwtPasetoSamlDebuggerSeo from '@/components/seo/JwtPasetoSamlDebuggerSeo';
@@ -201,6 +203,13 @@ export const toolComponents: Record<string, ComponentType<Record<string, never>>
   'bank-statement-redactor': PdfScrubber, // Alias -> /document/bank-statement-redactor
   'invoice-redactor': PdfScrubber, // Alias -> /document/invoice-redactor
   'redact-pdf': PdfScrubber, // Alias -> /document/redact-pdf
+  'pdf-signer-bates-stamper': PdfSignerBatesStudio,
+  'sign-pdf': PdfSignerBatesStudio, // Alias
+  'pdf-watermark': PdfSignerBatesStudio, // Alias
+  'bates-numbering-pdf': PdfSignerBatesStudio, // Alias
+  'bates-stamping': PdfSignerBatesStudio, // Alias
+  'pdf-exhibit-stamp': PdfSignerBatesStudio, // Alias
+  'pdf-digital-signer': PdfSignerBatesStudio, // Alias
 
   // Media
   'webp-to-jpg-png': WebpToJpgPng,
@@ -341,6 +350,13 @@ export const seoComponents: Record<string, ComponentType<Record<string, never>>>
   'bank-statement-redactor': PdfScrubberSeo, // Alias
   'invoice-redactor': PdfScrubberSeo, // Alias
   'redact-pdf': PdfScrubberSeo, // Alias
+  'pdf-signer-bates-stamper': PdfSignerBatesStudioSeo,
+  'sign-pdf': PdfSignerBatesStudioSeo, // Alias
+  'pdf-watermark': PdfSignerBatesStudioSeo, // Alias
+  'bates-numbering-pdf': PdfSignerBatesStudioSeo, // Alias
+  'bates-stamping': PdfSignerBatesStudioSeo, // Alias
+  'pdf-exhibit-stamp': PdfSignerBatesStudioSeo, // Alias
+  'pdf-digital-signer': PdfSignerBatesStudioSeo, // Alias
 
 
   // Media

@@ -971,6 +971,19 @@ B. Government Visa / Passport Portal Preset (Applicant_Visa_Passport_Photo.HEIC)
                             Audit image payload bottlenecks across HTTP waterfalls and scrub JWTs, cookies, and API keys locally.
                         </p>
                     </Link>
+
+                    <Link
+                        href="/document/pdf-signer-bates-stamper"
+                        className="group rounded-2xl border border-slate-200/80 p-4 transition-colors hover:border-indigo-400 dark:border-slate-800 dark:hover:border-indigo-700 min-w-0"
+                    >
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+                            PDF Digital Signer, Watermark &amp; Bates Stamper →
+                        </div>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            Sign PDFs with /ByteRange &amp; SHA-256 audit pages, add tiled underlay watermarks, and stamp multi-PDF Bates numbers locally.
+                        </p>
+                    </Link>
+
                 </div>
             </section>
         </article>

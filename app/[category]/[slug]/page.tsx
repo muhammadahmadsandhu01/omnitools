@@ -141,7 +141,14 @@ export function resolveCanonicalRoute(category: string, slug: string): {
                                                 slug === 'kubernetes-cronjob-generator' ||
                                                 slug === 'cron-to-systemd'
                                                 ? 'cron-expression-generator'
-                                                : slug;
+                                                : slug === 'sign-pdf' ||
+                                                  slug === 'pdf-watermark' ||
+                                                  slug === 'bates-numbering-pdf' ||
+                                                  slug === 'bates-stamping' ||
+                                                  slug === 'pdf-exhibit-stamp' ||
+                                                  slug === 'pdf-digital-signer'
+                                                  ? 'pdf-signer-bates-stamper'
+                                                  : slug;
 
   const resolvedCategory =
     resolvedSlug === 'image-to-pdf' ||
@@ -153,7 +160,8 @@ export function resolveCanonicalRoute(category: string, slug: string): {
       resolvedSlug === 'pdf-to-ppt' ||
       resolvedSlug === 'pdf-to-jpg' ||
       resolvedSlug === 'compress-pdf' ||
-      resolvedSlug === 'pdf-scrubber'
+      resolvedSlug === 'pdf-scrubber' ||
+      resolvedSlug === 'pdf-signer-bates-stamper'
       ? 'document'
       : category === 'pdf'
         ? 'document'
