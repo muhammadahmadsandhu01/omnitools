@@ -33,14 +33,14 @@ const HOMEPAGE_COUNTRIES = [
 export const metadata: Metadata = {
   title: 'Free Online Tools — PDF, JSON, Finance & SEO',
   description:
-    'Use 42 free client-side online tools and 22 country salary calculators in your browser. Format JSON & SQL, sign/redact/merge PDFs, convert HEIC/Parquet/SQLite, and calculate taxes.',
+    'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
   alternates: {
     canonical: SITE_URL,
   },
   openGraph: {
     title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Use 42 free client-side online tools and 22 country salary calculators in your browser. Format JSON & SQL, sign/redact/merge PDFs, convert HEIC/Parquet/SQLite, and calculate taxes.',
+      'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
     url: SITE_URL,
     type: 'website',
     images: [DEFAULT_OG_IMAGE],
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     creator: '@kivarotools',
     title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Use 42 free client-side online tools and 22 country salary calculators in your browser. Format JSON & SQL, sign/redact/merge PDFs, convert HEIC/Parquet/SQLite, and calculate taxes.',
+      'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
     images: [`${SITE_URL}/og-image.png`],
   },
 };

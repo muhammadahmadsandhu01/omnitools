@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
+    'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
 
   applicationName: 'KivaroTools',
 
@@ -106,7 +106,7 @@ export const metadata: Metadata = {
     siteName: 'KivaroTools',
     title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
+      'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
     url: SITE_URL,
     images: [DEFAULT_OG_IMAGE],
   },
@@ -117,7 +117,7 @@ export const metadata: Metadata = {
     creator: '@kivarotools',
     title: 'Free Online Tools — PDF, JSON, Finance & SEO | KivaroTools',
     description:
-      'Use 30+ free online tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/compress PDFs, resize images in KB, and calculate loans.',
+      'Use 42 free client-side tools and 22 country salary calculators in your browser. Format JSON & SQL, merge/redact PDFs, convert images, and calculate taxes.',
     images: [`${SITE_URL}/og-image.png`],
   },
 

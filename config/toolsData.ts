@@ -84,9 +84,9 @@ export const categories: ToolCategory[] = [
     color: 'text-green-500',
     description:
       'Zero-upload browser-based developer utilities for HAR network waterfall analysis & secret sanitization, Parquet/Avro/Feather inspection, formatting and validating JSON, converting JSON to CSV/Excel/YAML/XML, formatting 19 SQL dialects, testing regular expressions with ReDoS guards, optimizing SVG vectors, encoding Base64, and generating CSPRNG passwords & SHA hashes.',
-    seoTitle: "Developer Tools Online — HAR, Parquet, JSON, SQL & Regex",
+    seoTitle: "Free Developer Tools — JSON, SQL, HAR & Regex",
     seoDescription:
-      "Free browser-based developer tools: inspect & sanitize HAR files, open Parquet/Avro/Feather files, format & repair 25MB JSON, convert JSON to Excel/CSV, beautify 19 SQL dialects, test regex, and minify SVGs locally.",
+      "Free client-side developer tools: inspect HAR & Parquet files, format 25MB JSON & 19 SQL dialects, debug JWT/SAML & Cron, and test Regex locally.",
     keywords: [
       'developer tools online',
       'json formatter validator',
@@ -278,9 +278,9 @@ export const tools: Tool[] = [
       'Scenario-based startup finance and cap-table calculator for gross and net burn rate, static vs. 60-month dynamic cash runway, Default Alive breakeven analysis, modeled Burn Multiple, Pre/Post-Money SAFE conversion, option-pool dilution, and M&A exit waterfall modeling in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free SaaS Burn Rate, Cash Runway & SAFE Dilution Calculator',
+    seoTitle: 'SaaS Burn Rate, Runway & SAFE Calculator',
     seoDescription:
-      'Model startup gross and net burn rate, 60-month dynamic cash runway, Default Alive breakeven, Burn Multiple, Post-Money SAFE & Convertible Note dilution, and Series A option pool shuffles with 3-sheet Excel (.xlsx) export.',
+      'Model startup gross and net burn rate, 60-month cash runway, Default Alive breakeven, Burn Multiple, and Post-Money SAFE & Series A cap table dilution.',
     keywords: [
       'saas burn rate calculator',
       'startup runway calculator',
@@ -339,9 +339,9 @@ export const tools: Tool[] = [
       'Compare Full-Time Employee (W-2 / PAYE / T4 / PAYG / Salaried) vs. Independent Contractor (1099 / Inside IR35 Umbrella / Sole Trader) vs. Tax-Optimized Entity (S-Corp 1120-S / Outside IR35 Ltd / CCPC / Sec 44ADA / PSEB 0.25%) across 153+ ISO 4217 currencies. Solve for your exact break-even hourly/daily rate and audit 12-point IR35/IRS classification risk.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Contractor vs Employee Calculator (W2/1099/S-Corp/IR35)',
+    seoTitle: 'Contractor vs Employee Calculator (W2/1099)',
     seoDescription:
-      'Free 3-way Contractor vs. Full-Time Employee Calculator across 153+ ISO currencies. Compare W-2 vs 1099 vs S-Corp, UK Inside vs Outside IR35 KID, Canada T4 vs CCPC, India Sec 44ADA, and Pakistan PSEB 0.25% with an exact break-even rate solver.',
+      'Free 3-way Contractor vs. Full-Time Employee Calculator. Compare W-2 vs 1099 vs S-Corp, UK IR35, Canada T4, India 44ADA & break-even hourly rates.',
     keywords: [
       '1099 vs w2 calculator 2026',
       'w2 to 1099 hourly rate converter',
@@ -901,7 +901,7 @@ export const tools: Tool[] = [
     status: 'published',
     seoTitle: 'Free SQLite & DuckDB Viewer, ERD & SQL Studio',
     seoDescription:
-      'Open and query .sqlite, .db, .db-wal, and .duckdb files locally in your browser. Run SQLite & DuckDB SUMMARIZE queries, generate ER diagrams, carve deleted freelist rows, scrub PII, and export to Drizzle, Prisma, PostgreSQL, or Excel with zero server uploads.',
+      'Open and query .sqlite, .db, .db-wal & .duckdb files in your browser. Run SQL queries, view ER diagrams, scrub PII, and export to Drizzle, Prisma & CSV.',
     keywords: [
       'sqlite viewer online',
       'open sqlite file online no upload',
@@ -968,9 +968,9 @@ export const tools: Tool[] = [
       'Compile OpenAPI 3.1, OpenAPI 3.0, and Swagger 2.0 YAML or JSON specifications into strict TypeScript interfaces, topologically sorted Zod runtime schemas (with automatic z.lazy() circular reference guards), MSW v2 request handlers, deterministic seeded mock JSON payloads, and typed Fetch / TanStack Query v5 hooks 100% locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free OpenAPI (Swagger) to TypeScript, Zod & MSW Generator',
+    seoTitle: 'OpenAPI to TypeScript, Zod & MSW Generator',
     seoDescription:
-      'Convert OpenAPI 3.1, 3.0 & Swagger 2.0 YAML/JSON into TypeScript interfaces, topologically sorted Zod schemas (z.lazy() circular guards), MSW v2 mocks, and TanStack Query v5 hooks in your browser.',
+      'Convert OpenAPI 3.1, 3.0 & Swagger 2.0 specs into TypeScript interfaces, Zod validation schemas, MSW v2 mocks, and TanStack Query v5 hooks locally.',
     keywords: [
       'openapi to typescript',
       'openapi to typescript converter online',
@@ -1037,7 +1037,7 @@ export const tools: Tool[] = [
       'Decode, verify, sign, encrypt, and audit JWT (JWS, 5-part JWE & RFC 9901 SD-JWT), PASETO (v1–v4 local & public with LE64 PAE), and OASIS SAML 2.0 (HTTP-Redirect DEFLATE & HTTP-POST Base64) tokens 100% locally in your browser. Audit 16 security rules (alg:none, 65 weak secrets, RS256->HS256 confusion, SAML XSW1–XSW8) with 1-click auto-remediation.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'JWT, PASETO & SAML 2.0 Debugger & Security Verifier',
+    seoTitle: 'JWT, PASETO & SAML 2.0 Debugger & Verifier',
     seoDescription:
       'Free client-side JWT, JWE, SD-JWT, PASETO v1–v4, and SAML 2.0 debugger and verifier. Audit 16 SSO security rules, crack weak secrets, and convert JWK to PEM.',
     keywords: [
@@ -1105,9 +1105,9 @@ export const tools: Tool[] = [
       'Build, explain, validate, and simulate 5-, 6-, and 7-field cron schedules across POSIX/Linux crontab, Kubernetes CronJob, GitHub Actions, Spring @Scheduled, Java Quartz (L, W, LW, #), AWS EventBridge, and Jenkins H hash-jitter dialects. Simulate 12 IANA timezones, scan for DST 02:00 skip hazards, audit 14 reliability rules with 1-click auto-fix, and compile Kubernetes, systemd OnCalendar, and Terraform configs.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Cron Expression Generator, 7-Dialect Builder & Simulator',
+    seoTitle: 'Cron Expression Generator & 7-Dialect Builder',
     seoDescription:
-      'Free 7-dialect Cron expression generator, visual builder, and DST simulator for Linux, Kubernetes, Quartz, AWS EventBridge, GitHub Actions, and systemd timers.',
+      'Free 7-dialect Cron expression generator, visual builder, and DST simulator for Linux, Kubernetes, Quartz, AWS EventBridge, and GitHub Actions.',
     keywords: [
       'cron expression generator and simulator',
       'crontab guru alternative with seconds',
@@ -1290,9 +1290,9 @@ export const tools: Tool[] = [
       'Analyze, debug, compare, and sanitize HTTP Archive (.har) files 100% locally in your browser. Inspect 7-phase network waterfalls, decode JWTs & SAML 2.0 assertions, scrub tokens/cookies/PII across 14 surfaces with deterministic pseudonymization ([JWT_TOKEN_01]), and export to k6, Playwright, OpenAPI 3.1, Postman, cURL, or Excel.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'HAR File Analyzer, Waterfall Viewer & Sanitizer',
+    seoTitle: 'HAR File Analyzer, Viewer & Secret Sanitizer',
     seoDescription:
-      'Free client-side HAR file analyzer, waterfall viewer, and 14-surface secret sanitizer. Redact JWTs, cookies, API keys & PII locally and export to k6, Playwright, OpenAPI & Postman.',
+      'Free client-side HAR file analyzer, waterfall viewer, and secret sanitizer. Redact JWTs, cookies & API keys locally and export to k6 & Playwright.',
     keywords: [
       'har file analyzer online',
       'har file sanitizer online',
@@ -1712,9 +1712,9 @@ export const tools: Tool[] = [
       'Sign, watermark, and Bates-stamp PDF documents 100% locally in your browser with zero server uploads. Embed handwritten signatures, page initials, corporate seals, ISO 32000-1 /Sig /ByteRange dictionaries, and SHA-256 Audit Certificates; apply diagonal tiled underlay/overlay watermarks with dynamic macros; and stamp continuous multi-PDF Bates numbers with 94% Shrink-to-Fit margin protection and Page 1 EXHIBIT A court stickers.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Digital Signer, Watermark & Bates Stamping Studio',
+    seoTitle: 'PDF Signer, Watermark & Bates Stamper Free',
     seoDescription:
-      'Free client-side PDF digital signer, diagonal tiled watermark adder, and legal eDiscovery Bates & Exhibit stamper with 94% Shrink-to-Fit and SHA-256 audit log.',
+      'Free client-side PDF digital signer, tiled watermark adder, and legal eDiscovery Bates & Exhibit stamper with Shrink-to-Fit and SHA-256 audit logs.',
     keywords: [
       'pdf digital signer watermark bates stamper',
       'bates numbering pdf online free no upload',
@@ -1779,9 +1779,9 @@ export const tools: Tool[] = [
       'Permanently redact IBANs, Luhn Card PANs, ABA Routing/MICR lines, SSN/CNIC/GSTIN/VAT IDs, ZATCA QR payloads, coupled running balances, and all 12 internal PDF metadata surfaces locally in your browser.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'PDF Bank Statement & Invoice Scrubber — Free Redactor',
+    seoTitle: 'PDF Statement & Invoice Scrubber — Redactor',
     seoDescription:
-      'Permanently redact bank statements, tax invoices, and W-2 PDFs in your browser. Scrub IBANs, cards, tax IDs, running balances, and all 12 hidden PDF surfaces.',
+      'Permanently redact bank statements, invoices, and W-2 PDFs in your browser. Scrub IBANs, card numbers, tax IDs, and hidden PDF metadata locally.',
     keywords: [
       'pdf bank statement scrubber online free',
       'redact bank statement for rental application',
@@ -2265,9 +2265,9 @@ export const tools: Tool[] = [
       'Batch convert iPhone .HEIC, .HEIF, and .AVIF photos to JPG, PNG, WebP, or printable PDF locally in your browser with zero server uploads. Inspect binary ISOBMFF boxes, map Display P3 wide color gamut to sRGB, scrub GPS location coordinates, and auto-tune KB size for visa/passport portals.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'HEIC & AVIF to JPG/PNG/WebP Batch Converter (No Upload)',
+    seoTitle: 'HEIC & AVIF to JPG, PNG & WebP Converter',
     seoDescription:
-      'Free client-side HEIC & AVIF to JPG, PNG, WebP, and PDF batch converter. Strip GPS EXIF metadata, preserve Display P3 colors, and compress under 100KB or 200KB.',
+      'Free client-side HEIC & AVIF to JPG, PNG, WebP, and PDF batch converter. Strip GPS EXIF metadata, preserve Display P3 colors, and hit target KB sizes.',
     keywords: [
       'heic to jpg batch converter no upload',
       'avif to png transparent converter free',
@@ -2512,9 +2512,9 @@ export const tools: Tool[] = [
     status: 'published',
     description:
       'Generate llmstxt.org v2 compliant llms.txt, llms-full.txt, llms-ctx.txt, and RFC 9309 AI crawler robots.txt rules with 45 verified AI bots, sitemap.xml ingestion, BPE token budgeting, and 12-point GEO linting — 100% client-side.',
-    seoTitle: 'Free llms.txt & AI Crawler robots.txt Generator | GEO',
+    seoTitle: 'Free llms.txt & AI robots.txt Generator',
     seoDescription:
-      'Create llmstxt.org v2 compliant llms.txt, llms-full.txt, W3C tdmrep.json, and AI crawler robots.txt files in your browser. Control 45 AI bots (OAI-SearchBot, GPTBot, ClaudeBot, PerplexityBot), convert sitemaps and HTML to Markdown, and fix RFC 9309 leaks with zero server uploads.',
+      'Generate spec-compliant llms.txt, llms-full.txt, W3C tdmrep.json, and AI crawler robots.txt files in your browser to control 45 AI search & LLM bots.',
     isPopular: true,
     keywords: [
       'llms.txt generator',

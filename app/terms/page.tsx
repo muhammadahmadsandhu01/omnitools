@@ -41,21 +41,49 @@ export const metadata: Metadata = {
 };
 
 export default function TermsOfServicePage() {
+  const termsSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${SITE_URL}/terms#webpage`,
+    name: 'Terms of Service — KivaroTools',
+    url: `${SITE_URL}/terms`,
+    description:
+      'Terms of Service and professional usage disclaimers governing KivaroTools client-side financial, tax, legal PDF, and developer web applications.',
+    inLanguage: 'en',
+    datePublished: '2026-01-15',
+    dateModified: '2026-11-10',
+    publisher: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Terms of Service', item: `${SITE_URL}/terms` },
+    ],
+  };
+
   return (
     <main className="w-full">
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'WebPage',
-            name: 'Terms of Service — KivaroTools',
-            url: `${SITE_URL}/terms`,
-            publisher: { '@type': 'Organization', name: 'KivaroTools', url: SITE_URL },
-          }),
-        }}
-      />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(termsSchema),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbSchema),
+          }}
+        />
+
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="mb-8">
           <ol className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -89,15 +117,16 @@ export default function TermsOfServicePage() {
           </h1>
 
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400">
-            <span>Last Updated: October 2026</span>
+            <span>Last Updated: November 2026</span>
             <span>•</span>
-            <span>Effective Date: October 2026</span>
+            <span>Effective Date: November 2026</span>
           </div>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
             Welcome to KivaroTools (<strong>{SITE_URL}</strong>). These Terms of Service (&ldquo;Terms&rdquo;) govern your
-            access to and use of the KivaroTools website and web applications. By accessing or using our website, you acknowledge
-            that you have read, understood, and agreed to be bound by these Terms.
+            access to and use of the KivaroTools website and our 42 client-side web applications and 22 country salary
+            calculators. By accessing or using our website, you acknowledge that you have read, understood, and agreed to
+            be bound by these Terms.
           </p>
         </header>
 
@@ -112,12 +141,13 @@ export default function TermsOfServicePage() {
             </h2>
             <p>
               KivaroTools is an independent digital utility suite developed and operated in {OPERATOR_LOCATION}, provided
-              free of charge for a worldwide audience. The platform offers client-side calculators, data converters, document
-              utilities, and developer tools designed to run directly in your web browser.
+              free of charge for a worldwide audience. The platform offers client-side financial and payroll calculators,
+              database and columnar file inspectors, document signing/redaction utilities, image converters, and developer
+              tools designed to run directly in your web browser.
             </p>
             <p>
-              We reserve the right to modify, update, suspend, or discontinue any feature, tool, or calculation engine
-              at any time without prior notice.
+              We reserve the right to modify, update, suspend, or discontinue any feature, tool, statutory ruleset, or
+              calculation engine at any time without prior notice.
             </p>
           </section>
 
@@ -129,30 +159,40 @@ export default function TermsOfServicePage() {
             </h2>
             <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 dark:border-amber-900/40 dark:bg-amber-950/20">
               <p className="text-sm font-semibold text-amber-950 dark:text-amber-200 mb-2">
-                IMPORTANT: Not Professional Financial, Tax, or Legal Advice
+                IMPORTANT: Not Professional Financial, Tax, Accounting, Investment, or Legal Advice
               </p>
               <p className="text-xs leading-6 text-amber-900 dark:text-amber-300">
-                All tools on KivaroTools—including our 22 Country Salary Calculators, Mortgage Amortization Calculators,
-                Personal &amp; Auto Loan EMI Calculators, Compound Interest Calculators, SIP Projection Engines, Invoice Generators,
-                and Precious Metals Melt Rate Trackers—are provided strictly for <strong>educational estimation, preliminary modeling,
-                and informational planning purposes</strong>.
+                All tools on KivaroTools—including our 22 Country Salary Calculators, Universal Contractor vs. Full-Time Employee
+                (W-2 / 1099 / S-Corp / IR35) Calculator, SaaS Burn Rate, Cash Runway &amp; SAFE Cap Table Dilution Calculator,
+                Mortgage Amortization Calculator, Loan EMI Calculator, Compound Interest &amp; SIP Projection Engines, Invoice
+                Generator, Precious Metals Melt Value Tracker, PDF Digital Signer &amp; Bates Stamper, and PDF Bank Statement /
+                Invoice PII Scrubber—are provided strictly for <strong>educational estimation, preliminary modeling, and
+                  informational planning purposes</strong>.
               </p>
             </div>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
-                <strong>Tax &amp; Payroll Estimates:</strong> While our statutory salary models codify published official tax
-                schedules (such as IRS, HMRC, BMF, CBDT, FBR, CRA, and ATO brackets), actual payroll withholdings and take-home pay depend on
-                individual circumstances, employer benefits, localized municipal levies, family credits, and personal tax elections.
+                <strong>Tax, Payroll &amp; Worker Classification Estimates:</strong> While our statutory salary and contractor
+                models codify published official tax schedules (such as IRS, HMRC PAYE &amp; Off-Payroll IR35, BMF, CBDT Sec 115BAC &amp;
+                44ADA, FBR, CRA T4/CCPC, and ATO brackets), actual payroll withholdings, S-Corp reasonable compensation, and worker
+                classification determinations depend on individual facts, employment contracts, localized municipal levies, and
+                personal tax elections.
               </li>
               <li>
-                <strong>Loans &amp; Interest:</strong> Loan schedules and EMI models are mathematical projections and do not constitute
-                a binding loan quote, commercial offer, or formal Truth in Lending Act (TILA) disclosure. Actual lender terms, APR,
-                closing costs, and insurance vary.
+                <strong>Startup Runway, Cap Table Dilution, Loans &amp; Interest:</strong> SaaS cash runway, Post-Money SAFE
+                conversions, Series A option pool shuffles, and loan/mortgage schedules are mathematical simulations and do not
+                constitute investment advice, securities valuation, or a formal Truth in Lending Act (TILA) disclosure.
               </li>
               <li>
-                <strong>Professional Consultation:</strong> You should consult a qualified accountant, certified tax advisor,
-                financial planner, or legal counsel in your respective jurisdiction before making financial commitments, signing contracts,
-                or filing statutory tax returns.
+                <strong>Document Signing, Bates Stamping &amp; PII Redaction:</strong> Our PDF Digital Signer, Watermark &amp;
+                Bates Stamper, and PDF/HAR/SQLite PII Scrubbers execute automated client-side transformations. They do not
+                constitute legal representation or guaranteed regulatory compliance; you must independently inspect and verify
+                every signed, Bates-numbered, or redacted file before court filing, eDiscovery production, or third-party sharing.
+              </li>
+              <li>
+                <strong>Professional Consultation:</strong> You should consult a qualified CPA, chartered accountant, certified tax
+                advisor, financial planner, or legal counsel in your respective jurisdiction before making financial commitments,
+                executing financing documents, classifying workers, or filing statutory tax returns.
               </li>
             </ul>
           </section>
@@ -169,17 +209,24 @@ export default function TermsOfServicePage() {
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm">
               <li>
-                <strong>Data Accuracy:</strong> You are responsible for verifying the accuracy and appropriateness of any converted
-                images, generated PDFs, formatted queries, invoices, QR codes, or numerical calculations before using them in commercial,
-                legal, print, or production environments.
+                <strong>Output &amp; Redaction Verification:</strong> You are solely responsible for verifying the accuracy,
+                completeness, and suitability of any converted images, redacted or Bates-stamped PDFs, generated TypeScript/Zod
+                schemas, Cron schedules, SQL queries, invoices, or numerical calculations before deploying or submitting them in
+                production, legal, or commercial environments.
               </li>
               <li>
-                <strong>Lawful Content:</strong> You agree not to use our tools to process, encode, or format material that is illegal,
-                infringing on intellectual property rights, defamatory, or harmful.
+                <strong>Credential &amp; Secret Hygiene:</strong> When using our JWT/PASETO/SAML 2.0 Debugger, HAR Secret
+                Sanitizer, or Password Generator, you remain solely responsible for rotating compromised production credentials
+                and enforcing organizational security policies.
               </li>
               <li>
-                <strong>Platform Integrity:</strong> You agree not to attempt to interfere with our hosting network, launch denial-of-service
-                attacks, bypass rate limits on inspection APIs, or engage in automated scraping that degrades the service for other visitors.
+                <strong>Lawful Content:</strong> You agree not to use our tools to process, encode, sign, or format material that
+                is unlawful, fraudulent, infringing on intellectual property rights, or harmful.
+              </li>
+              <li>
+                <strong>Platform Integrity:</strong> You agree not to attempt to interfere with our hosting network, launch
+                denial-of-service attacks, bypass rate limits on inspection APIs, or engage in automated scraping that degrades
+                the service for other visitors.
               </li>
             </ul>
           </section>
@@ -196,7 +243,8 @@ export default function TermsOfServicePage() {
             </p>
             <p className="text-sm">
               <strong>Your Content Remains Yours:</strong> We claim no intellectual property or proprietary rights over any text,
-              images, PDF files, code snippets, or financial numbers you input, convert, or export through our browser-based tools.
+              images, PDF documents, SQLite/Parquet datasets, OpenAPI specs, code snippets, or financial numbers you input, convert,
+              or export through our browser-based tools.
             </p>
           </section>
 
@@ -209,8 +257,9 @@ export default function TermsOfServicePage() {
             <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50 text-xs leading-6 uppercase text-slate-600 dark:text-slate-400">
               KivaroTools is provided on an &ldquo;AS IS&rdquo; and &ldquo;AS AVAILABLE&rdquo; basis, without warranties of any kind,
               either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose,
-              non-infringement, uninterrupted availability, or complete freedom from mathematical or programming errors. We do not
-              warrant that calculation results will meet your specific accounting requirements or that the site will remain error-free.
+              non-infringement, uninterrupted availability, or complete freedom from mathematical, parsing, or programming errors. We do not
+              warrant that calculation or redaction results will meet your specific accounting, legal, or compliance requirements or that
+              the site will remain error-free.
             </div>
           </section>
 
@@ -223,8 +272,8 @@ export default function TermsOfServicePage() {
             <p className="text-sm leading-6">
               To the maximum extent permitted by applicable law, in no event shall the operator of KivaroTools be liable for any indirect,
               incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, goodwill, or business
-              opportunities arising out of or related to your use of, or inability to use, our website or calculation tools, even if
-              advised of the possibility of such damages.
+              opportunities arising out of or related to your use of, or inability to use, our website, file processors, or calculation
+              tools, even if advised of the possibility of such damages.
             </p>
           </section>
 

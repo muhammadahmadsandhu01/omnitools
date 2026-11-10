@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   Globe,
   Clock,
+  Scale,
+  HelpCircle,
 } from 'lucide-react';
 import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, DEFAULT_OG_IMAGE } from '@/config/site';
 
@@ -43,9 +45,35 @@ export default function ContactPage() {
   const contactSchema = {
     '@context': 'https://schema.org',
     '@type': 'ContactPage',
+    '@id': `${SITE_URL}/contact#webpage`,
     name: 'Contact KivaroTools',
     url: `${SITE_URL}/contact`,
-    description: 'Support, bug reporting, and feedback contact channel for KivaroTools.',
+    description: 'Support, bug reporting, statutory tax inquiry, and feedback contact channel for KivaroTools.',
+    inLanguage: 'en',
+    mainEntity: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+      ...(CONTACT_EMAIL
+        ? {
+          contactPoint: {
+            '@type': 'ContactPoint',
+            email: CONTACT_EMAIL,
+            contactType: 'customer support',
+            availableLanguage: ['English'],
+          },
+        }
+        : {}),
+    },
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Contact', item: `${SITE_URL}/contact` },
+    ],
   };
 
   return (
@@ -53,6 +81,10 @@ export default function ContactPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         {/* Breadcrumb Navigation */}
@@ -80,7 +112,7 @@ export default function ContactPage() {
         <header className="mb-12 border-b border-slate-200 pb-10 dark:border-slate-800">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
             <MessageSquare className="h-4 w-4" />
-            Support &amp; Feedback
+            Support &amp; Engineering Feedback
           </div>
 
           <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl dark:text-white">
@@ -88,8 +120,8 @@ export default function ContactPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            We welcome constructive feedback, bug reports, statutory calculation discrepancy inquiries, and
-            feature suggestions from users worldwide.
+            We welcome constructive feedback, bug reports, statutory tax or financial calculation discrepancy inquiries,
+            privacy requests, and new utility suggestions from engineers, financial planners, and users worldwide.
           </p>
         </header>
 
@@ -105,9 +137,9 @@ export default function ContactPage() {
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 KivaroTools is an independent web utility platform developed and operated in {OPERATOR_LOCATION},
-                serving visitors, software engineers, and businesses across the globe. We build transparent,
-                client-side tools designed to make complex calculations and file conversions accessible without
-                registration barriers.
+                serving visitors, software engineers, financial analysts, and businesses across the globe. We build
+                transparent, 100% client-side tools designed to make complex calculations, database inspections, and
+                document transformations accessible without registration barriers or server uploads.
               </p>
             </div>
           </div>
@@ -125,8 +157,10 @@ export default function ContactPage() {
                 <Mail className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold">Email Support Channel</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Inquiries, bug reports, suggestions, and legal/privacy notices (Typical response: 24–48 business hours)</p>
+                <h3 className="text-base font-semibold">Email Support &amp; Engineering Desk</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Technical support, bug reports, statutory tax updates, and legal/privacy notices (Typical response: 24–48 business hours)
+                </p>
               </div>
             </div>
 
@@ -177,12 +211,26 @@ export default function ContactPage() {
                 <Bug className="h-5 w-5" />
               </div>
               <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">
-                Bug &amp; Discrepancy Reports
+                Bug &amp; Parser Discrepancy Reports
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                If you encounter a calculation issue, statutory tax discrepancy, browser compatibility problem,
-                or UI glitch, please include the tool URL, your browser/device type, and the inputs used so we
-                can reproduce and rectify it promptly.
+                If you encounter a calculation issue, PDF/Parquet/SQLite parser edge case, browser compatibility problem,
+                or UI glitch, please include the tool URL, your browser/OS version, and non-sensitive reproduction steps
+                so our engineering team can verify and patch it promptly.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                <Scale className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">
+                Statutory Tax &amp; Financial Ruleset Updates
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Notice a newly enacted Finance Act amendment, social security ceiling adjustment, or regional tax slab
+                update across our 22 country salary calculators or Contractor vs. Employee models? Send us the official
+                statutory citation for immediate ruleset verification.
               </p>
             </div>
 
@@ -191,30 +239,57 @@ export default function ContactPage() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">
-                Feature &amp; Tool Suggestions
+                Feature &amp; New Utility Suggestions
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Have an idea for a new client-side calculator, conversion format, or developer utility that fits
-                our privacy-first ethos? We review community recommendations for upcoming development cycles.
+                Have an idea for a new client-side calculator, binary file inspector, cryptographic debugger, or document
+                workflow that fits our zero-upload ethos? We prioritize community requests in upcoming engineering sprints.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-white">
+                Security, Privacy &amp; Responsible Disclosure
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Because our tools process data locally in client browser memory, server-side exposure is minimized by
+                design. For GDPR/CCPA privacy inquiries or responsible security vulnerability disclosures, reach out
+                directly via our support email.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Responsible Security Disclosure */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">
-              <ShieldCheck className="h-5 w-5" />
+        {/* Common Support Questions (Self-Service FAQ) */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900 space-y-4">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-blue-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Frequently Asked Support Questions
+            </h2>
+          </div>
+          <div className="space-y-4 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">
+                1. Can KivaroTools recover a PDF, SQLite file, or invoice I processed earlier?
+              </h3>
+              <p className="mt-1">
+                No. Because all 42 tools on KivaroTools execute 100% locally inside your browser&apos;s volatile memory (RAM) with
+                zero server uploads, your files and inputs never touch our servers. Once you close your browser tab, the in-memory
+                buffer is permanently destroyed.
+              </p>
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-                Security &amp; Responsible Disclosure
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                We take security seriously. Because our tools process data locally in client browser memory,
-                server-side exposure is minimized by architecture. If you discover a potential vulnerability
-                or security concern, please disclose it responsibly via email with actionable reproduction steps.
+              <h3 className="font-semibold text-slate-900 dark:text-white">
+                2. Do I need to include my confidential file when reporting a bug?
+              </h3>
+              <p className="mt-1">
+                Never send confidential bank statements, production private keys, or live customer databases via email. Instead,
+                use our built-in synthetic sample presets or describe the structural format (e.g., PDF producer version, Parquet
+                compression codec, or Cron dialect) so we can reproduce the issue safely.
               </p>
             </div>
           </div>

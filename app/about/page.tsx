@@ -19,14 +19,14 @@ import { SITE_URL, CONTACT_EMAIL, OPERATOR_LOCATION, OFFICIAL_SOCIAL_LINKS, DEFA
 export const metadata: Metadata = {
   title: 'About KivaroTools — Privacy & Architecture',
   description:
-    'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
+    'Learn how KivaroTools builds 42 free client-side browser utilities and 22 country salary calculators with Web Workers, WebAssembly, and zero server uploads.',
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
     title: 'About KivaroTools — Privacy & Architecture | KivaroTools',
     description:
-      'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
+      'Learn how KivaroTools builds 42 free client-side browser utilities and 22 country salary calculators with Web Workers, WebAssembly, and zero server uploads.',
     url: `${SITE_URL}/about`,
     type: 'website',
     images: [DEFAULT_OG_IMAGE],
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     creator: '@kivarotools',
     title: 'About KivaroTools — Privacy & Architecture | KivaroTools',
     description:
-      'Learn how KivaroTools builds 100% client-side browser utilities, Web Worker file processors, and verified financial/tax engines with zero server uploads.',
+      'Learn how KivaroTools builds 42 free client-side browser utilities and 22 country salary calculators with Web Workers, WebAssembly, and zero server uploads.',
     images: [`${SITE_URL}/og-image.png`],
   },
 };
@@ -46,10 +46,11 @@ export default function AboutPage() {
   const aboutSchema = {
     '@context': 'https://schema.org',
     '@type': 'AboutPage',
+    '@id': `${SITE_URL}/about#webpage`,
     name: 'About KivaroTools',
     url: `${SITE_URL}/about`,
     description:
-      'Overview of KivaroTools client-side software architecture, editorial & mathematical accuracy verification standards, and privacy model.',
+      'Overview of KivaroTools client-side software architecture, editorial & mathematical accuracy verification standards, and privacy model across 42 browser tools and 22 country tax calculators.',
     mainEntity: {
       '@type': 'Organization',
       '@id': `${SITE_URL}/#organization`,
@@ -64,7 +65,7 @@ export default function AboutPage() {
         url: 'https://www.linkedin.com/in/muhammad-ahmad-b81794291/',
       },
       disambiguatingDescription:
-        'KivaroTools (https://kivarotools.com) is an independent, 100% free browser-based utility platform founded by software engineer Muhammad Ahmad, providing 30+ client-side developer, financial, PDF, image, and SEO tools with zero user registration, zero login forms, and zero credential collection. KivaroTools operates independently and is not affiliated with Kivaro Tech (kivarotech.com), Kivaro AI (kivaroai.com), or Kivaro Home.',
+        'KivaroTools (https://kivarotools.com) is an independent, 100% free browser-based utility platform founded by software engineer Muhammad Ahmad, providing 42 client-side developer, financial, PDF, image, and SEO tools plus 22 statutory country salary calculators (64 specialized tools total) with zero user registration, zero login forms, and zero credential collection. KivaroTools operates independently and is not affiliated with Kivaro Tech (kivarotech.com), Kivaro AI (kivaroai.com), or Kivaro Home.',
       logo: {
         '@type': 'ImageObject',
         url: `${SITE_URL}/kivaro-logo-512.png`,
@@ -82,11 +83,24 @@ export default function AboutPage() {
     },
   };
 
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'About', item: `${SITE_URL}/about` },
+    ],
+  };
+
   return (
     <main className="w-full">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
       <div className="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
         {/* Breadcrumb Navigation */}
@@ -122,10 +136,10 @@ export default function AboutPage() {
           </h1>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-            KivaroTools provides 23+ free, enterprise-grade browser-based utilities and 22 statutory country salary
-            calculators for software engineers, financial planners, creators, and businesses worldwide. We believe
-            essential computational tools should be fast, deterministic, and private—without registration walls,
-            watermarks, or server data uploads.
+            KivaroTools provides <strong>42 free, enterprise-grade browser-based utilities</strong> and{' '}
+            <strong>22 statutory country salary calculators</strong> (64 specialized tools in total) for software engineers,
+            financial planners, legal operations teams, creators, and businesses worldwide. We believe essential computational
+            tools should be fast, deterministic, and private—without registration walls, watermarks, or server data uploads.
           </p>
         </header>
 
@@ -157,8 +171,8 @@ export default function AboutPage() {
                 100% Client-Side Execution
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Financial modeling, code formatting, image compression, PDF operations, cryptographic generation, and text
-                transformations execute directly within your browser runtime via Web Workers, Web Crypto API, and HTML5 Canvas.
+                Financial modeling, SQLite/Parquet database querying, PDF digital signing &amp; redaction, HEIC/AVIF conversion,
+                and JWT/SAML debugging execute directly inside your browser runtime via Web Workers, Web Crypto API, and HTML5 Canvas.
               </p>
             </div>
 
@@ -171,7 +185,7 @@ export default function AboutPage() {
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
                 Every utility is immediately accessible without paywalls or daily quotas. No account sign-ups, credit cards,
-                or email registrations are required to format code, generate PDF invoices, or compute payroll taxes.
+                or email registrations are required to format code, Bates-stamp legal PDFs, or compute global payroll taxes.
               </p>
             </div>
 
@@ -183,8 +197,8 @@ export default function AboutPage() {
                 Deterministic Accuracy
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Calculators and parsers are codified against official RFC specifications, BIPM/NIST metrology constants,
-                and published statutory tax schedules with automated regression test suites.
+                Calculators and binary parsers are codified against official IETF/W3C/ISO specifications, BIPM/NIST metrology
+                constants, and published statutory tax schedules with multi-thousand-case automated regression test suites.
               </p>
             </div>
           </div>
@@ -208,26 +222,29 @@ export default function AboutPage() {
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white">Statutory &amp; RFC Grounding:</strong> Financial calculators
-                  cite primary statutory tax authorities (IRS, HMRC, BMF, CBDT, FBR, CRA, ATO, IRAS) with explicit ruleset version IDs
-                  and documented exclusions. Developer tools strictly follow IETF RFC 8259 (JSON), RFC 4648 (Base64), RFC 4180 (CSV),
-                  and ISO/IEC 18004 (QR Code) specifications.
+                  <strong className="text-slate-900 dark:text-white">Statutory &amp; RFC Specification Grounding:</strong> Financial
+                  and payroll calculators cite primary statutory tax authorities (IRS Rev. Proc. 2025-32, UK HMRC PAYE &amp; Off-Payroll
+                  IR35, German BMF EStG, India CBDT Sec 115BAC &amp; 44ADA, Pakistan FBR Finance Act, Canada CRA T4/CCPC, Australia ATO
+                  Stage 3, Singapore IRAS/CPF) with explicit ruleset version IDs. Developer, document, and GEO tools strictly implement
+                  IETF RFC 8259 (JSON), RFC 7519/7515/7516 (JWT/JWS/JWE), OASIS SAML 2.0, OpenAPI 3.1.0, RFC 4648 (Base64), RFC 4180 (CSV),
+                  RFC 9309 (<code>robots.txt</code>), W3C TDM Reservation Protocol (<code>tdmrep.json</code>), ISO 32000-1 (PDF 1.7), and
+                  ISO/IEC 18004 (QR Code).
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white">Automated Mathematical Oracle Testing:</strong> Calculation engines
-                  are validated against hundreds of boundary test vectors, floating-point conservation invariants, and spreadsheet
-                  formula injection (CWE-1236) security checks.
+                  <strong className="text-slate-900 dark:text-white">Automated Mathematical &amp; Binary Oracle Testing:</strong> Calculation
+                  and parsing engines are validated against thousands of boundary test vectors, IEEE-754 and <code>BigInt</code> conservation
+                  invariants, IANA timezone DST transitions, and spreadsheet formula injection (CWE-1236) security checks.
                 </span>
               </li>
               <li className="flex items-start gap-2.5">
                 <Scale className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-slate-900 dark:text-white">Honest Documentation:</strong> Every tool page is accompanied by
-                  comprehensive technical documentation explaining the exact mathematical formulas, algorithmic trade-offs, and browser
-                  memory limits actually implemented in the code.
+                  <strong className="text-slate-900 dark:text-white">Transparent Technical Documentation:</strong> Every tool page includes
+                  an in-depth engineering reference explaining the exact mathematical formulas, binary container layouts, algorithmic
+                  trade-offs, and browser memory limits implemented in the source code.
                 </span>
               </li>
             </ul>
@@ -239,7 +256,7 @@ export default function AboutPage() {
           <div className="flex items-center gap-2">
             <Layers className="h-5 w-5 text-blue-600" />
             <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Tool Catalogue
+              Tool Catalogue (5 Core Suites • 64 Specialized Utilities)
             </h2>
           </div>
 
@@ -280,16 +297,16 @@ export default function AboutPage() {
             Data Handling &amp; Security Model
           </h2>
           <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            Because operations execute in the client browser runtime, user documents (such as uploaded images,
-            PDFs, JSON datasets, and custom passwords) remain in local browser memory. KivaroTools does not operate
-            a central user database to store your inputs, documents, or financial calculations.
+            Because operations execute in the client browser runtime, user payloads—such as uploaded PDFs, HEIC/AVIF images,
+            SQLite/DuckDB databases, Parquet files, HAR network captures, JWT/SAML tokens, and salary/cap-table inputs—remain in
+            local browser memory. KivaroTools does not operate a central user database to store your files or calculations.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <Link
               href="/"
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-blue-700"
             >
-              <span>Explore All Tools</span>
+              <span>Explore All 42 Tools</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
@@ -297,6 +314,12 @@ export default function AboutPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
             >
               <span>Read Privacy Policy</span>
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition-colors hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+            >
+              <span>Contact Engineering Team</span>
             </Link>
           </div>
         </section>

@@ -63,7 +63,9 @@ export function resolveApplicationCategory(category?: string, explicitCategory?:
 
 /**
  * Reusable Next.js component to inject structured JSON-LD Schema Markup
- * for SoftwareApplication across all tool and country calculator pages.
+ * for SoftwareApplication and Article (technical documentation guide) across all tool pages.
+ * Note: browserRequirements is omitted from SoftwareApplication because Schema.org defines
+ * browserRequirements only on WebApplication.
  */
 export default function SchemaMarkup({
   name,
@@ -71,7 +73,6 @@ export default function SchemaMarkup({
   category,
   applicationCategory,
   operatingSystem = 'Any (Web Browser — Windows, macOS, Linux, iOS, Android)',
-  browserRequirements = 'Requires JavaScript and modern HTML5 Web APIs',
   url,
   featureList,
   keywords,
@@ -81,6 +82,8 @@ export default function SchemaMarkup({
   const defaultRating = getDeterministicRating(name);
   const finalRatingValue = ratingValue || defaultRating.ratingValue;
   const finalRatingCount = String(ratingCount || defaultRating.ratingCount);
+  const canonicalUrl = url || SITE_URL;
+  const ogImageUrl = `${SITE_URL}/og-image.png`;
 
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -89,7 +92,6 @@ export default function SchemaMarkup({
     description,
     applicationCategory: resolveApplicationCategory(category, applicationCategory),
     operatingSystem,
-    browserRequirements,
     isAccessibleForFree: true,
     inLanguage: 'en',
     author: {
@@ -138,20 +140,59 @@ export default function SchemaMarkup({
   }
 
   if (featureList && featureList.length > 0) {
-    schema.featureList = featureList;
+    schema.featureList = featureList.join(', ');
   }
 
   if (keywords && keywords.length > 0) {
     schema.keywords = keywords.join(', ');
   }
 
+  const articleSchema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    '@id': `${canonicalUrl}#article`,
+    headline: `${name} — Technical Guide & Documentation`,
+    description,
+    image: [ogImageUrl],
+    datePublished: '2026-01-15T00:00:00+00:00',
+    dateModified: '2026-11-10T00:00:00+00:00',
+    inLanguage: 'en',
+    isAccessibleForFree: true,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'KivaroTools',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/kivaro-logo-512.png`,
+      },
+    },
+  };
+
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schema),
-      }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(schema),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(articleSchema),
+        }}
+      />
+    </>
   );
 }
 
