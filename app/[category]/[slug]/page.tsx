@@ -71,6 +71,10 @@ export function resolveCanonicalRoute(category: string, slug: string): {
     return { resolvedCategory: 'finance', resolvedSlug: 'emi-calculator' };
   }
 
+  if (category === 'seo' && slug === 'word-counter') {
+    return { resolvedCategory: 'seo', resolvedSlug: 'text-analyzer' };
+  }
+
   const resolvedSlug =
     slug === 'webp-converter'
       ? 'webp-to-jpg-png'

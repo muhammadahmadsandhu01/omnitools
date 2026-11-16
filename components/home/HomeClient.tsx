@@ -91,7 +91,7 @@ export default function HomeClient() {
             </div>
 
             <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
-              Powerful Tools.
+              KivaroTools — Powerful Tools.
               <span className="block text-blue-600">
                 Private by Design.
               </span>

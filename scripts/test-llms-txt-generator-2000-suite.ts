@@ -919,7 +919,7 @@ assertTest(compiledAiTxt.includes('Allow-AI-Training: no'), 'T-1920', 'ai.txt de
 const compiledTdmRep = compileTdmRepJson(baseWorkspace);
 const parsedTdm = JSON.parse(compiledTdmRep);
 assertTest(parsedTdm[0]['tdm-reservation'] === 1, 'T-1921', 'tdmrep.json tdm-reservation is 1');
-assertTest(parsedTdm[0]['tdm-policy'] === 'https://kivarotools.com/legal/ai-policy', 'T-1922', 'tdmrep.json policy URL matches');
+assertTest(parsedTdm[0]['tdm-policy'] === 'https://docs.example.com/legal/ai-policy', 'T-1922', 'tdmrep.json policy URL matches');
 
 // 7. compileNextJsRoutesCode
 const nextJsCode = compileNextJsRoutesCode(baseWorkspace);

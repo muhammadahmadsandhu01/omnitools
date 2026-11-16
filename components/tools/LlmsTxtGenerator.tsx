@@ -149,7 +149,7 @@ const SAMPLE_HTML_DOC_SNIPPET = `<!DOCTYPE html>
 <head>
   <title>Webhooks & HMAC Signature Verification | AcmeCloud Docs</title>
   <meta name="description" content="Verify incoming AcmeCloud webhook payloads using SHA-256 HMAC signatures and replay-protection timestamps." />
-  <link rel="canonical" href="https://kivarotools.com/api/webhooks" />
+  <link rel="canonical" href="https://docs.example.com/api/webhooks" />
 </head>
 <body>
   <nav>Top Navigation Menu — Home | Pricing | Login</nav>
@@ -176,22 +176,22 @@ function verifyWebhook(rawBody, secret, signatureHeader) {
 const SAMPLE_SITEMAP_XML_SNIPPET = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://kivarotools.com/docs/edge-kv-storage</loc>
+    <loc>https://docs.example.com/docs/edge-kv-storage</loc>
     <lastmod>2026-10-29</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://kivarotools.com/api/rate-limits-and-quotas</loc>
+    <loc>https://docs.example.com/api/rate-limits-and-quotas</loc>
     <lastmod>2026-10-28</lastmod>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://kivarotools.com/guides/migrating-from-aws-lambda</loc>
+    <loc>https://docs.example.com/guides/migrating-from-aws-lambda</loc>
     <lastmod>2026-10-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://kivarotools.com/legal/dpa-subprocessors</loc>
+    <loc>https://docs.example.com/legal/dpa-subprocessors</loc>
     <lastmod>2026-10-10</lastmod>
     <priority>0.3</priority>
   </url>
@@ -231,7 +231,7 @@ export default function LlmsTxtGenerator() {
 
     // Tab 4: HTML-to-Markdown Compiler State
     const [htmlSourceInput, setHtmlSourceInput] = useState<string>(SAMPLE_HTML_DOC_SNIPPET);
-    const [htmlPageUrl, setHtmlPageUrl] = useState<string>('https://kivarotools.com/api/webhooks');
+    const [htmlPageUrl, setHtmlPageUrl] = useState<string>('https://docs.example.com/api/webhooks');
     const [htmlTargetSection, setHtmlTargetSection] = useState<string>('API & SDK Reference');
 
     // Tab 5: Export Studio Preview Format
@@ -1186,7 +1186,7 @@ export default function LlmsTxtGenerator() {
                                                     handleAddManualLink();
                                                 }
                                             }}
-                                            placeholder="https://kivarotools.com/api/webhooks or /docs/webhooks"
+                                            placeholder="https://docs.example.com/api/webhooks or /docs/webhooks"
                                             className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono"
                                         />
                                     </div>
@@ -1956,7 +1956,7 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() =>
                                             setImportRobotsText(
-                                                'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://kivarotools.com/sitemap.xml'
+                                                'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.example.com/sitemap.xml'
                                             )
                                         }
                                         className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -1976,7 +1976,7 @@ export default function LlmsTxtGenerator() {
                                     onClick={() => {
                                         const rawToParse =
                                             importRobotsText.trim() ||
-                                            'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://kivarotools.com/sitemap.xml';
+                                            'User-agent: *\nDisallow: /admin/\nDisallow: /checkout/\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: Claude-Web\nDisallow: /\nUser-agent: GPTBot\nDisallow: /\nSitemap: https://docs.example.com/sitemap.xml';
                                         const parsedRob = parseExistingRobotsTxt(rawToParse, workspace.bots);
                                         setWorkspace((p) => ({
                                             ...p,
@@ -2089,7 +2089,7 @@ export default function LlmsTxtGenerator() {
                                     type="button"
                                     onClick={() =>
                                         setImportLlmsText(
-                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.'
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.example.com/api/auth): Duplicate link.\n- [Read more](https://docs.example.com/api/auth): Duplicate link.'
                                         )
                                     }
                                     className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
@@ -2110,7 +2110,7 @@ export default function LlmsTxtGenerator() {
                                     onClick={() => {
                                         const rawToValidate =
                                             importLlmsText.trim() ||
-                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.\n- [Read more](https://kivarotools.com/api/auth): Duplicate link.';
+                                            '# Acme Broken Docs\n> Our revolutionary world-class synergistic AI platform.\n## Core Documentation\n- [Click here](/docs/relative-link): Cutting-edge guide.\n- [Read more](https://docs.example.com/api/auth): Duplicate link.\n- [Read more](https://docs.example.com/api/auth): Duplicate link.';
                                         const parsed = parseExistingLlmsTxt(rawToValidate, workspace.siteUrl);
                                         setWorkspace((p) => ({
                                             ...p,
@@ -2220,7 +2220,7 @@ export default function LlmsTxtGenerator() {
                                 type="button"
                                 onClick={() => {
                                     setHtmlSourceInput(SAMPLE_HTML_DOC_SNIPPET);
-                                    setHtmlPageUrl('https://kivarotools.com/api/webhooks');
+                                    setHtmlPageUrl('https://docs.example.com/api/webhooks');
                                 }}
                                 className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
                             >

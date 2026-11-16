@@ -98,22 +98,47 @@ const nextConfig: NextConfig = {
       // GSC 404 Exact Remediation Redirects (All 23 URLs from GSC Coverage Report)
       {
         source: '/admin',
-        destination: '/seo/llms-txt-generator',
+        destination: '/',
         permanent: true,
       },
       {
-        source: '/admin/:slug*',
-        destination: '/seo/llms-txt-generator',
+        source: '/admin/:path*',
+        destination: '/',
         permanent: true,
       },
       {
         source: '/checkout',
-        destination: '/seo/llms-txt-generator',
+        destination: '/',
         permanent: true,
       },
       {
-        source: '/checkout/:slug*',
-        destination: '/seo/llms-txt-generator',
+        source: '/checkout/:path*',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/legal/privacy',
+        destination: '/privacy',
+        permanent: true,
+      },
+      {
+        source: '/legal/ai-policy',
+        destination: '/privacy',
+        permanent: true,
+      },
+      {
+        source: '/pricing',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/changelog',
+        destination: '/about',
+        permanent: true,
+      },
+      {
+        source: '/seo/word-counter',
+        destination: '/seo/text-analyzer',
         permanent: true,
       },
       {
@@ -128,7 +153,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/ai.txt',
-        destination: '/seo/llms-txt-generator',
+        destination: '/llms.txt',
         permanent: true,
       },
       {
@@ -143,7 +168,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/WinAnsiEncoding',
-        destination: '/document/pdf-to-word',
+        destination: '/document/pdf-scrubber',
         permanent: true,
       },
       {
@@ -193,7 +218,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/FlateDecode',
-        destination: '/document/pdf-to-word',
+        destination: '/document/pdf-scrubber',
         permanent: true,
       },
       {
