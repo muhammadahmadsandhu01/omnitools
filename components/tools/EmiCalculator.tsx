@@ -96,6 +96,7 @@ export default function EmiCalculator() {
   const [principal, setPrincipal] = useState<number>(0);
   const [rate, setRate] = useState<number>(0);
   const [years, setYears] = useState<number>(0);
+  const [tenureUnit, setTenureUnit] = useState<'years' | 'months'>('years');
   const [frequency, setFrequency] = useState<PaymentFrequency>('monthly');
   const [timing, setTiming] = useState<PaymentTiming>('end');
 
@@ -283,6 +284,7 @@ export default function EmiCalculator() {
     setPrincipal(0);
     setRate(0);
     setYears(0);
+    setTenureUnit('years');
     setFrequency('monthly');
     setTiming('end');
     setExtraPayment(0);
@@ -315,8 +317,8 @@ export default function EmiCalculator() {
     frequency === 'weekly'
       ? 'Weekly Payment'
       : frequency === 'biweekly'
-      ? 'Biweekly Payment'
-      : 'Monthly Payment';
+        ? 'Biweekly Payment'
+        : 'Monthly Payment';
 
   const totalOngoingCashOutflow = scheduledPayment + extraPayment + recurringFee;
 
@@ -330,6 +332,38 @@ export default function EmiCalculator() {
     oneTimePrepayment > 0 &&
     prepaymentMode !== 'immediate' &&
     loanData.isPrepaymentPastPayoff;
+
+  const applyPreset = (presetPrincipal: number, presetRate: number, presetYears: number) => {
+    setPrincipal(presetPrincipal);
+    setRate(presetRate);
+    setYears(presetYears);
+    setTenureUnit('years');
+    setFrequency('monthly');
+    setTiming('end');
+    setExtraPayment(0);
+    setOneTimePrepayment(0);
+    setPrepaymentPeriod(0);
+    setPrepaymentMode('term');
+    setOriginationFee(0);
+    setRecurringFee(0);
+  };
+
+  const symbolDisplay = currency.symbol.trim();
+  const currencyInputPadding =
+    symbolDisplay.length >= 3 ? 'pl-12' : symbolDisplay.length === 2 ? 'pl-9' : 'pl-7';
+
+  const activeAdvancedCount =
+    (extraPayment > 0 ? 1 : 0) +
+    (oneTimePrepayment > 0 ? 1 : 0) +
+    (originationFee > 0 ? 1 : 0) +
+    (recurringFee > 0 ? 1 : 0);
+
+  const tenureDisplayValue =
+    years === 0
+      ? ''
+      : tenureUnit === 'months'
+        ? Math.round(years * 12)
+        : Number(years.toFixed(4));
 
   return (
     <div className="mx-auto w-full max-w-[1240px] min-w-0 space-y-6 text-slate-900 dark:text-slate-100">
@@ -356,6 +390,33 @@ export default function EmiCalculator() {
 
             {/* Input Controls Form */}
             <div role="region" aria-label="Loan input controls" className="space-y-5">
+              {/* Optional Quick Presets (Non-destructive; keeps clean 0-state default on load) */}
+              <div className="flex flex-wrap items-center gap-1.5" aria-label="Quick example presets">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mr-1">
+                  Examples:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(25000, 10, 5)}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500 transition"
+                >
+                  Personal 25k · 10% · 5y
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(35000, 7.5, 4)}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500 transition"
+                >
+                  Auto 35k · 7.5% · 4y
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPreset(10000, 0, 2)}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700 hover:border-blue-400 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-500 transition"
+                >
+                  0% Promo 10k · 2y
+                </button>
+              </div>
               {/* Currency Selector */}
               <div>
                 <label htmlFor="emi-currency" className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
@@ -373,7 +434,7 @@ export default function EmiCalculator() {
                 >
                   {WORLD_CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
-                      {c.name} ({c.code}) — {c.symbol}
+                      {c.name} ({c.code}){c.symbol.trim() !== c.code ? ` — ${c.symbol.trim()}` : ''}
                     </option>
                   ))}
                 </select>
@@ -386,8 +447,8 @@ export default function EmiCalculator() {
                     Loan Principal Amount
                   </label>
                   <div className="relative w-1/2 min-w-[120px]">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                      {currency.symbol}
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                      {symbolDisplay}
                     </span>
                     <input
                       id="emi-principal"
@@ -399,7 +460,7 @@ export default function EmiCalculator() {
                       placeholder="0"
                       value={principal === 0 ? '' : principal}
                       onChange={(e) => setPrincipal(safeNumber(e.target.value, 0, 0, 100000000))}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-7 pr-3 py-1.5 text-right font-mono text-sm font-bold text-slate-900 dark:border-slate-700/80 dark:bg-slate-950 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                      className={`w-full rounded-xl border border-slate-300 bg-slate-50 ${currencyInputPadding} pr-3 py-1.5 text-right font-mono text-sm font-bold text-slate-900 dark:border-slate-700/80 dark:bg-slate-950 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10`}
                     />
                   </div>
                 </div>
@@ -456,27 +517,64 @@ export default function EmiCalculator() {
                 />
               </div>
 
-              {/* Loan Tenure Input & Slider */}
+              {/* Loan Tenure Input & Slider with Years / Months Toggle */}
               <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label htmlFor="emi-years" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                    Loan Tenure (Duration)
-                  </label>
-                  <div className="relative w-1/3 min-w-[100px]">
+                <div className="flex flex-wrap justify-between items-center gap-2 mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="emi-years" className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                      Loan Tenure
+                    </label>
+                    <div
+                      role="group"
+                      aria-label="Tenure unit"
+                      className="inline-flex rounded-lg border border-slate-200 bg-slate-100 p-0.5 dark:border-slate-700 dark:bg-slate-900"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setTenureUnit('years')}
+                        aria-pressed={tenureUnit === 'years'}
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold transition ${tenureUnit === 'years'
+                            ? 'bg-white text-blue-600 shadow-xs dark:bg-slate-800 dark:text-blue-400'
+                            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                          }`}
+                      >
+                        Yrs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTenureUnit('months')}
+                        aria-pressed={tenureUnit === 'months'}
+                        className={`rounded-md px-2 py-0.5 text-[10px] font-bold transition ${tenureUnit === 'months'
+                            ? 'bg-white text-blue-600 shadow-xs dark:bg-slate-800 dark:text-blue-400'
+                            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                          }`}
+                      >
+                        Mos
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative w-1/3 min-w-[104px]">
                     <input
                       id="emi-years"
                       autoComplete="off"
                       type="number"
                       min="0"
-                      max="50"
-                      step="0.5"
+                      max={tenureUnit === 'months' ? 600 : 50}
+                      step={tenureUnit === 'months' ? '1' : '0.5'}
                       placeholder="0"
-                      value={years === 0 ? '' : years}
-                      onChange={(e) => setYears(safeNumber(e.target.value, 0, 0, 50))}
-                      className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-3 pr-9 py-1.5 text-right font-mono text-sm font-bold text-slate-900 dark:border-slate-700/80 dark:bg-slate-950 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                      value={tenureDisplayValue}
+                      onChange={(e) => {
+                        if (tenureUnit === 'months') {
+                          const mos = safeNumber(e.target.value, 0, 0, 600);
+                          setYears(mos / 12);
+                        } else {
+                          setYears(safeNumber(e.target.value, 0, 0, 50));
+                        }
+                      }}
+                      className="w-full rounded-xl border border-slate-300 bg-slate-50 pl-3 pr-10 py-1.5 text-right font-mono text-sm font-bold text-slate-900 dark:border-slate-700/80 dark:bg-slate-950 dark:text-slate-100 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                     />
                     <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                      Yrs
+                      {tenureUnit === 'months' ? 'Mos' : 'Yrs'}
                     </span>
                   </div>
                 </div>
@@ -485,16 +583,23 @@ export default function EmiCalculator() {
                   autoComplete="off"
                   type="range"
                   min="0"
-                  max="40"
-                  step="1"
-                  value={Math.min(Math.max(years, 0), 40)}
-                  onChange={(e) => setYears(Number(e.target.value))}
+                  max={tenureUnit === 'months' ? 360 : 40}
+                  step={tenureUnit === 'months' ? '6' : '1'}
+                  value={
+                    tenureUnit === 'months'
+                      ? Math.min(Math.max(Math.round(years * 12), 0), 360)
+                      : Math.min(Math.max(years, 0), 40)
+                  }
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setYears(tenureUnit === 'months' ? val / 12 : val);
+                  }}
                   className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600 mt-1"
                 />
               </div>
 
-              {/* Frequency & Timing Selectors (2 Columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+              {/* Frequency & Timing Selectors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3 pt-1">
                 <div className="min-w-0 w-full">
                   <label htmlFor="emi-frequency" className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
                     Payment Frequency
@@ -533,18 +638,28 @@ export default function EmiCalculator() {
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
+                  aria-expanded={showAdvanced}
+                  aria-controls="emi-advanced-options"
                   onClick={() => setShowAdvanced((prev) => !prev)}
                   className="flex w-full items-center justify-between py-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition"
                 >
                   <div className="flex items-center gap-1.5">
                     <Sliders className="h-3.5 w-3.5" />
-                    <span>Advanced Payoff & Fee Options</span>
+                    <span>Advanced Payoff &amp; Fee Options</span>
+                    {activeAdvancedCount > 0 && (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                        {activeAdvancedCount} active
+                      </span>
+                    )}
                   </div>
                   {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
 
                 {showAdvanced && (
-                  <div className="mt-3 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+                  <div
+                    id="emi-advanced-options"
+                    className="mt-3 space-y-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-950/40"
+                  >
                     {/* Extra Recurring Payment */}
                     <div>
                       <div className="flex justify-between items-center mb-1">
@@ -552,8 +667,8 @@ export default function EmiCalculator() {
                           Extra Recurring Payment
                         </label>
                         <div className="relative w-1/2 min-w-[120px]">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-                            {currency.symbol}
+                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                            {symbolDisplay}
                           </span>
                           <input
                             id="emi-extra"
@@ -565,7 +680,7 @@ export default function EmiCalculator() {
                             placeholder="0"
                             value={extraPayment === 0 ? '' : extraPayment}
                             onChange={(e) => setExtraPayment(safeNumber(e.target.value, 0, 0, 100000000))}
-                            className="w-full rounded-xl border border-slate-300 bg-white pl-7 pr-3 py-1.5 text-right font-mono text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
+                            className={`w-full rounded-xl border border-slate-300 bg-white ${currencyInputPadding} pr-3 py-1.5 text-right font-mono text-xs font-bold dark:border-slate-700 dark:bg-slate-900`}
                           />
                         </div>
                       </div>
@@ -581,8 +696,8 @@ export default function EmiCalculator() {
                           One-Time Prepayment
                         </label>
                         <div className="relative w-1/2 min-w-[120px]">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-                            {currency.symbol}
+                          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                            {symbolDisplay}
                           </span>
                           <input
                             id="emi-prepayment"
@@ -593,8 +708,15 @@ export default function EmiCalculator() {
                             step="500"
                             placeholder="0"
                             value={oneTimePrepayment === 0 ? '' : oneTimePrepayment}
-                            onChange={(e) => setOneTimePrepayment(safeNumber(e.target.value, 0, 0, 100000000))}
-                            className="w-full rounded-xl border border-slate-300 bg-white pl-7 pr-3 py-1.5 text-right font-mono text-xs font-bold dark:border-slate-700 dark:bg-slate-900"
+                            onChange={(e) => {
+                              const nextVal = safeNumber(e.target.value, 0, 0, 100000000);
+                              setOneTimePrepayment(nextVal);
+                              if (nextVal > 0 && prepaymentPeriod === 0) {
+                                const maxP = Math.max(1, Math.round(years * getPeriodsPerYear(frequency)));
+                                setPrepaymentPeriod(years > 0 ? Math.min(12, maxP) : 12);
+                              }
+                            }}
+                            className={`w-full rounded-xl border border-slate-300 bg-white ${currencyInputPadding} pr-3 py-1.5 text-right font-mono text-xs font-bold dark:border-slate-700 dark:bg-slate-900`}
                           />
                         </div>
                       </div>
@@ -611,7 +733,7 @@ export default function EmiCalculator() {
                               type="number"
                               min="1"
                               max={Math.max(1, Math.round(years * getPeriodsPerYear(frequency)))}
-                              placeholder="12"
+                              placeholder="1"
                               value={prepaymentPeriod === 0 ? '' : prepaymentPeriod}
                               onChange={(e) => setPrepaymentPeriod(safeNumber(e.target.value, 0, 0, 1200))}
                               className="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-mono dark:border-slate-700 dark:bg-slate-900"
@@ -809,30 +931,30 @@ export default function EmiCalculator() {
 
             {/* Key Summary Rows */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-600 dark:text-slate-400">Principal Amount:</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
+              <div className="flex justify-between items-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 min-w-0">
+                <span className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">Principal Amount:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                   {currency.symbol}{hasCalculatedLoan ? formatCurrencyAmount(totalPrincipal, currency) : '0.00'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-600 dark:text-slate-400">Total Interest Paid:</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+              <div className="flex justify-between items-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 min-w-0">
+                <span className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">Total Interest Paid:</span>
+                <span className="font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
                   +{currency.symbol}{hasCalculatedLoan ? formatCurrencyAmount(totalInterest, currency) : '0.00'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-600 dark:text-slate-400">Total Loan Fees:</span>
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
+              <div className="flex justify-between items-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 min-w-0">
+                <span className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">Total Loan Fees:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
                   {currency.symbol}{hasCalculatedLoan ? formatCurrencyAmount(totalFees, currency) : '0.00'}
                 </span>
               </div>
 
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800">
-                <span className="font-semibold text-slate-600 dark:text-slate-400">Payoff Duration:</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="flex justify-between items-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 min-w-0">
+                <span className="font-semibold text-slate-600 dark:text-slate-400 shrink-0">Payoff Duration:</span>
+                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                   {hasCalculatedLoan ? formatDuration(payoffPeriods, frequency) : '—'}
                 </span>
               </div>
@@ -849,7 +971,7 @@ export default function EmiCalculator() {
                     Principal + All Interest + All Applied Fees
                   </span>
                 </div>
-                <span className="font-mono text-xl sm:text-2xl font-extrabold text-blue-400 dark:text-blue-300">
+                <span className="font-mono text-xl sm:text-2xl font-extrabold text-blue-400 dark:text-blue-300 whitespace-nowrap shrink-0">
                   {currency.symbol}{hasCalculatedLoan ? formatCurrencyAmount(totalCost, currency) : '0.00'}
                 </span>
               </div>
@@ -939,11 +1061,10 @@ export default function EmiCalculator() {
             aria-selected={activeTab === 'schedule'}
             aria-controls="panel-schedule"
             onClick={() => setActiveTab('schedule')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
-              activeTab === 'schedule'
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${activeTab === 'schedule'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
-            }`}
+              }`}
           >
             <CalendarDays className="h-4 w-4" />
             Amortization Schedule {hasCalculatedLoan ? `(${schedule.length} payments)` : ''}
@@ -956,11 +1077,10 @@ export default function EmiCalculator() {
             aria-selected={activeTab === 'yearly'}
             aria-controls="panel-yearly"
             onClick={() => setActiveTab('yearly')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
-              activeTab === 'yearly'
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${activeTab === 'yearly'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
-            }`}
+              }`}
           >
             <Layers className="h-4 w-4" />
             Yearly Summary {hasCalculatedLoan ? `(${yearlySummary.length} years)` : ''}
@@ -973,11 +1093,10 @@ export default function EmiCalculator() {
             aria-selected={activeTab === 'methodology'}
             aria-controls="panel-methodology"
             onClick={() => setActiveTab('methodology')}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${
-              activeTab === 'methodology'
+            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition shrink-0 ${activeTab === 'methodology'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800'
-            }`}
+              }`}
           >
             <ShieldCheck className="h-4 w-4" />
             Methodology & Assumptions

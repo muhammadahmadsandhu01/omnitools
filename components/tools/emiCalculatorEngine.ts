@@ -101,8 +101,8 @@ export const WORLD_CURRENCIES: CurrencyItem[] = [
   { code: 'INR', symbol: '₹', name: 'Indian rupee', minorUnit: 2 },
   { code: 'CAD', symbol: 'C$', name: 'Canadian dollar', minorUnit: 2 },
   { code: 'AUD', symbol: 'A$', name: 'Australian dollar', minorUnit: 2 },
-  { code: 'AED', symbol: 'د.إ', name: 'United Arab Emirates dirham', minorUnit: 2 },
-  { code: 'SAR', symbol: 'ر.س', name: 'Saudi riyal', minorUnit: 2 },
+  { code: 'AED', symbol: 'AED ', name: 'United Arab Emirates dirham', minorUnit: 2 },
+  { code: 'SAR', symbol: 'SAR ', name: 'Saudi riyal', minorUnit: 2 },
   { code: 'PKR', symbol: '₨', name: 'Pakistani rupee', minorUnit: 2 },
   { code: 'JPY', symbol: '¥', name: 'Japanese yen', minorUnit: 0 },
   { code: 'CNY', symbol: '¥', name: 'Chinese yuan renminbi', minorUnit: 2 },
@@ -117,10 +117,10 @@ export const WORLD_CURRENCIES: CurrencyItem[] = [
   { code: 'SEK', symbol: 'kr', name: 'Swedish krona', minorUnit: 2 },
   { code: 'NOK', symbol: 'kr', name: 'Norwegian krone', minorUnit: 2 },
   { code: 'MXN', symbol: '$', name: 'Mexican peso', minorUnit: 2 },
-  { code: 'BHD', symbol: '.د.ب', name: 'Bahraini dinar', minorUnit: 3 },
-  { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti dinar', minorUnit: 3 },
-  { code: 'OMR', symbol: 'ر.ع.', name: 'Omani rial', minorUnit: 3 },
-  { code: 'QAR', symbol: 'ر.ق', name: 'Qatari riyal', minorUnit: 2 },
+  { code: 'BHD', symbol: 'BHD ', name: 'Bahraini dinar', minorUnit: 3 },
+  { code: 'KWD', symbol: 'KWD ', name: 'Kuwaiti dinar', minorUnit: 3 },
+  { code: 'OMR', symbol: 'OMR ', name: 'Omani rial', minorUnit: 3 },
+  { code: 'QAR', symbol: 'QAR ', name: 'Qatari riyal', minorUnit: 2 },
   { code: 'THB', symbol: '฿', name: 'Thai baht', minorUnit: 2 },
   { code: 'MYR', symbol: 'RM', name: 'Malaysian ringgit', minorUnit: 2 },
   { code: 'IDR', symbol: 'Rp', name: 'Indonesian rupiah', minorUnit: 2 },
@@ -562,7 +562,8 @@ export function formatCurrencyAmount(
   showSymbol = false
 ): string {
   if (!Number.isFinite(value)) return '0.00';
-  const formatted = value.toLocaleString(undefined, {
+  const locale = currency.code === 'INR' ? 'en-IN' : undefined;
+  const formatted = value.toLocaleString(locale, {
     minimumFractionDigits: currency.minorUnit,
     maximumFractionDigits: currency.minorUnit,
   });

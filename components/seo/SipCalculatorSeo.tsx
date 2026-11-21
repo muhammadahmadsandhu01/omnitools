@@ -216,32 +216,32 @@ export default function SipCalculatorSeo() {
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
           Whether you are building a monthly investment plan, comparing SIP vs. lump sum timing, or reverse-solving a target corpus with our SIP investment planner, follow these four steps:
         </p>
-        <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5 not-prose list-none p-0">
-          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5 not-prose">
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 1 · Select Mode &amp; Currency</div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
               Choose <strong>SIP (Periodic)</strong>, <strong>Lump Sum (One-Time)</strong>, or click the top-bar <strong>Goal Planner</strong> button. Pick from 154 ISO-4217 currencies (including USD, INR with lakh/crore grouping, PKR, AED, GBP, CAD, SAR, PHP, and ZAR).
             </p>
-          </li>
-          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+          </div>
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 2 · Enter Contribution, Return &amp; Tenure</div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
               Enter your periodic amount (plus optional <strong>Initial Starting Capital</strong> for a combined lump sum + SIP plan), expected annual return rate (% p.a.), and investment horizon (1–100 years).
             </p>
-          </li>
-          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+          </div>
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 3 · Add Step-Up, Inflation, TER &amp; Tax</div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
               Set an <strong>Annual SIP Step-up (%)</strong> and <strong>Expected Inflation Rate (%)</strong>, then open <strong>Expense Ratio (TER), Tax &amp; Timing</strong> to model management fees, entry fees, flat maturity tax, Nominal APR vs. Effective APY, and Beginning vs. End-of-Period timing.
             </p>
-          </li>
-          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+          </div>
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 4 · Review Scenarios, Monte Carlo &amp; Export</div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
               Compare nominal vs. real purchasing power, inspect the live <strong>SIP vs. Day-1 Lump Sum</strong> delta and 3,000-path Monte Carlo percentiles, and export the year-by-year table via <strong>Export CSV</strong>, <strong>Full Report</strong>, or <strong>Share</strong> URL.
             </p>
-          </li>
-        </ol>
+          </div>
+        </div>
       </section>
 
       {/* Section: Supported Capabilities & Known Limitations */}
