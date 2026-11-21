@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import {
   Calculator,
@@ -111,13 +111,13 @@ export interface GoalPlanResult {
    ===================================================================== */
 
 export const ISO_ACTIVE_CURRENCIES: CurrencyCode[] = [
-  'AED','AFN','ALL','AMD','AOA','ARS','AUD','AWG','AZN','BAM','BBD','BDT','BHD','BIF','BMD','BND','BOB','BRL','BSD','BTN','BWP','BYN','BZD',
-  'CAD','CDF','CHF','CLP','CNY','COP','CRC','CUP','CVE','CZK','DJF','DKK','DOP','DZD','EGP','ERN','ETB','EUR','FJD','FKP','GBP','GEL','GHS','GIP','GMD',
-  'GNF','GTQ','GYD','HKD','HNL','HTG','HUF','IDR','ILS','INR','IQD','IRR','ISK','JMD','JOD','JPY','KES','KGS','KHR','KMF','KPW','KRW','KWD','KYD','KZT',
-  'LAK','LBP','LKR','LRD','LSL','LYD','MAD','MDL','MGA','MKD','MMK','MNT','MOP','MRU','MUR','MVR','MWK','MXN','MYR','MZN','NAD','NGN','NIO','NOK','NPR','NZD',
-  'OMR','PAB','PEN','PGK','PHP','PKR','PLN','PYG','QAR','RON','RSD','RUB','RWF','SAR','SBD','SCR','SDG','SEK','SGD','SHP','SLE','SOS','SRD','SSP','STN',
-  'SVC','SYP','SZL','THB','TJS','TMT','TND','TOP','TRY','TTD','TWD','TZS','UAH','UGX','USD','UYU','UZS','VES','VND','VUV','WST','XAF','XCD','XCG','XOF','XPF',
-  'YER','ZAR','ZMW','ZWG',
+  'AED', 'AFN', 'ALL', 'AMD', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN', 'BAM', 'BBD', 'BDT', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL', 'BSD', 'BTN', 'BWP', 'BYN', 'BZD',
+  'CAD', 'CDF', 'CHF', 'CLP', 'CNY', 'COP', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP', 'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD',
+  'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HTG', 'HUF', 'IDR', 'ILS', 'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR', 'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT',
+  'LAK', 'LBP', 'LKR', 'LRD', 'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU', 'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK', 'NPR', 'NZD',
+  'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG', 'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK', 'SGD', 'SHP', 'SLE', 'SOS', 'SRD', 'SSP', 'STN',
+  'SVC', 'SYP', 'SZL', 'THB', 'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX', 'USD', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XCD', 'XCG', 'XOF', 'XPF',
+  'YER', 'ZAR', 'ZMW', 'ZWG',
 ];
 
 export const CURRENCY_NAMES: Record<CurrencyCode, string> = {
@@ -156,7 +156,7 @@ export const CURRENCY_NAMES: Record<CurrencyCode, string> = {
 };
 
 export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  AED: 'د.إ', AFN: '؋', ALL: 'L', AMD: '֏', AOA: 'Kz', ARS: '$', AUD: 'A$', AWG: 'ƒ', AZN: '₼', BAM: 'KM',
+  AED: 'AED', AFN: '؋', ALL: 'L', AMD: '֏', AOA: 'Kz', ARS: '$', AUD: 'A$', AWG: 'ƒ', AZN: '₼', BAM: 'KM',
   BBD: 'Bds$', BDT: '৳', BHD: '.د.ب', BIF: 'FBu', BMD: '$', BND: 'B$', BOB: 'Bs', BRL: 'R$', BSD: 'B$', BTN: 'Nu.',
   BWP: 'P', BYN: 'Br', BZD: 'BZ$', CAD: 'C$', CDF: 'FC', CHF: 'CHF', CLP: '$', CNY: '¥', COP: '$', CRC: '₡', CUP: '$',
   CVE: '$', CZK: 'Kč', DJF: 'Fdj', DKK: 'kr', DOP: 'RD$', DZD: 'دج', EGP: 'E£', ERN: 'Nfk', ETB: 'Br', EUR: '€',
@@ -216,7 +216,8 @@ export function formatCurrency(value: number, currencyCode: CurrencyCode = 'USD'
   if (!Number.isFinite(value)) return `${currencyCode} 0`;
   const meta = getCurrencyMeta(currencyCode);
   const normalized = Math.abs(value) < 1e-9 ? 0 : value;
-  return new Intl.NumberFormat('en-US', {
+  const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: meta.code,
     minimumFractionDigits: meta.fractionDigits,
@@ -407,8 +408,8 @@ export function projectInvestment({
   const multiple = totalInvested > 0 ? futureValue / totalInvested : 0;
   const endingAnnualContribution = mode === 'sip'
     ? (stepUp > 0
-        ? (Math.round(baseRecurring * Math.pow(1 + annualStepUpDecimal, Math.max(0, T - 1)) * 100) / 100)
-        : baseRecurring) * periodsPerYear
+      ? (Math.round(baseRecurring * Math.pow(1 + annualStepUpDecimal, Math.max(0, T - 1)) * 100) / 100)
+      : baseRecurring) * periodsPerYear
     : grossInitial;
 
   const overflow = !Number.isFinite(futureValue) || !Number.isFinite(totalInvested) || futureValue > 1e18;
@@ -984,16 +985,14 @@ export function generateReportHtml({
     <tr><td>Inflation Assumption</td><td>${inflationRate.toFixed(2)}%</td><td>Total Periodic Cycles</td><td>${result.totalPeriods}</td></tr>
   </table>
 
-  ${
-    goalPlan
+  ${goalPlan
       ? `
   <h2>Goal Planner Validation</h2>
   <p style="font-size: 13px;">Target Goal: <strong>${formatCur(goalPlan.target)}</strong> · Required ${mode === 'sip' ? goalPlan.frequencyLabel : 'one-time'} contribution: <strong>${formatCur(goalPlan.requiredContribution)}</strong> · Projected Achievement: <strong>${formatCur(goalPlan.projectedValue)}</strong> (${goalPlan.reachable ? 'Target Achieved' : 'Unreachable'})</p>`
       : ''
-  }
+    }
 
-  ${
-    monteCarloResult
+  ${monteCarloResult
       ? `
   <h2>Illustrative Monte Carlo Risk Distribution (3,000 Paths)</h2>
   <p style="font-size: 12px; color: #64748b;">Simulated stochastic pathways assuming lognormal geometric Brownian motion across ${years} years.</p>
@@ -1002,7 +1001,7 @@ export function generateReportHtml({
     <tr><td>${formatCur(monteCarloResult.p10)}</td><td>${formatCur(monteCarloResult.p25)}</td><td><strong>${formatCur(monteCarloResult.p50)}</strong></td><td>${formatCur(monteCarloResult.p75)}</td><td>${formatCur(monteCarloResult.p90)}</td></tr>
   </table>`
       : ''
-  }
+    }
 
   <h2>Year-by-Year Accounting Reconciliation Schedule</h2>
   <table>
@@ -1061,7 +1060,11 @@ export default function SipCalculator() {
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [csvDownloaded, setCsvDownloaded] = useState(false);
+  const [reportDownloaded, setReportDownloaded] = useState(false);
   const [hoveredYear, setHoveredYear] = useState<number | null>(null);
+  const goalSectionRef = useRef<HTMLDivElement | null>(null);
+  const goalInputRef = useRef<HTMLInputElement | null>(null);
 
   // URL hash state hydration
   useEffect(() => {
@@ -1123,21 +1126,40 @@ export default function SipCalculator() {
   const [showMonteCarlo, setShowMonteCarlo] = useState(false);
 
 
-  // Input sanitization & validation
+  // Input sanitization & explicit inline validation
   const parsedInvestment = safeNumber(investment, 0);
   const parsedInitial = safeNumber(initialInvestment, 0);
   const parsedRate = safeNumber(rate, 0);
+  const rawYearsNumber = safeNumber(years, 0);
   const parsedYears = Math.max(1, Math.min(100, Math.floor(safeNumber(years, 10))));
+
+  const isInvestmentNegative = investment.trim() !== '' && parsedInvestment < 0;
+  const isInitialNegative = mode === 'sip' && initialInvestment.trim() !== '' && parsedInitial < 0;
+  const isYearsInvalid = years.trim() !== '' && (rawYearsNumber < 1 || rawYearsNumber > 100);
+  const isZeroContributionOnly =
+    investment.trim() !== '' &&
+    parsedInvestment === 0 &&
+    (mode === 'lumpsum' || !(initialInvestment.trim() !== '' && parsedInitial > 0));
 
   const isInvestmentEntered = investment.trim() !== '' && parsedInvestment > 0;
   const isInitialEntered = initialInvestment.trim() !== '' && parsedInitial > 0;
   const isRateEntered = rate.trim() !== '' && Number.isFinite(parsedRate);
-  const isYearsEntered = years.trim() !== '' && Number.isFinite(safeNumber(years, 0));
+  const isYearsEntered = years.trim() !== '' && Number.isFinite(rawYearsNumber) && rawYearsNumber >= 1 && rawYearsNumber <= 100;
 
   const hasRequiredInputs =
-    mode === 'sip'
+    !isInvestmentNegative &&
+    !isInitialNegative &&
+    !isYearsInvalid &&
+    (mode === 'sip'
       ? (isInvestmentEntered || isInitialEntered) && isRateEntered && isYearsEntered
-      : isInvestmentEntered && isRateEntered && isYearsEntered;
+      : isInvestmentEntered && isRateEntered && isYearsEntered);
+
+  const activeAdvancedCount =
+    (safeNumber(annualFee, 0) > 0 ? 1 : 0) +
+    (safeNumber(contributionFee, 0) > 0 ? 1 : 0) +
+    (safeNumber(taxRate, 0) > 0 ? 1 : 0) +
+    (rateBasis !== 'nominal' ? 1 : 0) +
+    (mode === 'sip' && contributionTiming !== 'beginning' ? 1 : 0);
 
   // Canonical calculations
   const calculations = useMemo(() => {
@@ -1336,6 +1358,9 @@ export default function SipCalculator() {
     setShowSchedule(true);
     setShowDetails(false);
     setCopied(false);
+    setShareCopied(false);
+    setCsvDownloaded(false);
+    setReportDownloaded(false);
     setGoalAmount('');
     setShowGoalPlanner(false);
     setMonteCarloVolatility('15');
@@ -1435,18 +1460,25 @@ export default function SipCalculator() {
       currencyCode: currency.code,
     });
 
-    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `kivarotools-${mode === 'sip' ? 'sip' : 'lumpsum'}-schedule-${currency.code}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try {
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kivarotools-${mode === 'sip' ? 'sip' : 'lumpsum'}-schedule-${currency.code}.csv`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 2500);
+      setCsvDownloaded(true);
+      window.setTimeout(() => setCsvDownloaded(false), 2000);
+    } catch {
+      setCsvDownloaded(false);
+    }
   };
 
-  // Professional HTML report download handler
+  // Professional HTML report download & print-preview handler
   const handleDownloadReport = () => {
     if (!calculations) return;
     const htmlReport = generateReportHtml({
@@ -1467,15 +1499,35 @@ export default function SipCalculator() {
       monteCarloResult,
     });
 
-    const blob = new Blob([htmlReport], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `kivarotools-investment-report-${currency.code}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try {
+      const blob = new Blob([htmlReport], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kivarotools-investment-report-${currency.code}.html`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+      setReportDownloaded(true);
+      window.setTimeout(() => setReportDownloaded(false), 2200);
+    } catch {
+      const win = window.open('', '_blank', 'noopener,noreferrer');
+      if (win) {
+        win.document.open();
+        win.document.write(htmlReport);
+        win.document.close();
+      }
+    }
+  };
+
+  const handleOpenGoalPlannerTab = () => {
+    setShowGoalPlanner(true);
+    window.setTimeout(() => {
+      goalSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      goalInputRef.current?.focus({ preventScroll: true });
+    }, 60);
   };
 
   const investmentLabel = mode === 'sip'
@@ -1493,40 +1545,51 @@ export default function SipCalculator() {
     <div className="flex flex-col gap-8 max-w-full">
       {/* Mode Selection Tabs & Presets */}
       <div className="flex flex-col items-center gap-4">
-        <div
-          role="tablist"
-          aria-label="Investment Calculation Mode"
-          className="bg-gray-100 dark:bg-slate-800 p-1.5 rounded-2xl flex gap-1.5 border border-gray-200 dark:border-slate-700 max-w-md w-full"
-        >
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 w-full max-w-xl">
+          <div
+            role="tablist"
+            aria-label="Investment Calculation Mode"
+            className="bg-gray-100 dark:bg-slate-800 p-1.5 rounded-2xl flex gap-1.5 border border-gray-200 dark:border-slate-700 flex-1"
+          >
+            <button
+              type="button"
+              role="tab"
+              id={`${idPrefix}-tab-sip`}
+              aria-selected={mode === 'sip'}
+              aria-controls={`${idPrefix}-panel-main`}
+              onClick={() => setMode('sip')}
+              className={`flex-1 min-h-[44px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${mode === 'sip'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-500/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+            >
+              SIP (Periodic)
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id={`${idPrefix}-tab-lumpsum`}
+              aria-selected={mode === 'lumpsum'}
+              aria-controls={`${idPrefix}-panel-main`}
+              onClick={() => setMode('lumpsum')}
+              className={`flex-1 min-h-[44px] py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${mode === 'lumpsum'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-500/20'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+            >
+              Lump Sum (One-Time)
+            </button>
+          </div>
           <button
             type="button"
-            role="tab"
-            id={`${idPrefix}-tab-sip`}
-            aria-selected={mode === 'sip'}
-            aria-controls={`${idPrefix}-panel-main`}
-            onClick={() => setMode('sip')}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-              mode === 'sip'
-                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-500/20'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            onClick={handleOpenGoalPlannerTab}
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-1.5 border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${showGoalPlanner
+                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                : 'bg-blue-50/80 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/70 hover:bg-blue-100/80 dark:hover:bg-blue-950/50'
+              }`}
           >
-            SIP (Periodic)
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id={`${idPrefix}-tab-lumpsum`}
-            aria-selected={mode === 'lumpsum'}
-            aria-controls={`${idPrefix}-panel-main`}
-            onClick={() => setMode('lumpsum')}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
-              mode === 'lumpsum'
-                ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-500/20'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            Lump Sum (One-Time)
+            <Target className="w-4 h-4 shrink-0" />
+            <span>Goal Planner</span>
           </button>
         </div>
 
@@ -1606,12 +1669,18 @@ export default function SipCalculator() {
                   min="0"
                   max="1000000000000000"
                   step="any"
+                  aria-invalid={isInitialNegative}
                   value={initialInvestment}
                   placeholder="e.g. 10000"
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setInitialInvestment(e.target.value)}
                   className="min-w-0 flex-1 px-4 py-3 bg-transparent focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
+              {isInitialNegative && (
+                <p role="alert" className="text-xs font-medium text-red-600 dark:text-red-400 mt-1.5">
+                  Initial starting capital cannot be negative. Enter 0 or a positive amount.
+                </p>
+              )}
             </div>
           )}
 
@@ -1637,12 +1706,23 @@ export default function SipCalculator() {
                 min="0"
                 max="1000000000000000"
                 step="any"
+                aria-invalid={isInvestmentNegative || isZeroContributionOnly}
                 value={investment}
                 placeholder={mode === 'sip' ? 'e.g. 500' : 'e.g. 50000'}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setInvestment(e.target.value)}
                 className="min-w-0 flex-1 px-4 py-3 bg-transparent focus:outline-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
+            {isInvestmentNegative && (
+              <p role="alert" className="text-xs font-medium text-red-600 dark:text-red-400 mt-1.5">
+                Investment amount cannot be negative. Enter a value greater than 0.
+              </p>
+            )}
+            {isZeroContributionOnly && (
+              <p role="alert" className="text-xs font-medium text-amber-700 dark:text-amber-400 mt-1.5">
+                Enter an investment amount greater than 0{mode === 'sip' ? ' (or add an initial starting capital above)' : ''} to calculate returns.
+              </p>
+            )}
             <div className="mt-2.5 px-0.5">
               <input
                 type="range"
@@ -1755,8 +1835,11 @@ export default function SipCalculator() {
               <label htmlFor={`${idPrefix}-years`} className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Time Period (Years)
               </label>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-500/20">
-                {years.trim() !== '' ? (parsedYears === 1 ? '1 Year' : `${parsedYears} Years`) : 'Enter years'}
+              <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${isYearsInvalid
+                  ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800'
+                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500/20'
+                }`}>
+                {years.trim() !== '' ? (isYearsInvalid ? '1–100 Years' : parsedYears === 1 ? '1 Year' : `${parsedYears} Years`) : 'Enter years'}
               </span>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
@@ -1768,10 +1851,12 @@ export default function SipCalculator() {
                 min="1"
                 max="100"
                 step="1"
+                aria-invalid={isYearsInvalid}
                 value={years}
                 placeholder="e.g. 10"
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setYears(e.target.value)}
-                className="w-24 sm:w-28 shrink-0 px-3.5 py-2.5 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white text-sm"
+                className={`w-24 sm:w-28 shrink-0 px-3.5 py-2.5 bg-gray-50 dark:bg-slate-950 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white text-sm ${isYearsInvalid ? 'border-red-400 dark:border-red-500' : 'border-gray-200 dark:border-slate-700'
+                  }`}
               />
               <div className="flex-1 min-w-0">
                 <input
@@ -1790,6 +1875,11 @@ export default function SipCalculator() {
                 </div>
               </div>
             </div>
+            {isYearsInvalid && (
+              <p role="alert" className="text-xs font-medium text-red-600 dark:text-red-400 mt-1.5">
+                Time period must be between 1 and 100 years.
+              </p>
+            )}
           </div>
 
           {/* Inflation Rate */}
@@ -1821,13 +1911,23 @@ export default function SipCalculator() {
               type="button"
               aria-expanded={showPlanning}
               onClick={() => setShowPlanning((v) => !v)}
-              className="w-full px-4 py-3 flex items-center justify-between text-left font-bold text-sm text-slate-800 dark:text-slate-200 bg-gray-50 dark:bg-slate-950/60 hover:bg-gray-100 dark:hover:bg-slate-800/60 transition-colors"
+              className="w-full min-h-[48px] px-4 py-3 flex items-center justify-between gap-2 text-left bg-gray-50 dark:bg-slate-950/60 hover:bg-gray-100 dark:hover:bg-slate-800/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500"
             >
-              <span className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-500" />
-                <span>Advanced Fee, Tax &amp; Timing Models</span>
+              <span className="flex flex-col">
+                <span className="flex items-center gap-2 font-bold text-sm text-slate-800 dark:text-slate-200">
+                  <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Expense Ratio (TER), Tax &amp; Timing</span>
+                  {activeAdvancedCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+                      {activeAdvancedCount} active
+                    </span>
+                  )}
+                </span>
+                <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400 mt-0.5 pl-6">
+                  TER % · Entry Fee % · Flat CGT % · APR/APY · Beginning/End
+                </span>
               </span>
-              {showPlanning ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showPlanning ? <ChevronUp className="w-4 h-4 shrink-0 text-slate-500" /> : <ChevronDown className="w-4 h-4 shrink-0 text-slate-500" />}
             </button>
             {showPlanning && (
               <div className="p-4 space-y-4 bg-white dark:bg-slate-900/80 border-t border-gray-200 dark:border-slate-800">
@@ -1991,12 +2091,12 @@ export default function SipCalculator() {
             <>
               {/* Primary Future Value Display */}
               <div className="mb-6 pb-6 border-b border-emerald-200/70 dark:border-emerald-800/50">
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight break-words">
+                <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight tabular-nums whitespace-nowrap overflow-x-auto">
                   {formatCurrency(calculations.futureValue, currency.code)}
                 </div>
-                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2 flex items-center gap-2">
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <span>Purchasing Power (Today&apos;s Money):</span>
-                  <strong className="text-slate-900 dark:text-white">{formatCurrency(calculations.realValue, currency.code)}</strong>
+                  <strong className="text-slate-900 dark:text-white tabular-nums whitespace-nowrap">{formatCurrency(calculations.realValue, currency.code)}</strong>
                 </div>
               </div>
 
@@ -2182,10 +2282,13 @@ export default function SipCalculator() {
                   <span>Total Capital Invested</span>
                   <strong className="text-slate-900 dark:text-white">{formatCurrency(calculations.totalInvested, currency.code)}</strong>
                 </div>
-                <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
+                <div className="flex justify-between items-center gap-2 text-slate-600 dark:text-slate-400">
                   <span>Gross Market Growth</span>
-                  <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                    +{formatCurrency(calculations.grossGrowth, currency.code)}
+                  <span className={`font-semibold tabular-nums whitespace-nowrap ${calculations.grossGrowth >= 0
+                      ? 'text-emerald-700 dark:text-emerald-400'
+                      : 'text-red-600 dark:text-red-400'
+                    }`}>
+                    {calculations.grossGrowth >= 0 ? '+' : ''}{formatCurrency(calculations.grossGrowth, currency.code)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
@@ -2212,7 +2315,7 @@ export default function SipCalculator() {
                 </div>
                 <div className="bg-white/70 dark:bg-slate-900/60 rounded-xl p-3 border border-emerald-500/10">
                   <div className="text-slate-500 dark:text-slate-400 font-medium">Ending Annual Contribution</div>
-                  <div className="text-base font-extrabold text-slate-900 dark:text-white mt-1">
+                  <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(calculations.endingAnnualContribution, currency.code)}
                   </div>
                 </div>
@@ -2249,7 +2352,7 @@ export default function SipCalculator() {
       </div>
 
       {/* Goal Planner Module */}
-      <div className="border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-xs">
+      <div ref={goalSectionRef} className="border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-xs">
         <button
           type="button"
           aria-expanded={showGoalPlanner}
@@ -2283,6 +2386,7 @@ export default function SipCalculator() {
                   {currency.symbol}
                 </span>
                 <input
+                  ref={goalInputRef}
                   id={`${idPrefix}-goal-amount`}
                   type="number"
                   inputMode="decimal"
@@ -2306,7 +2410,7 @@ export default function SipCalculator() {
                 <div className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
                   Required {mode === 'sip' ? `${goalPlan.frequencyLabel} investment` : 'one-time lump sum'} to reach target:
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400">
+                <div className="text-xl sm:text-3xl font-black text-emerald-700 dark:text-emerald-400 tabular-nums whitespace-nowrap overflow-x-auto">
                   {formatCurrency(goalPlan.requiredContribution, currency.code)}
                 </div>
                 <div className="text-xs text-slate-600 dark:text-slate-400 pt-1">
@@ -2380,36 +2484,46 @@ export default function SipCalculator() {
 
             {monteCarloResult && (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 pt-3">
-                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3.5">
+                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">10th Percentile</div>
-                  <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-1">
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(monteCarloResult.p10, currency.code)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3.5">
+                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">25th Percentile</div>
-                  <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-1">
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(monteCarloResult.p25, currency.code)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/60 dark:bg-purple-950/30 p-3.5">
+                <div className="rounded-xl border border-purple-200 dark:border-purple-800/60 bg-purple-50/60 dark:bg-purple-950/30 p-3">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400">Median (50th)</div>
-                  <div className="text-sm sm:text-base font-extrabold text-purple-700 dark:text-purple-400 mt-1">
+                  <div className="text-xs sm:text-sm font-extrabold text-purple-700 dark:text-purple-400 mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(monteCarloResult.p50, currency.code)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3.5">
+                <div className="rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/60 dark:bg-slate-950/40 p-3">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">75th Percentile</div>
-                  <div className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white mt-1">
+                  <div className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(monteCarloResult.p75, currency.code)}
                   </div>
                 </div>
-                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 p-3.5">
+                <div className="rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/60 dark:bg-emerald-950/30 p-3">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">90th Percentile</div>
-                  <div className="text-sm sm:text-base font-extrabold text-emerald-700 dark:text-emerald-400 mt-1">
+                  <div className="text-xs sm:text-sm font-extrabold text-emerald-700 dark:text-emerald-400 mt-1 tabular-nums whitespace-nowrap overflow-x-auto">
                     {formatCurrency(monteCarloResult.p90, currency.code)}
                   </div>
                 </div>
+              </div>
+            )}
+            {monteCarloResult && monteCarloResult.probabilityTarget !== null && (
+              <div className="mt-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  Empirical Probability of Reaching Goal ({formatCurrency(parsedGoal, currency.code)}):
+                </span>
+                <strong className="text-sm font-black text-purple-700 dark:text-purple-300 tabular-nums">
+                  {monteCarloResult.probabilityTarget.toFixed(1)}% of 3,000 paths
+                </strong>
               </div>
             )}
           </div>
@@ -2518,8 +2632,8 @@ export default function SipCalculator() {
               disabled={!hasRequiredInputs}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-colors"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
+              {csvDownloaded ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Download className="w-3.5 h-3.5" />}
+              <span>{csvDownloaded ? 'CSV Saved!' : 'Export CSV'}</span>
             </button>
             <button
               type="button"
@@ -2527,26 +2641,26 @@ export default function SipCalculator() {
               disabled={!hasRequiredInputs}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Full Report</span>
+              {reportDownloaded ? <Check className="w-3.5 h-3.5" /> : <FileText className="w-3.5 h-3.5" />}
+              <span>{reportDownloaded ? 'Report Saved!' : 'Full Report'}</span>
             </button>
           </div>
         </div>
 
         {showSchedule && (
           <div className="overflow-x-auto max-w-full overscroll-x-contain">
-            <table className="min-w-[580px] w-full text-xs text-left" aria-label="Year-by-year investment schedule">
-              <thead className="bg-gray-100/70 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold border-b border-gray-200 dark:border-slate-800">
+            <table className="w-full text-[11px] sm:text-xs text-left tabular-nums" aria-label="Year-by-year investment schedule">
+              <thead className="bg-gray-100/70 dark:bg-slate-950 text-slate-600 dark:text-slate-400 uppercase tracking-wide font-bold border-b border-gray-200 dark:border-slate-800">
                 <tr className="h-10">
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Year</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Start Balance</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Contributions</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Gross Growth</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Total Fees</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Taxes</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Ending Balance</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Net Gain</th>
-                  <th scope="col" className="px-4 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Purchasing Power</th>
+                  <th scope="col" className="sticky left-0 z-10 bg-gray-100 dark:bg-slate-950 px-2.5 py-2.5 whitespace-nowrap text-center align-middle font-bold leading-tight">Yr</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Start Bal.</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Invested</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Growth</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Fees</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Taxes</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">End Bal.</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Net Gain</th>
+                  <th scope="col" className="px-2.5 py-2.5 whitespace-nowrap text-right align-middle font-bold leading-tight">Real Value</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800/80">
@@ -2559,19 +2673,25 @@ export default function SipCalculator() {
                 ) : (
                   calculations.schedule.map((row) => (
                     <tr key={row.year} className="hover:bg-slate-50/60 dark:hover:bg-slate-850 transition-colors h-10">
-                      <td className="px-4 py-2.5 font-bold text-slate-900 dark:text-white text-center whitespace-nowrap align-middle">{row.year}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">{formatCurrency(row.startingBalance, currency.code)}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-900 dark:text-white whitespace-nowrap align-middle">{formatCurrency(row.contributions, currency.code)}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap align-middle">+{formatCurrency(row.grossGrowth, currency.code)}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">
+                      <td className="sticky left-0 z-10 bg-white dark:bg-slate-900 px-2.5 py-2.5 font-bold text-slate-900 dark:text-white text-center whitespace-nowrap align-middle">{row.year}</td>
+                      <td className="px-2.5 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">{formatCurrency(row.startingBalance, currency.code)}</td>
+                      <td className="px-2.5 py-2.5 text-right text-slate-900 dark:text-white whitespace-nowrap align-middle">{formatCurrency(row.contributions, currency.code)}</td>
+                      <td className={`px-2.5 py-2.5 text-right font-semibold whitespace-nowrap align-middle ${row.grossGrowth >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                        {row.grossGrowth >= 0 ? '+' : ''}{formatCurrency(row.grossGrowth, currency.code)}
+                      </td>
+                      <td className="px-2.5 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">
                         {row.contributionFees + row.managementFees > 0 ? `-${formatCurrency(row.contributionFees + row.managementFees, currency.code)}` : '0'}
                       </td>
-                      <td className="px-4 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">
+                      <td className="px-2.5 py-2.5 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap align-middle">
                         {row.taxes > 0 ? `-${formatCurrency(row.taxes, currency.code)}` : '0'}
                       </td>
-                      <td className="px-4 py-2.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap align-middle">{formatCurrency(row.endingBalance, currency.code)}</td>
-                      <td className="px-4 py-2.5 text-right font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap align-middle">{formatCurrency(row.netGain, currency.code)}</td>
-                      <td className="px-4 py-2.5 text-right text-slate-500 dark:text-slate-400 whitespace-nowrap align-middle">{formatCurrency(row.inflationAdjustedValue, currency.code)}</td>
+                      <td className="px-2.5 py-2.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap align-middle">{formatCurrency(row.endingBalance, currency.code)}</td>
+                      <td className={`px-2.5 py-2.5 text-right font-semibold whitespace-nowrap align-middle ${row.netGain >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                        {formatCurrency(row.netGain, currency.code)}
+                      </td>
+                      <td className="px-2.5 py-2.5 text-right text-slate-500 dark:text-slate-400 whitespace-nowrap align-middle">{formatCurrency(row.inflationAdjustedValue, currency.code)}</td>
                     </tr>
                   ))
                 )}

@@ -27,9 +27,9 @@ export const SIP_CALCULATOR_FAQS: FaqItem[] = [
       'Dollar-cost averaging allocates a fixed monetary amount at regular intervals regardless of asset price fluctuations. When mutual fund or ETF prices decline, your fixed installment automatically purchases more fund units. When prices recover, those lower-cost units amplify your gains. Over multi-year economic cycles, DCA eliminates the stress of market timing and lowers your volume-weighted average cost per share.',
   },
   {
-    question: 'What is an Annual Step-Up SIP and why is it recommended?',
+    question: 'How is a Step-Up SIP different from a regular SIP, and does it account for inflation?',
     answer:
-      'A Step-Up (or Top-Up) SIP automatically increases your recurring contribution by a fixed percentage (typically 5% to 15%) each year, mirroring annual salary increments. Because compound interest accelerates dramatically on larger balances, stepping up contributions by 10% annually over a 15- to 20-year horizon can more than double your final accumulated corpus compared to keeping contributions flat.',
+      'A regular SIP keeps contributions flat, whereas a Step-Up (Top-Up) SIP increases your recurring contribution by a fixed percentage (e.g., 5% or 10%) at the start of each year to mirror salary increments. At 12% nominal p.a., a 10% annual step-up boosts a 15-year corpus by 72.1% and nearly doubles a 20-year corpus (+99.1%). Unlike basic calculators that omit inflation on step-ups, KivaroTools lets you enable Annual SIP Step-Up (%) and Expected Inflation Rate (%) together.',
   },
   {
     question: 'How do entry fees, expense ratios, and capital gains taxes erode wealth?',
@@ -72,14 +72,34 @@ export const SIP_CALCULATOR_FAQS: FaqItem[] = [
       'Indian financial portals and AMFI guidelines calculate monthly SIP returns using nominal APR compounding (periodic rate i = r / 12), where 12% annual return implies exactly 1.0% per month. Conversely, European and North American quantitative models frequently default to effective APY compounding (periodic rate i = (1 + r)^(1/12) - 1 ≈ 0.9489% per month) so that compounding intra-year exactly equals the stated annual return. KivaroTools provides a direct toggle between both conventions.',
   },
   {
-    question: 'How does combining an initial day-1 lump sum with an ongoing monthly step-up SIP affect compounding?',
+    question: 'How do I combine an existing mutual fund lump sum with a monthly Step-Up SIP?',
     answer:
-      'KivaroTools supports a hybrid mode where a starting lump sum (P_0) compounds concurrently with your regular recurring installments. The lump-sum component compounds for the entire horizon: P_0 * (1 + i)^n, while each periodic installment compounds for its respective remaining life. This hybrid modeling reflects the common scenario of investing an existing savings reserve while continuing monthly dollar-cost averaging.',
+      'In SIP mode, enter your existing balance in the optional Initial Investment / Starting Capital field, set your monthly contribution, and add your Annual SIP Step-up (%). The starting lump sum (P_0) compounds for the full horizon while each stepped-up installment compounds for its remaining duration, giving you a unified schedule and CSV export.',
   },
   {
-    question: 'How does Long-Term Capital Gains (LTCG) tax affect mutual fund redemption values at maturity?',
+    question: 'How can UAE expats plan SIP investments across AED, USD, and INR?',
     answer:
-      'Upon liquidating mutual fund investments, tax authorities assess capital gains tax on net profits above statutory exemption thresholds. KivaroTools calculates taxable gains as max(0, Ending Balance - Net Cost Basis) and applies your configured LTCG tax rate. This displays your realistic post-tax net take-home wealth rather than an inflated gross theoretical figure.',
+      'Use the 154-currency selector to switch between AED, USD, or INR and model local or NRI mutual fund SIPs in your contribution currency. You can set Capital Gains Tax to 0% for UAE tax-free local scenarios or enter your destination market tax and inflation assumptions (note: currency exchange-rate fluctuations are not modeled).',
+  },
+  {
+    question: 'Can I export the year-by-year SIP table to Excel (CSV) or share my scenario?',
+    answer:
+      'Yes. Click Export CSV above the yearly schedule to download an RFC-4180 spreadsheet (starting balance, contributions, gross growth, fees, taxes, ending balance, net gain, and inflation-adjusted value) ready for Microsoft Excel or Google Sheets, or click Share to copy a Base64 #state= URL containing your exact inputs.',
+  },
+  {
+    question: 'Is a Systematic Investment Plan (SIP) the same as a UK SIPP?',
+    answer:
+      'No. A SIP (Systematic Investment Plan) is a regular investing schedule (dollar-cost or pound-cost averaging), whereas a SIPP (Self-Invested Personal Pension) is a UK tax-wrapped pension account. You can model regular GBP contributions here, then apply UK ISA or SIPP wrapper rules and HMRC allowances separately.',
+  },
+  {
+    question: 'Does the Capital Gains Tax field compute exact Indian LTCG, Pakistan CGT, US IRS, UK HMRC, or Canada CRA tax rules?',
+    answer:
+      'No. The Capital Gains Tax (%) field applies a simplified flat percentage deduction to net realized gains above net cost basis at maturity: max(0, Ending Balance - Net Cost Basis) × Tax Rate. It is for illustrative planning only and does not model statutory exemptions, holding-period slabs, Indian LTCG exemptions, Pakistan filer/non-filer CGT, US IRS Form 1099-DIV brackets, UK HMRC CGT allowances, Canada CRA inclusion rates, or Saudi Zakat.',
+  },
+  {
+    question: 'Where can I model post-retirement withdrawals (SWP) after my SIP finishes?',
+    answer:
+      'This SIP calculator models wealth accumulation only (periodic SIP, one-time lump sum, and combined hybrid investing). For Systematic Withdrawal Plans (SWP) and retirement drawdown timelines, use the KivaroTools Compound Interest Calculator (/finance/compound-interest).',
   },
 ];
 
@@ -113,30 +133,30 @@ export default function SipCalculatorSeo() {
             name: 'How to Calculate SIP Mutual Fund Returns, Step-Up Top-Ups & Lumpsum Growth Online',
             description: 'Step-by-step guide to projecting Systematic Investment Plan (SIP) maturity corpus, annual step-up increments, inflation-adjusted returns, and target wealth goals.',
             step: [
-      {
-        '@type': 'HowToStep',
-        position: 1,
-        name: 'Choose SIP, Lumpsum, or Hybrid Investment Mode',
-        text: 'Select regular monthly SIP, one-time Lumpsum, or combined Hybrid mode, or switch to Reverse Target Corpus planning.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 2,
-        name: 'Enter Monthly Investment, Expected Return & Tenure',
-        text: 'Set your periodic contribution amount, expected annual CAGR (%), and investment horizon in years.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 3,
-        name: 'Enable Annual Step-Up & Inflation/Tax Adjustments',
-        text: 'Optionally add an annual step-up percentage to model salary increments and apply inflation and capital gains tax rates.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 4,
-        name: 'Analyze Wealth Breakdown & Yearly Amortization Table',
-        text: 'Review total invested capital vs. wealth gained, compare delay cost penalties, and export the year-by-year growth schedule.',
-      }
+              {
+                '@type': 'HowToStep',
+                position: 1,
+                name: 'Choose SIP, Lumpsum, or Hybrid Investment Mode',
+                text: 'Select regular monthly SIP, one-time Lumpsum, or combined Hybrid mode, or switch to Reverse Target Corpus planning.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 2,
+                name: 'Enter Monthly Investment, Expected Return & Tenure',
+                text: 'Set your periodic contribution amount, expected annual CAGR (%), and investment horizon in years.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 3,
+                name: 'Enable Annual Step-Up & Inflation/Tax Adjustments',
+                text: 'Optionally add an annual step-up percentage to model salary increments and apply inflation and capital gains tax rates.',
+              },
+              {
+                '@type': 'HowToStep',
+                position: 4,
+                name: 'Analyze Wealth Breakdown & Yearly Amortization Table',
+                text: 'Review total invested capital vs. net wealth gained, compare SIP vs. Day-1 lump-sum timing deltas, inspect ±4% sensitivity scenarios, and export the year-by-year CSV schedule or HTML report.',
+              }
             ],
           }),
         }}
@@ -144,11 +164,11 @@ export default function SipCalculatorSeo() {
 
       <section aria-labelledby="sip-calculator-systematic-investment-plan-sip" className="mb-8">
         <h2 id="sip-calculator-systematic-investment-plan-sip" className="text-2xl sm:text-3xl font-extrabold mb-4 text-slate-900 dark:text-slate-100 tracking-tight">
-          Systematic Investment Plan (SIP) Guide: Mathematics, Compounding &amp; Wealth Architecture
+          Step-Up SIP &amp; Mutual Fund Calculator Guide: Real Returns, Expense Ratios &amp; Compounding
         </h2>
         <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
           <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-            <strong>Privacy First &amp; Secure:</strong> All financial simulations, reverse root-finding, and Monte Carlo iterations run 100% locally in your browser. No personal data, amounts, or portfolio balances are ever transmitted to external servers.
+            <strong>Client-Side Calculation Privacy:</strong> All SIP projections, goal-solver bisection iterations, and 3,000-path Monte Carlo simulations run locally in your browser. Your calculator inputs and portfolio amounts are not transmitted to a calculation server.
           </p>
         </blockquote>
         <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-base">
@@ -188,11 +208,75 @@ export default function SipCalculatorSeo() {
         </div>
       </section>
 
+      {/* Section: How to Use the SIP Calculator (Synced with HowTo Schema) */}
+      <section aria-labelledby="sip-how-to-use" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="sip-how-to-use" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+          How to Use This Online SIP &amp; Mutual Fund Calculator
+        </h2>
+        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
+          Whether you are building a monthly investment plan, comparing SIP vs. lump sum timing, or reverse-solving a target corpus with our SIP investment planner, follow these four steps:
+        </p>
+        <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5 not-prose list-none p-0">
+          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+            <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 1 · Select Mode &amp; Currency</div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+              Choose <strong>SIP (Periodic)</strong>, <strong>Lump Sum (One-Time)</strong>, or click the top-bar <strong>Goal Planner</strong> button. Pick from 154 ISO-4217 currencies (including USD, INR with lakh/crore grouping, PKR, AED, GBP, CAD, SAR, PHP, and ZAR).
+            </p>
+          </li>
+          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+            <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 2 · Enter Contribution, Return &amp; Tenure</div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+              Enter your periodic amount (plus optional <strong>Initial Starting Capital</strong> for a combined lump sum + SIP plan), expected annual return rate (% p.a.), and investment horizon (1–100 years).
+            </p>
+          </li>
+          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+            <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 3 · Add Step-Up, Inflation, TER &amp; Tax</div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+              Set an <strong>Annual SIP Step-up (%)</strong> and <strong>Expected Inflation Rate (%)</strong>, then open <strong>Expense Ratio (TER), Tax &amp; Timing</strong> to model management fees, entry fees, flat maturity tax, Nominal APR vs. Effective APY, and Beginning vs. End-of-Period timing.
+            </p>
+          </li>
+          <li className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+            <div className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">Step 4 · Review Scenarios, Monte Carlo &amp; Export</div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 m-0 leading-relaxed">
+              Compare nominal vs. real purchasing power, inspect the live <strong>SIP vs. Day-1 Lump Sum</strong> delta and 3,000-path Monte Carlo percentiles, and export the year-by-year table via <strong>Export CSV</strong>, <strong>Full Report</strong>, or <strong>Share</strong> URL.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      {/* Section: Supported Capabilities & Known Limitations */}
+      <section aria-labelledby="sip-capabilities-limitations" className="mb-8">
+        <h2 id="sip-capabilities-limitations" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+          Supported Capabilities &amp; Model Limitations
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 not-prose text-xs sm:text-sm">
+          <div className="p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20">
+            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 text-sm mb-2">Verified Supported Capabilities</h3>
+            <ul className="list-disc pl-4 space-y-1.5 text-slate-600 dark:text-slate-400 m-0">
+              <li>Monthly, quarterly, and yearly SIPs, one-time lump sums, and hybrid Initial Capital + Step-Up SIPs.</li>
+              <li>Annual percentage Step-Up (%) combined with inflation discounting (real purchasing power).</li>
+              <li>Three-tier friction: front-end entry fee (%), geometric ongoing TER (%), and flat maturity capital gains tax (%).</li>
+              <li>80-iteration reverse Goal Planner, live SIP vs. Day-1 Lump Sum delta, ±4% sensitivity, and 3,000-path Monte Carlo with target reach probability.</li>
+              <li>154 ISO-4217 currencies (with Indian lakh/crore INR grouping), RFC-4180 CSV export, printable HTML report, and Base64 URL state sharing.</li>
+            </ul>
+          </div>
+          <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/20">
+            <h3 className="font-bold text-amber-900 dark:text-amber-300 text-sm mb-2">Known Scope Limitations (What This Tool Does Not Model)</h3>
+            <ul className="list-disc pl-4 space-y-1.5 text-slate-600 dark:text-slate-400 m-0">
+              <li><strong>Percentage Step-Up Only:</strong> Annual step-up supports percentage increments (%), not fixed-currency annual top-ups.</li>
+              <li><strong>Accumulation Only (No SWP):</strong> Does not model Systematic Withdrawal Plans (use our <Link href="/finance/compound-interest" className="underline font-semibold text-emerald-700 dark:text-emerald-400">Compound Interest &amp; Withdrawal Calculator</Link> for drawdown).</li>
+              <li><strong>Assumed Returns Only:</strong> Does not pull historical mutual fund NAVs or compute irregular-date XIRR / rolling returns.</li>
+              <li><strong>Simplified Flat Tax:</strong> Applies one flat % to net gains at maturity; does not compute jurisdiction-specific tax slabs, exemptions, or FX rate shifts.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Section: The Mathematics of SIP Returns */}
       <section aria-labelledby="sip-calculator-the-mathematical-sip-future-va" className="mb-8">
-        <h3 id="sip-calculator-the-mathematical-sip-future-va" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-the-mathematical-sip-future-va" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           The Mathematical SIP Future Value Formulas
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           The terminal future value of an SIP depends on the timing of contributions within each cycle. In banking and mutual fund operations, monthly automated debits typically execute on the first business day of the cycle. This timing represents an <strong>Annuity Due</strong>. If contributions are deposited at the end of the month, the schedule follows an <strong>Ordinary Annuity</strong>.
         </p>
@@ -294,9 +378,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Worked Numerical Example */}
       <section aria-labelledby="sip-calculator-independently-verified-worked-" className="mb-8">
-        <h3 id="sip-calculator-independently-verified-worked-" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-independently-verified-worked-" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Independently Verified Worked Numerical Example
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           To demonstrate the exact mechanics of the KivaroTools engine, consider a typical retail wealth-building plan:
         </p>
@@ -332,7 +416,7 @@ export default function SipCalculatorSeo() {
             </div>
             <div>
               <strong>Step 3: Compute Compound Growth Factor:</strong>{' '}
-              <code>(1 + 0.01)^120 = (1.01)^120 &approx; 3.30038689</code>.
+              <code>(1 + 0.01)^120 = (1.01)^120 ≈ 3.30038689</code>.
             </div>
             <div>
               <strong>Step 4: Ordinary Annuity Sum:</strong>{' '}
@@ -360,9 +444,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Step-Up SIP Dynamics */}
       <section aria-labelledby="sip-calculator-step-up-top-up-sip-the-multipl" className="mb-8">
-        <h3 id="sip-calculator-step-up-top-up-sip-the-multipl" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-step-up-top-up-sip-the-multipl" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Step-Up (Top-Up) SIP: The Multiplier for Salaried Investors
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           In standard financial modeling, recurring contributions are assumed to remain static for decades. In reality, working professionals receive regular wage increases and promotions. A <strong>Step-Up SIP</strong> systematically escalates your monthly allocation by a chosen percentage (e.g., 5% or 10%) at the start of each new investment year:
         </p>
@@ -393,21 +477,21 @@ export default function SipCalculatorSeo() {
                 <td className="p-3">$60,000</td>
                 <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">$116,170</td>
                 <td className="p-3">$95,625</td>
-                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$175,765 (+51.3%)</td>
+                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$168,716 (+45.2%)</td>
               </tr>
               <tr>
                 <td className="p-3 font-bold text-slate-900 dark:text-white">15 Years</td>
                 <td className="p-3">$90,000</td>
                 <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">$252,288</td>
-                <td className="p-3">$190,634</td>
-                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$458,541 (+81.8%)</td>
+                <td className="p-3">$190,635</td>
+                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$434,192 (+72.1%)</td>
               </tr>
               <tr>
                 <td className="p-3 font-bold text-slate-900 dark:text-white">20 Years</td>
                 <td className="p-3">$120,000</td>
                 <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">$499,574</td>
                 <td className="p-3">$343,650</td>
-                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$1,142,398 (+128.7%)</td>
+                <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">$994,436 (+99.1%)</td>
               </tr>
             </tbody>
           </table>
@@ -416,36 +500,36 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Institutional Friction: Fees, Taxes & Net Cost Basis */}
       <section aria-labelledby="sip-calculator-the-compounding-drag-expense-r" className="mb-8">
-        <h3 id="sip-calculator-the-compounding-drag-expense-r" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-the-compounding-drag-expense-r" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Institutional Drag: Entry Fees, Expense Ratios (TER) &amp; Capital Gains Tax
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Online calculators frequently present gross theoretical returns without deducting operational frictions. In real-world asset management, three distinct leakages reduce your net take-home wealth:
         </p>
 
         <div className="space-y-4 my-6 not-prose">
           <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
               1. Front-End Entry &amp; Contribution Fees (Cost Basis Reduction)
-            </h4>
+            </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Deducted directly from gross deposits before capital enters the market. For instance, a 10% entry fee on a $100 deposit invests $90 into your portfolio. Your taxable cost basis is established at the net invested amount ($90), ensuring accurate subsequent capital gains calculation.
             </p>
           </div>
 
           <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
               2. Annual Management Expense Ratio (TER Drag)
-            </h4>
+            </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Deducted continuously from accumulated portfolio assets after applying investment returns. The periodic fee rate is computed via geometric compounding: <code>fee_rate = 1 &minus; (1 &minus; TER)^(1/m)</code>. Even a 1% annual fee deduction compounds over 20 years to consume 15% to 25% of your potential total wealth gains.
             </p>
           </div>
 
           <div className="p-4 rounded-xl border border-gray-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-            <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1">
               3. Terminal Capital Gains Tax Liquidation
-            </h4>
+            </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400">
               Assessed on net realized capital gains upon maturity: <code>Tax = max(0, Ending Balance &minus; Net Cost Basis) &times; Tax Rate</code>. Post-tax future value accurately reveals your real take-home liquidation corpus.
             </p>
@@ -473,7 +557,7 @@ export default function SipCalculatorSeo() {
               2. Front-End Entry Fees &amp; Net Taxable Cost Basis
             </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              When brokers deduct an upfront entry load (e.g., 2%), only the remaining 98% of your cash enters the market. Erroneously counting the fee toward your invested cost basis distorts subsequent capital gains calculations. Our engine properly segregates gross cash deposits from net cost basis to ensure IRS and international tax audit compliance.
+              When brokers deduct an upfront entry load (e.g., 2%), only the remaining 98% of your cash enters the market. Erroneously counting the fee toward your invested cost basis distorts subsequent capital gains calculations. Our engine segregates gross cash deposits from net cost basis so the simplified flat-rate maturity tax estimate reflects net market profits rather than taxing upfront entry fees (illustrative only; not a substitute for local tax filings).
             </p>
           </div>
 
@@ -491,7 +575,7 @@ export default function SipCalculatorSeo() {
               4. 80-Iteration Bisection Solver: Target Reachability &amp; Upper Bounds
             </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Basic goal planners fail when target wealth goals are impossible under given returns and tenures. KivaroTools executes an 80-iteration numerical bisection solver accurate to $0.05. If a milestone exceeds upper contribution boundaries, the engine transparently indicates unreachability rather than returning flawed calculations.
+              Basic goal planners fail when target wealth goals are impossible under given returns and tenures. KivaroTools executes an 80-iteration numerical bisection solver reconciling target reachability within 0.05 currency units. If a milestone exceeds upper contribution boundaries, the engine transparently indicates unreachability rather than returning flawed calculations.
             </p>
           </div>
 
@@ -517,9 +601,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Goal Planner Numerical Bisection Solver */}
       <section aria-labelledby="sip-calculator-goal-planner-reverse-solver" className="mb-8">
-        <h3 id="sip-calculator-goal-planner-reverse-solver" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-goal-planner-reverse-solver" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Goal Planner: High-Precision Reverse Bisection Root-Finder
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Instead of guessing arbitrary monthly contribution amounts until your target portfolio is reached, the KivaroTools Goal Planner implements a numerical <strong>Bisection Root-Finding Algorithm</strong> (80 iterations) that determines the exact periodic installment or lump sum required to reach your target milestone.
         </p>
@@ -535,16 +619,16 @@ export default function SipCalculatorSeo() {
             &bull; <strong>Reachability Check:</strong> If a milestone cannot be achieved within maximum allowable contributions, the solver transparently marks the goal as unreachable (<code>reachable: false</code>) rather than providing misleading estimations.
           </div>
           <div>
-            &bull; <strong>Full Friction Accounting:</strong> Incorporates your assumed return rate, annual step-up percentage, entry fees, management expense ratio, and capital gains tax during every bisection evaluation to guarantee precision within $0.05.
+            &bull; <strong>Full Friction Accounting:</strong> Incorporates your assumed return rate, annual step-up percentage, entry fees, management expense ratio, and capital gains tax during every bisection evaluation to reconcile target reachability within 0.05 currency units.
           </div>
         </div>
       </section>
 
       {/* Section: 3,000-Path Monte Carlo Stochastic Simulation */}
       <section aria-labelledby="sip-calculator-monte-carlo-stochastic-simulat" className="mb-8">
-        <h3 id="sip-calculator-monte-carlo-stochastic-simulat" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-monte-carlo-stochastic-simulat" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           3,000-Path Monte Carlo Stochastic Simulation (Lognormal Brownian Motion)
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Real equity markets do not deliver smooth, uniform returns each year. To protect investors against Sequence of Returns Risk, KivaroTools includes an institutional-grade 3,000-path Monte Carlo simulator utilizing the <strong>Box-Muller Transform</strong> for normally distributed stochastic variations:
         </p>
@@ -564,9 +648,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Inflation Discounting */}
       <section aria-labelledby="sip-calculator-inflation-discounting-measurin" className="mb-8">
-        <h3 id="sip-calculator-inflation-discounting-measurin" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-inflation-discounting-measurin" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Inflation Discounting: Measuring Real Future Purchasing Power
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Achieving a nominal portfolio of $500,000 sounds impressive, but if consumer prices double over the same 20-year span, your actual standard of living is dramatically different. KivaroTools provides continuous real purchasing power calculation:
         </p>
@@ -582,9 +666,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: 154 ISO World Currencies, RFC-4180 CSV & Privacy */}
       <section aria-labelledby="sip-calculator-global-currencies-csv-privacy" className="mb-8">
-        <h3 id="sip-calculator-global-currencies-csv-privacy" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-global-currencies-csv-privacy" className="text-xl sm:text-2xl font-bold mt-8 mb-3 text-slate-800 dark:text-slate-200">
           Global Multi-Currency, Security &amp; Institutional Export Standards
-        </h3>
+        </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
           Built for international investors, wealth managers, and financial planners, KivaroTools delivers enterprise-grade utility:
         </p>
@@ -605,61 +689,149 @@ export default function SipCalculatorSeo() {
         </ul>
       </section>
 
-      {/* Section: Frequently Asked Questions */}
-            {/* Competitor Comparison Section */}
+      {/* Section: Regional SIP & Mutual Fund Examples Across 154 Currencies */}
+      <section aria-labelledby="sip-regional-worked-examples" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+        <h2 id="sip-regional-worked-examples" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+          Regional SIP Worked Examples Across 154 Currencies
+        </h2>
+        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm sm:text-base">
+          Every figure below is computed directly by the KivaroTools deterministic engine (Nominal APR, Beginning-of-Period timing) using illustrative assumptions to demonstrate how step-ups, Total Expense Ratios (TER), flat maturity tax, and inflation interact across currencies:
+        </p>
+
+        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
+          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <thead>
+              <tr className="bg-gray-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
+                <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold">Market / Currency</th>
+                <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold">Illustrative Inputs</th>
+                <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold">Total Invested</th>
+                <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold">Nominal Ending Value</th>
+                <th scope="col" className="p-3 border-b border-gray-200 dark:border-slate-700 font-bold text-emerald-700 dark:text-emerald-400">Real Value (Today&apos;s Money)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">India (INR)</th>
+                <td className="p-3">&#8377;10,000/mo, 10% step-up, 12% p.a., 10 yrs, 1% TER, 6% inflation</td>
+                <td className="p-3">&#8377;19,12,491</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">&#8377;32,02,239 <span className="text-[11px] font-normal text-slate-500">(&#8377;33,74,326 pre-TER)</span></td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">&#8377;17,88,113</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">United States (USD)</th>
+                <td className="p-3">$500/mo, 5% step-up, 12% p.a., 15 yrs, 0.75% TER, 15% flat tax, 4% inflation</td>
+                <td className="p-3">$129,471.36</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">$279,227.60 <span className="text-[11px] font-normal text-slate-500">(-$38,342.30 fees/tax)</span></td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">$155,045.17</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">Pakistan (PKR)</th>
+                <td className="p-3">PKR 25,000/mo, 10% step-up, 14% p.a., 10 yrs, 1% TER, 8% inflation</td>
+                <td className="p-3">PKR 4,781,227</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">PKR 8,881,687</td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">PKR 4,113,939</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">UAE (AED)</th>
+                <td className="p-3">AED 2,500/mo, 5% step-up, 8% p.a., 15 yrs, 0.5% TER, 0% tax, 2.5% inflation</td>
+                <td className="p-3">AED 647,357</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">AED 1,119,689</td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">AED 773,107</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">Saudi Arabia (SAR)</th>
+                <td className="p-3">SAR 2,000/mo, 5% step-up, 7% p.a., 15 yrs, 2.5% inflation</td>
+                <td className="p-3">SAR 517,885</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">SAR 861,207</td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">SAR 594,634</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">Philippines (PHP)</th>
+                <td className="p-3">&#8369;5,000/mo + &#8369;50,000 initial capital, 8% p.a., 10 yrs, 4% inflation</td>
+                <td className="p-3">&#8369;650,000</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">&#8369;1,031,810</td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">&#8369;697,054</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-bold text-slate-900 dark:text-white">South Africa (ZAR)</th>
+                <td className="p-3">R2,500/mo, 10% p.a., 15 yrs, 1% TER, 5% inflation</td>
+                <td className="p-3">R450,000</td>
+                <td className="p-3 font-semibold text-slate-800 dark:text-slate-200">R951,983</td>
+                <td className="p-3 font-bold text-emerald-700 dark:text-emerald-400">R457,920</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-5 not-prose text-xs text-slate-600 dark:text-slate-400">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+            <strong className="text-slate-900 dark:text-slate-100 block mb-1">UK &amp; Canada Investors (GBP / CAD)</strong>
+            In the UK, a Systematic Investment Plan (regular pound-cost averaging) is distinct from a <strong>SIPP</strong> (Self-Invested Personal Pension) or Stocks &amp; Shares <strong>ISA</strong>. In Canada, model regular CAD mutual fund or ETF investing here and account separately for TFSA/RRSP contribution limits or CRA capital gains inclusion rules.
+          </div>
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+            <strong className="text-slate-900 dark:text-slate-100 block mb-1">Accumulation Only (Need SWP Drawdown?)</strong>
+            This tool models periodic accumulation, one-time lump sums, and hybrid investing. If you want to model post-retirement <strong>Systematic Withdrawal Plans (SWP)</strong> or general fixed-deposit compounding, use our{' '}
+            <Link href="/finance/compound-interest" className="text-emerald-600 dark:text-emerald-400 font-semibold underline hover:text-emerald-700">
+              Compound Interest &amp; Withdrawal Calculator
+            </Link>.
+          </div>
+        </div>
+      </section>
+
+      {/* Competitor Comparison Section */}
       <section aria-labelledby="sip-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
         <h2 id="sip-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          SIP Calculator Comparison: KivaroTools vs. Leading Investment Portals
+          SIP Calculator Comparison: KivaroTools vs. Global &amp; Regional Portals
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
-          See why mutual fund investors choose KivaroTools for goal planning and step-up returns:
+          Feature comparison based on publicly available web calculator capabilities across global and regional SIP tools:
         </p>
         <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
-          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <table className="min-w-[740px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Groww SIP</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">ET Money</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Zerodha Coin</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-bold">KivaroTools</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">The Calculator Site</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">SIPCalculator.org</th>
+                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Groww &amp; Zerodha</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Step-Up SIP Top-Up Modeling</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Annual percentage increments)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate tool required</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic step-up</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Fixed SIP only</td>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Step-Up SIP + Initial Lump Sum</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">Combined on one screen (% step-up + initial capital)</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Initial balance + yearly % step-up</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Step-up supported</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate pages; no hybrid lump sum + SIP</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Reverse Target Corpus Solver</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Solves required monthly SIP for goal)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Manual trial &amp; error</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic goal calculator</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Manual trial &amp; error</td>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Inflation + TER Expense Ratio + Tax</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">All 3 modeled + real purchasing power</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Inflation only; no TER or tax</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Omits TER &amp; inflation on main SIP pages</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Delay Cost Analysis</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Quantifies 1, 3, 5-yr delay penalties)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Reverse Goal Solver &amp; SIP vs. Lump Sum</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">80-iter bisection solver + live timing delta</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate SIP &amp; Lumpsum tabs; no reverse solver</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Brokerage Account Cross-Sell</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Zero cross-selling (100% Independent)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Pushes Groww demat account</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Lead-capture prompts</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Requires Kite login</td>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Monte Carlo Risk Simulation</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">3,000 lognormal paths + goal probability</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">Not included</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Inflation &amp; LTCG Tax Adjustments</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Yes (Real net purchasing power)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Nominal returns only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Nominal returns only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Nominal returns only</td>
+                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Currencies, Export &amp; Account Prompts</th>
+                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">154 currencies (INR lakh/crore) · CSV · Share URL · No brokerage signup</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">5 currencies · no CSV/URL share</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">20 currencies · CSV/PDF/Share</td>
+                <td className="p-3 border border-slate-200 dark:border-slate-700">INR only · no CSV · promotes brokerage signup</td>
               </tr>
             </tbody>
           </table>
@@ -667,9 +839,9 @@ export default function SipCalculatorSeo() {
       </section>
 
       <section aria-labelledby="sip-calculator-frequently-asked-questions-abo" className="mb-8">
-        <h3 id="sip-calculator-frequently-asked-questions-abo" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-frequently-asked-questions-abo" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
           Frequently Asked Questions About SIP Investing
-        </h3>
+        </h2>
         <div className="space-y-3">
           {SIP_CALCULATOR_FAQS.map((faq, index) => (
             <details
@@ -690,9 +862,9 @@ export default function SipCalculatorSeo() {
 
       {/* Section: Contextual Internal Links */}
       <section aria-labelledby="sip-calculator-explore-related-financial-amp-" className="mb-8">
-        <h3 id="sip-calculator-explore-related-financial-amp-" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
+        <h2 id="sip-calculator-explore-related-financial-amp-" className="text-xl sm:text-2xl font-bold mt-10 mb-4 text-slate-800 dark:text-slate-200">
           Explore Related Financial &amp; Investment Calculators
-        </h3>
+        </h2>
         <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm mb-4">
           Complement your long-term investment planning with our suite of auditable finance calculators:
         </p>
@@ -766,55 +938,15 @@ export default function SipCalculatorSeo() {
         </div>
 
         {/* Statutory Regulatory Disclaimer */}
-        <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          <strong>Statutory Notice &amp; Financial Disclaimer:</strong> The calculations, projections, and simulation scenarios generated by this tool are purely hypothetical estimates for educational and illustrative planning purposes. They do not constitute financial, investment, legal, or tax advice. Market investments are subject to market risks, including the potential loss of principal. Past performance of mutual funds, indices, or asset classes does not guarantee future results. Consult a licensed financial advisor or registered investment consultant before committing capital.
+        <div className="mt-8 pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 leading-relaxed space-y-2">
+          <p className="m-0">
+            <strong>Statutory Notice &amp; Financial Disclaimer:</strong> The calculations, projections, and simulation scenarios generated by this tool are purely hypothetical estimates for educational and illustrative planning purposes. They do not constitute financial, investment, legal, or tax advice. Market investments are subject to market risks, including the potential loss of principal. Past performance of mutual funds, indices, or asset classes does not guarantee future results.
+          </p>
+          <p className="m-0">
+            <strong>Regional Tax &amp; Regulatory Scope:</strong> The flat Capital Gains Tax (%) field is a simplified illustrative estimate at maturity only. It does not model jurisdiction-specific tax rules, exemptions, or wrappers—such as India SEBI/AMFI exit loads or LTCG exemptions, Pakistan SECP/MUFAP/FBR filer/non-filer CGT slabs, US IRS Form 1099-DIV/brackets or 401(k)/IRA rules, UK HMRC CGT allowances or ISA/SIPP wrappers, Canada CRA inclusion rates or TFSA/RRSP rules, Saudi ZATCA Zakat, Philippines BIR, or South Africa SARS regulations. Consult a licensed financial advisor or qualified tax professional before committing capital.
+          </p>
         </div>
       </section>
-    
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            SIP &amp; Mutual Fund Returns Calculator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip calculator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">step up sip calculator with inflation</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mutual fund return calculator lump sum and sip</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip calculator with expense ratio ter and exit load</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">target amount sip goal planner calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">dollar cost averaging mutual fund calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">nominal apr vs effective apy sip calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">ltcg capital gains tax mutual fund calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">monte carlo sip wealth simulator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">monthly investment compound return calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">step up sip calculator with annual increment percentage</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip return calculator for 10 years 15 years 20 years</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">target corpus reverse sip calculator monthly investment</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip vs lumpsum mutual fund return comparison calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip calculator with inflation adjusted purchasing power</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mutual fund sip calculator with capital gains tax</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">monthly sip investment growth chart and table</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip delay cost calculator how much you lose waiting</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">retirement sip corpus planning calculator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">top up sip return calculator with compounding</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">monte carlo mutual fund sip simulation calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate future value of monthly sip investment</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">equity mutual fund cagr return sip calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">daily sip vs monthly sip investment calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip wealth multiplier calculator 10x 20x 50x</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip calculator for child education planning</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">index fund sip return calculator 12 percent cagr</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">debt mutual fund sip calculator after tax returns</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">perpetual sip maturity value calculator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">goal based financial planning sip calculator free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">zero tracking private sip calculator for investors</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">download sip amortization schedule csv table</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">hybrid mutual fund sip projection calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">sip return calculation formula with step up in excel</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much sip needed for 1 crore in 10 years</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free online mutual fund systematic investment planner</span>
-          </div>
-        </section>
-      </article>
+    </article>
   );
 }
