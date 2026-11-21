@@ -32,6 +32,7 @@ import {
   type YearlySummaryRow,
   type LoanCalculationResult,
   type ComparisonResult,
+  ISO_ACTIVE_CURRENCIES,
   WORLD_CURRENCIES,
   safeNumber,
   validateLoanParams,
@@ -64,6 +65,7 @@ export type {
 };
 
 export {
+  ISO_ACTIVE_CURRENCIES,
   WORLD_CURRENCIES,
   parseCleanNumber,
   safeNumber,
@@ -350,7 +352,7 @@ export default function EmiCalculator() {
 
   const symbolDisplay = currency.symbol.trim();
   const currencyInputPadding =
-    symbolDisplay.length >= 3 ? 'pl-12' : symbolDisplay.length === 2 ? 'pl-9' : 'pl-7';
+    symbolDisplay.length >= 4 ? 'pl-14' : symbolDisplay.length === 3 ? 'pl-12' : symbolDisplay.length === 2 ? 'pl-9' : 'pl-7';
 
   const activeAdvancedCount =
     (extraPayment > 0 ? 1 : 0) +

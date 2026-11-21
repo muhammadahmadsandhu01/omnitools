@@ -341,7 +341,7 @@ export default function MortgageCalculator() {
 
   const baseline = useMemo(() => {
     if (!isReady) return null;
-    return buildMortgageModel({ ...values, extra: 0, prepay: 0 });
+    return buildMortgageModel({ ...values, frequency: 'monthly', extra: 0, prepay: 0 });
   }, [isReady, values]);
 
   const formatter = useMemo(() => new Intl.NumberFormat('en-US', {
@@ -354,12 +354,30 @@ export default function MortgageCalculator() {
   const money = (v: number) => formatter.format(Number.isFinite(v) ? v : 0);
 
   const currencySymbol = useMemo(() => {
+    const explicitSymbols: Record<string, string> = {
+      USD: '$',
+      SGD: 'S$',
+      AUD: 'A$',
+      CAD: 'CA$',
+      HKD: 'HK$',
+      NZD: 'NZ$',
+      ZAR: 'R',
+      PHP: '₱',
+      GBP: '£',
+      EUR: '€',
+      INR: '₹',
+      JPY: '¥',
+      AED: 'AED',
+      SAR: 'SAR',
+      PKR: 'PKR',
+    };
+    if (explicitSymbols[currency.code]) return explicitSymbols[currency.code];
     try {
       return (
         new Intl.NumberFormat('en-US', {
           style: 'currency',
           currency: currency.code,
-          currencyDisplay: 'narrowSymbol',
+          currencyDisplay: 'symbol',
         })
           .formatToParts(0)
           .find((p) => p.type === 'currency')?.value || currency.code
@@ -368,6 +386,28 @@ export default function MortgageCalculator() {
       return currency.code;
     }
   }, [currency.code]);
+
+  const pmiDropoffInfo = useMemo(() => {
+    if (!result || result.pmiTotal <= 0) return null;
+    let lastPmiPeriod = 0;
+    for (let i = result.rows.length - 1; i >= 0; i -= 1) {
+      if (result.rows[i].pmi > 0) {
+        lastPmiPeriod = result.rows[i].period;
+        break;
+      }
+    }
+    if (lastPmiPeriod <= 0) return null;
+    const perYear = frequency === 'biweekly' ? 26 : 12;
+    const dropPeriod = lastPmiPeriod + 1;
+    const dropYear = Math.ceil(dropPeriod / perYear);
+    return { period: dropPeriod, year: dropYear, lastPmiPeriod };
+  }, [result, frequency]);
+
+  const activeAdvancedCount = useMemo(() => {
+    return [hoa, pmiRate, pmiLtv, closingAmount, closingPct, points, lenderFees, prepay].filter(
+      (v) => v.trim() !== '' && toNumber(v) > 0,
+    ).length;
+  }, [hoa, pmiRate, pmiLtv, closingAmount, closingPct, points, lenderFees, prepay]);
 
   const loanToValue = priceNum > 0 && result ? (result.loan / priceNum) * 100 : 0;
 
@@ -521,10 +561,10 @@ export default function MortgageCalculator() {
           `Estimated Payoff Duration: ${result.payoffYears.toFixed(1)} years (${result.payoffPeriods} payments)`,
           ...(interestSaved > 0
             ? [
-                '--- Prepayment Impact ---',
-                `Interest Saved: ${money(interestSaved)}`,
-                `Time Saved: ${yearsSaved > 0 ? `${yearsSaved} yrs ` : ''}${remMonthsSaved} mos`,
-              ]
+              '--- Prepayment Impact ---',
+              `Interest Saved: ${money(interestSaved)}`,
+              `Time Saved: ${yearsSaved > 0 ? `${yearsSaved} yrs ` : ''}${remMonthsSaved} mos`,
+            ]
             : []),
           '--- Note ---',
           'Estimate only. Calculations do not constitute a lender disclosure or official Loan Estimate.',
@@ -642,9 +682,8 @@ export default function MortgageCalculator() {
               value={homePrice}
               style={currencyPaddingStyle}
               onChange={(e) => setPrice(e.target.value)}
-              className={`${moneyInputBaseClass} ${
-                fieldErrors.homePrice ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-              }`}
+              className={`${moneyInputBaseClass} ${fieldErrors.homePrice ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                }`}
               aria-label="Home purchase price"
               aria-invalid={!!fieldErrors.homePrice}
               aria-describedby={fieldErrors.homePrice ? `${homePriceId}-error` : undefined}
@@ -674,9 +713,8 @@ export default function MortgageCalculator() {
                 value={downPayment}
                 style={currencyPaddingStyle}
                 onChange={(e) => setDPAmount(e.target.value)}
-                className={`${moneyInputBaseClass} ${
-                  fieldErrors.downPayment ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                }`}
+                className={`${moneyInputBaseClass} ${fieldErrors.downPayment ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                  }`}
                 aria-label="Down payment amount"
                 aria-invalid={!!fieldErrors.downPayment}
                 aria-describedby={fieldErrors.downPayment ? `${downPaymentId}-error` : undefined}
@@ -701,9 +739,8 @@ export default function MortgageCalculator() {
                 value={downPct}
                 style={percentPaddingStyle}
                 onChange={(e) => setDPPct(e.target.value)}
-                className={`${inputBaseClass} pr-11 ${
-                  fieldErrors.downPct ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                }`}
+                className={`${inputBaseClass} pr-11 ${fieldErrors.downPct ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                  }`}
                 aria-label="Down payment percentage"
                 aria-invalid={!!fieldErrors.downPct}
                 aria-describedby={fieldErrors.downPct ? `${downPctId}-error` : undefined}
@@ -733,9 +770,8 @@ export default function MortgageCalculator() {
                 value={rate}
                 style={percentPaddingStyle}
                 onChange={(e) => setRate(e.target.value)}
-                className={`${inputBaseClass} pr-11 ${
-                  fieldErrors.rate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                }`}
+                className={`${inputBaseClass} pr-11 ${fieldErrors.rate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                  }`}
                 aria-label="Annual interest rate"
                 aria-invalid={!!fieldErrors.rate}
                 aria-describedby={fieldErrors.rate ? `${rateId}-error` : undefined}
@@ -759,9 +795,8 @@ export default function MortgageCalculator() {
               placeholder="e.g. 30"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              className={`${inputBaseClass} ${
-                fieldErrors.term ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-              }`}
+              className={`${inputBaseClass} ${fieldErrors.term ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                }`}
               aria-label="Loan term in years"
               aria-invalid={!!fieldErrors.term}
               aria-describedby={fieldErrors.term ? `${termId}-error` : undefined}
@@ -783,11 +818,10 @@ export default function MortgageCalculator() {
                 key={v}
                 type="button"
                 onClick={() => setFrequency(v)}
-                className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-all text-center whitespace-nowrap ${
-                  frequency === v
+                className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-all text-center whitespace-nowrap ${frequency === v
                     ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                     : 'bg-gray-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-400'
-                }`}
+                  }`}
               >
                 {v === 'monthly' ? 'Monthly (12/yr)' : 'Biweekly (26/yr)'}
               </button>
@@ -817,9 +851,8 @@ export default function MortgageCalculator() {
                 value={tax}
                 style={currencyPaddingStyle}
                 onChange={(e) => setTax(e.target.value)}
-                className={`${moneyInputBaseClass} ${
-                  fieldErrors.tax ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                }`}
+                className={`${moneyInputBaseClass} ${fieldErrors.tax ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                  }`}
                 aria-label="Annual property tax"
                 aria-invalid={!!fieldErrors.tax}
                 aria-describedby={fieldErrors.tax ? `${taxId}-error` : undefined}
@@ -846,9 +879,8 @@ export default function MortgageCalculator() {
                 value={insurance}
                 style={currencyPaddingStyle}
                 onChange={(e) => setInsurance(e.target.value)}
-                className={`${moneyInputBaseClass} ${
-                  fieldErrors.insurance ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                }`}
+                className={`${moneyInputBaseClass} ${fieldErrors.insurance ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                  }`}
                 aria-label="Annual home insurance"
                 aria-invalid={!!fieldErrors.insurance}
                 aria-describedby={fieldErrors.insurance ? `${insuranceId}-error` : undefined}
@@ -862,19 +894,59 @@ export default function MortgageCalculator() {
           </div>
         </div>
 
+        {/* Extra Monthly Principal (Surfaced for 1-step extra-payment modeling) */}
+        <div className="min-w-0 w-full">
+          <label htmlFor={extraId} className={labelClass}>
+            Extra Monthly Principal <span className="text-xs font-normal text-slate-500 dark:text-slate-400">(Optional)</span>
+          </label>
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold pointer-events-none select-none text-sm">
+              {currencySymbol}
+            </span>
+            <input
+              id={extraId}
+              type="number"
+              min="0"
+              step="any"
+              placeholder="e.g. 200"
+              value={extra}
+              style={currencyPaddingStyle}
+              onChange={(e) => setExtra(e.target.value)}
+              className={`${moneyInputBaseClass} ${fieldErrors.extra ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                }`}
+              aria-label="Extra monthly principal payment"
+              aria-invalid={!!fieldErrors.extra}
+              aria-describedby={fieldErrors.extra ? `${extraId}-error` : undefined}
+            />
+          </div>
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            Applied strictly toward principal reduction to cut interest, PMI duration, and payoff time.
+          </p>
+          {fieldErrors.extra && (
+            <p id={`${extraId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
+              {fieldErrors.extra}
+            </p>
+          )}
+        </div>
+
         {/* Advanced Options Accordion */}
         <button
           type="button"
           onClick={() => setAdvancedOpen((v) => !v)}
           aria-expanded={advancedOpen}
           aria-controls={advancedControlsId}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors"
+          className="w-full min-h-[44px] flex items-center justify-between px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none transition-colors"
         >
           <span className="flex items-center gap-2 text-left">
             <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-            Advanced Mortgage & Financing Options
+            <span>Advanced Options (HOA, PMI, Closing Costs &amp; Lump Sum)</span>
+            {activeAdvancedCount > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300">
+                {activeAdvancedCount} active
+              </span>
+            )}
           </span>
-          {advancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {advancedOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
         </button>
 
         {advancedOpen && (
@@ -899,9 +971,8 @@ export default function MortgageCalculator() {
                     value={hoa}
                     style={currencyPaddingStyle}
                     onChange={(e) => setHoa(e.target.value)}
-                    className={`${moneyInputBaseClass} ${
-                      fieldErrors.hoa ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${moneyInputBaseClass} ${fieldErrors.hoa ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Monthly HOA dues"
                     aria-invalid={!!fieldErrors.hoa}
                     aria-describedby={fieldErrors.hoa ? `${hoaId}-error` : undefined}
@@ -927,9 +998,8 @@ export default function MortgageCalculator() {
                     value={pmiRate}
                     style={percentPaddingStyle}
                     onChange={(e) => setPmiRate(e.target.value)}
-                    className={`${inputBaseClass} pr-11 ${
-                      fieldErrors.pmiRate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${inputBaseClass} pr-11 ${fieldErrors.pmiRate ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Annual PMI rate"
                     aria-invalid={!!fieldErrors.pmiRate}
                     aria-describedby={fieldErrors.pmiRate ? `${pmiRateId}-error` : undefined}
@@ -945,7 +1015,27 @@ export default function MortgageCalculator() {
 
               {/* PMI Cancellation Threshold */}
               <div className="flex flex-col justify-start min-w-0 w-full">
-                <label htmlFor={pmiLtvId} className={labelClass}>PMI Cancellation Threshold</label>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label htmlFor={pmiLtvId} className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 leading-snug">
+                    PMI Cancellation LTV
+                  </label>
+                  <div className="inline-flex items-center gap-1 shrink-0">
+                    {(['80', '78'] as const).map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setPmiLtv(pct)}
+                        className={`px-1.5 py-0.5 text-[11px] font-semibold rounded-md border transition-colors ${(pmiLtv || '80') === pct
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-gray-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-gray-200 dark:border-slate-700 hover:border-blue-400'
+                          }`}
+                        title={pct === '80' ? '80% LTV borrower-requested cancellation (HPA)' : '78% LTV automatic statutory cancellation (CFPB HPA)'}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div className="relative">
                   <input
                     id={pmiLtvId}
@@ -957,9 +1047,8 @@ export default function MortgageCalculator() {
                     value={pmiLtv}
                     style={percentPaddingStyle}
                     onChange={(e) => setPmiLtv(e.target.value)}
-                    className={`${inputBaseClass} pr-11 ${
-                      fieldErrors.pmiLtv ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${inputBaseClass} pr-11 ${fieldErrors.pmiLtv ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="PMI cancellation LTV threshold"
                     aria-invalid={!!fieldErrors.pmiLtv}
                     aria-describedby={fieldErrors.pmiLtv ? `${pmiLtvId}-error` : undefined}
@@ -989,9 +1078,8 @@ export default function MortgageCalculator() {
                     value={closingAmount}
                     style={currencyPaddingStyle}
                     onChange={(e) => setClosingAmt(e.target.value)}
-                    className={`${moneyInputBaseClass} ${
-                      fieldErrors.closingAmount ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${moneyInputBaseClass} ${fieldErrors.closingAmount ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Closing costs amount"
                     aria-invalid={!!fieldErrors.closingAmount}
                     aria-describedby={fieldErrors.closingAmount ? `${closingAmountId}-error` : undefined}
@@ -1017,9 +1105,8 @@ export default function MortgageCalculator() {
                     value={closingPct}
                     style={percentPaddingStyle}
                     onChange={(e) => setClosingPercentage(e.target.value)}
-                    className={`${inputBaseClass} pr-11 ${
-                      fieldErrors.closingPct ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${inputBaseClass} pr-11 ${fieldErrors.closingPct ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Closing costs percentage of price"
                     aria-invalid={!!fieldErrors.closingPct}
                     aria-describedby={fieldErrors.closingPct ? `${closingPctId}-error` : undefined}
@@ -1047,9 +1134,8 @@ export default function MortgageCalculator() {
                     value={points}
                     style={percentPaddingStyle}
                     onChange={(e) => setPoints(e.target.value)}
-                    className={`${inputBaseClass} pr-11 ${
-                      fieldErrors.points ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${inputBaseClass} pr-11 ${fieldErrors.points ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Discount points percentage of loan"
                     aria-invalid={!!fieldErrors.points}
                     aria-describedby={fieldErrors.points ? `${pointsId}-error` : undefined}
@@ -1079,9 +1165,8 @@ export default function MortgageCalculator() {
                     value={lenderFees}
                     style={currencyPaddingStyle}
                     onChange={(e) => setLenderFees(e.target.value)}
-                    className={`${moneyInputBaseClass} ${
-                      fieldErrors.lenderFees ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                    }`}
+                    className={`${moneyInputBaseClass} ${fieldErrors.lenderFees ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                      }`}
                     aria-label="Upfront lender fees"
                     aria-invalid={!!fieldErrors.lenderFees}
                     aria-describedby={fieldErrors.lenderFees ? `${lenderFeesId}-error` : undefined}
@@ -1095,40 +1180,9 @@ export default function MortgageCalculator() {
               </div>
             </div>
 
-            {/* Prepayment & Extra Principal Section with clean divider */}
+            {/* One-Time Lump-Sum Prepayment Section */}
             <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {/* Extra Monthly Principal */}
-                <div className="flex flex-col justify-start min-w-0 w-full">
-                  <label htmlFor={extraId} className={labelClass}>Extra Monthly Principal</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 font-semibold pointer-events-none select-none text-sm">
-                      {currencySymbol}
-                    </span>
-                    <input
-                      id={extraId}
-                      type="number"
-                      min="0"
-                      step="any"
-                      placeholder="e.g. 500"
-                      value={extra}
-                      style={currencyPaddingStyle}
-                      onChange={(e) => setExtra(e.target.value)}
-                      className={`${moneyInputBaseClass} ${
-                        fieldErrors.extra ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                      }`}
-                      aria-label="Extra monthly principal payment"
-                      aria-invalid={!!fieldErrors.extra}
-                      aria-describedby={fieldErrors.extra ? `${extraId}-error` : undefined}
-                    />
-                  </div>
-                  {fieldErrors.extra && (
-                    <p id={`${extraId}-error`} role="alert" className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      {fieldErrors.extra}
-                    </p>
-                  )}
-                </div>
-
+              <div className="grid grid-cols-1 gap-4">
                 {/* One-Time Prepayment */}
                 <div className="flex flex-col justify-start min-w-0 w-full">
                   <label htmlFor={prepayId} className={labelClass}>One-Time Prepayment</label>
@@ -1145,9 +1199,8 @@ export default function MortgageCalculator() {
                       value={prepay}
                       style={currencyPaddingStyle}
                       onChange={(e) => setPrepay(e.target.value)}
-                      className={`${moneyInputBaseClass} ${
-                        fieldErrors.prepay ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                      }`}
+                      className={`${moneyInputBaseClass} ${fieldErrors.prepay ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                        }`}
                       aria-label="One-time prepayment amount"
                       aria-invalid={!!fieldErrors.prepay}
                       aria-describedby={fieldErrors.prepay ? `${prepayId}-error` : undefined}
@@ -1187,9 +1240,8 @@ export default function MortgageCalculator() {
                         placeholder="e.g. 12"
                         value={prepayPeriod}
                         onChange={(e) => setPrepayPeriod(e.target.value)}
-                        className={`${inputBaseClass} ${
-                          fieldErrors.prepayPeriod ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
-                        }`}
+                        className={`${inputBaseClass} ${fieldErrors.prepayPeriod ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-slate-700'
+                          }`}
                         aria-label="Prepayment period number"
                         aria-invalid={!!fieldErrors.prepayPeriod}
                         aria-describedby={fieldErrors.prepayPeriod ? `${prepayPeriodId}-error` : undefined}
@@ -1278,8 +1330,15 @@ export default function MortgageCalculator() {
                       : 'Includes 26 biweekly payments/yr + monthly housing escrow'}
                   </p>
                 </div>
-                <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-slate-700 shadow-sm whitespace-nowrap shrink-0">
-                  LTV: {loanToValue.toFixed(1)}%
+                <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                  <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-slate-700 shadow-sm whitespace-nowrap">
+                    LTV: {loanToValue.toFixed(1)}%
+                  </div>
+                  {pmiDropoffInfo && (
+                    <div className="text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 shadow-sm whitespace-nowrap">
+                      PMI Ends: {frequency === 'biweekly' ? `Period ${pmiDropoffInfo.period}` : `Mo ${pmiDropoffInfo.period}`} (Yr {pmiDropoffInfo.year})
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1389,14 +1448,64 @@ export default function MortgageCalculator() {
               </div>
             </div>
 
-            {/* Prepayment Acceleration Impact (Conditional) */}
+            {/* Itemized Cash to Close Breakdown (Shown when upfront fees/points/closing costs are present) */}
+            {(result.closing > 0 || result.points > 0 || result.upfrontFees > 0 || result.appliedPrepayAtOrigination > 0) && (
+              <div className="p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                    Itemized Cash to Close
+                  </h4>
+                  <span className="text-xs font-bold text-blue-700 dark:text-blue-400 tabular-nums">
+                    {money(result.cashToClose)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block">Down Payment</span>
+                    <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{money(result.down)}</span>
+                  </div>
+                  {result.closing > 0 && (
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block">Closing Costs</span>
+                      <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{money(result.closing)}</span>
+                    </div>
+                  )}
+                  {result.points > 0 && (
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block">Discount Points</span>
+                      <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{money(result.points)}</span>
+                    </div>
+                  )}
+                  {result.upfrontFees > 0 && (
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block">Lender Fees</span>
+                      <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{money(result.upfrontFees)}</span>
+                    </div>
+                  )}
+                  {result.appliedPrepayAtOrigination > 0 && (
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block">Day-1 Prepayment</span>
+                      <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{money(result.appliedPrepayAtOrigination)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Prepayment & Biweekly Acceleration Impact (Compared vs. Standard Monthly Baseline) */}
             {totalSavings > 0 && (
               <div className="p-4 sm:p-5 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-emerald-50/60 dark:bg-emerald-950/20 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <h4 className="font-bold text-emerald-950 dark:text-emerald-200 text-sm">
-                    Prepayment & Accelerated Payoff Impact
-                  </h4>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingDown className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <h4 className="font-bold text-emerald-950 dark:text-emerald-200 text-sm">
+                      {frequency === 'biweekly' && toNumber(extra) === 0 && toNumber(prepay) === 0
+                        ? 'Biweekly vs. Monthly Payoff Savings'
+                        : frequency === 'biweekly'
+                          ? 'Biweekly + Prepayment Savings (vs. Monthly)'
+                          : 'Prepayment & Accelerated Payoff Impact'}
+                    </h4>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs sm:text-sm">
                   <div className="min-w-0">
@@ -1520,11 +1629,10 @@ export default function MortgageCalculator() {
                           setScheduleView(v);
                           setSchedulePage(1);
                         }}
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
-                          scheduleView === v
+                        className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${scheduleView === v
                             ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
                             : 'text-slate-600 dark:text-slate-400'
-                        }`}
+                          }`}
                       >
                         {v === 'yearly' ? 'Yearly' : frequency === 'biweekly' ? 'Biweekly' : 'Monthly'}
                       </button>
@@ -1545,7 +1653,7 @@ export default function MortgageCalculator() {
               {scheduleOpen && (
                 <div id={scheduleControlsId} className="space-y-3">
                   <div className="overflow-x-auto max-h-[460px] rounded-xl border border-gray-200 dark:border-slate-800 [scrollbar-width:thin] overscroll-x-contain">
-                    <table className="min-w-[580px] w-full text-xs" aria-label="Amortization Schedule">
+                    <table className="min-w-[680px] w-full text-xs tabular-nums" aria-label="Amortization Schedule">
                       <thead className="sticky top-0 bg-gray-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-b border-gray-200 dark:border-slate-800">
                         <tr>
                           <th scope="col" className="text-left px-3 py-2.5 font-bold whitespace-nowrap">
@@ -1663,7 +1771,7 @@ export default function MortgageCalculator() {
 
               <div>
                 <strong className="text-slate-900 dark:text-white block mb-0.5">2. Payment Frequency & Accelerated Biweekly Convention:</strong>
-                Monthly schedules model 12 scheduled payments per year. Biweekly schedules implement the industry-standard <strong>Accelerated Biweekly</strong> convention, where the biweekly installment is set to exactly half of the 30-year monthly payment (<code className="font-mono">Monthly P&I ÷ 2</code>) paid 26 times per year. Because 26 half-payments equal 13 full monthly payments annually, this produces one extra monthly payment per year, accelerating principal reduction and typically cutting a 30-year term to ~24.15 years. Note: This is an educational comparison; actual lender servicing using calendar day counts (Actual/365, leap years, or bank holidays) may yield slight timing differences.
+                Monthly schedules model 12 scheduled payments per year. Biweekly schedules implement the industry-standard <strong>Accelerated Biweekly</strong> convention, where the biweekly installment is set to exactly half of the standard monthly payment for your selected term (<code className="font-mono">Monthly P&I ÷ 2</code>) paid 26 times per year. Because 26 half-payments equal 13 full monthly payments annually, this produces one extra monthly payment per year, accelerating principal reduction and typically cutting a 30-year term to ~24.15 years. Note: This is an educational comparison; actual lender servicing using calendar day counts (Actual/365, leap years, or bank holidays) may yield slight timing differences.
               </div>
 
               <div>
@@ -1678,7 +1786,7 @@ export default function MortgageCalculator() {
 
               <div>
                 <strong className="text-slate-900 dark:text-white block mb-0.5">5. PMI Estimation & Statutory Cancellation (HPA 1998):</strong>
-                PMI is modeled as a balance-based estimate (<code className="font-mono">Beginning Balance × PMI Rate ÷ 12</code>) when original loan-to-value (LTV) exceeds 80%. In this educational model, PMI drops off once the balance reaches the configured threshold (default 80% LTV). Under federal law (the US Homeowners Protection Act of 1998), borrowers have the right to request PMI cancellation in writing at 80% LTV of the original value (subject to good payment history and no subordinate liens), while lenders are legally required to automatically terminate PMI at 78% LTV based on the original amortization schedule.
+                PMI is modeled as a balance-based estimate (<code className="font-mono">Beginning Balance × PMI Rate ÷ 12</code>) when original loan-to-value (LTV) exceeds 80%. In this educational model, PMI drops off once the balance reaches the configured threshold (default 80% LTV). Under federal law (the US Homeowners Protection Act of 1998), borrowers have the right to request PMI cancellation in writing at 80% LTV of the original value (subject to good payment history and no subordinate liens), while lenders are legally required to automatically terminate PMI at 78% LTV based on the original amortization schedule. Note: 80%/78% HPA cancellation applies to conventional mortgages only—not FHA loans, which carry HUD Upfront MIP (UFMIP) and life-of-loan Annual MIP when origination LTV exceeds 90%.
               </div>
 
               <div>

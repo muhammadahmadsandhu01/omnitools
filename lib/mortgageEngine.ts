@@ -172,19 +172,19 @@ export const MORTGAGE_PRESETS: PresetScenario[] = [
     },
   },
   {
-    id: 'fha-30yr',
-    label: 'FHA 30-Yr (3.5% Down + PMI)',
-    description: '$300k home, 3.5% down ($10.5k), 6.75% rate, 0.85% annual PMI with dynamic cancellation.',
+    id: 'conv-5pct-pmi',
+    label: 'Conventional 5% Down (PMI)',
+    description: '$300k home, 5% down ($15k), 6.75% rate, 0.75% annual conventional PMI with 80% LTV drop-off.',
     values: {
       homePrice: '300000',
-      downPayment: '10500',
-      downPct: '3.5',
+      downPayment: '15000',
+      downPct: '5',
       rate: '6.75',
       term: '30',
       tax: '3600',
       insurance: '1200',
       hoa: '50',
-      pmiRate: '0.85',
+      pmiRate: '0.75',
       pmiLtv: '80',
       closingPct: '2.5',
       points: '0',
@@ -354,15 +354,15 @@ export function buildMortgageModel(inputs: CalculationInputs): MortgageModelResu
   const scheduled =
     inputs.frequency === 'biweekly'
       ? roundMinor(
-          calculatePeriodicPayment(
-            balance,
-            inputs.rate,
-            Math.max(1, Math.round(inputs.years * 12)),
-            12,
-            minorUnit,
-          ) / 2,
+        calculatePeriodicPayment(
+          balance,
+          inputs.rate,
+          Math.max(1, Math.round(inputs.years * 12)),
+          12,
           minorUnit,
-        )
+        ) / 2,
+        minorUnit,
+      )
       : calculatePeriodicPayment(balance, inputs.rate, periods, paymentsPerYear, minorUnit);
   const extraPerPeriod = roundMinor((Math.max(0, inputs.extra) * 12) / paymentsPerYear, minorUnit);
 

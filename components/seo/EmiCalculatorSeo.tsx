@@ -113,7 +113,7 @@ export default function EmiCalculatorSeo() {
         '@type': 'HowToStep',
         position: 1,
         name: 'Select Currency and Enter Principal, Rate & Tenure',
-        text: 'Pick from 42 world currencies (including USD, INR with lakh/crore grouping, PKR, AED, SAR, GBP, AUD, PHP, and ZAR), enter your loan principal, nominal annual interest rate (0% to 100%), and tenure in Years or Months.',
+        text: 'Pick from 154 active ISO-4217 currencies (including USD, INR with lakh/crore grouping, PKR, AED, SAR, GBP, AUD, PHP, and ZAR), enter your loan principal, nominal annual interest rate (0% to 100%), and tenure in Years or Months.',
       },
       {
         '@type': 'HowToStep',
@@ -188,7 +188,7 @@ export default function EmiCalculatorSeo() {
           <div className="not-prose grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 mb-6">
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm mb-1">
-                42 Currencies + INR Lakh/Crore
+                154 ISO-4217 Currencies + INR Lakh/Crore
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
                 Supports USD, INR (with 12,34,567.89 grouping), PKR, AED, SAR, GBP, AUD, PHP, ZAR, and 3-decimal Gulf currencies (BHD, KWD, OMR) using clean ISO codes.
@@ -245,40 +245,40 @@ export default function EmiCalculatorSeo() {
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
             Whether you are comparing personal loan offers, testing weekly or biweekly auto payments, or checking whether a lump-sum prepayment should shorten your tenure or lower your monthly EMI, follow these four steps:
           </p>
-          <ol className="not-prose list-none pl-0 grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <li className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
+          <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
               <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1.5">
                 Step 1 &middot; Currency, Principal, Rate &amp; Tenure
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
-                Choose from 42 currencies (including USD, INR with lakh/crore grouping, PKR, AED, SAR, GBP, AUD, PHP, and ZAR), enter your principal ($0&ndash;$100M), nominal annual rate (0%&ndash;100%), and tenure using the <strong>Yrs / Mos</strong> toggle (or click a quick example preset).
+                Choose from 154 ISO-4217 currencies (including USD, INR with lakh/crore grouping, PKR, AED, SAR, GBP, AUD, PHP, and ZAR), enter your principal ($0&ndash;$100M), nominal annual rate (0%&ndash;100%), and tenure using the <strong>Yrs / Mos</strong> toggle (or click a quick example preset).
               </p>
-            </li>
-            <li className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
+            </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
               <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1.5">
                 Step 2 &middot; Payment Frequency &amp; Timing
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
                 Select <strong>Monthly (12/yr)</strong>, <strong>Biweekly (26/yr)</strong>, or <strong>Weekly (52/yr)</strong>, and toggle between <strong>End of Period (In Arrears)</strong> for standard loans or <strong>Beginning of Period (In Advance)</strong> for annuity-due leases and retail finance.
               </p>
-            </li>
-            <li className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
+            </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
               <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1.5">
                 Step 3 &middot; Add Prepayments &amp; Lender Fees
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
                 Open <strong>Advanced Payoff &amp; Fee Options</strong> to enter an Extra Recurring Payment, a One-Time Prepayment at a specific Period # (<strong>Reduce Term</strong>, <strong>Reduce Payment Re-Cast</strong>, or <strong>Immediate</strong>), plus Origination and Periodic Fees.
               </p>
-            </li>
-            <li className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
+            </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 p-4">
               <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1.5">
                 Step 4 &middot; Audit Schedule &amp; Export CSV
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
                 Review Principal vs. Interest %, Economic Loan Cost, and Accelerated Payoff Savings, inspect the period-by-period or Yearly Summary table, and click <strong>Export Amortization CSV</strong> or <strong>Share Scenario</strong> with zero signup.
               </p>
-            </li>
-          </ol>
+            </div>
+          </div>
         </section>
 
         {/* Section 1: Reducing-Balance EMI Formula */}
@@ -466,7 +466,7 @@ export default function EmiCalculatorSeo() {
             4. Global &amp; Regional Loan Scenarios (Multi-Currency, Fees &amp; 0% Promo)
           </h2>
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            Because KivaroTools formats 42 currencies (including INR lakh/crore grouping and clean ISO codes for AED, SAR, QAR, OMR, KWD, and BHD) without forcing currency conversion, you can model local personal, auto, and retail loans directly:
+            Because KivaroTools formats 154 ISO-4217 currencies (including INR lakh/crore grouping and clean ISO codes for AED, SAR, QAR, OMR, KWD, and BHD) without forcing currency conversion, you can model local personal, auto, and retail loans directly:
           </p>
           <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-xs sm:text-sm">
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-800/40">
@@ -608,7 +608,7 @@ export default function EmiCalculatorSeo() {
               <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
                 <tr>
                   <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Currencies &amp; Principal</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">42 world currencies (0, 2, or 3 decimal minor units; INR lakh/crore grouping; clean ISO codes for AED/SAR/QAR/OMR/KWD/BHD). Principal 0 to 100,000,000.</td>
+                  <td className="p-3 border border-gray-200 dark:border-slate-700">154 active ISO-4217 currencies (0, 2, or 3 decimal minor units; INR lakh/crore grouping; clean ISO codes for AED/SAR/QAR/OMR/KWD/BHD). Principal 0 to 100,000,000.</td>
                   <td className="p-3 border border-gray-200 dark:border-slate-700">Reducing-balance principal with non-negative clamping and symbol/comma sanitization.</td>
                 </tr>
                 <tr>
@@ -662,7 +662,7 @@ export default function EmiCalculatorSeo() {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
                 <tr>
                   <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Currencies &amp; Formatting</th>
-                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">42 currencies (INR lakh/crore + clean AED/SAR ISO)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">154 ISO-4217 currencies (INR lakh/crore + clean AED/SAR ISO)</td>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">USD only</td>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">INR only (lakh/crore)</td>
                   <td className="p-3 border border-slate-200 dark:border-slate-700">USD only</td>

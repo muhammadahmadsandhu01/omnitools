@@ -7,79 +7,64 @@ export interface FaqItem {
 
 export const MORTGAGE_CALCULATOR_FAQS: FaqItem[] = [
   {
-    question: 'What financial components are included in a standard PITI mortgage payment?',
+    question: 'How much faster can I pay off a 30-year mortgage by paying extra toward principal each month?',
     answer:
-      'PITI stands for Principal, Interest, Taxes, and Insurance. Principal directly reduces your outstanding loan balance, while Interest compensates the mortgage servicer for financing the capital. Taxes cover municipal and county property assessments collected in escrow, and Insurance covers hazard homeowners coverage plus Private Mortgage Insurance (PMI) if your down payment is below 20%. Where applicable, Homeowners Association (HOA) dues are added to calculate your true recurring housing budget.',
+      'Enter an Extra Monthly Principal amount directly in the calculator input panel. Every extra unit is applied strictly to your remaining principal balance, reducing future interest charges and accelerating payoff. For example, on a $300,000 home with 5% down ($285,000 loan) at 6.75% over 30 years with 0.75% PMI, adding $200/month cuts payoff from 30.0 years to 22.75 years (saving 7 years 3 months), eliminates $108,187.79 in lifetime interest, and saves $7,672.64 in PMI.',
   },
   {
-    question: 'When can Private Mortgage Insurance (PMI) be terminated under federal law?',
+    question: 'Should I put 20% down to avoid PMI or put less down and pay PMI temporarily?',
     answer:
-      'Under the federal Homeowners Protection Act of 1998 (HPA) in the United States, borrowers with conventional loans have the right to request written PMI cancellation once their principal balance amortizes to 80% of the original property value, provided payments are current and no secondary liens exist. Furthermore, mortgage servicers are legally mandated to automatically cancel PMI once the loan-to-value (LTV) ratio drops to 78% of the original purchase price based on the initial amortization schedule. KivaroTools models this drop-off dynamically at each payment cycle.',
+      'Putting 20% down (80% Loan-to-Value) removes Private Mortgage Insurance (PMI) immediately ($0). Putting 5% to 10% down lowers your upfront Cash to Close but adds monthly PMI until your loan balance reaches your cancellation threshold (default 80% LTV borrower-requested; adjustable to 78% LTV automatic cancellation). Use the calculator to compare total cumulative PMI cost against the cash you preserve at closing.',
   },
   {
-    question: 'What are the main financial trade-offs between 15-year and 30-year fixed mortgages?',
+    question: 'When does PMI drop off automatically on a conventional mortgage?',
     answer:
-      'A 30-year fixed mortgage offers lower monthly payments, maximizing cash-flow flexibility and initial homebuyer purchasing power. In contrast, a 15-year fixed mortgage requires approximately 30% to 38% higher monthly payments, but lenders typically offer lower interest rates (0.50% to 0.75% lower), and the accelerated amortization schedule saves borrowers hundreds of thousands of dollars in cumulative lifetime interest charges.',
+      'Under the U.S. Homeowners Protection Act of 1998 (CFPB HPA), conventional borrowers can request written PMI cancellation once principal reaches 80% of the original home value (with a good payment history and no subordinate liens), and servicers must automatically terminate PMI at 78% LTV on the original amortization schedule. KivaroTools lets you toggle between 80% and 78% LTV and displays the exact period and year PMI drops to $0.00.',
   },
   {
-    question: 'What are mortgage discount points and how do you calculate the breakeven period?',
+    question: 'Why do 80% and 78% LTV PMI cancellation rules not apply to FHA 3.5% down loans?',
     answer:
-      'One mortgage discount point costs 1% of your financed loan amount upfront in exchange for a permanent reduction in the nominal interest rate (typically 0.25% per point). The breakeven timeline is calculated by dividing total upfront point costs by monthly payment savings: Breakeven (Months) = Upfront Point Cost / Monthly Interest Savings. If buying one point costs $3,000 and saves $50 each month, the breakeven horizon is 60 months (5 years). If you expect to stay in the home longer than 5 years without refinancing, paying points is financially advantageous.',
+      'Per official U.S. HUD rules (effective post-June 3, 2013), FHA loans with an origination LTV above 90% (such as 3.5% down at 96.5% LTV) carry Annual Mortgage Insurance Premium (MIP) for the entire life of the loan plus an Upfront MIP (UFMIP, typically 1.75%). Because 80%/78% HPA cancellation applies to conventional mortgages only, FHA borrowers generally must refinance into a conventional loan to remove MIP.',
   },
   {
-    question: 'How does an annual escrow analysis affect your monthly mortgage bill?',
+    question: 'How much more does an accelerated biweekly mortgage schedule save compared to monthly payments?',
     answer:
-      'Lenders collect estimated municipal property taxes and hazard insurance premiums each month, holding these funds in a dedicated escrow impound account. Because county tax assessments and property insurance premiums fluctuate annually, servicers conduct an annual escrow analysis. If disbursements exceeded projections, an escrow shortage occurs, raising your monthly mortgage payment for the subsequent 12 months to cover the deficit and rebuild the regulatory minimum cushion.',
+      'An accelerated biweekly schedule sets each payment to half of the standard monthly P&I installment and collects 26 payments per year (every two weeks), which equals 13 full monthly payments annually. On a $500,000 home with 10% down ($450,000 loan) at 6.5% over 30 years plus $200/month extra principal, switching to accelerated biweekly reduces total interest to $373,708.74 and payoff to 20.92 years—saving $200,238.59 and 9 years 1 month versus a standard monthly schedule.',
   },
   {
-    question: 'How does biweekly mortgage compounding accelerate loan payoff compared to monthly payments?',
+    question: 'Can I export all 360 monthly or biweekly mortgage payments with extra payments to Excel?',
     answer:
-      'Under a true accelerated biweekly mortgage schedule, you make a half-payment every two weeks across 52 weeks in a calendar year, totaling 26 biweekly installments. Because there are 26 half-payments, you effectively complete 13 full monthly payments each year—one extra full monthly payment applied directly toward principal reduction. On a typical 30-year loan, this biweekly schedule eliminates roughly 4 to 6 years of repayment duration and saves tens of thousands in lifetime interest without requiring formal refinancing.',
+      'Yes. Click Download CSV (Excel Ready) to export the complete period-by-period or yearly amortization schedule—including Payment, Principal, Interest, PMI, Extra Principal, and Ending Balance—with zero signup, zero email gates, and no export limits. Cells are formatted per RFC-4180 with spreadsheet formula-injection protection (CWE-1236).',
   },
   {
-    question: 'What is the difference between the Nominal Interest Rate and the Annual Percentage Rate (APR)?',
+    question: 'Does this mortgage calculator include property taxes, home insurance, and HOA fees?',
     answer:
-      'The nominal interest rate is the baseline contractual rate used to calculate your scheduled monthly principal and interest payment. The Annual Percentage Rate (APR) represents the comprehensive cost of credit expressed as an annual percentage, incorporating the nominal rate plus mandatory financing charges such as discount points, loan origination fees, processing fees, and prepaid mortgage interest. As a result, the APR is virtually always higher than the nominal note rate.',
+      'Yes. Enter Annual Property Tax and Annual Home Insurance directly in the main form, and open Advanced Options to add Monthly HOA Dues and Annual PMI Rate. KivaroTools converts annual escrow items into monthly equivalents to show your full PITI + HOA recurring housing budget alongside lifetime cash outflow.',
   },
   {
-    question: 'How do extra principal payments shorten the loan without refinancing?',
+    question: 'Can I include closing costs, discount points, and lender fees in Cash to Close?',
     answer:
-      'Conventional mortgages calculate interest based on the remaining unpaid principal balance at each billing cycle. Applying extra funds strictly toward principal reduces the outstanding balance faster, which directly decreases the interest accrued during every subsequent payment period. As interest charges decline, a larger portion of your regular monthly payment goes toward principal, creating a compounding acceleration effect that reduces total payoff time and cumulative interest without altering your contractual payment obligations.',
+      'Yes. Open Advanced Options to enter Closing Costs (either as a flat amount or a percentage of purchase price, kept bidirectionally synchronized), Discount Points (1% of financed loan principal per point), and Upfront Lender Fees. The calculator displays an itemized Cash to Close breakdown alongside your amortization schedule.',
   },
   {
-    question: 'Can you obtain a conventional or government mortgage with zero down payment?',
+    question: 'Can I calculate a mortgage or home loan in AED, SGD, ZAR, PHP, SAR, GBP, AUD, or USD?',
     answer:
-      'Yes, specific government-backed loan programs permit 100% financing with zero down payment. Qualified military service members, veterans, and surviving spouses can obtain VA loans with zero down payment and zero monthly PMI. Additionally, USDA loans offer zero-down financing for eligible low-to-moderate-income buyers purchasing homes in designated rural and suburban communities. Conventional loans typically require a minimum down payment of 3% for first-time buyers or 5% for standard programs.',
+      'Yes. Select from 154 active ISO-4217 world currencies in the currency selector, including AED, SGD, ZAR, PHP, SAR, GBP, AUD, INR, EUR, and USD, with exact minor-unit decimal precision (0, 2, or 3 decimal places). Currency selection formats denominations only and does not perform live foreign-exchange conversion or apply country-specific tax rules.',
   },
   {
-    question: 'What closing costs should home buyers expect at loan settlement?',
+    question: 'Why do UAE or Singapore bank mortgage calculators differ from a standard amortization schedule?',
     answer:
-      'Homebuyers typically incur upfront closing costs ranging between 2% and 5% of the total purchase price. These settlement charges encompass lender origination fees, credit reports, property appraisal fees, title searches, lender title insurance, settlement agent fees, transfer taxes, government recording fees, and initial escrow impound deposits for prepaid hazard insurance and municipal taxes. KivaroTools allows you to model closing costs either as an exact dollar figure or as a percentage of purchase price (both fields stay bidirectionally synchronized), alongside discount points and itemized lender fees, to compute your precise settlement cash required to close.',
+      'Standard fixed-rate amortization calculates principal, interest, extra payments, and payoff dates accurately in AED or SGD. Local bank eligibility tools additionally layer on statutory borrowing caps—such as Singapore MAS 55% TDSR / 30% MSR limits and ABSD stamp duty, or Central Bank of the UAE (CBUAE) LTV caps and Dubai Land Department (DLD) 4% transfer fees—which are outside a generic amortization model.',
   },
   {
-    question: 'How do property tax re-assessments and homeowners insurance rate hikes impact future payments?',
+    question: 'Does this calculator include South African transfer duty, Philippine Pag-IBIG tiers, or Canadian semi-annual compounding?',
     answer:
-      'While your principal and interest payment remains strictly fixed on a fixed-rate loan, your total monthly housing cost is not fixed if property taxes and insurance are escrowed. Municipalities reassess property values periodically, and hazard insurance carriers frequently update replacement cost premiums. An increase in annual taxes or insurance will trigger an escrow recalculation that increases your monthly payment even though your underlying loan terms have not changed.',
+      'No. KivaroTools models standard fixed-rate monthly-compounding mortgages and general closing costs. Consult local lenders or statutory schedules for South African SARS transfer duty and bond registration fees, Philippine Pag-IBIG subsidized rate tiers, Dubai 4% DLD fees, UK early repayment charges (ERCs), Australian offset accounts, or Canadian mandatory semi-annual fixed-rate compounding.',
   },
   {
-    question: 'Are mortgage interest and property taxes tax-deductible?',
+    question: 'Does KivaroTools send my home price or loan numbers to mortgage brokers or lenders?',
     answer:
-      'In the United States, eligible homeowners who itemize deductions on Schedule A can deduct mortgage interest on acquisition debt up to $750,000 ($375,000 if married filing separately). State and local taxes (SALT), including municipal property taxes, can also be deducted up to the statutory $10,000 cap ($5,000 if married filing separately). However, if your standard deduction exceeds total itemized deductions, itemizing provides no incremental tax benefit.',
-  },
-  {
-    question: 'How does KivaroTools guarantee principal conservation across 360 monthly or 780 biweekly payment periods?',
-    answer:
-      'Our financial engine executes an exact Principal Conservation check at the end of every simulation run: Initial Financed Principal minus Total Principal Repaid must reconcile to precisely $0.00. On the final scheduled period, the engine caps the principal component to the remaining unpaid beginning balance, eliminating penny overpayments or trailing cent residuals caused by IEEE-754 floating-point rounding.',
-  },
-  {
-    question: 'How does FHA Mortgage Insurance (MIP) differ from conventional Private Mortgage Insurance (PMI)?',
-    answer:
-      'Unlike conventional PMI, which automatically terminates under the Homeowners Protection Act once LTV reaches 80% (or 78%), FHA loans require both an upfront mortgage insurance premium (UFMIP, typically 1.75%) and an annual mortgage insurance premium (MIP, typically 0.85%). For borrowers putting down less than 10%, FHA MIP remains for the entire life of the loan and cannot be cancelled without refinancing into a conventional mortgage.',
-  },
-  {
-    question: 'Does KivaroTools transmit my property price, income, or loan parameters to mortgage lenders or brokers?',
-    answer:
-      'No. KivaroTools operates with a strict zero-lead-capture, zero-tracking policy. All amortization algorithms, PITI escrow math, biweekly conversions, and CSV generation execute 100% locally in your web browser. Neither your purchase price, down payment, interest rate, nor personal financial figures are ever uploaded to any server or shared with mortgage lenders.',
+      'No. All amortization math, PITI calculations, biweekly schedules, and CSV exports run locally inside your browser using client-side JavaScript. KivaroTools has no lender lead-capture forms, no account signup wall, and does not transmit your financial inputs to mortgage brokers.',
   },
 ];
 
@@ -100,52 +85,39 @@ export default function MortgageCalculatorSeo() {
   const howToSchema = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: 'How to Calculate Monthly Mortgage Payments (PITI) and Amortization Schedules',
+    name: 'How to Calculate Monthly or Biweekly Mortgage Payments, PMI Drop-Off & Extra Principal Savings',
     description:
-      'Step-by-step instructions to calculate monthly mortgage principal, interest, taxes, insurance (PITI), dynamic PMI drop-off, closing costs, and prepayment savings using KivaroTools.',
+      'Four-step guide to modeling PITI mortgage payments, 80%/78% LTV PMI cancellation, Cash to Close, extra principal prepayments, and Excel-ready CSV amortization schedules on KivaroTools.',
     step: [
       {
         '@type': 'HowToStep',
         position: 1,
-        name: 'Select Currency and Quick Preset',
-        text: 'Choose your currency from over 160 ISO world currencies and optionally load a realistic preset like Conventional 30-Yr Fixed, 15-Yr Fixed Accelerated, Extra $200/Mo Payoff, or Zero Down 100% Financed.',
+        name: 'Select Currency & Core Loan Terms',
+        text: 'Pick from 154 ISO-4217 currencies (USD, AED, SGD, ZAR, PHP, SAR, GBP, AUD, and more) or load a quick scenario preset, then enter Home Purchase Price, synced Down Payment amount or %, Annual Interest Rate, and Loan Term (1–100 years).',
       },
       {
         '@type': 'HowToStep',
         position: 2,
-        name: 'Enter Purchase Price and Down Payment',
-        text: 'Input the agreed home price and configure your down payment using either cash dollars or percentage (kept bidirectionally synchronized).',
+        name: 'Choose Monthly or Accelerated Biweekly & Add Escrow',
+        text: 'Toggle between standard Monthly (12/yr) or Accelerated Biweekly (26/yr) payments, then enter Annual Property Tax, Annual Home Insurance, and optional Extra Monthly Principal.',
       },
       {
         '@type': 'HowToStep',
         position: 3,
-        name: 'Set Interest Rate, Term, and Frequency',
-        text: 'Input the nominal annual interest rate (e.g. 6.5%), repayment term between 1 and 100 years, and payment frequency (Monthly or Accelerated Biweekly).',
+        name: 'Configure HOA, PMI Threshold, Closing Costs & Lump Sum',
+        text: 'Open Advanced Options to add Monthly HOA Dues, Annual PMI Rate with 80% or 78% CFPB HPA LTV cancellation threshold, Closing Costs ($ or %), Discount Points (%), Upfront Lender Fees, and an optional One-Time Prepayment at origination or a chosen period.',
       },
       {
         '@type': 'HowToStep',
         position: 4,
-        name: 'Add Escrow Expenses and PMI Parameters',
-        text: 'Input annual property taxes, hazard homeowners insurance, monthly HOA dues, and your estimated PMI rate with cancellation threshold (default 80% LTV).',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 5,
-        name: 'Model Upfront Closing Costs and Lender Fees',
-        text: 'Specify closing costs (in dollars or percentage with bidirectional sync), discount points (1% per point), and lender fees to calculate total settlement cash to close.',
-      },
-      {
-        '@type': 'HowToStep',
-        position: 6,
-        name: 'Simulate Prepayments and Export Schedule',
-        text: 'Add extra monthly principal or a lump-sum prepayment, examine interactive SVG Donut and Amortization trajectory charts, and export your complete amortization schedule via RFC-4180 CSV.',
+        name: 'Audit Savings, PMI Drop-Off & Export CSV Schedule',
+        text: 'Review your monthly or biweekly payment, PMI Ends milestone badge, Itemized Cash to Close, Interest & Time Saved, and paginated Yearly or Periodic amortization table, then click Download CSV (Excel Ready) or Copy Summary.',
       },
     ],
   };
 
   return (
     <>
-      {/* FAQPage & HowTo JSON-LD Structured Data for Google Rich Snippets */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -156,525 +128,426 @@ export default function MortgageCalculatorSeo() {
       />
 
       <article className="prose prose-slate dark:prose-invert max-w-4xl mx-auto bg-white dark:bg-[#111827] p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-gray-200 dark:border-slate-800 transition-colors mt-8 shadow-xs">
-        <section aria-labelledby="mortgage-calculator-mortgage-amp-home-loan-master-" className="mb-8">
-          <h2 id="mortgage-calculator-mortgage-amp-home-loan-master-" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
-            Mortgage &amp; Home Loan Master Guide: PITI Breakdown, Amortization &amp; Payoff Strategies
+        {/* SECTION 1: OVERVIEW & WORKFLOW */}
+        <section aria-labelledby="mortgage-guide-overview" className="mb-8">
+          <h2 id="mortgage-guide-overview" className="text-2xl sm:text-3xl font-bold mb-4 text-slate-900 dark:text-slate-100">
+            Mortgage &amp; Home Loan Amortization Guide: PITI, PMI Drop-Off, Extra Payments &amp; CSV Export
           </h2>
           <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
             <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-              <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No financial inputs, loan parameters, or property valuations are ever uploaded to remote servers.
+              <strong>Privacy-First &amp; Zero Lead Capture:</strong> Every amortization schedule, PITI calculation, and Excel-ready CSV file is computed 100% locally in your web browser. No signup, no email wall, and no broker lead forms.
             </p>
           </blockquote>
-          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
-            Securing a residential mortgage is the largest financial transaction most individuals undertake in a lifetime. Accurately projecting your monthly housing expenditure requires understanding how principal repayment, periodic interest, property taxes, homeowners insurance, private mortgage insurance (PMI), and closing fees interact. KivaroTools delivers a deterministic mathematical modeling engine designed to analyze the complete lifecycle of your mortgage with zero ads, zero lead capture, and complete in-browser privacy.
-          </p>
-        </section>
-
-        {/* STEP-BY-STEP USER GUIDE */}
-        <section aria-labelledby="mortgage-calculator-how-to-use-the-kivarotools-mor" className="mb-8">
-          <h3 id="mortgage-calculator-how-to-use-the-kivarotools-mor" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            How to Use the KivaroTools Mortgage Calculator: Step-by-Step
-          </h3>
-          <ol className="list-decimal pl-5 space-y-2 mb-6 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-            <li>
-              <strong>Choose Currency &amp; Preset:</strong> Select your denomination from over 160 active ISO world currencies (with exact minor unit decimal precision). You can click any of the <em>Quick Scenario Presets</em> (e.g. Conventional 30-Yr Fixed, 15-Yr Fixed Accelerated, Extra $200/Mo Payoff, or Zero Down 100% Financed) to populate realistic parameters instantly, or enter your own custom figures.
-            </li>
-            <li>
-              <strong>Enter Home Purchase Price:</strong> Input the agreed purchase price of the property. Formatted inputs with commas or currency symbols are cleanly parsed.
-            </li>
-            <li>
-              <strong>Configure Down Payment:</strong> Enter either your liquid cash down payment amount or your target down payment percentage. The calculator keeps both fields bidirectionally synchronized.
-            </li>
-            <li>
-              <strong>Set Interest Rate &amp; Loan Term:</strong> Input the lender&apos;s nominal annual interest rate (e.g., 6.5%, supported in steps of 0.001%) and desired repayment horizon (supports any term from 1 to 100 years, up to 2,600 biweekly periods).
-            </li>
-            <li>
-              <strong>Select Payment Frequency:</strong> Choose between standard <em>Monthly</em> (12 payments/year) or <em>Accelerated Biweekly</em> (26 payments/year, where each biweekly payment equals half the monthly payment, creating 13 monthly equivalents per year to accelerate equity buildup).
-            </li>
-            <li>
-              <strong>Expand Optional Escrow &amp; Property Expenses:</strong> Input annual property taxes, hazard homeowners insurance, monthly HOA dues, and your estimated PMI rate with custom cancellation threshold (default 80% LTV).
-            </li>
-            <li>
-              <strong>Model Upfront Closing Costs &amp; Fees:</strong> In the advanced panel, enter either your total closing costs dollar amount ($) or percentage (%) with bidirectional synchronization, mortgage discount points (1% per point), and itemized lender fees to simulate your exact cash required on closing day.
-            </li>
-            <li>
-              <strong>Simulate Principal Prepayments:</strong> Add a recurring extra monthly or biweekly principal payment, or model a one-time lump-sum prepayment (applied either at loan origination or at any designated future payment period) to instantly compute the interest saved, avoided PMI charges, and shortened payoff horizon.
-            </li>
-            <li>
-              <strong>Inspect Results &amp; Export Schedule:</strong> Review your itemized monthly cost cards, loan-to-value ratio, lifetime interest total, interactive visual breakdown charts (SVG donut and balance progression curve), and complete month-by-month or year-by-year amortization schedule with one-click RFC-4180 CSV export (with formula injection defense) or clipboard summary copy.
-            </li>
-          </ol>
-        </section>
-
-        {/* CORE FORMULA & MATHEMATICAL DEFINITION */}
-        <section aria-labelledby="mortgage-calculator-the-core-mortgage-amortization" className="mb-8">
-          <h3 id="mortgage-calculator-the-core-mortgage-amortization" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            The Core Mortgage Amortization Formula Explained
-          </h3>
           <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            For a conventional fully amortizing fixed-rate loan with positive principal, periodic compounding, and constant nominal annual interest rate, scheduled periodic principal and interest payment <code className="font-mono font-semibold">M</code> is governed by the standard annuity formula:
+            Whether you are comparing a conventional 30-year vs. 15-year US mortgage with automatic 80%/78% LTV PMI cancellation, building a UAE (AED) amortization schedule or Singapore (SGD) extra-payment plan, calculating a home loan EMI in India, Saudi Arabia (SAR), or the Philippines (PHP), testing extra bond repayments in South Africa (ZAR), modeling a UK mortgage overpayment (GBP), or running Australia fortnightly extra repayments (AUD), accurate math starts with separating debt service from escrow and upfront settlement costs.
+          </p>
+          <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400">
+            KivaroTools combines full PITI + HOA modeling, dynamic conventional PMI drop-off tracking, accelerated biweekly (26/yr) payoff savings, recurring extra principal and one-time lump-sum prepayments, itemized Cash to Close (closing costs, discount points, and lender fees), and unlimited RFC-4180 CSV export across 154 ISO-4217 world currencies.
+          </p>
+        </section>
+
+        {/* SECTION 2: HOW TO USE (4-STEP VISUAL CARDS — ZERO OUTER OL NUMBERS) */}
+        <section aria-labelledby="mortgage-how-to-use" className="mb-8">
+          <h2 id="mortgage-how-to-use" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            How to Use This Mortgage &amp; Extra Payment Calculator
+          </h2>
+          <p className="mb-4 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400">
+            Model your true monthly or biweekly housing cost, PMI cancellation milestone, and full amortization schedule in four steps:
           </p>
 
-          <div className="bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-6 font-mono text-sm text-center overflow-x-auto overscroll-x-contain text-blue-700 dark:text-blue-300">
+          <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 my-5">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 sm:p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-1.5">
+                STEP 1 &middot; CURRENCY, PRICE &amp; LOAN TERMS
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                Choose from <strong>154 ISO-4217 currencies</strong> (USD, AED, SGD, ZAR, PHP, SAR, GBP, AUD, and more) or click a Quick Scenario Preset. Enter Home Purchase Price, synced Down Payment ($ or %), Annual Interest Rate, and Loan Term (1&ndash;100 years).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 sm:p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-1.5">
+                STEP 2 &middot; FREQUENCY, ESCROW &amp; EXTRA PRINCIPAL
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                Select <strong>Monthly (12/yr)</strong> or <strong>Accelerated Biweekly (26/yr)</strong>, enter Annual Property Tax and Home Insurance, and add an optional <strong>Extra Monthly Principal</strong> payment right in the main panel.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 sm:p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-1.5">
+                STEP 3 &middot; PMI, HOA, CLOSING COSTS &amp; LUMP SUM
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                Open <strong>Advanced Options</strong> to add HOA dues, Annual PMI Rate with <strong>80% or 78% LTV</strong> cancellation toggle, synced Closing Costs, Discount Points (%), Upfront Lender Fees, and a One-Time Prepayment (at origination or a specific period).
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-4 sm:p-5">
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400 mb-1.5">
+                STEP 4 &middot; AUDIT SAVINGS &amp; EXPORT EXCEL CSV
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                Inspect your <strong>PMI Ends</strong> milestone badge, Itemized Cash to Close, Interest &amp; Time Saved, and Yearly or Periodic schedule, then click <strong>Download CSV (Excel Ready)</strong> or <strong>Copy Summary</strong> with zero signup.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: CORE FORMULA */}
+        <section aria-labelledby="mortgage-formula" className="mb-8">
+          <h2 id="mortgage-formula" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            How Fixed-Rate Mortgage Amortization &amp; Biweekly Math Work
+          </h2>
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            For a standard fixed-rate amortizing mortgage with financed principal <code className="font-mono font-semibold">P</code>, periodic interest rate <code className="font-mono font-semibold">r</code>, and <code className="font-mono font-semibold">n</code> scheduled periods, the periodic principal-and-interest payment <code className="font-mono font-semibold">M</code> is calculated with the standard annuity formula:
+          </p>
+
+          <div className="bg-slate-50 dark:bg-slate-900/80 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 mb-5 font-mono text-sm text-center overflow-x-auto overscroll-x-contain text-blue-700 dark:text-blue-300">
             M = P &times; [ r(1 + r)^n ] / [ (1 + r)^n &minus; 1 ]
           </div>
 
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-            Where the variables are strictly defined as:
-          </p>
           <ul className="list-disc pl-5 space-y-1.5 mb-6 text-sm text-slate-600 dark:text-slate-400">
-            <li><strong>M:</strong> Scheduled periodic principal-and-interest payment amount.</li>
-            <li><strong>P:</strong> Net financed loan principal borrowed (Home Purchase Price minus Down Payment).</li>
-            <li><strong>r:</strong> Periodic interest rate, equal to the nominal annual interest rate divided by the number of payment periods per year (Annual Rate &divide; 100 &divide; 12 for monthly, or &divide; 26 for biweekly).</li>
-            <li><strong>n:</strong> Total number of scheduled amortization payment periods (Loan Term in Years &times; Periods per Year).</li>
-            <li><strong>Zero-Interest Case (r = 0%):</strong> When the interest rate is exactly zero, the payment formula safely collapses to exact linear repayment: <code className="font-mono">M = P / n</code>, avoiding floating-point division-by-zero errors.</li>
+            <li><strong>P (Financed Loan Principal):</strong> Home Purchase Price minus Down Payment (and minus any Day-1 Origination Prepayment).</li>
+            <li><strong>r (Periodic Rate):</strong> Nominal Annual Interest Rate &divide; 100 &divide; 12 for monthly payments (or &divide; 26 for biweekly compounding cycles).</li>
+            <li><strong>Accelerated Biweekly Convention:</strong> Sets each biweekly installment to <code className="font-mono">Monthly P&amp;I &divide; 2</code> paid 26 times per year (13 monthly equivalents/year), cutting interest and years off your payoff schedule automatically.</li>
+            <li><strong>Zero-Interest Edge Case (r = 0%):</strong> Safely falls back to exact linear repayment <code className="font-mono">M = P / n</code> without division-by-zero errors.</li>
+            <li><strong>Final-Period Principal Conservation:</strong> On the final payment period, principal is capped to the exact remaining unpaid balance so ending balance reconciles cleanly to <code className="font-mono">0.00</code>.</li>
           </ul>
         </section>
 
-        {/* TWO WORKED EXAMPLES */}
-        <section aria-labelledby="mortgage-calculator-independently-verified-worked-" className="mb-8">
-          <h3 id="mortgage-calculator-independently-verified-worked-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            Independently Verified Worked Calculations
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            To verify mathematical transparency, consider these two real-world reference cases calculated with exact precision by the KivaroTools engine:
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-            {/* Example 1 */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/60 dark:bg-slate-800/40">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-2">
-                Example 1: Conventional 30-Year Fixed (20% Down)
-              </h4>
-              <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 mb-3 font-mono">
-                <li>Home Purchase Price: $400,000.00</li>
-                <li>Down Payment: 20.00% ($80,000.00)</li>
-                <li>Financed Principal (P): $320,000.00</li>
-                <li>Nominal Annual Rate: 6.50% (r = 0.065 / 12)</li>
-                <li>Term: 30 Years (n = 360 monthly payments)</li>
-                <li>Annual Taxes: $4,800.00 ($400.00/mo)</li>
-                <li>Annual Insurance: $1,440.00 ($120.00/mo)</li>
-                <li>PMI: $0.00 (Down payment &ge; 20%)</li>
-              </ul>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
-                <p><strong>Monthly P&amp;I:</strong> $2,022.62</p>
-                <p><strong>Monthly Escrow:</strong> $520.00 ($400 tax + $120 ins)</p>
-                <p><strong>Total Monthly Housing Cost:</strong> $2,542.62</p>
-                <p><strong>Lifetime Interest:</strong> $408,140.64</p>
-                <p><strong>Total Scheduled Outflow:</strong> $728,140.64</p>
-              </div>
-            </div>
-
-            {/* Example 2 */}
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/60 dark:bg-slate-800/40">
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base mb-2">
-                Example 2: Low-Down 30-Year Loan (5% Down + Prepayment)
-              </h4>
-              <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 mb-3 font-mono">
-                <li>Home Purchase Price: $300,000.00</li>
-                <li>Down Payment: 5.00% ($15,000.00)</li>
-                <li>Financed Principal (P): $285,000.00 (95% LTV)</li>
-                <li>Nominal Annual Rate: 6.75%</li>
-                <li>Term: 30 Years (360 payments)</li>
-                <li>Annual PMI Rate: 0.75% on balance</li>
-                <li>PMI Threshold: 80% LTV ($240,000.00 balance)</li>
-                <li>Extra Principal Prepayment: $200.00/month</li>
-              </ul>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
-                <p><strong>Base Monthly P&amp;I:</strong> $1,848.50</p>
-                <p><strong>Initial Monthly PMI:</strong> $178.13</p>
-                <p><strong>Total Initial Payment:</strong> $2,026.63 ($1,848.50 P&amp;I + $178.13 PMI)</p>
-                <p><strong>PMI Cancellation:</strong> Month 82 (Year 7) at $239,376 balance (&le; 80% LTV)</p>
-                <p><strong>Payoff Duration:</strong> 273 Months (~22.8 Years, saved 7.3 years)</p>
-                <p><strong>Lifetime Interest Saved:</strong> $108,187.79</p>
-                <p><strong>Avoided PMI Premiums:</strong> $7,672.64</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* COMPLETE PITI TABLE */}
-        <section aria-labelledby="mortgage-calculator-the-anatomy-of-a-piti-mortgage" className="mb-8">
-          <h3 id="mortgage-calculator-the-anatomy-of-a-piti-mortgage" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            The Anatomy of a PITI Mortgage Payment
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            Your monthly mortgage check is rarely paid solely to the loan principal. In conventional residential lending, payments are apportioned across four financial pillars plus recurring community assessments:
-          </p>
-
-          <div className="overflow-x-auto overscroll-x-contain mb-6">
-            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Component</th>
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Destination</th>
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Financial Function &amp; Dynamics</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Principal (P)</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Loan Balance</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Reduces the remaining unpaid mortgage balance, building borrower home equity. Increases every month throughout the amortization schedule.</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Interest (I)</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Lender / Servicer</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">The financing fee billed each period based strictly on the outstanding balance. Decreases each period as the principal amortizes.</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Property Taxes (T)</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Escrow &rarr; Municipality</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Assessed by local county or city taxing districts to fund public services and schools. Disbursed semi-annually or annually from escrow.</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">Home Insurance (I)</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Escrow &rarr; Hazard Insurer</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Hazard homeowners coverage protecting against structure loss, plus Private Mortgage Insurance (PMI) if equity is below 20%.</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap">HOA Dues</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono">Community Association</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Monthly or annual condominium, townhouse, or subdivision master association maintenance dues for common facilities.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* FEATURE & TECHNICAL CAPABILITIES MATRIX */}
-        <section aria-labelledby="mortgage-calculator-technical-capabilities-matrix" className="mb-8">
-          <h3 id="mortgage-calculator-technical-capabilities-matrix" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            KivaroTools Mortgage Engine: Features &amp; Technical Capabilities Matrix
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            The following technical specification matrix outlines the computational architecture, inputs, and modeling capabilities implemented in the KivaroTools mortgage calculator:
-          </p>
-          <div className="overflow-x-auto overscroll-x-contain mb-6">
-            <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 whitespace-nowrap">Functional Module</th>
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Supported Input Formats</th>
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Calculation Engine Logic</th>
-                  <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Output &amp; Visual Representation</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Down Payment</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Bidirectional Currency Amount ($) or Percentage (%)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Automatically syncs both fields. Calculates Net Financed Principal: P = Home Price &minus; Down Payment.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Loan-to-Value (LTV) metric card &amp; Cash to Close chart segment</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Closing Costs</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Bidirectional Dollar Amount ($) or Percentage (%)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Syncs settlement cost in dollars or as percentage of purchase price. Included in total upfront Cash to Close.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Closing Costs card &amp; Settlement breakdown ring chart</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Discount Points &amp; Fees</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Discount points (%) and upfront lender fees ($)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Each point computes as 1.0% of financed loan principal. Fees added linearly to cash required at settlement.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Itemized Cash to Close summary table</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Payment Frequency</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Monthly (12/yr) or Accelerated Biweekly (26/yr)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Biweekly divides standard monthly payment by 2. 26 payments/yr create 13 full payments, accelerating equity buildup.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Adjusts payment period labels &amp; amortization row cycles</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Escrow (Taxes &amp; Ins)</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Annual property taxes ($) and annual insurance ($)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Divided into 12 level monthly installments and added to principal and interest for true PITI housing budget.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Monthly Cost card and interactive Donut chart segments</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Dynamic PMI Drop-off</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Annual PMI rate (%) and LTV threshold (default 80%)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Evaluates current loan balance at each payment period. Automatically sets PMI to $0 when LTV &le; threshold.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">PMI column in schedule drops to $0.00 at exact milestone</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Principal Prepayments</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Recurring extra principal ($/mo) and lump-sum prepayment ($)</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Applies extra directly to principal reduction. Dynamically recalculates interest savings and early payoff horizon.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Payoff Years, Interest Saved &amp; Amortization curve shift</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Amortization Export</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Annual summary view or Periodic detail view</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Full month-by-month and year-by-year schedule. RFC-4180 CSV export with formula injection defense (apostrophe prefix).</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Paginated data table &amp; instant CSV file download</td>
-                </tr>
-                <tr>
-                  <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 whitespace-nowrap text-slate-900 dark:text-slate-100">Global Currencies</th>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Over 160 active ISO-4217 world currencies</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700">Strict minor unit rounding (0, 2, or 3 decimals) prevents IEEE-754 floating-point rounding errors across all world currencies.</td>
-                  <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">Formatted symbols ($ USD, &euro; EUR, &pound; GBP, &yen; JPY, etc.)</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* PMI DYNAMICS */}
-        <section aria-labelledby="mortgage-calculator-private-mortgage-insurance-pmi" className="mb-8">
-          <h3 id="mortgage-calculator-private-mortgage-insurance-pmi" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            Private Mortgage Insurance (PMI) Cancellation Dynamics
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            When buyers put down less than 20% equity, lenders require Private Mortgage Insurance (PMI) to offset credit default risk. KivaroTools dynamically evaluates your balance at every single payment period. Once the outstanding debt drops to or below your configured cancellation threshold (default 80% Loan-to-Value), the tool removes PMI from subsequent periods in the amortization table, accurately illustrating the drop in your monthly payment.
-          </p>
-        </section>
-
-        {/* 15-YR VS 30-YR COMPARISON */}
-        <section aria-labelledby="mortgage-calculator-15-year-vs-30-year-fixed-mortg" className="mb-8">
-          <h3 id="mortgage-calculator-15-year-vs-30-year-fixed-mortg" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            15-Year vs. 30-Year Fixed Mortgages: Financial Trade-offs
-          </h3>
-          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-            Choosing between a 15-year and a 30-year fixed loan represents a trade-off between monthly cash-flow flexibility and cumulative lifetime wealth accumulation:
-          </p>
-          <ul className="list-disc pl-5 space-y-2 mb-6 text-sm text-slate-600 dark:text-slate-400">
-            <li>
-              <strong>30-Year Fixed Loan:</strong> Best for buyers seeking maximum purchasing power and predictable low monthly payments. You can always make voluntary extra principal prepayments to accelerate payoff while maintaining the flexibility to fall back to the lower scheduled payment during periods of financial stress.
-            </li>
-            <li>
-              <strong>15-Year Fixed Loan:</strong> Best for high-earning buyers or refinancers who can comfortably manage payments 30% to 38% higher. In exchange, lenders typically discount the interest rate by 0.50% to 0.75%, and the loan amortizes in half the time, saving tens or hundreds of thousands of dollars in lifetime interest charges.
-            </li>
-          </ul>
-        </section>
-
-        {/* ZONE 5: DEDICATED PITFALLS, EDGE CASES & VERIFICATION GUIDE */}
-        <section aria-labelledby="mortgage-calculator-financial-pitfalls-and-edge-cases" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-          <h2 id="mortgage-calculator-financial-pitfalls-and-edge-cases" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-            Common Financial Pitfalls, Edge Cases &amp; Verification Guide
+        {/* SECTION 4: FULL PITI, HOA & CASH TO CLOSE BREAKDOWN */}
+        <section aria-labelledby="mortgage-piti-breakdown" className="mb-8">
+          <h2 id="mortgage-piti-breakdown" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            Full PITI, HOA &amp; Cash-to-Close Breakdown
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                1. Accelerated Biweekly (Monthly/2) vs Standard Biweekly Math
+          <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+            Your recurring housing budget combines amortizing debt service with non-amortizing escrow obligations, while settlement day requires upfront Cash to Close:
+          </p>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+            <table className="min-w-[640px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap font-semibold">Cost Component</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap font-semibold">Billing Cycle</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">How KivaroTools Models It</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Principal &amp; Interest (P&amp;I)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap">Monthly or Biweekly</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Fixed scheduled payment; interest accrues on remaining balance while principal share grows each period.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Property Taxes &amp; Insurance (T&amp;I)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap">Escrowed Monthly</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Annual inputs divided by 12 and added to monthly housing cost and lifetime outflow across your actual payoff duration.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">HOA Dues</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap">Monthly</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Added directly to recurring monthly housing cost and cumulative ownership outlay.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Conventional PMI (80% / 78% LTV)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap">Until LTV &le; Threshold</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Evaluated dynamically on each cycle&apos;s balance when initial LTV &gt; 80%; automatically drops to 0.00 once LTV reaches your 80% or 78% threshold.</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Cash to Close</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 whitespace-nowrap">One-Time at Settlement</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Sums Down Payment + Closing Costs (synced $ or %) + Discount Points (1% of loan/pt) + Upfront Lender Fees + Origination Prepayment.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* SECTION 5: ENGINE-VERIFIED WORKED EXAMPLES (US + BIWEEKLY + 78%/80% PMI) */}
+        <section aria-labelledby="mortgage-worked-examples" className="mb-8">
+          <h2 id="mortgage-worked-examples" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            Engine-Verified Worked Examples: Extra Payments, Biweekly &amp; PMI Drop-Off
+          </h2>
+          <p className="mb-4 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400">
+            Every number below was generated directly by the KivaroTools amortization engine and verified for exact principal conservation:
+          </p>
+
+          <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-2">
+                Example 1: Conventional 30-Year Fixed (20% Down, PITI)
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                Many online calculators divide the annual 12-month total by 26 (i.e., Monthly &times; 12 / 26), which yields zero prepayment acceleration. KivaroTools implements genuine <em>Accelerated Biweekly</em> amortization (Monthly &divide; 2). Because there are 26 biweekly periods per year, you submit 13 full monthly payments annually, shaving 4 to 6 years off a 30-year loan without refinancing fees.
-              </p>
+              <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400 mb-3 font-mono list-none pl-0">
+                <li>Home Price: $400,000 | Down: 20% ($80,000)</li>
+                <li>Loan Principal: $320,000 | Rate: 6.50% | Term: 30 yrs</li>
+                <li>Taxes: $4,800/yr ($400/mo) | Insurance: $1,440/yr ($120/mo)</li>
+                <li>PMI: $0.00 (Initial LTV = 80%)</li>
+              </ul>
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <p className="m-0"><strong>Monthly P&amp;I:</strong> $2,022.62 &nbsp;|&nbsp; <strong>Total Monthly PITI:</strong> $2,542.62</p>
+                <p className="m-0"><strong>Lifetime Interest:</strong> $408,140.64 &nbsp;|&nbsp; <strong>Total P&amp;I Outflow:</strong> $728,140.64</p>
+              </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                2. Homeowners Protection Act of 1998: 80% Request vs 78% Mandate
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-5 bg-slate-50/60 dark:bg-slate-800/40">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base mb-2">
+                Example 2: Conventional 5% Down + PMI (80% vs 78% LTV) + $200/mo Extra
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                Under the federal HPA, borrowers with conventional mortgages have the statutory right to request written PMI cancellation once the loan balance reaches 80% LTV of the original purchase price. Servicers are legally required to automatically drop PMI at 78% LTV. KivaroTools tracks the exact month your loan crosses these milestones and sets PMI to $0.00.
-              </p>
+              <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400 mb-3 font-mono list-none pl-0">
+                <li>Home Price: $300,000 | Down: 5% ($15,000) | Loan: $285,000</li>
+                <li>Rate: 6.75% | Term: 30 yrs | PMI: 0.75% | Extra: +$200/mo</li>
+              </ul>
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <p className="m-0"><strong>Base P&amp;I:</strong> $1,848.50 &nbsp;|&nbsp; <strong>Initial PMI:</strong> $178.13/mo</p>
+                <p className="m-0"><strong>PMI Ends (80% LTV):</strong> Month 82 (Yr 7) &mdash; saves <strong>$7,672.64</strong> PMI</p>
+                <p className="m-0"><strong>PMI Ends (78% Auto HPA):</strong> Month 90 (Yr 8) &mdash; saves <strong>$8,264.36</strong> PMI</p>
+                <p className="m-0"><strong>Payoff:</strong> 273 mos (22.75 yrs, <strong>7 yrs 3 mos saved</strong>) &nbsp;|&nbsp; <strong>Interest Saved:</strong> $108,187.79</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="not-prose rounded-2xl border border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 sm:p-5 mb-6">
+            <h3 className="font-bold text-emerald-950 dark:text-emerald-200 text-sm sm:text-base mb-1.5">
+              Example 3: Accelerated Biweekly (26/Yr) + $200/mo Extra Principal ($500k Home, 10% Down)
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed m-0">
+              On a <strong>$500,000</strong> home with 10% down ($450,000 loan, 6.50%, 30 years, 0.50% PMI), switching from Monthly to <strong>Accelerated Biweekly ($1,422.16 every 2 weeks)</strong> plus <strong>$200/mo extra principal</strong> cuts payoff to <strong>544 biweekly periods (20.92 years)</strong>, drops PMI at <strong>Period 113 (Year 5)</strong>, and saves <strong>$200,238.59 in lifetime interest</strong> and <strong>9 years 1 month</strong> compared to a standard 30-year monthly schedule.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 6: GLOBAL & REGIONAL WORKED EXAMPLES (UAE, SG, ZA, PH, SA) */}
+        <section aria-labelledby="mortgage-regional-examples" className="mb-8">
+          <h2 id="mortgage-regional-examples" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            Global Home Loan EMI, Bond &amp; Mortgage Amortization Scenarios (AED, SGD, ZAR, PHP, SAR, GBP, AUD)
+          </h2>
+          <p className="mb-4 text-sm sm:text-base leading-relaxed text-slate-600 dark:text-slate-400">
+            Select any of our 154 ISO-4217 currencies to model local mortgage, housing loan, or South African bond repayments with instant Excel CSV export:
+          </p>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+            <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden tabular-nums">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Market / Currency</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Illustrative Scenario</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold text-right">Monthly P&amp;I</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold text-right">Payoff &amp; Interest Saved</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">UAE (AED)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">AED 1,500,000 home, 20% down, 4.5%, 25 yrs, +AED 1,000/mo extra</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">AED 6,669.99</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">19.75 yrs (&minus;5 yrs 3 mos) &middot; <strong>AED 190,382.10</strong> saved</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Singapore (SGD)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">SGD 1,200,000 home, 25% down, 3.2%, 25 yrs, +SGD 500/mo extra</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">S$4,362.11</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">21.33 yrs (&minus;3 yrs 8 mos) &middot; <strong>S$66,312.78</strong> saved</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">South Africa Bond (ZAR)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">R1,500,000 home, 10% deposit, 11.25%, 20 yrs, +R1,000/mo extra</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">R14,164.96</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">16.08 yrs (&minus;3 yrs 11 mos) &middot; <strong>R475,546.20</strong> saved</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Philippines (PHP)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">&peso;4,000,000 home, 20% down, 7.5%, 15 yrs (standard schedule)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">&peso;29,664.40</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">15.0 yrs &middot; Total Interest: &peso;2,139,590.64</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Saudi Arabia (SAR)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">SAR 1,200,000 home, 15% down, 5.5% illustrative, 20 yrs</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">SAR 7,016.45</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">20.0 yrs &middot; Total Interest: SAR 663,948.39</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">UK Overpayment (GBP)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">&pound;350,000 home, 20% deposit, 4.75%, 25 yrs, +&pound;250/mo overpayment</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">&pound;1,596.33</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">19.42 yrs (&minus;5 yrs 7 mos) &middot; <strong>&pound;50,317.90</strong> saved</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 whitespace-nowrap">Australia Fortnightly (AUD)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">A$800,000 home, 20% deposit, 6.0%, 30 yrs, Biweekly (26/yr) + A$200/mo extra</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap">A$1,918.56 / fn</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-right whitespace-nowrap">22.15 yrs (&minus;7 yrs 10 mos) &middot; <strong>A$224,564.70</strong> saved</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* SECTION 7: COMPETITOR COMPARISON TABLE (HONEST, ZERO FAKE CLAIMS) */}
+        <section aria-labelledby="mortgage-competitor-comparison" className="mb-8 pt-6 border-t border-gray-100 dark:border-slate-800">
+          <h2 id="mortgage-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-3">
+            Mortgage Calculator Comparison: KivaroTools vs. Major Online Calculators
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
+            How KivaroTools compares on everyday borrower workflows—with transparent scope and zero signup walls:
+          </p>
+          <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-5 not-prose">
+            <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (Free)</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">MortgageCalculator.org</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">AccurateCalculators</th>
+                  <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Regional Bank Portals</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Unlimited Excel CSV Export</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">Unlimited RFC-4180 CSV (No signup)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Print view only (no CSV)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">3 free exports cap</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Rarely offered</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Multi-Currency Support</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">154 ISO-4217 currencies (AED, SGD, ZAR, PHP, GBP, AUD, USD)</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">USD only</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Multi-currency</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Single local currency</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Dynamic 80% / 78% PMI Drop-Off</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">Editable LTV threshold + exact PMI Ends badge</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">80% LTV default</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Stops below 80% LTV</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Often omitted</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Extra Principal + Biweekly + PITI</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">Monthly extra, lump sum (origination or period #) &amp; 26/yr biweekly</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Extra payment on separate page</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Supported</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Usually split across pages</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Cash to Close (Points &amp; Fees)</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">Synced closing costs ($/%), discount points &amp; lender fees</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Basic closing inputs</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Points, fees &amp; Reg Z APR</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Local statutory fee estimators</td>
+                </tr>
+                <tr>
+                  <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Privacy &amp; Lead Capture</th>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-700 dark:text-emerald-400 font-medium">100% browser-side; zero lead forms</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Lender rate-table lead wall</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Subscription upsell for exports</td>
+                  <td className="p-3 border border-slate-200 dark:border-slate-700">Bank pre-approval lead funnels</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* SECTION 8: SUPPORTED CAPABILITIES & MODEL LIMITATIONS */}
+        <section aria-labelledby="mortgage-capabilities-limitations" className="mb-8">
+          <h2 id="mortgage-capabilities-limitations" className="text-xl sm:text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            Supported Capabilities &amp; Model Limitations
+          </h2>
+          <div className="not-prose grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
+            <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/50">
+              <h3 className="font-bold text-emerald-950 dark:text-emerald-200 mb-2 text-sm">
+                Verified Live Capabilities
+              </h3>
+              <ul className="space-y-1.5 text-slate-700 dark:text-slate-300 list-disc pl-4 m-0">
+                <li>154 ISO-4217 world currencies with exact 0, 2, or 3 decimal minor-unit rounding.</li>
+                <li>Full PITI + HOA monthly and accelerated biweekly (26/yr) payment modeling.</li>
+                <li>Dynamic conventional PMI drop-off at custom 80% or 78% LTV with exact period/year badge.</li>
+                <li>Extra monthly principal + one-time lump-sum prepayment (Day-1 origination or specific period #).</li>
+                <li>Itemized Cash to Close (down payment, synced closing costs $/%, discount points, lender fees).</li>
+                <li>Visual horizontal cost breakdown bars, principal conservation audit, paginated schedule, Copy Summary &amp; RFC-4180 Excel CSV export.</li>
+              </ul>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                3. Conflating Down Payment with Total Cash to Close
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50">
+              <h3 className="font-bold text-amber-950 dark:text-amber-200 mb-2 text-sm">
+                Explicit Model Boundaries (Not Modeled Here)
               </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                First-time homebuyers frequently overlook closing charges. Your cash required on settlement day equals <code>Down Payment + Closing Costs + Discount Points + Lender Fees + Origination Prepayments</code>. KivaroTools features synchronized dollar and percentage inputs, allowing you to audit your official TRID Closing Disclosure before arriving at the title company.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                4. Origination Curtailment vs Mid-Loan Lump-Sum Prepayments
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                Applying a prepayment on Day 1 at loan origination immediately reduces the interest-bearing principal before Period 1 accrues. Our engine allows you to toggle between an origination curtailment and a specific period lump-sum prepayment, modeling the exact interest savings and accelerated PMI drop-off date.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                5. Property Tax Reassessment &amp; Escrow Shortage Spikes
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                Fixed-rate mortgages guarantee that Principal and Interest remain constant. However, municipal tax boards reassess newly purchased homes to reflect higher transaction prices, causing annual escrow shortages. Our non-amortizing escrow pass-through modeling separates pure debt service from municipal assessments.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 mb-1 text-sm">
-                6. RFC-4180 CSV Amortization Export &amp; Formula Injection Defense
-              </h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                Exporting your 360-month or 780-biweekly schedule to Microsoft Excel or Google Sheets is protected against CSV Spreadsheet Formula Injection (CWE-1236). KivaroTools sanitizes all cell entries starting with &ldquo;=&rdquo;, &ldquo;+&rdquo;, &ldquo;-&rdquo;, or &ldquo;@&rdquo; by prepending a single quote, ensuring enterprise-grade data security.
-              </p>
+              <ul className="space-y-1.5 text-slate-700 dark:text-slate-300 list-disc pl-4 m-0">
+                <li><strong>FHA UFMIP / Life-of-Loan MIP:</strong> This tool models conventional 80%/78% HPA PMI cancellation, not HUD FHA MIP rules.</li>
+                <li><strong>Regional Statutory Taxes &amp; Caps:</strong> Does not compute MAS Singapore TDSR/MSR/ABSD, Dubai 4% DLD fees, South African SARS transfer duty, or Philippine Pag-IBIG tiers.</li>
+                <li><strong>Canadian Fixed-Rate Compounding:</strong> Uses monthly/biweekly periodic compounding rather than Canada&apos;s mandatory semi-annual compounding.</li>
+                <li><strong>Loan Recasting / Personal &amp; Auto EMIs:</strong> For personal, auto, or retail loans with payment recasting or weekly schedules, use our{' '}
+                  <Link href="/finance/emi-calculator" className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                    EMI &amp; Loan Calculator
+                  </Link>.
+                </li>
+              </ul>
             </div>
           </div>
         </section>
 
-        {/* FAQS SECTION */}
-              {/* Competitor Comparison Section */}
-      <section aria-labelledby="mortgage-competitor-comparison" className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800">
-        <h2 id="mortgage-competitor-comparison" className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-          Mortgage Calculator Comparison: KivaroTools vs. Leading Financial Portals
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm sm:text-base leading-relaxed">
-          See how KivaroTools compares against commercial loan sites and traditional banking mortgage tools:
-        </p>
-        <div className="w-full max-w-full overflow-x-auto overscroll-x-contain my-6 not-prose">
-          <table className="min-w-[680px] w-full text-xs sm:text-sm text-left border-collapse border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Capability / Metric</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Bankrate</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">Zillow Mortgage</th>
-                <th scope="col" className="p-3 border border-slate-200 dark:border-slate-700 font-semibold">NerdWallet</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Private In-Memory Execution</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side (No Lead Generation)</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Collects data for loan brokers</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Lead-capture forms</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Sponsored lender ads</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Automated PMI Drop-off at 80% LTV</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Dynamic LTV tracking &amp; automatic stop</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Manual checkbox</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Flat fee throughout loan</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Static estimate</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Advanced Prepayment Options</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Lump-sum, monthly extra &amp; annual step-up</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly extra only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic monthly extra</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Basic extra payment</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Accelerated Bi-Weekly Schedules</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">26 pay-period accelerated amortization</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Separate calculator</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Monthly only</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">Downloadable Amortization CSV</th>
-                <td className="p-3 border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Instant Formula-Safe CSV Export</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">Print view only</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-                <td className="p-3 border border-slate-200 dark:border-slate-700">None</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section aria-labelledby="mortgage-calculator-frequently-asked-questions" className="mb-8">
-          <h3 id="mortgage-calculator-frequently-asked-questions" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
+        {/* SECTION 9: FAQS */}
+        <section aria-labelledby="mortgage-calculator-frequently-asked-questions" className="mb-8">
+          <h2 id="mortgage-calculator-frequently-asked-questions" className="text-xl sm:text-2xl font-bold mb-4 text-slate-900 dark:text-slate-100">
             Frequently Asked Questions
-          </h3>
-          <div className="space-y-3">
+          </h2>
+          <div className="space-y-3 not-prose">
             {MORTGAGE_CALCULATOR_FAQS.map((faq, index) => (
               <details
                 key={index}
                 className="group rounded-xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900/50 transition-colors"
               >
-                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-base cursor-pointer select-none list-none flex items-center justify-between">
+                <summary className="font-semibold text-slate-900 dark:text-slate-100 text-sm sm:text-base cursor-pointer select-none list-none flex items-center justify-between gap-3">
                   <span>{faq.question}</span>
-                  <span className="ml-2 text-slate-400 group-open:rotate-180 transition-transform">&#9662;</span>
+                  <span className="text-slate-400 group-open:rotate-180 transition-transform shrink-0">&#9662;</span>
                 </summary>
-                <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                <p className="mt-3 text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400 m-0">
                   {faq.answer}
                 </p>
               </details>
             ))}
           </div>
 
-          {/* FINANCIAL DISCLAIMER */}
-          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 mb-6 text-xs text-amber-900 dark:text-amber-200 leading-relaxed mt-6">
-            <strong>Important Financial &amp; Legal Disclaimer:</strong> The calculations, estimates, and amortization schedules generated by this tool are provided solely for informational and educational purposes. KivaroTools is not a mortgage lender, loan originator, or licensed financial advisor. Results do not constitute an official Loan Estimate or Closing Disclosure under the federal Truth in Lending Act (TILA) / Real Estate Settlement Procedures Act (RESPA) integrated disclosures (TRID). Actual mortgage rates, escrow requirements, private mortgage insurance premiums, and closing fees depend on individual credit profiles, property characteristics, and official lender underwriting guidelines.
+          {/* YMYL & REGIONAL REGULATORY DISCLAIMER */}
+          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 leading-relaxed mt-6">
+            <strong>Important Financial &amp; Regulatory Disclaimer:</strong> All payments, PMI drop-off dates, Cash-to-Close totals, and amortization schedules are educational estimates for fixed-rate amortizing loans. KivaroTools is not a mortgage lender, broker, or licensed financial advisor. Outputs do not constitute a TILA/RESPA (TRID) Loan Estimate, Closing Disclosure, or regulatory affordability check under CFPB, HUD, MAS (Singapore), CBUAE (UAE), SARS (South Africa), SAMA (Saudi Arabia), or Pag-IBIG (Philippines) rules. Verify final terms with a licensed lender before signing loan documents.
           </div>
         </section>
 
-        {/* RELATED FINANCIAL CALCULATORS */}
-        <section aria-labelledby="mortgage-calculator-related-financial-calculators-" className="mb-8">
-          <h3 id="mortgage-calculator-related-financial-calculators-" className="text-xl font-semibold mb-3 text-slate-800 dark:text-slate-200">
-            Related Financial Calculators &amp; Utilities
-          </h3>
+        {/* SECTION 10: RELATED FINANCIAL CALCULATORS */}
+        <section aria-labelledby="mortgage-calculator-related-financial-calculators-" className="mb-2">
+          <h2 id="mortgage-calculator-related-financial-calculators-" className="text-xl font-bold mb-3 text-slate-900 dark:text-slate-100">
+            Related Financial Calculators on KivaroTools
+          </h2>
           <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-            Explore related personal finance and lending tools on KivaroTools: calculate personal and auto loan installments on the{' '}
+            Continue your financial planning with our companion calculators: calculate personal, auto, or retail loan installments with recasting on the{' '}
             <Link href="/finance/emi-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Personal &amp; Auto Loan EMI Calculator
+              Loan EMI Calculator
             </Link>
-            , project long-term compound investment wealth with the{' '}
-            <Link href="/finance/compound-interest" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Compound Interest Calculator
-            </Link>
-            , calculate systematic mutual fund returns with the{' '}
+            , model mutual fund wealth growth with the{' '}
             <Link href="/finance/sip-calculator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
               SIP Calculator
             </Link>
-            , track spot gold and bullion scrap with the{' '}
-            <Link href="/finance/precious-metals" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Precious Metals Calculator
+            , project long-term savings with the{' '}
+            <Link href="/finance/compound-interest" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Compound Interest Calculator
             </Link>
-            , convert international currencies with the{' '}
-            <Link href="/finance/crypto-converter" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Currency &amp; Crypto Converter
+            , estimate net take-home pay in{' '}
+            <Link href="/finance/salary-calculator/singapore" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              Singapore
+            </Link>{' '}
+            or the{' '}
+            <Link href="/finance/salary-calculator/united-arab-emirates" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+              United Arab Emirates
             </Link>
-            , or generate professional PDF invoices using the{' '}
+            , or generate client invoices with the{' '}
             <Link href="/finance/invoice-generator" className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
-              Pro Invoice Generator
+              Invoice Generator
             </Link>
             .
           </p>
-        </section>
-      
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            Mortgage Payment &amp; PITI Calculator — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage calculator with pmi and taxes</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">piti mortgage payment calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">accelerated biweekly mortgage payoff calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage amortization schedule calculator csv</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">early mortgage payoff extra principal calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">home loan cash to close estimator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">automatic 80 ltv pmi cancellation calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">15 year vs 30 year mortgage calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage discount points breakeven calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">property tax escrow hoa mortgage calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage payment calculator with pmi and taxes</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">biweekly mortgage payment amortization calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">extra mortgage principal payment payoff calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">30 year vs 15 year mortgage payoff comparison</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage pmi cancellation 80 ltv calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate monthly mortgage payment with hoa dues</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage amortization schedule with lump sum prepayment</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">how much principal do i pay in first year mortgage</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage closing costs and discount points calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">fha loan monthly payment and mip calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">va loan funding fee and monthly payment calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage payoff date calculator with extra 100 per month</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">annual vs monthly mortgage amortization schedule</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">fixed rate mortgage total interest paid calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage prepayment penalty and savings calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">interest only mortgage payment calculator excel free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">calculate effective interest rate on mortgage with points</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">jumbo loan monthly payment calculator with taxes</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">home mortgage loan payoff acceleration schedule</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">mortgage principal balance after 5 years calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private mortgage calculator client side no server</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">downloadable mortgage amortization schedule csv</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">interactive mortgage loan comparison calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial property mortgage payment calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">first time home buyer monthly budget mortgage calculator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free mortgage payment estimator with property insurance</span>
-          </div>
         </section>
       </article>
     </>
