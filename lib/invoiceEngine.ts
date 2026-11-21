@@ -2,7 +2,8 @@
  * KivaroTools Invoice Calculation & Pagination Engine
  *
  * Deterministic mathematical calculation layer, decimal-safe monetary arithmetic,
- * multi-currency formatting, height-aware A4 pagination budgeting, and draft validation.
+ * multi-currency formatting, ISO date-term helpers, height-aware A4 pagination budgeting,
+ * and draft validation.
  *
  * 100% pure TypeScript: no DOM, browser globals, or side-effects.
  */
@@ -260,6 +261,43 @@ export function formatDisplayDate(isoDate: string): string {
 }
 
 /**
+ * Computes an ISO due date (YYYY-MM-DD) from an issue date and standard payment term.
+ * Returns null if the term is 'Custom' or the issueDate is not a valid ISO date.
+ */
+export function computeDueDate(issueDate: string, paymentTerms: string): string | null {
+  if (!issueDate || typeof issueDate !== 'string') return null;
+  const parts = issueDate.split('-');
+  if (parts.length !== 3) return null;
+
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const day = parseInt(parts[2], 10);
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+  const base = new Date(Date.UTC(year, month, day));
+  if (isNaN(base.getTime())) return null;
+
+  // Calendar validity check (e.g. rejects '2026-02-30' or '2026-04-31')
+  if (base.getUTCFullYear() !== year || base.getUTCMonth() !== month || base.getUTCDate() !== day) {
+    return null;
+  }
+
+  const termDaysMap: Record<string, number> = {
+    'Due on Receipt': 0,
+    'Net 7': 7,
+    'Net 15': 15,
+    'Net 30': 30,
+    'Net 60': 60,
+  };
+
+  if (paymentTerms in termDaysMap) {
+    base.setUTCDate(base.getUTCDate() + termDaysMap[paymentTerms]);
+    return base.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
+
+/**
  * Common currency fallback list when Intl.supportedValuesOf is unavailable.
  */
 export const DEFAULT_CURRENCIES: CurrencyOption[] = [
@@ -272,6 +310,9 @@ export const DEFAULT_CURRENCIES: CurrencyOption[] = [
   { code: 'SAR', name: 'Saudi Riyal', symbol: '﷼', decimals: 2 },
   { code: 'CAD', name: 'Canadian Dollar', symbol: 'CA$', decimals: 2 },
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', decimals: 2 },
+  { code: 'PHP', name: 'Philippine Peso', symbol: '₱', decimals: 2 },
+  { code: 'NGN', name: 'Nigerian Naira', symbol: '₦', decimals: 2 },
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R', decimals: 2 },
   { code: 'JPY', name: 'Japanese Yen', symbol: '¥', decimals: 0 },
   { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', decimals: 2 },
   { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF', decimals: 2 },
@@ -326,8 +367,24 @@ export function getCurrencyOptions(): CurrencyOption[] {
       decimals: getCurrencyDecimals(code),
     }));
 
-    // Prioritize key commerce currencies at the top
-    const priorityOrder = ['USD', 'EUR', 'GBP', 'PKR', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'CHF'];
+    // Prioritize key commerce & regional currencies at the top
+    const priorityOrder = [
+      'USD',
+      'EUR',
+      'GBP',
+      'PKR',
+      'INR',
+      'AED',
+      'SAR',
+      'CAD',
+      'AUD',
+      'PHP',
+      'NGN',
+      'ZAR',
+      'JPY',
+      'CNY',
+      'CHF',
+    ];
     options.sort((a, b) => {
       const aIdx = priorityOrder.indexOf(a.code);
       const bIdx = priorityOrder.indexOf(b.code);
@@ -355,7 +412,7 @@ export function calculateLineItem(item: LineItem, decimals: number): ComputedLin
   const rate = Number.isFinite(item.rate) ? Math.max(0, item.rate) : 0;
   const rawGross = roundMoney(qty * rate, decimals);
   const lineDisc = Number.isFinite(item.discount)
-    ? Math.max(0, Math.min(rawGross, item.discount))
+    ? roundMoney(Math.max(0, Math.min(rawGross, item.discount)), decimals)
     : 0;
   const lineTotal = roundMoney(rawGross - lineDisc, decimals);
 
@@ -384,7 +441,12 @@ export function calculateInvoiceTotals(input: InvoiceTotalsInput): InvoiceTotals
   const discountValue = Number.isFinite(input.discountValue) ? Math.max(0, input.discountValue || 0) : 0;
   const shipping = Number.isFinite(input.shipping) ? Math.max(0, input.shipping || 0) : 0;
   const additionalFee = Number.isFinite(input.additionalFee) ? Math.max(0, input.additionalFee || 0) : 0;
-  const amountPaid = Number.isFinite(input.amountPaid) ? Math.max(0, input.amountPaid || 0) : 0;
+  const rawPaid = Number.isFinite(input.amountPaid)
+    ? input.amountPaid
+    : Number.isFinite((input as unknown as { paidAmount?: number }).paidAmount)
+      ? (input as unknown as { paidAmount?: number }).paidAmount
+      : 0;
+  const amountPaid = Math.max(0, rawPaid || 0);
 
   // 1. Line items calculation
   const computedItems = items.map((it) => calculateLineItem(it, decimals));
@@ -668,7 +730,7 @@ export function validateInvoiceDraft(data: unknown): {
   sanitized: InvoiceDraft | null;
 } {
   const errors: string[] = [];
-  if (!data || typeof data !== 'object') {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
     return { valid: false, errors: ['Input data is not a valid JSON object.'], sanitized: null };
   }
 
@@ -750,12 +812,18 @@ export function validateInvoiceDraft(data: unknown): {
   });
 
   const discountType = obj.discountType === 'fixed' ? 'fixed' : 'percent';
-  const discountValue = Number.isFinite(obj.discountValue) ? Math.max(0, Number(obj.discountValue)) : 0;
+  const rawDiscount = Number.isFinite(obj.discountValue) ? Math.max(0, Number(obj.discountValue)) : 0;
+  const discountValue = discountType === 'percent' ? Math.min(100, rawDiscount) : rawDiscount;
   const shipping = Number.isFinite(obj.shipping) ? Math.max(0, Number(obj.shipping)) : 0;
   const additionalFee = Number.isFinite(obj.additionalFee) ? Math.max(0, Number(obj.additionalFee)) : 0;
   const additionalFeeLabel =
     typeof obj.additionalFeeLabel === 'string' ? obj.additionalFeeLabel.slice(0, 50) : 'Processing Fee';
-  const amountPaid = Number.isFinite(obj.amountPaid) ? Math.max(0, Number(obj.amountPaid)) : 0;
+  const rawPaid = Number.isFinite(obj.amountPaid)
+    ? Number(obj.amountPaid)
+    : Number.isFinite((obj as Record<string, unknown>).paidAmount)
+      ? Number((obj as Record<string, unknown>).paidAmount)
+      : 0;
+  const amountPaid = Math.max(0, rawPaid);
   const currencyCode = typeof obj.currencyCode === 'string' ? obj.currencyCode.slice(0, 10).toUpperCase() : 'USD';
   const logo = typeof obj.logo === 'string' && obj.logo.startsWith('data:image/') ? obj.logo : undefined;
 
@@ -781,9 +849,6 @@ export function validateInvoiceDraft(data: unknown): {
   };
 }
 
-/**
- * Generates structured RFC 4180 CSV export content for invoice line items.
- */
 /**
  * Escapes a cell value for RFC 4180 CSV export.
  * Neutralizes spreadsheet formula injection (CWE-1236) for strings starting with =, +, -, @, \t, \r,

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useMemo, useRef, useState, useSyncExternalStore, useEffect } from 'react';
+import { useMemo, useRef, useState, useSyncExternalStore, useEffect, useCallback } from 'react';
 import {
   UploadCloud,
   Trash2,
@@ -26,6 +26,8 @@ import {
   CreditCard,
   Building2,
   User,
+  Sparkles,
+  Eye,
 } from 'lucide-react';
 
 /* -------------------------------------------------------------------------- */
@@ -43,16 +45,14 @@ import {
   type PageData,
   type PaginationOptions,
   type InvoiceTotals,
-  getCurrencyDecimals,
   roundMoney,
   formatMoney,
   getCurrencyOptions,
-  calculateLineItem,
   calculateInvoiceTotals,
   computeInvoicePages,
   formatDisplayDate,
+  computeDueDate,
   validateInvoiceDraft,
-  safeParseMoney,
   escapeCsvCell,
 } from '@/lib/invoiceEngine';
 
@@ -71,7 +71,7 @@ export type {
 
 const STORAGE_KEY = 'omni_invoice_draft_v4';
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 function useIsClient() {
   return useSyncExternalStore(
     emptySubscribe,
@@ -109,20 +109,31 @@ function checkStoredDraftSnapshot(): boolean {
 }
 
 function subscribeToStorage(callback: () => void) {
-  if (typeof window === 'undefined') return () => {};
+  if (typeof window === 'undefined') return () => { };
   window.addEventListener('storage', callback);
   return () => window.removeEventListener('storage', callback);
 }
 
 /* -------------------------------------------------------------------------- */
-/* UI Styles                                                                  */
+/* UI Design Tokens (KivaroTools Light & Dark Theme Native)                   */
 /* -------------------------------------------------------------------------- */
 
 const inputClass =
-  'w-full min-w-0 rounded-xl border border-slate-700/90 bg-slate-950/70 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20';
+  'w-full min-w-0 rounded-xl border border-slate-200 dark:border-slate-700/90 bg-white dark:bg-slate-950/70 px-3 py-2 text-sm text-slate-900 dark:text-slate-100 outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
 
 const labelClass =
-  'mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400';
+  'mb-1 block text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 dark:text-slate-400';
+
+const cardClass =
+  'rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/70 p-4 shadow-2xs';
+
+const secondaryBtnClass =
+  'inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-950 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
+
+type ToastNotice = {
+  type: 'success' | 'error';
+  text: string;
+};
 
 /* -------------------------------------------------------------------------- */
 /* Main Component                                                             */
@@ -131,11 +142,13 @@ const labelClass =
 export default function InvoiceGenerator() {
   const isClient = useIsClient();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [saveStatusMessage, setSaveStatusMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastNotice | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const jsonImportRef = useRef<HTMLInputElement>(null);
   const previewViewportRef = useRef<HTMLDivElement>(null);
+  const previewSectionRef = useRef<HTMLElement>(null);
 
   const [zoomMode, setZoomMode] = useState<'fit' | 'manual'>('fit');
   const [manualZoom, setManualZoom] = useState<number>(0.75);
@@ -145,10 +158,41 @@ export default function InvoiceGenerator() {
   const [logo, setLogo] = useState('');
   const [currencyCode, setCurrencyCode] = useState('USD');
 
+  /* Progressive Disclosure Panels */
+  const [showSenderExtra, setShowSenderExtra] = useState(false);
+  const [showClientExtra, setShowClientExtra] = useState(false);
+  const [showTermsField, setShowTermsField] = useState(false);
+
   /* Modals */
   const [showResetModal, setShowResetModal] = useState(false);
   const [pendingImportData, setPendingImportData] = useState<Record<string, unknown> | null>(null);
   const [draftBannerDismissed, setDraftBannerDismissed] = useState(false);
+
+  const showNotice = useCallback((type: 'success' | 'error', text: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ type, text });
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, type === 'error' ? 5000 : 3200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!showResetModal && !pendingImportData) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowResetModal(false);
+        setPendingImportData(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showResetModal, pendingImportData]);
 
   const hasStoredDraftInStorage = useSyncExternalStore(
     subscribeToStorage,
@@ -227,6 +271,79 @@ export default function InvoiceGenerator() {
   const decimals = selectedCurrency.decimals;
 
   /* ------------------------------------------------------------------------ */
+  /* Date & Payment Terms Synchronization                                     */
+  /* ------------------------------------------------------------------------ */
+
+  const handleIssueDateChange = (newDate: string) => {
+    setMeta((prev) => {
+      const autoDue = prev.paymentTerms !== 'Custom' ? computeDueDate(newDate, prev.paymentTerms) : null;
+      return {
+        ...prev,
+        date: newDate,
+        dueDate: autoDue ?? prev.dueDate,
+      };
+    });
+  };
+
+  const handlePaymentTermsChange = (newTerms: string) => {
+    setMeta((prev) => {
+      const autoDue = newTerms !== 'Custom' ? computeDueDate(prev.date, newTerms) : null;
+      return {
+        ...prev,
+        paymentTerms: newTerms,
+        dueDate: autoDue ?? prev.dueDate,
+      };
+    });
+  };
+
+  const handleDueDateChange = (newDueDate: string) => {
+    setMeta((prev) => {
+      const expectedForTerm =
+        prev.paymentTerms !== 'Custom' ? computeDueDate(prev.date, prev.paymentTerms) : null;
+      const nextTerms =
+        expectedForTerm && expectedForTerm !== newDueDate ? 'Custom' : prev.paymentTerms;
+      return {
+        ...prev,
+        dueDate: newDueDate,
+        paymentTerms: nextTerms,
+      };
+    });
+  };
+
+  /* ------------------------------------------------------------------------ */
+  /* Discount Input Clamping (Percent 0..100, Fixed >= 0)                     */
+  /* ------------------------------------------------------------------------ */
+
+  const handleDiscountTypeChange = (nextType: 'percent' | 'fixed') => {
+    setDiscountType(nextType);
+    if (nextType === 'percent' && discountValue > 100) {
+      setDiscountValue(100);
+      setDiscountInput('100');
+    }
+  };
+
+  const handleDiscountInputChange = (raw: string) => {
+    if (raw === '') {
+      setDiscountInput('');
+      setDiscountValue(0);
+      return;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      setDiscountInput('0');
+      setDiscountValue(0);
+      return;
+    }
+    if (discountType === 'percent' && parsed > 100) {
+      setDiscountInput('100');
+      setDiscountValue(100);
+      return;
+    }
+    setDiscountInput(raw);
+    setDiscountValue(parsed);
+  };
+
+  /* ------------------------------------------------------------------------ */
   /* Calculations (Pure Deterministic Calculation Layer)                       */
   /* ------------------------------------------------------------------------ */
 
@@ -248,12 +365,8 @@ export default function InvoiceGenerator() {
     subtotal,
     isFreshEmpty,
     discountAmount,
-    taxableSubtotal,
-    effectiveTaxableDiscount,
     taxableBase,
-    nonTaxableBase,
     computedTaxes,
-    totalTax,
     shippingAmount,
     feeAmount,
     grandTotal,
@@ -261,13 +374,15 @@ export default function InvoiceGenerator() {
     balanceDue,
   } = totals;
 
+  const combinedNotesLength = (meta.notes?.length || 0) + (meta.terms?.length || 0);
+
   /* Multi-page preview calculation */
   const previewPages = useMemo(
     () =>
       computeInvoicePages(items, {
         hasLogo: Boolean(logo),
-        hasNotes: Boolean(meta.notes),
-        notesLength: meta.notes?.length || 0,
+        hasNotes: Boolean(meta.notes || meta.terms),
+        notesLength: combinedNotesLength,
         hasBank: Boolean(sender.bank),
         bankLength: sender.bank?.length || 0,
         taxCount: computedTaxes.length,
@@ -282,6 +397,8 @@ export default function InvoiceGenerator() {
       items,
       logo,
       meta.notes,
+      meta.terms,
+      combinedNotesLength,
       sender.bank,
       computedTaxes.length,
       discountAmount,
@@ -390,26 +507,28 @@ export default function InvoiceGenerator() {
 
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
 
     if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
-      alert('For security and consistent PDF rendering, please upload PNG, JPG, or WebP images.');
+      showNotice('error', 'For security and reliable PDF rendering, upload PNG, JPG, or WebP logos.');
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      alert('Please upload a valid image file (PNG, JPG, WebP).');
+      showNotice('error', 'Please upload a valid image file (PNG, JPG, or WebP).');
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image exceeds 2 MB. Please upload a smaller logo.');
+      showNotice('error', 'Image exceeds 2 MB. Please upload a smaller logo.');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (evt) => {
       setLogo((evt.target?.result as string) || '');
+      showNotice('success', 'Company logo added to invoice.');
     };
     reader.readAsDataURL(file);
   };
@@ -427,7 +546,7 @@ export default function InvoiceGenerator() {
       const padX = isMobile ? 16 : 40;
       const availableWidth = Math.max(220, viewport.clientWidth - padX);
       const scaleX = (availableWidth - 8) / 794;
-      const fit = isMobile ? Math.min(1.0, scaleX) : Math.min(1.0, scaleX);
+      const fit = Math.min(1.0, scaleX);
       setFitScale(Math.max(0.25, Math.min(fit, 1.15)));
     };
 
@@ -457,8 +576,113 @@ export default function InvoiceGenerator() {
   };
 
   /* ------------------------------------------------------------------------ */
+  /* Sample Invoice Loader                                                    */
+  /* ------------------------------------------------------------------------ */
+
+  const handleLoadSample = () => {
+    const issue = todayISO();
+    const due = computeDueDate(issue, 'Net 15') || issue;
+
+    setMeta({
+      invNum: 'INV-2026-014',
+      date: issue,
+      dueDate: due,
+      paymentTerms: 'Net 15',
+      status: 'Partially Paid',
+      poNumber: 'PO-4821',
+      notes: 'Thank you for your partnership! Please include invoice number INV-2026-014 on your wire transfer.',
+      terms: 'Payment is due within 15 calendar days of issue date. Balance reflects 50% upfront milestone deposit.',
+    });
+    setSender({
+      name: 'Northstar Digital Studio',
+      address: '420 Market Street, Suite 300\nSan Francisco, CA 94105',
+      email: 'billing@northstardigital.example',
+      phone: '+1 (415) 555-0142',
+      website: 'https://northstardigital.example',
+      taxId: 'US-94-3829104',
+      regNumber: 'REG-2021-8841',
+      bank: 'Bank Name: Mercury Business Bank\nAccount Name: Northstar Digital Studio LLC\nAccount / IBAN: US8900001234567890\nSWIFT/BIC: MRCYUS33',
+    });
+    setClient({
+      name: 'Acme Cloud Ventures',
+      address: '88 King Street West\nToronto, ON M5H 1A1, Canada',
+      shippingAddress: '',
+      email: 'ap@acmecloud.example',
+      phone: '+1 (416) 555-0198',
+      taxId: 'CA-829104412RT0001',
+    });
+    setItems([
+      {
+        id: `sample-1-${Date.now()}`,
+        desc: 'UI/UX Design & Component System Architecture',
+        qty: 20,
+        unit: 'hrs',
+        rate: 85,
+        discount: 100,
+        taxable: true,
+      },
+      {
+        id: `sample-2-${Date.now()}`,
+        desc: 'Third-Party Cloud Hosting Pass-Through (Tax-Exempt)',
+        qty: 1,
+        unit: 'lot',
+        rate: 300,
+        discount: 0,
+        taxable: false,
+      },
+    ]);
+    setTaxes([{ id: `tax-sample-${Date.now()}`, name: 'Sales Tax', rate: 10, enabled: true }]);
+    setDiscountType('percent');
+    setDiscountValue(5);
+    setDiscountInput('5');
+    setShipping(0);
+    setShippingInput('0');
+    setAdditionalFee(0);
+    setAdditionalFeeInput('0');
+    setAdditionalFeeLabel('Processing Fee');
+    setAmountPaid(1000);
+    setAmountPaidInput('1000');
+    setCurrencyCode('USD');
+    setShowSenderExtra(true);
+    setShowClientExtra(true);
+    setShowTermsField(true);
+    showNotice('success', 'Sample invoice loaded. Edit any field or click Download PDF.');
+  };
+
+  /* ------------------------------------------------------------------------ */
   /* Persistence & Reset (Explicit User Controlled)                           */
   /* ------------------------------------------------------------------------ */
+
+  const applySanitizedDraft = (draft: ReturnType<typeof validateInvoiceDraft>['sanitized']) => {
+    if (!draft) return;
+    setMeta(draft.meta);
+    setSender(draft.sender);
+    setClient(draft.client);
+    setItems(draft.items);
+    setTaxes(draft.taxes);
+    setDiscountType(draft.discountType);
+    setDiscountValue(draft.discountValue);
+    setDiscountInput(String(draft.discountValue));
+    setShipping(draft.shipping);
+    setShippingInput(String(draft.shipping));
+    setAdditionalFee(draft.additionalFee);
+    setAdditionalFeeInput(String(draft.additionalFee));
+    setAdditionalFeeLabel(draft.additionalFeeLabel);
+    setAmountPaid(draft.amountPaid);
+    setAmountPaidInput(String(draft.amountPaid));
+    setCurrencyCode(draft.currencyCode);
+    setLogo(draft.logo || '');
+
+    if (draft.sender.phone || draft.sender.website || draft.sender.taxId || draft.sender.regNumber) {
+      setShowSenderExtra(true);
+    }
+    if (draft.client.phone || draft.client.taxId || draft.client.shippingAddress) {
+      setShowClientExtra(true);
+    }
+    if (draft.meta.terms) {
+      setShowTermsField(true);
+    }
+  };
 
   const handleSaveDraft = () => {
     try {
@@ -480,11 +704,11 @@ export default function InvoiceGenerator() {
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
       setDraftBannerDismissed(false);
-      setSaveStatusMessage('Draft saved to browser storage.');
-      setTimeout(() => setSaveStatusMessage(null), 3000);
+      showNotice('success', 'Draft saved to this browser.');
     } catch {
-      alert(
-        'Could not save draft to local storage. Your storage quota may be exceeded (try removing the logo image).',
+      showNotice(
+        'error',
+        'Could not save draft. Browser storage quota may be full (try removing the logo image).',
       );
     }
   };
@@ -493,37 +717,17 @@ export default function InvoiceGenerator() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) return;
-      const draft = JSON.parse(stored);
-      if (draft.meta) setMeta(draft.meta);
-      if (draft.sender) setSender(draft.sender);
-      if (draft.client) setClient(draft.client);
-      if (Array.isArray(draft.items) && draft.items.length) setItems(draft.items);
-      if (Array.isArray(draft.taxes) && draft.taxes.length) setTaxes(draft.taxes);
-      if (draft.discountType) setDiscountType(draft.discountType);
-      if (typeof draft.discountValue === 'number') {
-        setDiscountValue(draft.discountValue);
-        setDiscountInput(String(draft.discountValue));
+      const parsed = JSON.parse(stored);
+      const { sanitized } = validateInvoiceDraft(parsed);
+      if (!sanitized) {
+        showNotice('error', 'Saved draft format was invalid and could not be restored.');
+        return;
       }
-      if (typeof draft.shipping === 'number') {
-        setShipping(draft.shipping);
-        setShippingInput(String(draft.shipping));
-      }
-      if (typeof draft.additionalFee === 'number') {
-        setAdditionalFee(draft.additionalFee);
-        setAdditionalFeeInput(String(draft.additionalFee));
-      }
-      if (draft.additionalFeeLabel) setAdditionalFeeLabel(draft.additionalFeeLabel);
-      if (typeof draft.amountPaid === 'number') {
-        setAmountPaid(draft.amountPaid);
-        setAmountPaidInput(String(draft.amountPaid));
-      }
-      if (draft.currencyCode) setCurrencyCode(draft.currencyCode);
-      if (typeof draft.logo === 'string') setLogo(draft.logo);
+      applySanitizedDraft(sanitized);
       setDraftBannerDismissed(true);
-      setSaveStatusMessage('Saved draft restored successfully.');
-      setTimeout(() => setSaveStatusMessage(null), 3000);
+      showNotice('success', 'Saved draft restored.');
     } catch {
-      alert('Failed to restore draft from browser storage.');
+      showNotice('error', 'Failed to restore draft from browser storage.');
     }
   };
 
@@ -531,6 +735,7 @@ export default function InvoiceGenerator() {
     try {
       localStorage.removeItem(STORAGE_KEY);
       setDraftBannerDismissed(true);
+      showNotice('success', 'Saved draft removed from browser storage.');
     } catch {
       // Ignore
     }
@@ -581,8 +786,7 @@ export default function InvoiceGenerator() {
     setLogo('');
     setCurrencyCode('USD');
     setShowResetModal(false);
-    setSaveStatusMessage('Invoice reset to clean defaults.');
-    setTimeout(() => setSaveStatusMessage(null), 3000);
+    showNotice('success', 'Invoice reset to clean defaults.');
   };
 
   /* ------------------------------------------------------------------------ */
@@ -658,6 +862,7 @@ export default function InvoiceGenerator() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    showNotice('success', `Exported Invoice_${cleanNum}.csv`);
   };
 
   /* ------------------------------------------------------------------------ */
@@ -698,10 +903,12 @@ export default function InvoiceGenerator() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    showNotice('success', `Exported Invoice_${cleanNum}.json`);
   };
 
   const handleJSONFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
 
     const reader = new FileReader();
@@ -714,11 +921,10 @@ export default function InvoiceGenerator() {
         }
         setPendingImportData(parsed);
       } catch {
-        alert('Invalid or corrupted JSON file. Please ensure the file is valid JSON.');
+        showNotice('error', 'Invalid or corrupted JSON file. Please select a valid invoice JSON backup.');
       }
     };
     reader.readAsText(file);
-    event.target.value = '';
   };
 
   const confirmJSONImport = () => {
@@ -727,30 +933,12 @@ export default function InvoiceGenerator() {
       const invRaw = (pendingImportData.invoice as Record<string, unknown>) || pendingImportData;
       const { sanitized } = validateInvoiceDraft(invRaw);
       if (sanitized) {
-        setMeta(sanitized.meta);
-        setSender(sanitized.sender);
-        setClient(sanitized.client);
-        setItems(sanitized.items);
-        setTaxes(sanitized.taxes);
-        setDiscountType(sanitized.discountType);
-        setDiscountValue(sanitized.discountValue);
-        setDiscountInput(String(sanitized.discountValue));
-        setShipping(sanitized.shipping);
-        setShippingInput(String(sanitized.shipping));
-        setAdditionalFee(sanitized.additionalFee);
-        setAdditionalFeeInput(String(sanitized.additionalFee));
-        setAdditionalFeeLabel(sanitized.additionalFeeLabel);
-        setAmountPaid(sanitized.amountPaid);
-        setAmountPaidInput(String(sanitized.amountPaid));
-        setCurrencyCode(sanitized.currencyCode);
-        if (sanitized.logo) setLogo(sanitized.logo);
+        applySanitizedDraft(sanitized);
       }
-
       setPendingImportData(null);
-      setSaveStatusMessage('Invoice imported and validated successfully.');
-      setTimeout(() => setSaveStatusMessage(null), 3000);
+      showNotice('success', 'Invoice imported and validated.');
     } catch {
-      alert('Failed to apply imported invoice data.');
+      showNotice('error', 'Failed to apply imported invoice data.');
     }
   };
 
@@ -801,7 +989,6 @@ export default function InvoiceGenerator() {
         const page = pages[i];
         const clone = page.cloneNode(true) as HTMLElement;
 
-        // Reset layout styles so it fills the 794x1123 A4 canvas without scaling or offsets
         clone.style.position = 'relative';
         clone.style.left = '0';
         clone.style.top = '0';
@@ -816,7 +1003,6 @@ export default function InvoiceGenerator() {
         staging.innerHTML = '';
         staging.appendChild(clone);
 
-        // Allow browser layout engine to paint clone
         await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
         const canvas = await html2canvas(clone, {
@@ -825,7 +1011,6 @@ export default function InvoiceGenerator() {
           backgroundColor: '#ffffff',
           logging: false,
           onclone: (clonedDoc: Document) => {
-            // Color sanitization canvas for modern CSS color formats (lab, oklch, color-mix)
             const cvs = clonedDoc.createElement('canvas');
             cvs.width = 1;
             cvs.height = 1;
@@ -898,12 +1083,8 @@ export default function InvoiceGenerator() {
                 outline-color: transparent;
                 text-decoration-color: currentColor;
               }
-              .invoice-document {
-                overflow: visible !important;
-              }
-              .invoice-document * {
-                overflow: visible !important;
-              }
+              .invoice-document,
+              .invoice-document *,
               #omni-invoice-pdf-staging {
                 overflow: visible !important;
               }
@@ -927,9 +1108,10 @@ export default function InvoiceGenerator() {
 
       const cleanInvNum = (meta.invNum || 'INV-0001').replace(/[^a-zA-Z0-9_-]/g, '_');
       pdf.save(`Invoice_${cleanInvNum}.pdf`);
+      showNotice('success', `Downloaded Invoice_${cleanInvNum}.pdf`);
     } catch (error) {
       console.error('PDF Generation Error:', error);
-      alert('Could not generate the PDF. Please try using the Print button to Save as PDF.');
+      showNotice('error', 'Could not generate the PDF. Try using the Print button to Save as PDF.');
     } finally {
       staging?.remove();
       setIsGenerating(false);
@@ -939,440 +1121,513 @@ export default function InvoiceGenerator() {
   if (!isClient) {
     return (
       <div
-        className="mx-auto w-full max-w-[1360px] min-w-0 rounded-[28px] border border-slate-800 bg-[#070b14] p-3 shadow-2xl sm:p-5 lg:p-6 animate-pulse"
+        className="mx-auto w-full min-w-0 rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 p-4 sm:p-6 animate-pulse"
         aria-busy="true"
         aria-label="Loading Invoice Generator Workspace"
       >
-        <div className="h-16 w-full rounded-2xl bg-slate-900/80 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-6 space-y-4">
-            <div className="h-48 rounded-2xl bg-slate-900/60" />
-            <div className="h-64 rounded-2xl bg-slate-900/60" />
-            <div className="h-48 rounded-2xl bg-slate-900/60" />
-          </div>
-          <div className="lg:col-span-6">
-            <div className="h-[800px] rounded-2xl bg-slate-900/60" />
-          </div>
+        <div className="h-16 w-full rounded-2xl bg-slate-200/70 dark:bg-slate-900/80 mb-5" />
+        <div className="space-y-4">
+          <div className="h-44 rounded-2xl bg-slate-200/60 dark:bg-slate-900/60" />
+          <div className="h-56 rounded-2xl bg-slate-200/60 dark:bg-slate-900/60" />
+          <div className="h-64 rounded-2xl bg-slate-200/60 dark:bg-slate-900/60" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1360px] min-w-0 rounded-[28px] border border-slate-800 bg-[#070b14] p-3 shadow-2xl sm:p-5 lg:p-6">
+    <div className="relative mx-auto w-full min-w-0 text-slate-900 dark:text-slate-100">
       {/* ================================================================== */}
-      {/* HEADER / TOOLBAR                                                   */}
+      {/* NON-SHIFTING FLOATING TOAST NOTIFICATION                           */}
       {/* ================================================================== */}
-
-      <div className="mb-4 flex flex-col gap-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600/15 text-blue-400 ring-1 ring-blue-500/20">
-            <ReceiptText className="h-6 w-6" />
-          </div>
-
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-base font-bold text-white sm:text-lg">
-                Invoice Generator
-              </h2>
-              <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-400">
-                Global Business
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              International business invoice builder with deterministic multi-currency totals & A4 export.
-            </p>
-          </div>
-        </div>
-
-        {/* Global Toolbar Actions */}
-        <div className="flex flex-wrap items-center gap-2">
-          {saveStatusMessage && (
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 animate-fadeIn">
-              <Check className="h-3.5 w-3.5" />
-              <span>{saveStatusMessage}</span>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-            title="Save draft to this browser"
-          >
-            <Save className="h-3.5 w-3.5 text-blue-400" />
-            <span className="hidden sm:inline">Save Draft</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowResetModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-            title="Start new invoice"
-          >
-            <RotateCcw className="h-3.5 w-3.5 text-amber-400" />
-            <span>New Invoice</span>
-          </button>
-
-          <div className="relative inline-block">
-            <input
-              ref={jsonImportRef}
-              type="file"
-              accept=".json"
-              onChange={handleJSONFileSelect}
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => jsonImportRef.current?.click()}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-              title="Import JSON invoice file"
-            >
-              <Upload className="h-3.5 w-3.5 text-slate-400" />
-              <span className="hidden md:inline">Import JSON</span>
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={exportJSON}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-            title="Export invoice data as JSON"
-          >
-            <FileCode className="h-3.5 w-3.5 text-indigo-400" />
-            <span className="hidden md:inline">JSON</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={exportCSV}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-            title="Export CSV spreadsheet"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">CSV</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white"
-            title="Print invoice"
-          >
-            <Printer className="h-3.5 w-3.5 text-slate-300" />
-            <span>Print</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Draft Notification Banner */}
-      {hasStoredDraft && (
-        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-blue-500/30 bg-blue-500/10 p-3.5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5 text-xs text-blue-200">
-            <Info className="h-4 w-4 shrink-0 text-blue-400" />
-            <span>A previous invoice draft is available in your browser storage.</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleRestoreDraft}
-              className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-500"
-            >
-              Restore Draft
-            </button>
-            <button
-              type="button"
-              onClick={handleDiscardDraft}
-              className="rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white"
-            >
-              Discard
-            </button>
-            <button
-              type="button"
-              onClick={() => setDraftBannerDismissed(true)}
-              className="p-1 text-slate-400 hover:text-white"
-              aria-label="Dismiss banner"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Date Validation Alert Banner */}
-      {isDueDateInvalid && (
+      {toast && (
         <div
-          role="alert"
-          className="mb-4 flex items-center gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-semibold text-amber-300"
+          role={toast.type === 'error' ? 'alert' : 'status'}
+          aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+          className={`fixed bottom-5 right-5 z-50 flex max-w-md items-center gap-2.5 rounded-2xl border px-4 py-3 text-xs font-semibold shadow-xl backdrop-blur-md animate-fadeIn ${toast.type === 'error'
+              ? 'border-red-300 bg-red-50/95 text-red-800 dark:border-red-500/40 dark:bg-red-950/95 dark:text-red-200'
+              : 'border-emerald-300 bg-emerald-50/95 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/95 dark:text-emerald-200'
+            }`}
         >
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" />
-          <span>Warning: Due date ({meta.dueDate}) is earlier than Issue date ({meta.date}).</span>
+          {toast.type === 'error' ? (
+            <AlertCircle className="h-4 w-4 shrink-0" />
+          ) : (
+            <Check className="h-4 w-4 shrink-0" />
+          )}
+          <span className="leading-snug">{toast.text}</span>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="ml-1 rounded p-0.5 opacity-70 transition hover:opacity-100"
+            aria-label="Dismiss notification"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 
-      {/* ================================================================== */}
-      {/* WORKSPACE GRID                                                     */}
-      {/* ================================================================== */}
-
-      <div className="grid w-full min-w-0 grid-cols-1 gap-6">
-        {/* ================================================================= */}
-        {/* FORM EDITOR                                                       */}
-        {/* ================================================================= */}
-
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/55">
-          <div className="border-b border-slate-800 bg-slate-900/80 px-4 py-3 sm:px-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-bold text-white">Invoice Editor</p>
-                <p className="text-[11px] text-slate-400">
-                  Fill in business details, line items, taxes, and terms.
+      <div className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/60 p-3 sm:p-5 space-y-4">
+        {/* ================================================================== */}
+        {/* TOP ACTION TOOLBAR                                                 */}
+        {/* ================================================================== */}
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 sm:p-4 shadow-2xs">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            {/* Brand / Live Summary */}
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-600/15 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
+                <ReceiptText className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-sm font-bold text-slate-900 dark:text-white sm:text-base">
+                    Invoice Workspace
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${meta.status === 'Paid'
+                          ? 'bg-emerald-500'
+                          : meta.status === 'Partially Paid'
+                            ? 'bg-blue-500'
+                            : meta.status === 'Overdue'
+                              ? 'bg-red-500'
+                              : meta.status === 'Sent'
+                                ? 'bg-violet-500'
+                                : 'bg-slate-400'
+                        }`}
+                    />
+                    {meta.status}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  No signup · Zero watermarks · 150+ ISO-4217 currencies
                 </p>
               </div>
+            </div>
 
-              {/* Status Badge */}
-              <div className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-950 px-2.5 py-1 text-[11px] font-semibold text-slate-300">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    meta.status === 'Paid'
-                      ? 'bg-emerald-400'
-                      : meta.status === 'Partially Paid'
-                        ? 'bg-blue-400'
-                        : meta.status === 'Overdue'
-                          ? 'bg-red-400'
-                          : meta.status === 'Sent'
-                            ? 'bg-violet-400'
-                            : 'bg-slate-400'
-                  }`}
+            {/* Primary & Secondary Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={generatePDF}
+                disabled={isGenerating}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Download className="h-3.5 w-3.5" />
+                )}
+                <span>{isGenerating ? 'Rendering PDF…' : 'Download PDF'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePrint}
+                className={secondaryBtnClass}
+                title="Print or Save as selectable PDF via browser print"
+              >
+                <Printer className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                <span>Print</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={exportCSV}
+                className={secondaryBtnClass}
+                title="Export RFC 4180 formula-safe CSV spreadsheet"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>CSV</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={exportJSON}
+                className={secondaryBtnClass}
+                title="Export reusable JSON backup"
+              >
+                <FileCode className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>JSON</span>
+              </button>
+
+              <div className="relative inline-block">
+                <input
+                  ref={jsonImportRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleJSONFileSelect}
+                  className="hidden"
                 />
-                <span>{meta.status}</span>
+                <button
+                  type="button"
+                  onClick={() => jsonImportRef.current?.click()}
+                  className={secondaryBtnClass}
+                  title="Import previously exported JSON invoice"
+                >
+                  <Upload className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <span>Import</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="p-3 sm:p-5 space-y-5">
-            {/* 1. METADATA & LOGO CARD */}
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[170px_minmax(0,1fr)]">
-              {/* Logo */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-3.5">
-                <label className={labelClass} htmlFor="logo-upload-btn">
-                  Company Logo
-                </label>
-                <button
-                  id="logo-upload-btn"
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="group flex h-[100px] w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-700 bg-slate-950/80 transition hover:border-blue-500/60 hover:bg-blue-500/[0.03]"
-                >
-                  {logo ? (
-                    <img
-                      src={logo}
-                      alt="Company logo preview"
-                      className="max-h-[75px] max-w-full object-contain"
-                    />
-                  ) : (
-                    <span className="flex flex-col items-center gap-1.5 text-xs text-slate-400 group-hover:text-slate-300">
-                      <UploadCloud className="h-5 w-5 text-slate-500" />
-                      <span>Upload Logo</span>
-                    </span>
-                  )}
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-                {logo && (
-                  <button
-                    type="button"
-                    onClick={() => setLogo('')}
-                    className="mt-1.5 w-full text-center text-[10px] font-semibold text-red-400 hover:underline"
-                  >
-                    Remove logo
-                  </button>
+          {/* Secondary Utility Row: Drafts, Sample, Reset & Live Balance Pill */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+                title="Save current draft to browser localStorage"
+              >
+                <Save className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                <span>Save Draft</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLoadSample}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+                title="Populate realistic example invoice data"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
+                <span>Load Sample</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowResetModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100 dark:hover:bg-slate-700"
+                title="Reset all fields to start a new invoice"
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>New Invoice</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500 dark:text-slate-400">
+                  {paidAmount > 0 ? 'Balance Due:' : 'Total:'}
+                </span>
+                <span className="font-mono text-sm font-black text-blue-600 dark:text-blue-400 tabular-nums">
+                  {currencySymbol} {formatMoney(paidAmount > 0 ? balanceDue : grandTotal, decimals)}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  previewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+                className="inline-flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>Preview ({previewPages.length}p)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Draft Notification Banner */}
+        {hasStoredDraft && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/90 dark:bg-blue-500/10 p-3.5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2.5 text-xs text-blue-900 dark:text-blue-200">
+              <Info className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+              <span>A previously saved invoice draft is available in your browser storage.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleRestoreDraft}
+                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-500"
+              >
+                Restore Draft
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="rounded-lg border border-blue-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 transition hover:bg-slate-50 dark:hover:bg-slate-700"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftBannerDismissed(true)}
+                className="p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                aria-label="Dismiss draft banner"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Date Validation Alert Banner */}
+        {isDueDateInvalid && (
+          <div
+            role="alert"
+            className="flex items-center gap-2.5 rounded-2xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs font-semibold text-amber-800 dark:text-amber-300"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              Warning: Due date ({meta.dueDate}) is earlier than Issue date ({meta.date}).
+            </span>
+          </div>
+        )}
+
+        {/* ================================================================== */}
+        {/* STEP 1: INVOICE DETAILS & LOGO                                     */}
+        {/* ================================================================== */}
+        <section className={cardClass} aria-labelledby="step-1-heading">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                1
+              </span>
+              <h3 id="step-1-heading" className="text-sm font-bold text-slate-900 dark:text-white">
+                Invoice Details &amp; Logo
+              </h3>
+            </div>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              Payment terms auto-calculate due date
+            </span>
+          </div>
+
+          <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[164px_minmax(0,1fr)]">
+            {/* Logo Uploader */}
+            <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3">
+              <label className={labelClass} htmlFor="logo-upload-btn">
+                Company Logo
+              </label>
+              <button
+                id="logo-upload-btn"
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="group flex h-[92px] w-full min-w-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/80 transition hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-blue-500/[0.04]"
+              >
+                {logo ? (
+                  <img
+                    src={logo}
+                    alt="Company logo preview"
+                    className="max-h-[72px] max-w-full object-contain"
+                  />
+                ) : (
+                  <span className="flex flex-col items-center gap-1 text-xs text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-300">
+                    <UploadCloud className="h-5 w-5" />
+                    <span className="font-medium">Upload Logo</span>
+                  </span>
                 )}
-                <p className="mt-1 text-[10px] text-slate-400">PNG, JPG, WebP · Max 2MB</p>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+              {logo ? (
+                <button
+                  type="button"
+                  onClick={() => setLogo('')}
+                  className="mt-1.5 w-full text-center text-[11px] font-semibold text-red-600 dark:text-red-400 hover:underline"
+                >
+                  Remove logo
+                </button>
+              ) : (
+                <p className="mt-1.5 text-center text-[10px] text-slate-500 dark:text-slate-400">
+                  PNG, JPG, WebP · Max 2 MB
+                </p>
+              )}
+            </div>
+
+            {/* Metadata Grid */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label className={labelClass} htmlFor="meta-inv-num">
+                  Invoice Number
+                </label>
+                <input
+                  id="meta-inv-num"
+                  value={meta.invNum}
+                  onChange={(e) => setMeta((prev) => ({ ...prev, invNum: e.target.value }))}
+                  className={inputClass}
+                  placeholder="INV-0001"
+                />
               </div>
 
-              {/* Meta fields */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-3.5">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <div>
-                    <label className={labelClass} htmlFor="meta-inv-num">
-                      Invoice Number
-                    </label>
-                    <input
-                      id="meta-inv-num"
-                      value={meta.invNum}
-                      onChange={(e) => setMeta((prev) => ({ ...prev, invNum: e.target.value }))}
-                      className={inputClass}
-                      placeholder="INV-0001"
-                    />
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="meta-status">
+                  Status
+                </label>
+                <select
+                  id="meta-status"
+                  value={meta.status}
+                  onChange={(e) =>
+                    setMeta((prev) => ({
+                      ...prev,
+                      status: e.target.value as InvoiceStatus,
+                    }))
+                  }
+                  className={inputClass}
+                >
+                  <option value="Draft">Draft</option>
+                  <option value="Sent">Sent</option>
+                  <option value="Partially Paid">Partially Paid</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Overdue">Overdue</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className={labelClass} htmlFor="meta-status">
-                      Status
-                    </label>
-                    <select
-                      id="meta-status"
-                      value={meta.status}
-                      onChange={(e) =>
-                        setMeta((prev) => ({
-                          ...prev,
-                          status: e.target.value as InvoiceStatus,
-                        }))
-                      }
-                      className={inputClass}
-                    >
-                      <option value="Draft">Draft</option>
-                      <option value="Sent">Sent</option>
-                      <option value="Partially Paid">Partially Paid</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Overdue">Overdue</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="meta-po-ref">
+                  PO / Reference (Optional)
+                </label>
+                <input
+                  id="meta-po-ref"
+                  value={meta.poNumber}
+                  onChange={(e) => setMeta((prev) => ({ ...prev, poNumber: e.target.value }))}
+                  className={inputClass}
+                  placeholder="PO-9842"
+                />
+              </div>
 
-                  <div>
-                    <label className={labelClass} htmlFor="meta-po-ref">
-                      PO / Reference
-                    </label>
-                    <input
-                      id="meta-po-ref"
-                      value={meta.poNumber}
-                      onChange={(e) => setMeta((prev) => ({ ...prev, poNumber: e.target.value }))}
-                      className={inputClass}
-                      placeholder="PO-9842"
-                    />
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="meta-date">
+                  Issue Date
+                </label>
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="meta-date"
+                    type="date"
+                    value={meta.date}
+                    onChange={(e) => handleIssueDateChange(e.target.value)}
+                    className={`${inputClass} pl-9`}
+                  />
+                </div>
+              </div>
 
-                  <div>
-                    <label className={labelClass} htmlFor="meta-date">
-                      Issue Date
-                    </label>
-                    <div className="relative">
-                      <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="meta-date"
-                        type="date"
-                        value={meta.date}
-                        onChange={(e) => setMeta((prev) => ({ ...prev, date: e.target.value }))}
-                        className={`${inputClass} pl-9 [color-scheme:dark]`}
-                      />
-                    </div>
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="meta-payment-terms">
+                  Payment Terms
+                </label>
+                <select
+                  id="meta-payment-terms"
+                  value={meta.paymentTerms}
+                  onChange={(e) => handlePaymentTermsChange(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="Due on Receipt">Due on Receipt</option>
+                  <option value="Net 7">Net 7 Days</option>
+                  <option value="Net 15">Net 15 Days</option>
+                  <option value="Net 30">Net 30 Days</option>
+                  <option value="Net 60">Net 60 Days</option>
+                  <option value="Custom">Custom Terms</option>
+                </select>
+              </div>
 
-                  <div>
-                    <label className={labelClass} htmlFor="meta-due-date">
-                      Due Date
-                    </label>
-                    <div className="relative">
-                      <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                      <input
-                        id="meta-due-date"
-                        type="date"
-                        value={meta.dueDate}
-                        aria-invalid={isDueDateInvalid}
-                        onChange={(e) => setMeta((prev) => ({ ...prev, dueDate: e.target.value }))}
-                        className={`${inputClass} pl-9 [color-scheme:dark] ${
-                          isDueDateInvalid ? 'border-amber-500/80 focus:ring-amber-500/20' : ''
-                        }`}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className={labelClass} htmlFor="meta-payment-terms">
-                      Payment Terms
-                    </label>
-                    <select
-                      id="meta-payment-terms"
-                      value={meta.paymentTerms}
-                      onChange={(e) =>
-                        setMeta((prev) => ({ ...prev, paymentTerms: e.target.value }))
-                      }
-                      className={inputClass}
-                    >
-                      <option value="Due on Receipt">Due on Receipt</option>
-                      <option value="Net 7">Net 7 Days</option>
-                      <option value="Net 15">Net 15 Days</option>
-                      <option value="Net 30">Net 30 Days</option>
-                      <option value="Net 60">Net 60 Days</option>
-                      <option value="Custom">Custom Terms</option>
-                    </select>
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="meta-due-date">
+                  Due Date
+                </label>
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    id="meta-due-date"
+                    type="date"
+                    value={meta.dueDate}
+                    aria-invalid={isDueDateInvalid}
+                    onChange={(e) => handleDueDateChange(e.target.value)}
+                    className={`${inputClass} pl-9 ${isDueDateInvalid ? 'border-amber-500 focus:ring-amber-500/20' : ''
+                      }`}
+                  />
                 </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* 2. PARTIES (FROM & BILL TO) */}
-            <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
-              {/* FROM */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-400" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-400">
-                    From · Business Details
-                  </p>
-                </div>
+        {/* ================================================================== */}
+        {/* STEP 2: FROM (SELLER) & BILL TO (CLIENT)                           */}
+        {/* ================================================================== */}
+        <section aria-labelledby="step-2-heading" className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+          <h3 id="step-2-heading" className="sr-only">
+            Business and Client Details
+          </h3>
 
-                <div className="space-y-3">
-                  <div>
-                    <label className={labelClass} htmlFor="sender-name">
-                      Business / Seller Name
-                    </label>
-                    <input
-                      id="sender-name"
-                      value={sender.name}
-                      onChange={(e) => setSender((prev) => ({ ...prev, name: e.target.value }))}
-                      className={inputClass}
-                      placeholder="Your Company / Brand Name"
-                    />
-                  </div>
+          {/* FROM */}
+          <div className={cardClass}>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-blue-600 dark:text-blue-400">
+                  From · Your Business
+                </p>
+              </div>
+            </div>
 
-                  <div>
-                    <label className={labelClass} htmlFor="sender-address">
-                      Business Address
-                    </label>
-                    <textarea
-                      id="sender-address"
-                      value={sender.address}
-                      onChange={(e) => setSender((prev) => ({ ...prev, address: e.target.value }))}
-                      className={`${inputClass} min-h-[64px] resize-y`}
-                      placeholder="Street, City, Postal Code, Country"
-                    />
-                  </div>
+            <div className="space-y-3">
+              <div>
+                <label className={labelClass} htmlFor="sender-name">
+                  Business / Freelancer Name
+                </label>
+                <input
+                  id="sender-name"
+                  value={sender.name}
+                  onChange={(e) => setSender((prev) => ({ ...prev, name: e.target.value }))}
+                  className={inputClass}
+                  placeholder="Your Company or Full Name"
+                />
+              </div>
 
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    <div>
-                      <label className={labelClass} htmlFor="sender-email">
-                        Email
-                      </label>
-                      <input
-                        id="sender-email"
-                        value={sender.email}
-                        onChange={(e) => setSender((prev) => ({ ...prev, email: e.target.value }))}
-                        className={inputClass}
-                        placeholder="billing@company.com"
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass} htmlFor="sender-phone">
-                        Phone
-                      </label>
-                      <input
-                        id="sender-phone"
-                        value={sender.phone}
-                        onChange={(e) => setSender((prev) => ({ ...prev, phone: e.target.value }))}
-                        className={inputClass}
-                        placeholder="+1 555-0199"
-                      />
-                    </div>
-                  </div>
+              <div>
+                <label className={labelClass} htmlFor="sender-address">
+                  Business Address
+                </label>
+                <textarea
+                  id="sender-address"
+                  value={sender.address}
+                  onChange={(e) => setSender((prev) => ({ ...prev, address: e.target.value }))}
+                  className={`${inputClass} min-h-[60px] resize-y`}
+                  placeholder="Street, City, Postal Code, Country"
+                />
+              </div>
 
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <div>
+                <label className={labelClass} htmlFor="sender-email">
+                  Email
+                </label>
+                <input
+                  id="sender-email"
+                  type="email"
+                  value={sender.email}
+                  onChange={(e) => setSender((prev) => ({ ...prev, email: e.target.value }))}
+                  className={inputClass}
+                  placeholder="billing@company.com"
+                />
+              </div>
+
+              {/* Progressive Disclosure: Optional Seller Identifiers */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowSenderExtra((v) => !v)}
+                  aria-expanded={showSenderExtra}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${showSenderExtra ? 'rotate-180' : ''}`}
+                  />
+                  <span>
+                    {showSenderExtra
+                      ? 'Hide Tax ID, Phone, Website & Reg. No.'
+                      : 'Add Tax ID / VAT / NTN, Phone, Website & Reg. No.'}
+                  </span>
+                </button>
+
+                {showSenderExtra && (
+                  <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-3">
                     <div>
                       <label className={labelClass} htmlFor="sender-tax-id">
                         Tax ID / VAT / GST / NTN
@@ -1399,85 +1654,133 @@ export default function InvoiceGenerator() {
                         placeholder="e.g. CRN-849201"
                       />
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* BILL TO */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <User className="h-4 w-4 text-violet-400" />
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-violet-400">
-                    Bill To · Client Details
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className={labelClass} htmlFor="client-name">
-                      Customer / Client Name
-                    </label>
-                    <input
-                      id="client-name"
-                      value={client.name}
-                      onChange={(e) => setClient((prev) => ({ ...prev, name: e.target.value }))}
-                      className={inputClass}
-                      placeholder="Client Name / Corporation"
-                    />
-                  </div>
-
-                  <div>
-                    <label className={labelClass} htmlFor="client-address">
-                      Billing Address
-                    </label>
-                    <textarea
-                      id="client-address"
-                      value={client.address}
-                      onChange={(e) => setClient((prev) => ({ ...prev, address: e.target.value }))}
-                      className={`${inputClass} min-h-[64px] resize-y`}
-                      placeholder="Street, City, Postal Code, Country"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     <div>
-                      <label className={labelClass} htmlFor="client-email">
-                        Email
-                      </label>
-                      <input
-                        id="client-email"
-                        value={client.email}
-                        onChange={(e) => setClient((prev) => ({ ...prev, email: e.target.value }))}
-                        className={inputClass}
-                        placeholder="ap@client.com"
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass} htmlFor="client-phone">
+                      <label className={labelClass} htmlFor="sender-phone">
                         Phone
                       </label>
                       <input
-                        id="client-phone"
-                        value={client.phone}
-                        onChange={(e) => setClient((prev) => ({ ...prev, phone: e.target.value }))}
+                        id="sender-phone"
+                        value={sender.phone}
+                        onChange={(e) => setSender((prev) => ({ ...prev, phone: e.target.value }))}
                         className={inputClass}
-                        placeholder="+1 555-0288"
+                        placeholder="+1 555-0199"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass} htmlFor="sender-website">
+                        Website
+                      </label>
+                      <input
+                        id="sender-website"
+                        value={sender.website}
+                        onChange={(e) => setSender((prev) => ({ ...prev, website: e.target.value }))}
+                        className={inputClass}
+                        placeholder="https://yourcompany.com"
                       />
                     </div>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    <div>
-                      <label className={labelClass} htmlFor="client-tax-id">
-                        Client Tax ID / VAT
-                      </label>
-                      <input
-                        id="client-tax-id"
-                        value={client.taxId}
-                        onChange={(e) => setClient((prev) => ({ ...prev, taxId: e.target.value }))}
-                        className={inputClass}
-                        placeholder="Customer VAT / Tax ID"
-                      />
+          {/* BILL TO */}
+          <div className={cardClass}>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-violet-600 dark:text-violet-400">
+                  Bill To · Client Details
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className={labelClass} htmlFor="client-name">
+                  Customer / Client Name
+                </label>
+                <input
+                  id="client-name"
+                  value={client.name}
+                  onChange={(e) => setClient((prev) => ({ ...prev, name: e.target.value }))}
+                  className={inputClass}
+                  placeholder="Client Name / Corporation"
+                />
+              </div>
+
+              <div>
+                <label className={labelClass} htmlFor="client-address">
+                  Billing Address
+                </label>
+                <textarea
+                  id="client-address"
+                  value={client.address}
+                  onChange={(e) => setClient((prev) => ({ ...prev, address: e.target.value }))}
+                  className={`${inputClass} min-h-[60px] resize-y`}
+                  placeholder="Street, City, Postal Code, Country"
+                />
+              </div>
+
+              <div>
+                <label className={labelClass} htmlFor="client-email">
+                  Email
+                </label>
+                <input
+                  id="client-email"
+                  type="email"
+                  value={client.email}
+                  onChange={(e) => setClient((prev) => ({ ...prev, email: e.target.value }))}
+                  className={inputClass}
+                  placeholder="ap@client.com"
+                />
+              </div>
+
+              {/* Progressive Disclosure: Optional Client Identifiers */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowClientExtra((v) => !v)}
+                  aria-expanded={showClientExtra}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"
+                >
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform ${showClientExtra ? 'rotate-180' : ''}`}
+                  />
+                  <span>
+                    {showClientExtra
+                      ? 'Hide Client Phone, Tax ID & Shipping Address'
+                      : 'Add Client Phone, Tax ID / VAT & Shipping Address'}
+                  </span>
+                </button>
+
+                {showClientExtra && (
+                  <div className="mt-3 space-y-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-3">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                      <div>
+                        <label className={labelClass} htmlFor="client-phone">
+                          Phone
+                        </label>
+                        <input
+                          id="client-phone"
+                          value={client.phone}
+                          onChange={(e) => setClient((prev) => ({ ...prev, phone: e.target.value }))}
+                          className={inputClass}
+                          placeholder="+1 555-0288"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass} htmlFor="client-tax-id">
+                          Client Tax ID / VAT
+                        </label>
+                        <input
+                          id="client-tax-id"
+                          value={client.taxId}
+                          onChange={(e) => setClient((prev) => ({ ...prev, taxId: e.target.value }))}
+                          className={inputClass}
+                          placeholder="Customer VAT / Tax ID"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className={labelClass} htmlFor="client-shipping">
@@ -1493,653 +1796,629 @@ export default function InvoiceGenerator() {
                           }))
                         }
                         className={inputClass}
-                        placeholder="Delivery location if different"
+                        placeholder="Delivery location if different from billing address"
                       />
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. LINE ITEMS SECTION */}
-            <div
-              className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4"
-              onKeyDown={handleLineItemsKeyDown}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-sm font-bold text-white">Line Items</h3>
-                  <p className="text-[11px] text-slate-400">
-                    Add products or services. Line Amount = (Qty × Rate) - Line Discount.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {/* Currency Selector */}
-                  <div className="relative">
-                    <label htmlFor="currency-select" className="sr-only">
-                      Currency
-                    </label>
-                    <select
-                      id="currency-select"
-                      value={currencyCode}
-                      onChange={(e) => setCurrencyCode(e.target.value)}
-                      className="h-9 appearance-none rounded-xl border border-slate-700 bg-slate-950 pl-3 pr-8 text-xs font-semibold text-white outline-none transition focus:border-blue-500"
-                    >
-                      {currencies.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.code} ({c.symbol}) — {c.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    aria-label="Add invoice line item"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white shadow-md shadow-blue-600/10 transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Item</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Items List */}
-              <div className="mt-3 space-y-3">
-                {computedItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    id={`line-item-card-${item.id}`}
-                    className="line-item-card rounded-xl border border-slate-800 bg-slate-900/60 p-3 transition hover:border-slate-700"
-                  >
-                    {/* Top Row: Description */}
-                    <div className="mb-2.5">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <label
-                          htmlFor={`item-desc-${item.id}`}
-                          className="text-[10px] font-semibold uppercase text-slate-400"
-                        >
-                          Item {index + 1} Description *
-                        </label>
-                        {!item.desc && (
-                          <span className="text-[10px] text-amber-400">
-                            Description recommended
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        id={`item-desc-${item.id}`}
-                        value={item.desc}
-                        onChange={(e) => handleItemChange(index, 'desc', e.target.value)}
-                        className={inputClass}
-                        placeholder={`e.g. Full-Stack Web Development, Consulting, or Product SKU ${index + 1}`}
-                      />
-                    </div>
-
-                    {/* Numeric Grid */}
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 items-end">
-                      {/* Qty */}
-                      <div>
-                        <label
-                          htmlFor={`item-qty-${item.id}`}
-                          className="mb-1 block text-[10px] font-semibold uppercase text-slate-400"
-                        >
-                          Qty
-                        </label>
-                        <input
-                          id={`item-qty-${item.id}`}
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={item.qty}
-                          onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-                          className={`${inputClass} text-center`}
-                        />
-                      </div>
-
-                      {/* Unit */}
-                      <div>
-                        <label
-                          htmlFor={`item-unit-${item.id}`}
-                          className="mb-1 block text-[10px] font-semibold uppercase text-slate-400"
-                        >
-                          Unit
-                        </label>
-                        <input
-                          id={`item-unit-${item.id}`}
-                          value={item.unit}
-                          onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                          className={inputClass}
-                          placeholder="hrs/pcs"
-                        />
-                      </div>
-
-                      {/* Rate */}
-                      <div>
-                        <label
-                          htmlFor={`item-rate-${item.id}`}
-                          className="mb-1 block text-[10px] font-semibold uppercase text-slate-400"
-                        >
-                          Unit Price ({currencySymbol})
-                        </label>
-                        <input
-                          id={`item-rate-${item.id}`}
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={item.rate === 0 ? '' : item.rate}
-                          onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
-                          className={`${inputClass} text-right`}
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      {/* Line Discount */}
-                      <div>
-                        <label
-                          htmlFor={`item-disc-${item.id}`}
-                          className="mb-1 block text-[10px] font-semibold uppercase text-slate-400"
-                        >
-                          Line Disc. ({currencySymbol})
-                        </label>
-                        <input
-                          id={`item-disc-${item.id}`}
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={item.discount === 0 ? '' : item.discount}
-                          onChange={(e) => handleItemChange(index, 'discount', e.target.value)}
-                          className={`${inputClass} text-right`}
-                          placeholder="0.00"
-                        />
-                      </div>
-
-                      {/* Line Amount Display */}
-                      <div>
-                        <span className="mb-1 block text-[10px] font-semibold uppercase text-slate-400">
-                          Total
-                        </span>
-                        <div className="flex h-[38px] items-center justify-end rounded-xl border border-slate-800 bg-slate-950 px-2.5 text-right font-mono text-xs font-bold text-slate-200">
-                          {currencySymbol} {formatMoney(item.lineTotal, decimals)}
-                        </div>
-                      </div>
-
-                      {/* Actions: Taxable checkbox + Delete */}
-                      <div className="flex items-center justify-between gap-1.5 h-[38px] px-1">
-                        <label
-                          htmlFor={`item-taxable-${item.id}`}
-                          className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 cursor-pointer select-none"
-                          title="Is this line item subject to tax?"
-                        >
-                          <input
-                            id={`item-taxable-${item.id}`}
-                            type="checkbox"
-                            checked={item.taxable}
-                            onChange={(e) => handleItemChange(index, 'taxable', e.target.checked)}
-                            className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500/20"
-                          />
-                          <span>Tax</span>
-                        </label>
-
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          disabled={items.length === 1}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-20"
-                          aria-label={`Remove item ${index + 1}`}
-                          title="Delete line item"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Bottom Add Item Action Bar */}
-              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2.5 border-t border-slate-800/80 pt-3">
-                <p className="text-[11px] text-slate-400">
-                  <span className="font-semibold text-slate-300">{items.length}</span>{' '}
-                  {items.length === 1 ? 'line item' : 'line items'}
-                  <span className="hidden sm:inline text-slate-500">
-                    {' '}• Press{' '}
-                    <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300">
-                      Ctrl+Enter
-                    </kbd>{' '}
-                    to quickly add next
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  aria-label="Add invoice line item"
-                  className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-950/40 px-4 text-xs font-bold text-blue-400 shadow-sm transition hover:border-blue-500/60 hover:bg-blue-900/50 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Item</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 4. DISCOUNTS, TAXES, SHIPPING & FEES */}
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-              {/* Discounts & Taxes */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 space-y-4">
-                {/* Global Discount */}
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <label className={labelClass}>Invoice Discount</label>
-                    <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-0.5 text-[11px]">
-                      <button
-                        type="button"
-                        onClick={() => setDiscountType('percent')}
-                        className={`rounded px-2 py-0.5 font-semibold transition ${
-                          discountType === 'percent'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        % Percent
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDiscountType('fixed')}
-                        className={`rounded px-2 py-0.5 font-semibold transition ${
-                          discountType === 'fixed'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Fixed ({currencySymbol})
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="global-discount-input"
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={discountInput}
-                      onChange={(e) => {
-                        setDiscountInput(e.target.value);
-                        setDiscountValue(Math.max(0, Number(e.target.value) || 0));
-                      }}
-                      className={`${inputClass} text-right font-mono`}
-                      placeholder="0.00"
-                    />
-                    <span className="text-xs font-semibold text-slate-400 shrink-0">
-                      {discountType === 'percent' ? '%' : currencyCode}
-                    </span>
-                    <span className="ml-auto font-mono text-xs font-semibold text-emerald-400 shrink-0">
-                      -{currencySymbol} {formatMoney(discountAmount, decimals)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[10px] text-slate-400">
-                    Discounts reduce the taxable base before taxes are applied.
-                  </p>
-                </div>
-
-                {/* Taxes Section */}
-                <div className="border-t border-slate-800 pt-3">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <div>
-                      <label className={labelClass}>Taxes (Calculated after discount)</label>
-                      <p className="text-[10px] text-slate-400">
-                        Taxable Base: {currencySymbol} {formatMoney(taxableBase, decimals)}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addTax}
-                      className="text-[11px] font-bold text-blue-400 hover:text-blue-300"
-                    >
-                      + Add Tax
-                    </button>
-                  </div>
-
-                  {taxes.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/40 p-3 text-center">
-                      <p className="text-xs text-slate-400">No taxes applied (0% tax-free / zero-rated).</p>
-                      <button
-                        type="button"
-                        onClick={addTax}
-                        className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:text-blue-300"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        <span>Add Tax (VAT, GST, Sales Tax)</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {taxes.map((t) => (
-                        <div
-                          key={t.id}
-                          className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2"
-                        >
-                          <input
-                            aria-label="Tax Name"
-                            value={t.name}
-                            onChange={(e) => updateTax(t.id, { name: e.target.value })}
-                            className="h-8 flex-1 min-w-[120px] rounded-lg border border-slate-700 bg-slate-950 px-2.5 text-xs text-white outline-none"
-                            placeholder="Tax name e.g. VAT"
-                          />
-
-                          <div className="flex items-center gap-1">
-                            <input
-                              aria-label={`${t.name} rate percentage`}
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="any"
-                              value={t.rate}
-                              onChange={(e) =>
-                                updateTax(t.id, {
-                                  rate: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
-                                })
-                              }
-                              className="h-8 w-16 rounded-lg border border-slate-700 bg-slate-950 px-2 text-right font-mono text-xs text-white outline-none"
-                            />
-                            <span className="text-xs text-slate-400">%</span>
-                          </div>
-
-                          <span className="font-mono text-xs font-semibold text-slate-300 ml-auto">
-                            +{currencySymbol}{' '}
-                            {formatMoney(
-                              roundMoney(taxableBase * (t.rate / 100), decimals),
-                              decimals,
-                            )}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => removeTax(t.id)}
-                            className="p-1 text-slate-500 hover:text-red-400 transition"
-                            aria-label={`Remove tax ${t.name}`}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Shipping, Fees & Payment Record */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 space-y-4">
-                {/* Shipping */}
-                <div>
-                  <label className={labelClass} htmlFor="shipping-charge-input">
-                    Shipping / Delivery Charge
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="shipping-charge-input"
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={shippingInput}
-                      onChange={(e) => {
-                        setShippingInput(e.target.value);
-                        setShipping(Math.max(0, Number(e.target.value) || 0));
-                      }}
-                      className={`${inputClass} text-right font-mono`}
-                      placeholder="0.00"
-                    />
-                    <span className="font-mono text-xs font-semibold text-slate-300 shrink-0">
-                      +{currencySymbol} {formatMoney(shippingAmount, decimals)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Additional Fee */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <input
-                      aria-label="Additional fee label"
-                      value={additionalFeeLabel}
-                      onChange={(e) => setAdditionalFeeLabel(e.target.value)}
-                      className="rounded border border-slate-700 bg-slate-950 px-2 py-0.5 text-[11px] font-bold uppercase text-slate-300"
-                      placeholder="Fee Label"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="additional-fee-input"
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={additionalFeeInput}
-                      onChange={(e) => {
-                        setAdditionalFeeInput(e.target.value);
-                        setAdditionalFee(Math.max(0, Number(e.target.value) || 0));
-                      }}
-                      className={`${inputClass} text-right font-mono`}
-                      placeholder="0.00"
-                    />
-                    <span className="font-mono text-xs font-semibold text-slate-300 shrink-0">
-                      +{currencySymbol} {formatMoney(feeAmount, decimals)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Amount Paid */}
-                <div className="border-t border-slate-800 pt-3">
-                  <label className={labelClass} htmlFor="amount-paid-input">
-                    Amount Already Paid
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="amount-paid-input"
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={amountPaidInput}
-                      onChange={(e) => {
-                        setAmountPaidInput(e.target.value);
-                        setAmountPaid(Math.max(0, Number(e.target.value) || 0));
-                      }}
-                      className={`${inputClass} text-right font-mono`}
-                      placeholder="0.00"
-                    />
-                    <span className="font-mono text-xs font-semibold text-blue-400 shrink-0">
-                      -{currencySymbol} {formatMoney(paidAmount, decimals)}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Balance Remaining:</span>
-                    <span className="font-mono font-bold text-amber-400">
-                      {currencySymbol} {formatMoney(balanceDue, decimals)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 5. PAYMENT INSTRUCTIONS & TERMS */}
-            <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-emerald-400" />
-                  <label className={labelClass} htmlFor="payment-instructions-text">
-                    Payment Instructions / Bank Details
-                  </label>
-                </div>
-                <textarea
-                  id="payment-instructions-text"
-                  value={sender.bank}
-                  onChange={(e) => setSender((prev) => ({ ...prev, bank: e.target.value }))}
-                  className={`${inputClass} min-h-[90px] resize-y`}
-                  placeholder="Bank Name: Example Bank&#10;Account Name: Your Company&#10;Account / IBAN: GB29EXMP12345678901234&#10;SWIFT/BIC: EXMPGB2L&#10;Payment Link: https://..."
-                />
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <label className={labelClass} htmlFor="notes-terms-text">
-                  Notes & Terms and Conditions
-                </label>
-                <textarea
-                  id="notes-terms-text"
-                  value={meta.notes}
-                  onChange={(e) => setMeta((prev) => ({ ...prev, notes: e.target.value }))}
-                  className={`${inputClass} min-h-[90px] resize-y`}
-                  placeholder="Thank you for your business! Please remit payment within payment terms."
-                />
-              </div>
-            </div>
-
-            {/* 6. FINANCIAL RECONCILIATION SUMMARY */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
-              <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-2 mb-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Financial Breakdown
-                </p>
-                <span className="text-[10px] text-slate-400">
-                  Deterministic Rounding · {decimals} Decimals
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Subtotal (Gross Line Items):</span>
-                  <span className="font-mono text-slate-200">
-                    {currencySymbol} {formatMoney(subtotal, decimals)}
-                  </span>
-                </div>
-
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-400">
-                    <span>Discount ({discountType === 'percent' ? `${discountValue}%` : 'Fixed'}):</span>
-                    <span className="font-mono">
-                      -{currencySymbol} {formatMoney(discountAmount, decimals)}
-                    </span>
-                  </div>
                 )}
-
-                <div className="flex justify-between text-slate-400">
-                  <span>Taxable Base:</span>
-                  <span className="font-mono text-slate-200">
-                    {currencySymbol} {formatMoney(taxableBase, decimals)}
-                  </span>
-                </div>
-
-                {computedTaxes.map((t) => (
-                  <div key={t.id} className="flex justify-between text-slate-400">
-                    <span>
-                      {t.name} ({t.rate}%):
-                    </span>
-                    <span className="font-mono text-slate-200">
-                      +{currencySymbol} {formatMoney(t.amount, decimals)}
-                    </span>
-                  </div>
-                ))}
-
-                {shippingAmount > 0 && (
-                  <div className="flex justify-between text-slate-400">
-                    <span>Shipping / Delivery:</span>
-                    <span className="font-mono text-slate-200">
-                      +{currencySymbol} {formatMoney(shippingAmount, decimals)}
-                    </span>
-                  </div>
-                )}
-
-                {feeAmount > 0 && (
-                  <div className="flex justify-between text-slate-400">
-                    <span>{additionalFeeLabel || 'Additional Fee'}:</span>
-                    <span className="font-mono text-slate-200">
-                      +{currencySymbol} {formatMoney(feeAmount, decimals)}
-                    </span>
-                  </div>
-                )}
-
-                <div className="border-t border-slate-800 pt-2 mt-2 flex justify-between items-baseline">
-                  <span className="text-sm font-bold text-white">Grand Total:</span>
-                  <span className="text-xl font-black text-blue-400 font-mono">
-                    {currencySymbol} {formatMoney(grandTotal, decimals)}
-                  </span>
-                </div>
-
-                {paidAmount > 0 && (
-                  <div className="flex justify-between text-blue-300 pt-1">
-                    <span>Amount Paid:</span>
-                    <span className="font-mono">
-                      -{currencySymbol} {formatMoney(paidAmount, decimals)}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex justify-between border-t border-slate-800/80 pt-1.5 font-bold">
-                  <span className="text-amber-300">Balance Due:</span>
-                  <span className="text-base text-amber-400 font-mono">
-                    {currencySymbol} {formatMoney(balanceDue, decimals)}
-                  </span>
-                </div>
               </div>
-            </div>
-
-            {/* Regulatory Disclaimer Notice */}
-            <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-[11px] leading-relaxed text-slate-400">
-              <p className="font-semibold text-slate-300 mb-1">
-                Standard Business Invoicing Notice:
-              </p>
-              <p>
-                This tool generates general-purpose commercial business invoices. Tax regulations,
-                statutory formatting, and e-invoicing compliance requirements (such as FBR, IRS,
-                VAT authorities, GST, or PEPPOL) vary across jurisdictions. Verify local statutory
-                requirements before using invoices for official tax filing.
-              </p>
             </div>
           </div>
         </section>
 
-        {/* ================================================================= */}
-        {/* LIVE A4 PREVIEW & EXPORT ACTIONS                                  */}
-        {/* ================================================================= */}
-
-        <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/55 flex flex-col">
-          {/* Preview Header & Toolbar */}
-          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/80 px-4 py-3">
-            {/* Title & Metadata */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
-                <FileText className="h-4 w-4" />
-              </div>
+        {/* ================================================================== */}
+        {/* STEP 3: LINE ITEMS & CURRENCY                                      */}
+        {/* ================================================================== */}
+        <section
+          className={cardClass}
+          aria-labelledby="step-3-heading"
+          onKeyDown={handleLineItemsKeyDown}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                3
+              </span>
               <div>
-                <p className="text-sm font-bold text-white">Live A4 Preview</p>
-                <p className="text-[11px] text-slate-400">
-                  {previewPages.length === 1 ? 'Page 1 of 1' : `${previewPages.length} Pages`} · Height-Aware Multi-Page A4
+                <h3 id="step-3-heading" className="text-sm font-bold text-slate-900 dark:text-white">
+                  Line Items &amp; Currency
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Line Total = (Qty &times; Unit Price) &minus; Line Discount
                 </p>
               </div>
             </div>
 
-            {/* Document Viewer Controls */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Zoom Controls */}
-              <div className="flex items-center rounded-xl border border-slate-700 bg-slate-950/70 p-1 text-xs text-slate-200">
+              <div className="relative">
+                <label htmlFor="currency-select" className="sr-only">
+                  Currency
+                </label>
+                <select
+                  id="currency-select"
+                  value={currencyCode}
+                  onChange={(e) => setCurrencyCode(e.target.value)}
+                  className="h-9 max-w-[230px] appearance-none rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 pl-3 pr-8 text-xs font-semibold text-slate-900 dark:text-white outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                >
+                  {currencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} ({c.symbol}) — {c.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              </div>
+
+              <button
+                type="button"
+                onClick={addItem}
+                aria-label="Add invoice line item"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 dark:hover:bg-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Item</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-3">
+            {computedItems.map((item, index) => (
+              <div
+                key={item.id}
+                id={`line-item-card-${item.id}`}
+                className="line-item-card rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-3 transition hover:border-slate-300 dark:hover:border-slate-700"
+              >
+                <div className="mb-2.5">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <label
+                      htmlFor={`item-desc-${item.id}`}
+                      className="text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400"
+                    >
+                      Item {index + 1} Description
+                    </label>
+                    {!item.desc && (
+                      <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                        Description recommended
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    id={`item-desc-${item.id}`}
+                    value={item.desc}
+                    onChange={(e) => handleItemChange(index, 'desc', e.target.value)}
+                    className={inputClass}
+                    placeholder={`e.g. Web Development, Design Retainer, or Product SKU ${index + 1}`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 items-end">
+                  <div>
+                    <label
+                      htmlFor={`item-qty-${item.id}`}
+                      className="mb-1 block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400"
+                    >
+                      Qty
+                    </label>
+                    <input
+                      id={`item-qty-${item.id}`}
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.qty}
+                      onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                      className={`${inputClass} text-center`}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={`item-unit-${item.id}`}
+                      className="mb-1 block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400"
+                    >
+                      Unit
+                    </label>
+                    <input
+                      id={`item-unit-${item.id}`}
+                      value={item.unit}
+                      onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                      className={inputClass}
+                      placeholder="hrs/pcs"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={`item-rate-${item.id}`}
+                      className="mb-1 block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400"
+                    >
+                      Unit Price ({currencySymbol})
+                    </label>
+                    <input
+                      id={`item-rate-${item.id}`}
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.rate === 0 ? '' : item.rate}
+                      onChange={(e) => handleItemChange(index, 'rate', e.target.value)}
+                      className={`${inputClass} text-right`}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor={`item-disc-${item.id}`}
+                      className="mb-1 block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400"
+                    >
+                      Line Disc. ({currencySymbol})
+                    </label>
+                    <input
+                      id={`item-disc-${item.id}`}
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={item.discount === 0 ? '' : item.discount}
+                      onChange={(e) => handleItemChange(index, 'discount', e.target.value)}
+                      className={`${inputClass} text-right`}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div>
+                    <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400">
+                      Total
+                    </span>
+                    <div className="flex h-[38px] items-center justify-end rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2.5 text-right font-mono text-xs font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                      {currencySymbol} {formatMoney(item.lineTotal, decimals)}
+                    </div>
+                  </div>
+
+                  <div className="flex h-[38px] items-center justify-between gap-1.5 px-1">
+                    <label
+                      htmlFor={`item-taxable-${item.id}`}
+                      className="flex cursor-pointer select-none items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400"
+                      title="Include this line item in the taxable base"
+                    >
+                      <input
+                        id={`item-taxable-${item.id}`}
+                        type="checkbox"
+                        checked={item.taxable}
+                        onChange={(e) => handleItemChange(index, 'taxable', e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500/20"
+                      />
+                      <span>Tax</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      disabled={items.length === 1}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 disabled:opacity-25"
+                      aria-label={`Remove item ${index + 1}`}
+                      title="Delete line item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">{items.length}</span>{' '}
+              {items.length === 1 ? 'line item' : 'line items'}
+              <span className="hidden sm:inline">
+                {' '}· Press{' '}
+                <kbd className="rounded border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-700 dark:text-slate-300">
+                  Ctrl+Enter
+                </kbd>{' '}
+                to add next
+              </span>
+            </p>
+            <button
+              type="button"
+              onClick={addItem}
+              aria-label="Add another line item"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-blue-200 dark:border-blue-500/30 bg-blue-50/70 dark:bg-blue-950/40 px-3.5 text-xs font-bold text-blue-700 dark:text-blue-400 transition hover:bg-blue-100 dark:hover:bg-blue-900/50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add Item</span>
+            </button>
+          </div>
+        </section>
+
+        {/* ================================================================== */}
+        {/* STEP 4: DISCOUNTS, TAXES, SHIPPING, FEES & PARTIAL PAYMENT         */}
+        {/* ================================================================== */}
+        <section aria-labelledby="step-4-heading" className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
+          <h3 id="step-4-heading" className="sr-only">
+            Discounts, Taxes, Shipping, Fees, and Partial Payments
+          </h3>
+
+          {/* Discounts & Taxes */}
+          <div className={`${cardClass} space-y-4`}>
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label className={labelClass} htmlFor="global-discount-input">
+                  Invoice Discount
+                </label>
+                <div className="flex items-center gap-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-0.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => handleDiscountTypeChange('percent')}
+                    className={`rounded px-2 py-0.5 font-semibold transition ${discountType === 'percent'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                  >
+                    % Percent
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDiscountTypeChange('fixed')}
+                    className={`rounded px-2 py-0.5 font-semibold transition ${discountType === 'fixed'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                  >
+                    Fixed ({currencySymbol})
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  id="global-discount-input"
+                  type="number"
+                  min="0"
+                  max={discountType === 'percent' ? 100 : undefined}
+                  step="any"
+                  value={discountInput}
+                  onChange={(e) => handleDiscountInputChange(e.target.value)}
+                  className={`${inputClass} text-right font-mono`}
+                  placeholder="0.00"
+                />
+                <span className="shrink-0 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  {discountType === 'percent' ? '%' : currencyCode}
+                </span>
+                <span className="ml-auto shrink-0 font-mono text-xs font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  -{currencySymbol} {formatMoney(discountAmount, decimals)}
+                </span>
+              </div>
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                Allocated proportionally across taxable and tax-exempt items before tax.
+              </p>
+            </div>
+
+            {/* Multiple Taxes */}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div>
+                  <span className={labelClass}>Taxes (Applied to Taxable Base)</span>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Taxable Base: {currencySymbol} {formatMoney(taxableBase, decimals)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addTax}
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  + Add Tax
+                </button>
+              </div>
+
+              {taxes.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/40 p-3 text-center">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    No taxes applied (0% tax-free).
+                  </p>
+                  <button
+                    type="button"
+                    onClick={addTax}
+                    className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Add Tax (VAT, GST, Sales Tax)</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {taxes.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-2"
+                    >
+                      <input
+                        aria-label="Tax Name"
+                        value={t.name}
+                        onChange={(e) => updateTax(t.id, { name: e.target.value })}
+                        className="h-8 flex-1 min-w-[120px] rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                        placeholder="e.g. VAT, GST, PST"
+                      />
+
+                      <div className="flex items-center gap-1">
+                        <input
+                          aria-label={`${t.name} rate percentage`}
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="any"
+                          value={t.rate}
+                          onChange={(e) =>
+                            updateTax(t.id, {
+                              rate: Math.max(0, Math.min(100, Number(e.target.value) || 0)),
+                            })
+                          }
+                          className="h-8 w-16 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 text-right font-mono text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500"
+                        />
+                        <span className="text-xs text-slate-500 dark:text-slate-400">%</span>
+                      </div>
+
+                      <span className="ml-auto font-mono text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                        +{currencySymbol}{' '}
+                        {formatMoney(roundMoney(taxableBase * (t.rate / 100), decimals), decimals)}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => removeTax(t.id)}
+                        className="p-1 text-slate-400 transition hover:text-red-600 dark:hover:text-red-400"
+                        aria-label={`Remove tax ${t.name}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Shipping, Fees & Partial Payment */}
+          <div className={`${cardClass} space-y-4`}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className={labelClass} htmlFor="shipping-charge-input">
+                  Shipping (Untaxed)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="shipping-charge-input"
+                    type="number"
+                    min="0"
+                    step="any"
+                    value={shippingInput}
+                    onChange={(e) => {
+                      setShippingInput(e.target.value);
+                      setShipping(Math.max(0, Number(e.target.value) || 0));
+                    }}
+                    className={`${inputClass} text-right font-mono`}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center gap-1.5">
+                  <input
+                    aria-label="Additional fee label"
+                    value={additionalFeeLabel}
+                    onChange={(e) => setAdditionalFeeLabel(e.target.value)}
+                    className="w-full rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500"
+                    placeholder="Processing Fee"
+                  />
+                </div>
+                <input
+                  id="additional-fee-input"
+                  aria-label="Additional fee amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={additionalFeeInput}
+                  onChange={(e) => {
+                    setAdditionalFeeInput(e.target.value);
+                    setAdditionalFee(Math.max(0, Number(e.target.value) || 0));
+                  }}
+                  className={`${inputClass} text-right font-mono`}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Deposit / Amount Already Paid */}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+              <label className={labelClass} htmlFor="amount-paid-input">
+                Amount Already Paid (Deposits / Partial Payments)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="amount-paid-input"
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={amountPaidInput}
+                  onChange={(e) => {
+                    setAmountPaidInput(e.target.value);
+                    setAmountPaid(Math.max(0, Number(e.target.value) || 0));
+                  }}
+                  className={`${inputClass} text-right font-mono`}
+                  placeholder="0.00"
+                />
+                <span className="shrink-0 font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 tabular-nums">
+                  -{currencySymbol} {formatMoney(paidAmount, decimals)}
+                </span>
+              </div>
+
+              {/* Compact Financial Summary */}
+              <div className="mt-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-3 space-y-1.5 text-xs">
+                <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                  <span>Subtotal</span>
+                  <span className="font-mono font-semibold text-slate-900 dark:text-slate-200 tabular-nums">
+                    {currencySymbol} {formatMoney(subtotal, decimals)}
+                  </span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                    <span>Discount ({discountType === 'percent' ? `${discountValue}%` : 'Fixed'})</span>
+                    <span className="font-mono tabular-nums">
+                      -{currencySymbol} {formatMoney(discountAmount, decimals)}
+                    </span>
+                  </div>
+                )}
+                {computedTaxes.map((t) => (
+                  <div key={t.id} className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>
+                      {t.name} ({t.rate}%)
+                    </span>
+                    <span className="font-mono text-slate-900 dark:text-slate-200 tabular-nums">
+                      +{currencySymbol} {formatMoney(t.amount, decimals)}
+                    </span>
+                  </div>
+                ))}
+                {shippingAmount > 0 && (
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>Shipping</span>
+                    <span className="font-mono text-slate-900 dark:text-slate-200 tabular-nums">
+                      +{currencySymbol} {formatMoney(shippingAmount, decimals)}
+                    </span>
+                  </div>
+                )}
+                {feeAmount > 0 && (
+                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                    <span>{additionalFeeLabel || 'Additional Fee'}</span>
+                    <span className="font-mono text-slate-900 dark:text-slate-200 tabular-nums">
+                      +{currencySymbol} {formatMoney(feeAmount, decimals)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-baseline justify-between border-t border-slate-200 dark:border-slate-800 pt-1.5">
+                  <span className="font-bold text-slate-900 dark:text-white">Grand Total</span>
+                  <span className="font-mono text-base font-black text-blue-600 dark:text-blue-400 tabular-nums">
+                    {currencySymbol} {formatMoney(grandTotal, decimals)}
+                  </span>
+                </div>
+                {paidAmount > 0 && (
+                  <div className="flex items-baseline justify-between border-t border-slate-200/80 dark:border-slate-800/80 pt-1.5 font-bold">
+                    <span className="text-amber-700 dark:text-amber-300">Balance Remaining</span>
+                    <span className="font-mono text-sm text-amber-700 dark:text-amber-400 tabular-nums">
+                      {currencySymbol} {formatMoney(balanceDue, decimals)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ================================================================== */}
+        {/* STEP 5: PAYMENT INSTRUCTIONS (IBAN/SWIFT) & NOTES / TERMS          */}
+        {/* ================================================================== */}
+        <section className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2" aria-label="Payment Instructions and Notes">
+          <div className={cardClass}>
+            <div className="mb-2 flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <label className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-700 dark:text-slate-300" htmlFor="payment-instructions-text">
+                Payment Instructions / Bank Details (IBAN &amp; SWIFT)
+              </label>
+            </div>
+            <textarea
+              id="payment-instructions-text"
+              value={sender.bank}
+              onChange={(e) => setSender((prev) => ({ ...prev, bank: e.target.value }))}
+              className={`${inputClass} min-h-[96px] resize-y`}
+              placeholder={'Bank Name: Example Bank\nAccount Name: Your Company\nAccount / IBAN: GB29EXMP12345678901234\nSWIFT/BIC: EXMPGB2L'}
+            />
+          </div>
+
+          <div className={`${cardClass} space-y-2.5`}>
+            <div>
+              <label className={labelClass} htmlFor="notes-terms-text">
+                Invoice Notes
+              </label>
+              <textarea
+                id="notes-terms-text"
+                value={meta.notes}
+                onChange={(e) => setMeta((prev) => ({ ...prev, notes: e.target.value }))}
+                className={`${inputClass} min-h-[70px] resize-y`}
+                placeholder="Thank you for your business! Please remit payment within payment terms."
+              />
+            </div>
+
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowTermsField((v) => !v)}
+                aria-expanded={showTermsField}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${showTermsField ? 'rotate-180' : ''}`}
+                />
+                <span>{showTermsField ? 'Hide Terms & Conditions' : 'Edit Terms & Conditions'}</span>
+              </button>
+
+              {showTermsField && (
+                <div className="mt-2">
+                  <label className={labelClass} htmlFor="meta-terms-text">
+                    Terms &amp; Conditions
+                  </label>
+                  <textarea
+                    id="meta-terms-text"
+                    value={meta.terms}
+                    onChange={(e) => setMeta((prev) => ({ ...prev, terms: e.target.value }))}
+                    className={`${inputClass} min-h-[60px] resize-y`}
+                    placeholder="Payment is due within the agreed timeframe."
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ================================================================== */}
+        {/* LIVE A4 PREVIEW & EXPORT ACTIONS                                   */}
+        {/* ================================================================== */}
+        <section
+          ref={previewSectionRef}
+          className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col shadow-xs"
+          aria-label="Live A4 Invoice Preview"
+        >
+          {/* Preview Header & Toolbar */}
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/90 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <FileText className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">Live A4 Preview</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {previewPages.length === 1 ? 'Page 1 of 1' : `${previewPages.length} Pages`} · Multi-Page A4 · {decimals} Decimals
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950/70 p-1 text-xs text-slate-700 dark:text-slate-200">
                 <button
                   type="button"
                   onClick={handleZoomOut}
-                  className="rounded px-2.5 py-1 font-bold text-slate-300 transition hover:bg-slate-800 active:scale-95"
+                  className="rounded px-2.5 py-1 font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
                   aria-label="Zoom out"
                   title="Zoom out"
                 >
-                  −
+                  &minus;
                 </button>
 
                 <button
                   type="button"
                   onClick={handleZoomFit}
-                  className={`rounded px-2.5 py-1 text-[11px] font-bold transition ${
-                    zoomMode === 'fit'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-300 hover:bg-slate-800'
-                  }`}
+                  className={`rounded px-2.5 py-1 text-[11px] font-bold transition ${zoomMode === 'fit'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
                   aria-label="Fit invoice to preview"
                   title="Fit document to window"
                 >
@@ -2149,7 +2428,7 @@ export default function InvoiceGenerator() {
                 <button
                   type="button"
                   onClick={handleZoomIn}
-                  className="rounded px-2.5 py-1 font-bold text-slate-300 transition hover:bg-slate-800 active:scale-95"
+                  className="rounded px-2.5 py-1 font-bold transition hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
                   aria-label="Zoom in"
                   title="Zoom in"
                 >
@@ -2157,12 +2436,11 @@ export default function InvoiceGenerator() {
                 </button>
               </div>
 
-              {/* Download PDF button */}
               <button
                 type="button"
                 onClick={generatePDF}
                 disabled={isGenerating}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-blue-600/15 transition hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 dark:hover:bg-blue-500 disabled:cursor-wait disabled:opacity-60"
               >
                 {isGenerating ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -2177,7 +2455,7 @@ export default function InvoiceGenerator() {
           {/* Viewport with Zoom & Document Canvas */}
           <div
             ref={previewViewportRef}
-            className="flex h-[calc(100vh-210px)] min-h-[640px] max-h-[960px] flex-1 items-start justify-center overflow-auto bg-[#070b14] p-3 sm:p-5"
+            className="flex h-[calc(100vh-210px)] min-h-[600px] max-h-[960px] flex-1 items-start justify-center overflow-auto bg-slate-100/90 dark:bg-[#070b14] p-3 sm:p-5"
           >
             <div className="flex w-full min-w-0 flex-col items-center gap-8 py-2">
               {previewPages.map((pageData) => (
@@ -2187,7 +2465,7 @@ export default function InvoiceGenerator() {
                 >
                   {/* Page Indicator */}
                   <div
-                    className="mb-2 flex items-center justify-between px-2 text-[9px] font-bold uppercase tracking-wider text-slate-400"
+                    className="mb-2 flex items-center justify-between px-2 text-[9px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
                     style={{ width: `${Math.round(794 * effectiveScale)}px` }}
                   >
                     <span>
@@ -2195,16 +2473,15 @@ export default function InvoiceGenerator() {
                     </span>
                     <span>
                       {pageData.items.length > 0
-                        ? `Items ${pageData.startItemIndex + 1}–${
-                            pageData.startItemIndex + pageData.items.length
-                          }`
+                        ? `Items ${pageData.startItemIndex + 1}–${pageData.startItemIndex + pageData.items.length
+                        }`
                         : 'Summary & Terms'}
                     </span>
                   </div>
 
                   {/* A4 Page Shell */}
                   <div
-                    className="invoice-page-shell relative shrink-0 shadow-2xl ring-1 ring-slate-900/10 rounded-sm bg-white"
+                    className="invoice-page-shell relative shrink-0 shadow-xl ring-1 ring-slate-900/10 rounded-sm bg-white"
                     style={{
                       width: `${Math.round(794 * effectiveScale)}px`,
                       height: `${Math.round(1123 * effectiveScale)}px`,
@@ -2226,11 +2503,7 @@ export default function InvoiceGenerator() {
                         className="flex h-[1123px] flex-col justify-between"
                         style={{ padding: '24px 32px 24px 32px' }}
                       >
-                        {/* PAGE CONTENT */}
                         <div className="min-w-0">
-                          {/* ============================================= */}
-                          {/* PAGE 1: FULL HEADER & PARTIES                 */}
-                          {/* ============================================= */}
                           {pageData.isFirstPage ? (
                             <>
                               {/* Header */}
@@ -2350,7 +2623,6 @@ export default function InvoiceGenerator() {
                                   )}
                                 </div>
 
-                                {/* Meta Dates Box */}
                                 <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-[9px] flex flex-col gap-1.5 self-start shadow-xs">
                                   <div className="flex items-center justify-between">
                                     <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
@@ -2388,9 +2660,6 @@ export default function InvoiceGenerator() {
                               </section>
                             </>
                           ) : (
-                            /* ============================================= */
-                            /* PAGE 2+: COMPACT REPEATING HEADER             */
-                            /* ============================================= */
                             <header className="invoice-row border-b border-slate-900 pb-1.5 mb-2 flex items-center justify-between">
                               <div className="flex items-center gap-2.5">
                                 <span className="text-[12px] font-black uppercase text-slate-950 tracking-tight">
@@ -2414,9 +2683,7 @@ export default function InvoiceGenerator() {
                             </header>
                           )}
 
-                          {/* ============================================= */}
-                          {/* LINE ITEMS TABLE                              */}
-                          {/* ============================================= */}
+                          {/* LINE ITEMS TABLE */}
                           {pageData.items.length > 0 && (
                             <section className="invoice-items mt-0.5">
                               <table className="w-full table-fixed border-collapse">
@@ -2528,12 +2795,9 @@ export default function InvoiceGenerator() {
                             </section>
                           )}
 
-                          {/* ============================================= */}
-                          {/* SUMMARY & FINANCIAL TOTALS                    */}
-                          {/* ============================================= */}
+                          {/* SUMMARY & FINANCIAL TOTALS */}
                           {pageData.hasSummary && (
                             <section className="invoice-summary mt-2.5 grid grid-cols-[minmax(0,1fr)_290px] gap-4 pt-2 border-t border-slate-200">
-                              {/* Left: Payment details & Notes */}
                               <div className="min-w-0 pr-2">
                                 <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
                                   Payment Instructions
@@ -2545,16 +2809,26 @@ export default function InvoiceGenerator() {
                                 {meta.notes && (
                                   <div className="mt-2">
                                     <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
-                                      Notes & Terms
+                                      Notes
                                     </p>
                                     <p className="mt-0.5 whitespace-pre-line text-[9px] leading-snug text-slate-500 break-words">
                                       {meta.notes}
                                     </p>
                                   </div>
                                 )}
+
+                                {meta.terms && (
+                                  <div className="mt-2">
+                                    <p className="text-[8px] font-extrabold uppercase tracking-[0.16em] text-slate-400">
+                                      Terms &amp; Conditions
+                                    </p>
+                                    <p className="mt-0.5 whitespace-pre-line text-[8.5px] leading-snug text-slate-500 break-words">
+                                      {meta.terms}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
 
-                              {/* Right: Totals Card */}
                               <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3 text-[9px] self-start shadow-xs flex flex-col gap-1">
                                 <div className="flex items-center justify-between text-slate-600 py-0.5">
                                   <span className="font-medium text-[9px]">Subtotal</span>
@@ -2653,18 +2927,13 @@ export default function InvoiceGenerator() {
                           )}
                         </div>
 
-                        {/* ============================================= */}
-                        {/* FOOTER                                        */}
-                        {/* ============================================= */}
                         <footer className="invoice-footer mt-auto border-t border-slate-200 pt-1.5">
                           <div className="flex items-center justify-between text-[8px] text-slate-400 font-medium">
                             <p>
-                              {sender.website ||
-                                sender.email ||
-                                'Thank you for your business'}
+                              {sender.website || sender.email || 'Thank you for your business'}
                             </p>
                             <p className="text-center text-[7px] text-slate-400/90">
-                              General-purpose business invoice. Tax & statutory requirements vary by jurisdiction.
+                              General-purpose business invoice. Tax &amp; statutory requirements vary by jurisdiction.
                             </p>
                             <p className="text-right">
                               Page {pageData.pageNumber} of {pageData.totalPages} · {meta.invNum || 'INV-0001'}
@@ -2679,6 +2948,12 @@ export default function InvoiceGenerator() {
             </div>
           </div>
         </section>
+
+        {/* Compact Commercial Notice */}
+        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/50 px-3.5 py-2.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+          <strong className="text-slate-700 dark:text-slate-300">Commercial Invoice Notice:</strong>{' '}
+          Generates general-purpose English A4 invoices in your browser. Statutory e-invoicing and multi-rate tax rules (such as FBR PRAL, India GST Rule 46, UAE FTA, HMRC VAT, CRA, BIR, NRS/FIRS, or SARS) vary by jurisdiction—verify local requirements before tax filing.
+        </div>
       </div>
 
       {/* ================================================================== */}
@@ -2689,33 +2964,32 @@ export default function InvoiceGenerator() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="reset-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fadeIn"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">
                 <RotateCcw className="h-5 w-5" />
               </div>
-              <h2 id="reset-modal-title" className="text-base font-bold text-white">
+              <h2 id="reset-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
                 Start New Invoice?
               </h2>
             </div>
-            <p className="text-xs leading-relaxed text-slate-400 mb-5">
-              This will reset all invoice fields, client data, and line items back to clean
-              defaults. Any unsaved edits will be cleared.
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 mb-5">
+              This will reset all invoice fields, client data, and line items back to clean defaults. Any unsaved edits will be cleared.
             </p>
             <div className="flex items-center justify-end gap-2.5">
               <button
                 type="button"
                 onClick={() => setShowResetModal(false)}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                className={secondaryBtnClass}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmReset}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-500"
+                className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700 dark:hover:bg-amber-500"
               >
                 Yes, Start New Invoice
               </button>
@@ -2732,21 +3006,21 @@ export default function InvoiceGenerator() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="import-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fadeIn"
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <FileCode className="h-5 w-5" />
               </div>
-              <h2 id="import-modal-title" className="text-base font-bold text-white">
+              <h2 id="import-modal-title" className="text-base font-bold text-slate-900 dark:text-white">
                 Confirm Invoice Import
               </h2>
             </div>
-            <p className="text-xs leading-relaxed text-slate-400 mb-4">
+            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400 mb-4">
               Importing this JSON file will replace your current editor fields with the imported invoice data.
             </p>
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-xs text-slate-300 mb-5 space-y-1">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 text-xs text-slate-700 dark:text-slate-300 mb-5 space-y-1">
               <p>
                 <strong>Invoice:</strong>{' '}
                 {String(
@@ -2764,16 +3038,16 @@ export default function InvoiceGenerator() {
               <button
                 type="button"
                 onClick={() => setPendingImportData(null)}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-700 hover:text-white"
+                className={secondaryBtnClass}
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmJSONImport}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-500"
+                className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 dark:hover:bg-blue-500"
               >
-                Import & Replace
+                Import &amp; Replace
               </button>
             </div>
           </div>
@@ -2853,11 +3127,6 @@ export default function InvoiceGenerator() {
         .invoice-items tbody tr {
           break-inside: avoid;
           page-break-inside: avoid;
-        }
-
-        select option {
-          background: #0f172a;
-          color: #ffffff;
         }
 
         @media print {
