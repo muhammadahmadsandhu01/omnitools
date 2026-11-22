@@ -15,79 +15,79 @@ export interface FaqItem {
 
 export const QR_GENERATOR_FAQS: FaqItem[] = [
   {
-    question: 'What is the difference between static and dynamic QR codes, and do these codes expire?',
+    question: 'What is the difference between static and dynamic QR codes, and do static QR codes expire?',
     answer:
-      'KivaroTools generates 100% static QR codes. Static codes directly encode your destination URL, Wi-Fi password, or vCard details straight into the matrix modules. Because there is no middleman redirect server, static QR codes never expire, cannot be deactivated, and carry zero monthly subscription fees. In contrast, dynamic QR codes route through third-party redirect domains that often stop working or demand payment once free trials expire.',
+      'KivaroTools is a permanent QR code generator that creates static QR codes only. A static QR code encodes your destination URL, Wi-Fi credentials, vCard contact, or calendar event directly into the QR matrix with no third-party redirect server. Because nothing sits in the middle, static QR codes never expire, have no scan caps, require no sign-up, and keep working as long as the destination stays active. Dynamic QR codes point to a hosted redirect URL so you can edit links or track scans, which typically requires an account or recurring subscription.',
   },
   {
-    question: 'How do QR code error correction levels work when adding a custom logo?',
+    question: 'How does this QR code generator with logo handle error correction levels?',
     answer:
-      'QR codes use Reed-Solomon error correction across four standardized tiers: L (~7% recovery), M (~15%), Q (~25%), and H (~30%). When you embed a logo in the center of the QR code, the logo physically overlays and obscures data modules. KivaroTools automatically promotes error correction to Level H (High), ensuring the remaining perimeter modules contain sufficient redundant mathematical parity bits for smartphone cameras to decode the code instantly.',
+      'As an ISO/IEC 18004 QR code generator error correction studio, KivaroTools supports all four Reed-Solomon tiers: Level L (~7% recovery), Level M (~15%), Level Q (~25%), and Level H (~30%). When you upload a center logo (PNG, JPEG, or WebP up to 5 MB), the logo excavates central data modules. KivaroTools automatically switches error correction to Level H so smartphone cameras can reconstruct the occluded area. Keep logo size at or below 20%–22% of QR width and run Verify Payload before printing.',
   },
   {
     question: 'What is the minimum quiet zone required for reliable QR code scanning?',
     answer:
-      'Per the ISO/IEC 18004 standard, a QR code requires an uninterrupted blank border—termed the "quiet zone"—of at least 4 modules wide on all four sides. Without this blank margin, camera sensors and optical barcode engines fail to isolate the three corner finder patterns from surrounding packaging art, text, or high-contrast backgrounds.',
+      'Under the ISO/IEC 18004 standard, a QR code requires an uninterrupted blank border—called the quiet zone—at least 4 modules wide on all four sides. Cropping the quiet zone lets surrounding text, borders, or artwork blend into the three corner finder patterns and causes camera scanners to fail.',
   },
   {
-    question: 'What export format should I choose: PNG, SVG, PDF, JPEG, or WebP?',
+    question: 'What export format should I choose: SVG, A4 PDF, PNG, JPEG, or WebP?',
     answer:
-      'Choose SVG (Scalable Vector Graphics) for commercial printing, signage, billboards, and apparel, because vector paths scale infinitely without pixelation. Choose PDF for immediate office or home printing, complete with embedded scannability guidelines. Choose PNG for web pages, presentations, and email signatures. Choose WebP for modern web apps prioritizing minimal file size, or JPEG if your workflow requires a standardized opaque white background.',
+      'Use our QR code generator SVG export for Adobe Illustrator, Inkscape, Figma, signage, business cards, and commercial print runs—every QR code SVG free download scales infinitely without pixelation. Choose Print-Ready A4 PDF for office signs and table tents (centered at 120mm × 120mm with print guidelines). Choose PNG (up to 1200 × 1200 px) for websites, decks, and emails, WebP for lightweight web assets, or JPEG when a solid opaque raster file is required.',
   },
   {
-    question: 'How large should a QR code be printed for business cards, flyers, and banners?',
+    question: 'How large should a QR code be printed for business cards, menus, and posters?',
     answer:
-      'A practical optical rule of thumb is the 10:1 distance-to-size ratio: the minimum QR code width should be at least 1/10th of the intended scanning distance. For handheld business cards scanned at 30 cm (12 in), a minimum size of 2.5 cm to 3.0 cm (1.0 to 1.2 in) is recommended. For wall posters scanned from 1.5 meters away, print at least 15 cm wide. Dense payloads like vCards require larger minimum print dimensions.',
+      'Follow the 10:1 scanning distance-to-size rule: make the QR code width at least one-tenth of the expected scanning distance. For business cards scanned from 25–30 cm away, print at least 2.5 cm × 2.5 cm (1.0 in). For posters scanned from 1.5 meters away, print at least 15 cm wide. Denser payloads like multi-field vCards or ICS calendar events need larger minimum print sizes (3.5–6.0 cm).',
   },
   {
-    question: 'Are my Wi-Fi credentials, contact details, and QR payload private?',
+    question: 'Is this a QR code generator no sign up tool with local browser processing?',
     answer:
-      'Yes, 100% private. All QR matrix computation, Reed-Solomon error correction, canvas rendering, and file export happen strictly in your client-side browser using Web APIs. No payload text, Wi-Fi passwords, contact names, or uploaded image logos are ever transmitted to or logged on KivaroTools servers.',
+      'Yes. KivaroTools is a QR code generator no sign up utility—no account, login, or watermark removal step is required. QR matrix calculation, logo compositing, SVG serialization, A4 PDF generation, and optical payload verification all run locally in your browser using client-side JavaScript without uploading your Wi-Fi passwords, vCard details, or logos to a server.',
   },
   {
-    question: 'Why do inverted or low-contrast QR codes fail to scan on some devices?',
+    question: 'Why do inverted or low-contrast QR codes fail to scan?',
     answer:
-      'Standard barcode optical scanners expect dark modules on a light background. Inverted codes (light modules on a dark background) and low-contrast combinations (like yellow on white or dark grey on black) fail because camera sensors cannot clearly calculate luminance differences. KivaroTools includes a real-time WCAG contrast calculator that warns you whenever contrast drops below the 4.5:1 recommended ratio.',
+      'Camera barcode scanners expect dark modules on a light background. Low-contrast palettes (under 3.0:1) fail in dim or warm lighting, and inverted QR codes (light modules on a dark background) fail on many older Android devices and retail handheld scanners. KivaroTools computes the live WCAG 2.1 luminance contrast ratio, flags inverted polarity, and blocks export below 3.0:1.',
   },
   {
-    question: 'Can I use generated QR codes commercially without licensing fees?',
+    question: 'Can I use generated static QR codes commercially without licensing fees?',
     answer:
-      'Yes. The QR code standard was invented by Denso Wave in 1994, which made the patent royalty-free under ISO/IEC 18004. Codes generated by KivaroTools are completely free to use on commercial products, restaurant menus, retail packaging, business stationery, and marketing campaigns with no licensing fees or attribution required.',
+      'Yes. QR Code is standardized under ISO/IEC 18004 and its patent holder, Denso Wave, chose not to exercise patent rights for standard-compliant codes. Static QR codes you create with KivaroTools are free to use on commercial packaging, restaurant menus, retail displays, and business cards with no royalties or attribution required.',
   },
   {
-    question: 'How does KivaroTools calculate the real-time 0–95 Scan Reliability Score?',
+    question: 'How does KivaroTools calculate the 0–95 Scan Reliability Score?',
     answer:
-      'The optical reliability algorithm inspects four objective scannability dimensions: (1) WCAG 2.1 relative luminance contrast ratio between foreground and background colors (up to 30 points for ratios >= 7.0:1), (2) quiet zone border width (25 points for >= 4 modules per ISO/IEC 18004), (3) payload byte capacity density (25 points for payloads utilizing under 50% of the selected version budget), and (4) error correction headroom relative to logo size (15 points for Level H with logo width <= 20%). A score of 85+ indicates reliable commercial scannability.',
+      'The heuristic reliability model scores four measurable structural factors: (1) WCAG 2.1 luminance contrast ratio (up to 30 points for >= 7.0:1, with a 10-point penalty for inverted colors), (2) ISO/IEC 18004 quiet zone width (15 points for >= 4 modules), (3) Reed-Solomon error correction headroom relative to any center logo (up to 25 points), and (4) QR matrix version density (up to 30 points for V1–V5). The total is capped at 95/100 because software cannot measure real-world lighting, paper glare, or camera autofocus.',
   },
   {
-    question: 'How does the in-browser optical verification scanner test codes before printing?',
+    question: 'How does the in-browser Verify Payload optical scanner work?',
     answer:
-      'KivaroTools embeds an interactive verification engine that leverages the native Web BarcodeDetector API (with a WebAssembly jsQR fallback for unsupported browsers). Clicking "Verify Scannability" decodes the live rendered HTML5 canvas in client-side memory, confirming that camera sensors can parse the payload string before you commit files to physical print runs.',
+      'Clicking "Verify Payload" decodes the live rendered HTML5 canvas directly in your browser using the native W3C BarcodeDetector API when available, automatically falling back to the client-side jsQR JavaScript decoder in other browsers. It confirms the decoded string matches your exact payload and automatically invalidates if you change any content or design setting.',
   },
   {
-    question: 'What are the 8 supported QR code payloads and how are special characters handled?',
+    question: 'What 8 static QR payload types are supported, and do they work offline?',
     answer:
-      'The tool supports 8 dedicated payload schemas: Website URL (with protocol normalization), Plain Text (up to 2,500 characters), Wi-Fi Network credentials, vCard 3.0 Electronic Business Cards, Email (mailto:), Telephone Dialing (tel:), SMS Text Messaging (sms:), and iCalendar Events (VEVENT). Semicolons, colons, commas, quotes, and backslashes in Wi-Fi and vCard payloads are automatically escaped to prevent syntax truncation.',
+      'KivaroTools combines 8 static modes in one studio: Website URL, Plain Text (plain text qr code generator up to 2,500 chars), Wi-Fi Network (wifi qr code generator for WPA/WPA2/WPA3, WEP, Open, and Hidden SSIDs), Contact (vcard qr code generator using vCard 3.0), Email (email qr code generator using mailto:), Phone (phone number qr code generator using tel:), SMS (sms qr code generator using sms:), and Calendar Event (event qr code generator / ics qr code generator using iCalendar VEVENT). Plain text, Wi-Fi, vCard contacts, and calendar events decode offline.',
   },
   {
-    question: 'How do I format Wi-Fi passwords containing semicolons, colons, or backslashes?',
+    question: 'How are special characters in Wi-Fi passwords and vCard fields handled?',
     answer:
-      'Wi-Fi network QR codes follow the MECARD-like syntax `WIFI:T:WPA;S:SSID;P:PASSWORD;H:;;`. Characters with structural meaning in the format—specifically backslashes (`\\`), semicolons (`;`), colons (`:`), double quotes (`"`), and commas (`,`)—must be preceded by a backslash escape character. KivaroTools applies this escaping automatically as you type.',
+      'Wi-Fi QR strings (`WIFI:T:WPA;S:SSID;P:PASSWORD;H:false;;`) and vCard 3.0 / iCalendar payloads use semicolons, colons, commas, quotes, and backslashes as delimiters. KivaroTools automatically escapes these structural characters as you type so mobile scanners parse complex passwords and company names without truncation.',
   },
   {
-    question: 'What contact information can be encoded into a vCard 3.0 digital business card QR code?',
+    question: 'What fields can I encode when I create vCard QR code business cards?',
     answer:
-      'The vCard 3.0 schema encodes First Name, Last Name, Organization, Job Title, Mobile Phone Number, Work Email Address, Website URL, and a Brief Note. When scanned by iOS Camera or Android Google Lens, mobile operating systems immediately prompt the user to "Create New Contact" with all fields populated into address book storage.',
+      'The Contact (vCard) tab acts as a compact VCF QR code generator encoding First Name, Last Name, Phone Number, Email Address, Organization, and Website URL into vCard 3.0 format. Keeping fields concise lowers the QR matrix version so the code stays easily scannable at 2.5 cm on printed business cards.',
   },
   {
-    question: 'Can I use a transparent background QR code on colored product packaging?',
+    question: 'Why does a QR scanner sometimes show my URL as plain text instead of opening a browser?',
     answer:
-      'Yes, by exporting in PNG or SVG with transparent background enabled. However, ensure the physical surface where the sticker or print is applied provides strong contrast against the foreground modules. Applying dark modules directly onto dark grey, navy, or patterned packaging will cause optical scan failures due to insufficient luminance contrast.',
+      'Many smartphone scanners treat bare domains without a protocol (like example.com) as plain text rather than a clickable link. Always include https:// or http://—the URL tab validates protocol formatting automatically so scanners launch the browser.',
   },
   {
-    question: 'Can I copy a high-resolution QR code directly to my clipboard without downloading a file?',
+    question: 'Can I copy a QR code image or raw SVG markup straight to my clipboard?',
     answer:
-      'Yes. KivaroTools utilizes the modern Async Clipboard API (`navigator.clipboard.write`) to export rendered QR codes as PNG blobs directly to your system clipboard with one click, allowing you to paste your custom QR code straight into Figma, Adobe Photoshop, Microsoft Word, Google Docs, or Slack messages without creating intermediate files.',
+      'Yes. You can copy the rendered PNG QR image directly to your clipboard (using the browser Async Clipboard API) to paste into docs, slides, or chat, click "Copy SVG" to paste clean vector markup straight into Figma, Illustrator, or HTML, or click "Copy Raw Data" to inspect the exact encoded payload string.',
   },
 ];
 
@@ -108,33 +108,33 @@ export default function QrGeneratorSeo() {
   const howToSchema = {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
-    name: 'How to Create, Verify, and Export a Custom Permanent QR Code',
+    name: 'How to Create, Verify, and Export a Static QR Code (SVG, A4 PDF & PNG)',
     description:
-      'Step-by-step guide to generating permanent, unexpiring static QR codes for URLs, Wi-Fi networks, vCard contacts, and events with custom colors, center logos, and vector exports.',
+      'Step-by-step guide to creating permanent, non-expiring static QR codes for URLs, Wi-Fi networks, vCard business cards, and calendar events with custom colors, center logos, and vector SVG or A4 PDF exports.',
     step: [
       {
         '@type': 'HowToStep',
         position: 1,
         name: 'Select QR Payload Type',
-        text: 'Choose from 8 standardized payload presets: Website URL, Plain Text, Wi-Fi Network, vCard 3.0 Contact, Email, Phone, SMS, or Calendar Event.',
+        text: 'Choose from 8 static payload modes: Website URL, Plain Text, Wi-Fi Network, Email, Phone, SMS, Contact (vCard 3.0), or Event (ICS).',
       },
       {
         '@type': 'HowToStep',
         position: 2,
-        name: 'Enter and Validate Payload Data',
-        text: 'Input your details into the dedicated form. Real-time validation checks syntax, character escaping, and ISO byte capacity limits across error correction tiers.',
+        name: 'Enter and Validate Payload Details',
+        text: 'Fill in your payload fields. Real-time validation checks URL protocols, required fields, special-character escaping, and ISO/IEC 18004 byte capacity.',
       },
       {
         '@type': 'HowToStep',
         position: 3,
-        name: 'Customize Visual Design and Upload Logo',
-        text: 'Adjust module styles (square, dots, rounded), set foreground and background colors with live WCAG contrast checking, adjust quiet zone margin (min 4 modules), and upload a brand logo (automatically activating Level H error correction).',
+        name: 'Customize Colors, Error Correction, Quiet Zone & Logo',
+        text: 'Pick foreground and background hex colors with live WCAG contrast checking, choose error correction (L, M, Q, or H), keep a 4-module quiet zone, and optionally upload a center logo (auto-enabling Level H).',
       },
       {
         '@type': 'HowToStep',
         position: 4,
-        name: 'Verify Optical Scannability and Download',
-        text: 'Review the 0–95 Scan Reliability Score, test with the in-browser verification scanner (BarcodeDetector / jsQR), and export as vector SVG, print-ready A4 PDF, PNG (up to 2048px), WebP, JPEG, or copy to clipboard.',
+        name: 'Verify Scannability and Download',
+        text: 'Check the 0–95 Scan Reliability Score, run the in-browser Verify Payload decoder (BarcodeDetector / jsQR), and export as vector SVG, print-ready A4 PDF, PNG (up to 1200×1200 px), WebP, JPEG, or copy to clipboard.',
       },
     ],
   };
@@ -151,49 +151,50 @@ export default function QrGeneratorSeo() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
       />
 
-      {/* SECTION 1: EXECUTIVE TECHNICAL OVERVIEW */}
-      <section aria-labelledby="qr-iso-iec-18004-architecture" className="mb-8">
+      {/* SECTION 1: EXECUTIVE OVERVIEW */}
+      <section aria-labelledby="qr-static-generator-overview" className="mb-8">
         <h2
-          id="qr-iso-iec-18004-architecture"
+          id="qr-static-generator-overview"
           className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-4 text-slate-900 dark:text-slate-100"
         >
-          Free Online QR Code Generator: Custom Colors, Logos, Static Durability &amp; Vector Downloads
+          Free Static QR Code Generator: Vector SVG, A4 PDF, vCard &amp; Wi-Fi with No Sign-Up
         </h2>
         <blockquote className="p-4 my-4 bg-blue-50 border-l-4 border-blue-600 rounded-r-lg dark:bg-slate-800 not-italic">
           <p className="text-sm text-slate-700 dark:text-slate-300 m-0">
-            <strong>Privacy First &amp; Secure:</strong> All processing is done locally in your browser via client-side JavaScript. No files, text, or data are ever uploaded to our servers.
+            <strong>Local Browser Processing:</strong> QR matrix generation, logo compositing, optical payload verification, and SVG/PDF/PNG export run locally in your browser via client-side JavaScript. This tool does not upload your QR payload or logo image to a server.
           </p>
         </blockquote>
         <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-base sm:text-lg">
-          <strong>Quick Response (QR) codes</strong> are two-dimensional matrix barcodes defined by the international <strong>ISO/IEC 18004</strong> standard.
-          Whether you are printing product packaging, displaying digital restaurant menus, configuring guest Wi-Fi access, or printing conference business cards,
-          KivaroTools provides a 100% free, client-side QR studio that generates permanent, unexpiring static codes with enterprise-grade precision, customizable colors,
-          embedded brand logos, real-time scannability analysis, and multi-format exports including vector SVG and print-ready PDF.
+          <strong>Quick Response (QR) codes</strong> are two-dimensional matrix barcodes standardized under <strong>ISO/IEC 18004</strong>.
+          Whether you need a permanent <strong>static QR code generator</strong> for product packaging, a <strong>vCard QR code generator</strong> for printed business cards,
+          a guest <strong>Wi-Fi QR code generator</strong> for a cafe or office, or an <strong>SVG QR code generator</strong> for print shops,
+          KivaroTools is a <strong>QR code generator no sign up</strong> studio that builds unexpiring codes with live WCAG contrast enforcement,
+          Reed-Solomon error correction (L/M/Q/H), quiet-zone controls, a 0–95 scan reliability score, and an in-browser optical decoder—with zero watermarks.
         </p>
       </section>
 
-      {/* SECTION 2: HOW TO CREATE A QR CODE */}
+      {/* SECTION 2: HOW TO CREATE A STATIC QR CODE */}
       <section aria-labelledby="qr-generator-how-to-create-a-custom-qr-code" className="my-8 p-6 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 not-prose">
         <h2 id="qr-generator-how-to-create-a-custom-qr-code" className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
           <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <span>How to Create a Custom QR Code in 4 Simple Steps</span>
+          <span>How to Create and Verify a Static QR Code in 4 Steps</span>
         </h2>
         <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
-            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">1. Choose Content Type</span>
-            <span className="text-slate-600 dark:text-slate-300">Select from URL, Plain Text, Wi-Fi Network, Email, Phone, SMS, vCard Contact, or Calendar Event.</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">1. Choose Payload Type</span>
+            <span className="text-slate-600 dark:text-slate-300">Select URL, Plain Text, Wi-Fi, Email, Phone, SMS, Contact (vCard 3.0), or Calendar Event (ICS).</span>
           </li>
           <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
-            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">2. Fill &amp; Validate Fields</span>
-            <span className="text-slate-600 dark:text-slate-300">Enter your details. Real-time validation checks syntax, character escaping, and ISO byte capacity limits.</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">2. Enter &amp; Validate Details</span>
+            <span className="text-slate-600 dark:text-slate-300">Fill in your content. Real-time validation checks protocol syntax, character escaping, and ISO byte limits.</span>
           </li>
           <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
-            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">3. Customize Design &amp; Logo</span>
-            <span className="text-slate-600 dark:text-slate-300">Fine-tune colors with live contrast calculation, adjust quiet zones, and upload your central brand badge.</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">3. Customize Colors, Margin &amp; Logo</span>
+            <span className="text-slate-600 dark:text-slate-300">Set brand hex colors with live WCAG contrast checks, keep a 4-module quiet zone, and optionally add a center logo.</span>
           </li>
           <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
-            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">4. Verify &amp; Download</span>
-            <span className="text-slate-600 dark:text-slate-300">Run the in-browser scanner verification and download in SVG vector, print-ready PDF, PNG, JPEG, or WebP.</span>
+            <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">4. Verify Payload &amp; Export</span>
+            <span className="text-slate-600 dark:text-slate-300">Click Verify Payload to optically decode the preview, then download SVG, A4 PDF, PNG, JPEG, or WebP—or copy SVG/PNG directly.</span>
           </li>
         </ol>
       </section>
@@ -201,63 +202,62 @@ export default function QrGeneratorSeo() {
       {/* SECTION 3: STATIC VS DYNAMIC QR CODES */}
       <section aria-labelledby="qr-generator-static-vs-dynamic-qr-codes-why" className="mb-8">
         <h2 id="qr-generator-static-vs-dynamic-qr-codes-why" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Static vs. Dynamic QR Codes: Why Unexpiring Static Codes Protect Your Business
+          Static vs. Dynamic QR Codes: Why a Permanent QR Code Generator Protects Your Prints
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-          Many online QR generator services steer users into <em>dynamic</em> QR codes. While dynamic codes allow changing the destination URL after printing,
-          they introduce a severe point of failure: they encode a proprietary third-party redirect link (e.g., <code className="text-xs">qrco.de/xyz</code> or <code className="text-xs">me-qr.com/link</code>).
-          If the service provider alters its pricing model, caps monthly scans, or goes out of business, your printed physical signs, restaurant menus, product boxes,
-          and brochures immediately display 404 errors or paywall pages.
+          Many online QR makers default to <em>dynamic</em> QR codes that encode a third-party redirect URL rather than your real destination.
+          If a 7- or 14-day free trial ends, a 250-scan cap is reached, or a subscription lapses, printed menus, business cards, flyers, and packaging stop resolving.
+          A <strong>permanent QR code generator</strong> encodes static data directly into the matrix—zero redirect servers, zero scan limits, and zero expiration.
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Feature Comparison</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Comparison Factor</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools Static QR Codes</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-slate-500">Commercial Dynamic QR Services</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-slate-500">Hosted Dynamic QR Services</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Code Longevity</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Permanent &amp; Unexpiring (Never expires)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-500">Expires after free trial or if subscription lapses</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Permanent &amp; unexpiring (no scan cap)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Depends on active vendor plan or trial window</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Intermediary Servers</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Direct payload encoding (Zero middleman)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Routes through vendor redirect domain</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Destination Routing</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Direct payload encoding (zero middleman)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Routes through vendor short-link redirect server</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">User Data Privacy</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side (No server logs or telemetry)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Logs scanner IP addresses, device user-agents &amp; locations</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Editable After Printing</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">No (fixed payload—re-generate if link changes)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Yes (destination can be updated on vendor dashboard)</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Cost &amp; Account Requirements</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium">100% Free, No Sign-up, No Credit Card</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Mandatory accounts, recurring monthly subscriptions ($15–$50/mo)</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Sign-Up &amp; Cost</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium">Free, no sign-up, no watermarks</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Usually requires account and paid plan after trial</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Offline Scannability</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Wi-Fi, vCard &amp; Text scan without internet access</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Requires active internet connection to resolve redirect</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Wi-Fi, vCard, ICS &amp; plain text decode offline</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Requires internet to resolve redirect URL</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* SECTION 4: SUPPORTED PAYLOAD TYPES & DATA SCHEMAS */}
+      {/* SECTION 4: ALL 8 PAYLOAD MODES + PRACTICAL EXAMPLES */}
       <section aria-labelledby="qr-generator-supported-qr-code-payloads-amp" className="mb-8">
         <h2 id="qr-generator-supported-qr-code-payloads-amp" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Supported QR Code Payloads &amp; Real-World Applications
+          8 Supported Static QR Payloads: URL, Wi-Fi, vCard, Calendar Event (ICS), Email, Phone, SMS &amp; Plain Text
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-          KivaroTools natively formats eight distinct standardized payload architectures, ensuring smartphone cameras on iOS and Android trigger the exact native action:
+          Instead of juggling separate single-purpose utilities, KivaroTools combines a <strong>WiFi QR code generator</strong>, <strong>vCard QR code generator</strong>, <strong>calendar QR code generator</strong> (also an <strong>event QR code generator</strong> and <strong>ICS QR code generator</strong>), <strong>email QR code generator</strong>, <strong>SMS QR code generator</strong>, <strong>phone number QR code generator</strong>, and <strong>plain text QR code generator</strong> in one interface:
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
           <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
@@ -271,132 +271,183 @@ export default function QrGeneratorSeo() {
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Website URL</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">https://yourdomain.com</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Launches default browser directly to the web page.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Product packaging, marketing flyers, menus, social media bios.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens default mobile browser directly to the page.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Product packaging, restaurant menus, flyers, portfolios.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Wi-Fi Quick Connect</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">WIFI:T:WPA;S:SSID;P:Pass;;</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts user to join Wi-Fi without typing credentials.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Hotels, coffee shops, co-working offices, Airbnbs, trade shows.</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Wi-Fi QR Code</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">WIFI:T:WPA;S:SSID;P:Pass;H:false;;</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts to join WPA/WPA2/WPA3, WEP, or open Wi-Fi.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Cafes, hotels, co-working spaces, Airbnbs, guest signs.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Digital Contact (vCard 3.0)</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Contact (vCard 3.0)</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">BEGIN:VCARD ... END:VCARD</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts &ldquo;Save Contact&rdquo; with name, phone, email, company &amp; site.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Printed business cards, conference badges, email signatures.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Prompts &ldquo;Save Contact&rdquo; with name, phone, email, org &amp; URL.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Business cards, conference badges, networking handouts.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Calendar Event (iCalendar)</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">BEGIN:VEVENT ... END:VEVENT</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens device calendar to schedule event with start/end time.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Event tickets, webinar banners, wedding invites, conferences.</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Calendar Event (ICS)</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">BEGIN:VCALENDAR ... END:VEVENT</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens device calendar with title, start/end, location &amp; notes.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Workshop flyers, conference passes, wedding invites.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Direct Telephone Dial</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Phone Number</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">tel:+15551234567</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens phone dialer with phone number pre-entered.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Customer support stickers, emergency dispatch, roadside billboards.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens phone dialer with number pre-entered.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Support stickers, service vans, roadside signs.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Prefilled SMS Message</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">SMS Text Message</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">sms:+15551234567?body=Hello</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens SMS messaging app with drafted inquiry text.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Real estate lawn signs, text-to-win contests, booking requests.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens SMS app with recipient and drafted message.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Real estate yard signs, booking requests, opt-in texts.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Prefilled Email Message</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Email (mailto:)</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">mailto:sales@ex.com?subject=...</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens email client with recipient, subject &amp; body template.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Warranty registration, feedback forms, customer inquiries.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Opens mail app with recipient, subject &amp; body template.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Warranty registration, customer feedback, inquiries.</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Plain Text / Serial Number</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">Raw UTF-8 text string</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Displays text directly on device screen or copies to clipboard.</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Hardware inventory labels, Wi-Fi keys, cryptographic public keys.</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Plain Text</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs text-blue-600 dark:text-blue-400">Raw UTF-8 text (up to 2,500 chars)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Displays text directly on screen without internet.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Inventory labels, serial numbers, coupon codes, notes.</td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        {/* PRACTICAL WORKFLOW EXAMPLES */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 not-prose mb-4">
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+              Business Card vCard SVG
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Enter name, phone, email, and organization in the <strong>Contact (vCard)</strong> tab to create vCard QR code artwork in high-contrast dark navy (<code className="font-mono">#1E3A8A</code>) on white, keep Level M and a 4-module quiet zone, verify optically, and download <strong>SVG</strong> for Illustrator or InDesign at 2.5 cm.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+              Cafe Guest Wi-Fi A4 PDF
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Enter your SSID and WPA/WPA2/WPA3 key in the <strong>Wi-Fi</strong> tab, optionally upload a cafe logo (auto-enabling Level H), verify the payload, and export a <strong>Print-Ready A4 PDF</strong> to frame on the counter.
+            </p>
+          </div>
+          <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+              Workshop Flyer Calendar (ICS)
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Add title, start/end times, and venue in the <strong>Event (ICS)</strong> tab, check the 0–95 reliability score and minimum print size for denser VEVENT payloads, run Verify Payload, and export <strong>SVG</strong> or <strong>PNG</strong>.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* SECTION 5: REED-SOLOMON ERROR CORRECTION */}
-      <section aria-labelledby="qr-generator-reed-solomon-error-correction-" className="mb-8">
-        <h2 id="qr-generator-reed-solomon-error-correction-" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Reed-Solomon Error Correction &amp; Center Logo Placement
+      {/* SECTION 5: VECTOR SVG, A4 PDF & RASTER EXPORT FORMATS */}
+      <section aria-labelledby="qr-generator-export-formats-compared-when-t" className="mb-8">
+        <h2 id="qr-generator-export-formats-compared-when-t" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+          QR Code Generator SVG, Print-Ready A4 PDF, PNG (up to 1200 px), JPEG &amp; WebP Exports
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-          QR codes incorporate mathematical <strong>Reed-Solomon error correction</strong> codes. This redundancy enables smartphones and industrial barcode readers
-          to reconstruct missing or corrupted data if the code is scratched, smudged, torn, or partially covered by a central company logo:
+          Built as a print-ready <strong>vector QR code generator</strong> and <strong>QR code generator SVG</strong> studio, KivaroTools exports five file formats plus one-click clipboard actions (<strong>Copy Image</strong>, <strong>Copy SVG</strong>, and <strong>Copy Raw Data</strong>):
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <ul className="space-y-2 mb-6 text-slate-600 dark:text-slate-400 text-sm">
+          <li>
+            <strong>SVG (Scalable Vector Graphics):</strong> Best for commercial printing, packaging, signage, and design tools (Adobe Illustrator, Inkscape, Figma, InDesign). Every <strong>QR code SVG free</strong> export scales infinitely with zero pixelation, and you can copy raw SVG markup in one click.
+          </li>
+          <li>
+            <strong>PDF (Print-Ready A4 Sheet):</strong> Generates a portrait A4 document via jsPDF with the QR code centered at <strong>120mm × 120mm</strong> plus an embedded Print &amp; Scannability Guidelines box—ready for office or home printers without design software.
+          </li>
+          <li>
+            <strong>PNG (Raster Image, 160–1200 px):</strong> Crisp lossless raster output adjustable from 160 × 160 px up to <strong>1200 × 1200 px</strong>. Ideal for web pages, slide decks, newsletters, and email signatures.
+          </li>
+          <li>
+            <strong>WebP (Compressed Raster):</strong> Lightweight modern raster format at 0.95 quality for smaller web asset payloads while keeping sharp module edges.
+          </li>
+          <li>
+            <strong>JPEG (Opaque Raster):</strong> Standard raster image rendered onto a solid background fill at 0.95 quality for workflows that require <code>.jpeg</code> files.
+          </li>
+        </ul>
+      </section>
+
+      {/* SECTION 6: REED-SOLOMON ERROR CORRECTION & CENTER LOGOS */}
+      <section aria-labelledby="qr-generator-reed-solomon-error-correction-" className="mb-8">
+        <h2 id="qr-generator-reed-solomon-error-correction-" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
+          QR Code Generator Error Correction (L, M, Q, H) &amp; Center Logo Placement
+        </h2>
+        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
+          Every ISO/IEC 18004 QR code includes mathematical <strong>Reed-Solomon error correction</strong> parity blocks so scanners can still read the code if modules are scratched, smudged, or excavated by a <strong>QR code generator with logo</strong> workflow:
+        </p>
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Tier</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recovery Percentage</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recovery &amp; Max Byte Capacity</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Matrix Density</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Deployment Environment</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Use</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level L</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">~7% recovery (2,953 bytes max)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Lowest density (fewest, largest modules)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Clean digital screen displays with no central logo.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Lowest density (largest modules)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Clean digital screens with long payloads and no logo.</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level M</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-blue-600 dark:text-blue-400">~15% recovery (2,331 bytes max)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Standard default density</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">General print media, flyers, invoices, and table tents.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Balanced default density</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">General print media, flyers, business cards, invoices.</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level Q</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-amber-600 dark:text-amber-400">~25% recovery (1,663 bytes max)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Moderate high density</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Industrial labeling, transit passes, subtle central icons.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Moderately high density</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Industrial labels, transit passes, high-wear prints.</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700 font-mono">Level H</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-medium text-emerald-600 dark:text-emerald-400">~30% recovery (1,273 bytes max)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Highest density (most redundant modules)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-bold text-blue-600 dark:text-blue-400">Mandatory for central brand logos &amp; outdoor weatherproof signage.</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Highest density (maximum redundancy)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-bold text-blue-600 dark:text-blue-400">Recommended for center logos &amp; outdoor signage.</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-          <strong>Important Logo Safety Rule:</strong> When adding a brand logo, KivaroTools automatically switches error correction to <strong>Level H</strong>.
-          Keep the logo size below <strong>22% of total QR width</strong>. If a logo covers more than 25% of the surface area or obscures any of the three corner finder pattern squares,
-          smartphones will fail to identify the coordinate matrix.
+          <strong>Center Logo Safety Rule:</strong> Uploading a PNG, JPEG, or WebP logo (up to 5 MB) automatically switches error correction to <strong>Level H</strong> and lets you tune logo width between <strong>12% and 28%</strong> (default 20%). Keep logo width at or below <strong>20%–22%</strong> so enough Reed-Solomon parity remains for real-world glare, tilt, and wear.
         </p>
       </section>
 
-      {/* SECTION 6: PRINT SIZING & OPTICAL SCANNABILITY FORMULA */}
+      {/* SECTION 7: PRINT SIZING & 10:1 RULE */}
       <section aria-labelledby="qr-generator-physical-printing-sizing-amp-t" className="mb-8">
         <h2 id="qr-generator-physical-printing-sizing-amp-t" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Physical Printing Sizing &amp; The 10:1 Scannability Rule
+          Physical Print Sizing &amp; The 10:1 Scanning Distance Rule
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-          A common cause of QR scanning failure in the field is printing the code too small for its intended viewing distance.
-          The industry standard rule of thumb for standard smartphone camera sensors is the <strong>10:1 distance-to-size ratio</strong>:
+          Printing a QR code too small for its viewing distance is one of the most common causes of field scan failures. Use the standard <strong>10:1 distance-to-size ratio</strong> as a baseline:
         </p>
         <div className="p-4 mb-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 not-prose">
           <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 text-center font-mono">
             Minimum QR Code Width = Intended Scanning Distance ÷ 10
           </p>
         </div>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[680px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+          <table className="min-w-[640px] w-full text-sm text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Medium &amp; Context</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Typical Scanning Distance</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Minimum Size</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended File Format</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Recommended Export</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
@@ -404,13 +455,13 @@ export default function QrGeneratorSeo() {
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Business Card / Badge</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">25 – 35 cm (10 – 14 in)</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">2.5 cm × 2.5 cm (1.0 in)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG or PNG (300 DPI)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG or PNG (1200 px)</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Restaurant Table Tent / Menu</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Table Tent / Menu / Wi-Fi Sign</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">40 – 50 cm (16 – 20 in)</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">4.0 cm × 4.0 cm (1.6 in)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">PDF or SVG</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">A4 PDF or SVG</td>
               </tr>
               <tr>
                 <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Retail Window Poster / Flyer</th>
@@ -419,183 +470,162 @@ export default function QrGeneratorSeo() {
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG Vector</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Outdoor Billboard / Trade Banner</th>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Outdoor Banner / Signage</th>
                 <td className="p-3 border border-gray-200 dark:border-slate-700">5.0 – 10 meters (16 – 33 ft)</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">50 – 100 cm (20 – 40 in)</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG Vector (Infinite Scaling)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 font-mono text-xs">SVG Vector</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* SECTION 7: EXPORT FORMATS COMPARED */}
-      <section aria-labelledby="qr-generator-export-formats-compared-when-t" className="mb-8">
-        <h2 id="qr-generator-export-formats-compared-when-t" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Export Formats Compared: When to Use PNG, SVG, PDF, JPEG, or WebP
-        </h2>
-        <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400">
-          KivaroTools provides five distinct export formats tailored for professional designers, office administrators, and web developers:
-        </p>
-        <ul className="space-y-2 mb-6 text-slate-600 dark:text-slate-400 text-sm">
-          <li>
-            <strong>SVG (Scalable Vector Graphics):</strong> The gold standard for print production. SVG files store mathematical coordinates rather than raster pixels, ensuring razor-sharp edges at any scale—from a tiny postage stamp to an outdoor highway billboard—with zero loss of clarity in Adobe Illustrator, Figma, or InDesign.
-          </li>
-          <li>
-            <strong>PDF (Portable Document Format):</strong> Formatted as a standardized A4 document via jsPDF with the QR code centered (100mm × 100mm) and print cut guidelines pre-rendered. Ideal for sending directly to office printers without needing graphic design software.
-          </li>
-          <li>
-            <strong>PNG (Portable Network Graphics):</strong> High-resolution raster graphics supporting transparency, rendered up to 2048px ultra HD. Perfect for websites, slide decks, newsletters, and email footers.
-          </li>
-          <li>
-            <strong>JPEG:</strong> Standardized raster image with guaranteed solid opaque background matte at 0.95 compression quality. Best for workflows requiring standard image files without alpha transparency.
-          </li>
-          <li>
-            <strong>WebP:</strong> Modern lightweight web format that provides up to 30% smaller file sizes than PNG while preserving crisp edges, making it ideal for web app asset bundles.
-          </li>
-        </ul>
-      </section>
-
-      {/* SECTION 8: SCAN RELIABILITY SCORE & IN-BROWSER SCANNER */}
+      {/* SECTION 8: SCAN RELIABILITY SCORE & IN-BROWSER VERIFICATION */}
       <section aria-labelledby="qr-generator-scan-reliability-and-verification" className="mb-8 p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 not-prose">
         <div className="flex items-center gap-2 mb-3">
           <Scan className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <h2 id="qr-generator-scan-reliability-and-verification" className="text-xl font-bold text-slate-900 dark:text-white">
-            Live 0–95 Scan Reliability Scoring &amp; In-Browser Verification Scanner
+            Live 0–95 Scan Reliability Score &amp; In-Browser Verify Payload Scanner
           </h2>
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
-          Prepress validation is critical when printing hundreds or thousands of physical signs. KivaroTools calculates a real-time <strong>0–95 Scan Reliability Score</strong> based on four mathematical parameters:
+          Before sending artwork to a printer, KivaroTools scores your QR code on a <strong>0–95 heuristic scale</strong> across four structural dimensions (capped at 95 because software cannot inspect physical lighting or paper glare):
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-4">
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40">
-            <span className="font-bold text-slate-900 dark:text-white block mb-1">1. WCAG 2.1 Luminance Contrast (30 pts)</span>
-            <span className="text-slate-600 dark:text-slate-400">Ratios &gt;= 7.0:1 earn the full 30 pts. Ratios &gt;= 4.5:1 earn 20 pts. Ratios below 3.0:1 trigger an optical failure warning.</span>
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">1. WCAG 2.1 Luminance Contrast (up to 30 pts)</span>
+            <span className="text-slate-600 dark:text-slate-400">Ratios &gt;= 7.0:1 earn 30 pts; &gt;= 4.5:1 earn 20 pts; inverted polarity deducts 10 pts; ratios below 3.0:1 block export.</span>
           </div>
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40">
-            <span className="font-bold text-slate-900 dark:text-white block mb-1">2. ISO/IEC Quiet Zone Margin (25 pts)</span>
-            <span className="text-slate-600 dark:text-slate-400">Margins &gt;= 4 modules earn 25 pts. Margins below 2 modules trigger a critical edge-bleeding alert.</span>
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">2. ISO/IEC 18004 Quiet Zone (up to 15 pts)</span>
+            <span className="text-slate-600 dark:text-slate-400">Margins &gt;= 4 modules earn 15 pts; 2–3 modules earn 5 pts; 0–1 modules earn 0 pts and trigger an edge-bleed warning.</span>
           </div>
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40">
-            <span className="font-bold text-slate-900 dark:text-white block mb-1">3. Payload Density Budget (25 pts)</span>
-            <span className="text-slate-600 dark:text-slate-400">Payloads utilizing &lt; 50% capacity earn 25 pts by maximizing individual module size and camera autofocus speed.</span>
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">3. Error Correction &amp; Logo Margin (up to 25 pts)</span>
+            <span className="text-slate-600 dark:text-slate-400">Evaluates Reed-Solomon tier (L/M/Q/H) alongside center logo occlusion (up to 25 pts for Level H; warns if logo exceeds 20% or uses L/M/Q).</span>
           </div>
           <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-900/40">
-            <span className="font-bold text-slate-900 dark:text-white block mb-1">4. Error Correction Headroom (15 pts)</span>
-            <span className="text-slate-600 dark:text-slate-400">Level H error correction paired with a center logo &lt;= 20% width earns 15 pts for optimal optical recovery.</span>
+            <span className="font-bold text-slate-900 dark:text-white block mb-1">4. Matrix Version Density (up to 30 pts)</span>
+            <span className="text-slate-600 dark:text-slate-400">Compact V1–V5 matrices earn 30 pts, V6–V10 earn 26 pts, V11–V20 earn 20 pts, and V21+ trigger larger minimum print size guidance.</span>
           </div>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          Additionally, users can click <strong>&quot;Verify Scannability&quot;</strong> to run our built-in optical decoder powered by the Web <code>BarcodeDetector</code> API with lazy-loaded <code>jsQR</code> WebAssembly fallback. This verifies that standard smartphone camera software can decode the payload string in milliseconds before you print.
+          Click <strong>&quot;Verify Payload&quot;</strong> to decode the live rendered canvas using the browser&apos;s native <code>BarcodeDetector</code> API with an automatic pure-JavaScript <code>jsQR</code> fallback, confirming the decoded string matches your payload before you print.
         </p>
       </section>
 
-      {/* SECTION 9: 5-COLUMN COMPETITOR COMPARISON MATRIX */}
+      {/* SECTION 9: COMPETITOR COMPARISON MATRIX (GROUNDED IN VERIFIED AUDIT) */}
       <section aria-labelledby="qr-generator-competitor-comparison-matrix" className="mb-8">
         <h2 id="qr-generator-competitor-comparison-matrix" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          QR Code Generator Comparison: KivaroTools vs. Commercial Alternatives
+          How KivaroTools Compares to Popular QR Code Generators
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-          Compare KivaroTools with commercial QR services across longevity, privacy, export fidelity, and integrated optical verification:
+          Compare KivaroTools with widely used QR code tools across static longevity, vector SVG &amp; A4 PDF exports, prepress controls, commercial use, and built-in optical verification:
         </p>
-        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose overscroll-x-contain">
-          <table className="min-w-[680px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
+        <div className="w-full overflow-x-auto overscroll-x-contain mb-6 not-prose">
+          <table className="min-w-[700px] w-full text-xs text-left border-collapse border border-gray-200 dark:border-slate-800">
             <thead>
               <tr className="bg-gray-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300">
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Evaluation Criterion</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (100% Free)</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">QR-Code-Generator / Bitly</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 font-semibold">Feature / Prepress Criterion</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-bold">KivaroTools (Free)</th>
                 <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">QRCode Monkey</th>
-                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Canva / Uniqode</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">TEC-IT</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">Adobe Express / Canva</th>
+                <th scope="col" className="p-3 border border-gray-200 dark:border-slate-700">QRStuff</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Code Expiry &amp; Scan Caps</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Permanent Static / Unlimited Scans</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-red-500">14-Day Trial Trap / Paid Subscriptions</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Static Free / Upsells Dynamic</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600">Scan Limits on Free Tiers</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Account &amp; Commercial Use</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">No sign-up · Royalty-free commercial use</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">No sign-up (static free)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-amber-600 dark:text-amber-400">Free tier restricts commercial use</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Account / login required (Canva)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Paid plans for colors &amp; vector</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Processing Privacy</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">100% Client-Side In-Browser</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Server Logs &amp; Redirect Trackers</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Server-Side Image Generation</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Cloud Account Required</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Free Vector SVG &amp; Print PDF</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">SVG + A4 PDF (120mm) + Copy SVG</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">SVG/PDF/EPS (PDF/EPS strip logos)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">PNG only on free tier</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">PNG/JPEG/PDF (no SVG on Adobe)</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">PNG only on free tier</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Print Formats</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">SVG + A4 PDF Sheet + 2048px PNG/WebP/JPG</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Vector SVG behind Paywall</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">SVG, PDF, EPS</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Standard PNG / PDF Print</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Center Logo &amp; Auto Level H</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Up to 5 MB · Auto-promotes Level H</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Up to 2 MB · Manual settings</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">No logo upload</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Basic overlay / add-on</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Paid tier</td>
               </tr>
               <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Built-In Optical Scanner</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">BarcodeDetector + jsQR Fallback</td>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">WCAG Contrast &amp; Quiet Zone</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Live WCAG ratio (3.0:1 block) + 0–12 slider</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">No contrast or quiet-zone slider</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700">Quiet zone &amp; EC controls</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">No prepress sliders</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">No WCAG contrast check</td>
+              </tr>
+              <tr>
+                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Built-In Optical Verification</th>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">0–95 Score + BarcodeDetector / jsQR</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
                 <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
-              </tr>
-              <tr>
-                <th scope="row" className="p-3 font-semibold border border-gray-200 dark:border-slate-700">Auto Level-H Logo Guard</th>
-                <td className="p-3 border border-gray-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-medium">Auto-Promote H (30%) + 10–22% Width Limit</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Manual Toggle</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Manual Settings</td>
-                <td className="p-3 border border-gray-200 dark:border-slate-700">Basic Overlay</td>
+                <td className="p-3 border border-gray-200 dark:border-slate-700 text-slate-400">None</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      {/* SECTION 10: 6-CARD OPTICAL TROUBLESHOOTING GRID */}
+      {/* SECTION 10: OPTICAL TROUBLESHOOTING GUIDE */}
       <section aria-labelledby="qr-generator-optical-troubleshooting-guide" className="mb-8">
         <h2 id="qr-generator-optical-troubleshooting-guide" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200">
-          Optical Troubleshooting &amp; Prepress Diagnostic Guide
+          Optical Troubleshooting &amp; Prepress Checklist
         </h2>
         <p className="mb-4 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-          If smartphone cameras or industrial barcode readers struggle to decode your custom QR code, check these 6 common optical pitfalls:
+          If a phone camera or handheld scanner struggles to read a printed QR code, check these six common prepress issues:
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 not-prose mb-6">
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              1. Inverted QR Colors (Light Dots on Dark Background)
+              1. Inverted Colors (Light Dots on Dark Background)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Standard optical sensors assume dark modules on a light background. While newer iOS updates can detect inverted codes, older Android cameras and dedicated retail handheld scanners fail completely. Always maintain a darker foreground than background.
+              Standard optical decoders expect dark modules on a light background. Older Android cameras and retail laser/2D scanners frequently reject inverted polarity. Keep the foreground darker than the background.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              2. Low Contrast Ratios &amp; Transparent Packaging
+              2. Low Contrast &amp; Tinted Print Substrates
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Contrast ratios below 3.0:1 fail under low-light or warm restaurant lighting. When printing transparent background QR codes onto tinted bottles or colored cardboard, the packaging substrate acts as the background, often degrading effective contrast.
+              Contrast ratios below 4.5:1 (and especially below 3.0:1) degrade rapidly under warm restaurant lighting or glossy lamination. Always place a solid light background box behind QR codes printed on dark or patterned packaging.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              3. Dense Version-40 Matrix Blurring
+              3. Overly Dense Matrix Blurring
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Encoding huge URLs with 20 UTM tracking parameters or 500-word vCard notes forces QR Version 40 (177×177 modules). Individual module dots become microscopic, causing ink bleed to merge adjacent modules during thermal or flexographic printing.
+              Long URLs packed with tracking parameters or lengthy text force high QR versions (up to V40, 177×177 modules). Microscopic modules blur together on thermal or inkjet printers—shorten payloads or increase print size.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              4. Missing Quiet Zone Margin (&lt; 4 Modules)
+              4. Cropped Quiet Zone (&lt; 4 Modules)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              ISO/IEC 18004 mandates an uninterrupted 4-module quiet zone border. Cropping the margin right up to the corner finder squares causes camera edge-detection algorithms to blend background imagery or nearby text directly into finder patterns.
+              ISO/IEC 18004 requires a 4-module blank margin on all sides. Cropping tightly around the corner finder squares prevents camera edge-detection from isolating the matrix.
             </p>
           </div>
 
@@ -605,34 +635,32 @@ export default function QrGeneratorSeo() {
               5. Unescaped Characters in Wi-Fi Passwords
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Wi-Fi passwords containing semicolons (<code>;</code>), colons (<code>:</code>), or backslashes (<code>\</code>) will terminate the parser early on mobile devices unless escaped with a leading backslash. KivaroTools automates escaping to prevent join failures.
+              Wi-Fi keys containing semicolons (<code>;</code>), colons (<code>:</code>), commas (<code>,</code>), quotes (<code>&quot;</code>), or backslashes (<code>\</code>) break naive parsers unless escaped. KivaroTools escapes them automatically.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2">
             <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              6. Oversized Center Logo Occlusion (&gt; 22% Width)
+              6. Oversized Center Logo (&gt; 22% Width)
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Reed-Solomon Level H can reconstruct up to ~30% missing data. However, if a central logo exceeds 22% of total width, normal wear, scratches, camera glare, or tilted angles will overwhelm remaining error correction headroom.
+              Level H restores up to ~30% of lost codewords. Exceeding 20%–22% width leaves very little safety margin for scratches, glare, or angled scans.
             </p>
           </div>
         </div>
       </section>
 
-      {/* SECTION 11: PRIVACY & ZERO KNOWLEDGE */}
+      {/* SECTION 11: PRIVACY & CLIENT-SIDE EXECUTION */}
       <section aria-labelledby="qr-generator-privacy-by-design-100-in-brows" className="mb-8">
         <h2 id="qr-generator-privacy-by-design-100-in-brows" className="text-xl sm:text-2xl font-bold mb-3 text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span>Privacy by Design: 100% In-Browser Execution</span>
+          <span>Client-Side QR Generation &amp; Payload Privacy</span>
         </h2>
         <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-400 text-sm">
-          Many web services upload your QR payloads, generating codes on remote servers where sensitive contact details, home Wi-Fi network passwords,
-          or internal staging URLs are permanently stored in database access logs.
-          KivaroTools follows a strict <strong>Zero-Knowledge Architecture</strong>: all matrix computations, error correction parity generation,
-          DOM vector rendering, and image encodings execute strictly within your local browser sandbox. No user inputs, uploaded brand graphics,
-          or generated images are ever transmitted to or logged on our servers.
+          Unlike server-rendered QR generators that send your Wi-Fi keys, internal staging URLs, or personal contact details to a remote backend,
+          KivaroTools executes QR matrix encoding, Reed-Solomon parity calculation, SVG vector building, A4 PDF generation, and optical decoding directly inside your browser.
+          No payloads or uploaded logo images are sent to KivaroTools servers by this tool.
         </p>
       </section>
 
@@ -661,18 +689,18 @@ export default function QrGeneratorSeo() {
       </section>
 
       {/* SECTION 13: CALL TO ACTION */}
-      <section aria-labelledby="qr-generator-ready-to-create-your-free-perm" className="my-8 p-6 sm:p-5 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
+      <section aria-labelledby="qr-generator-ready-to-create-your-free-perm" className="my-8 p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-center not-prose shadow-xl shadow-blue-500/10">
         <h2 id="qr-generator-ready-to-create-your-free-perm" className="text-xl sm:text-2xl font-bold mb-2 text-white">
-          Ready to Create Your Free, Permanent QR Code?
+          Ready to Create Your Free Static QR Code?
         </h2>
         <p className="text-blue-100 text-sm sm:text-base max-w-xl mx-auto mb-5 leading-relaxed">
-          Generate an unexpiring, high-precision QR code for your website, Wi-Fi network, or vCard contact right now in your browser.
+          Generate an unexpiring QR code for your website, Wi-Fi network, vCard business card, or event—verify scannability and export vector SVG or A4 PDF in seconds.
         </p>
         <a
           href="#qr-generator-tool"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-white text-blue-700 font-bold text-sm hover:bg-blue-50 transition-all shadow-md active:scale-95"
         >
-          <span>Open QR Code Studio</span>
+          <span>Back to QR Code Generator</span>
           <ArrowUpRight className="w-4 h-4" />
         </a>
       </section>
@@ -680,9 +708,16 @@ export default function QrGeneratorSeo() {
       {/* SECTION 14: RELATED TOOLS INTERNAL LINKING */}
       <section aria-labelledby="qr-generator-related-tools" className="pt-6 border-t border-gray-200 dark:border-slate-800 not-prose">
         <h2 id="qr-generator-related-tools" className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-          Related SEO, Document &amp; Developer Tools
+          Related SEO, Vector &amp; Document Tools
         </h2>
         <div className="flex flex-wrap gap-2 text-xs sm:text-sm">
+          <Link
+            href="/developer/svg-optimizer"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+          >
+            SVG Optimizer &rarr;
+          </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
           <Link
             href="/seo/meta-generator"
             className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
@@ -724,53 +759,15 @@ export default function QrGeneratorSeo() {
           >
             Base64 Encoder &amp; Decoder &rarr;
           </Link>
+          <span className="text-slate-300 dark:text-slate-700">•</span>
+          <Link
+            href="/seo"
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium"
+          >
+            All SEO &amp; Text Tools &rarr;
+          </Link>
         </div>
       </section>
-    
-                {/* Programmatic Long-Tail Search Intent & Global Use-Case Coverage (36 Intents) */}
-        <section id="programmatic-search-intents" aria-label="Supported Search Intents and Workflows" className="my-8 p-5 rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 not-prose">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
-            Custom QR Code Generator with Logo — Supported Workflows &amp; Long-Tail Search Coverage (36 Intents)
-          </h3>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free qr code generator no expiration</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">static qr code generator with logo</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">wifi qr code generator wpa2 no password typing</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vcard 3.0 digital business card qr code</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vector svg pdf high dpi png qr code maker</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">qr code contrast and scan reliability checker</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">built in webcam image qr code scanner verifier</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">icalendar event email sms tel qr generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reed solomon level h 30 error correction qr</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">commercial print ready qr code studio free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free custom qr code generator with logo center upload</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate wifi qr code connect without typing password</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">vcard digital business card qr code generator free</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">website url qr code generator high resolution download</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate static qr code that never expires no subscription</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">qr code generator vector svg and print ready pdf download</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">icalendar event qr code add to calendar on scan</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">email and sms pre filled message qr code generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">phone number direct dial qr code generator online</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">check qr code foreground background color contrast ratio</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">reed solomon error correction level h qr code generator</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">high scannability qr code with custom colors and quiet zone</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate qr code for restaurant menu pdf link</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate payment qr code with custom text payload</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">create qr code online without account registration</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">private client side qr code generator no redirect tracking</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">free bitly and qr code generator pro static alternative</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">high density qr code version estimator in browser</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">print ready 300 dpi png qr code for marketing flyers</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">generate qr code for app store and google play link</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">custom branded qr code generator with round corners</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">copy qr code image directly to clipboard</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">offline qr code maker works without internet</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">bulk qr code generator for inventory and events</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">test qr code scannability before printing guide</span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200/80 dark:border-slate-700/70">enterprise grade qr code creation studio 100 percent free</span>
-          </div>
-        </section>
-      </article>
+    </article>
   );
 }

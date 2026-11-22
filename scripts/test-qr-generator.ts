@@ -431,7 +431,7 @@ assert.ok(qrTool, 'qr-generator must exist in tools registry');
 assert.strictEqual(qrTool?.slug, 'qr-generator');
 assert.strictEqual(qrTool?.categoryId, 'seo');
 assert.strictEqual(qrTool?.status, 'published');
-assert.ok(qrTool?.seoTitle?.includes('Free QR Code Generator Online'), 'seoTitle should be compelling and unique');
+assert.ok(qrTool?.seoTitle?.includes('QR Code Generator'), 'seoTitle should be compelling and unique');
 assert.ok(qrTool?.seoDescription?.includes('static'), 'seoDescription should specify static unexpiring codes');
 assert.ok((qrTool?.relatedToolSlugs?.length ?? 0) > 0, 'relatedToolSlugs should be populated');
 

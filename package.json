@@ -18,7 +18,7 @@
     "test:pdf": "tsx scripts/test-pdf-merge-split-150-suite.ts && tsx scripts/test-pdf-merge-split.ts",
     "test:metals": "tsx scripts/test-precious-metals-engine.ts",
     "test:image-to-pdf": "tsx scripts/test-image-to-pdf-150-suite.ts && tsx scripts/test-image-to-pdf.ts",
-    "test:qr": "tsx scripts/test-qr-generator.ts",
+    "test:qr": "tsx scripts/test-qr-generator-1000-suite.ts && tsx scripts/test-qr-generator.ts",
     "test:regex": "tsx scripts/test-regex-tester-150-suite.ts && tsx scripts/test-user-regex-tester-suite.ts && tsx scripts/test-regex-tester.ts",
     "test:sip": "tsx scripts/test-sip-calculator-1000-suite.ts && tsx scripts/test-sip-150-suite.ts && tsx scripts/test-user-sip-suite.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
