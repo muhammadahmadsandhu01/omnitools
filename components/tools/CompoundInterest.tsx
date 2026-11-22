@@ -15,6 +15,7 @@ import {
   Info,
   Layers,
   Plus,
+  Printer,
   RotateCcw,
   Share2,
   ShieldAlert,
@@ -52,7 +53,7 @@ export type Currency = {
 export type FrequencyKey = CompoundingFrequency;
 
 export const WORLD_CURRENCIES: Currency[] = [
-  { code: "AED", symbol: "د.إ", name: "UAE Dirham" },
+  { code: "AED", symbol: "AED", name: "UAE Dirham" },
   { code: "AFN", symbol: "AFN", name: "Afghani" },
   { code: "ALL", symbol: "Lek", name: "Lek" },
   { code: "AMD", symbol: "֏", name: "Armenian Dram" },
@@ -96,7 +97,7 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "DJF", symbol: "Fdj", name: "Djibouti Franc" },
   { code: "DKK", symbol: "kr", name: "Danish Krone" },
   { code: "DOP", symbol: "RD$", name: "Dominican Peso" },
-  { code: "DZD", symbol: "دج", name: "Algerian Dinar" },
+  { code: "DZD", symbol: "DZD", name: "Algerian Dinar" },
   { code: "EGP", symbol: "E£", name: "Egyptian Pound" },
   { code: "ERN", symbol: "Nfk", name: "Nakfa" },
   { code: "ETB", symbol: "Br", name: "Ethiopian Birr" },
@@ -135,12 +136,12 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "KYD", symbol: "CI$", name: "Cayman Islands Dollar" },
   { code: "KZT", symbol: "₸", name: "Tenge" },
   { code: "LAK", symbol: "₭", name: "Lao Kip" },
-  { code: "LBP", symbol: "ل.ل", name: "Lebanese Pound" },
+  { code: "LBP", symbol: "LBP", name: "Lebanese Pound" },
   { code: "LKR", symbol: "Rs", name: "Sri Lanka Rupee" },
   { code: "LRD", symbol: "L$", name: "Liberian Dollar" },
   { code: "LSL", symbol: "L", name: "Loti" },
   { code: "LYD", symbol: "LD", name: "Libyan Dinar" },
-  { code: "MAD", symbol: "د.م.", name: "Moroccan Dirham" },
+  { code: "MAD", symbol: "MAD", name: "Moroccan Dirham" },
   { code: "MDL", symbol: "L", name: "Moldovan Leu" },
   { code: "MGA", symbol: "Ar", name: "Malagasy Ariary" },
   { code: "MKD", symbol: "ден", name: "Denar" },
@@ -161,7 +162,7 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "NOK", symbol: "kr", name: "Norwegian Krone" },
   { code: "NPR", symbol: "₨", name: "Nepalese Rupee" },
   { code: "NZD", symbol: "NZ$", name: "New Zealand Dollar" },
-  { code: "OMR", symbol: "﷼", name: "Rial Omani" },
+  { code: "OMR", symbol: "OMR", name: "Rial Omani" },
   { code: "PAB", symbol: "B/.", name: "Balboa" },
   { code: "PEN", symbol: "S/", name: "Sol" },
   { code: "PGK", symbol: "K", name: "Kina" },
@@ -169,15 +170,15 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "PKR", symbol: "₨", name: "Pakistan Rupee" },
   { code: "PLN", symbol: "zł", name: "Zloty" },
   { code: "PYG", symbol: "₲", name: "Guarani" },
-  { code: "QAR", symbol: "﷼", name: "Qatari Rial" },
+  { code: "QAR", symbol: "QAR", name: "Qatari Rial" },
   { code: "RON", symbol: "lei", name: "Romanian Leu" },
   { code: "RSD", symbol: "дин", name: "Serbian Dinar" },
   { code: "RUB", symbol: "RUB", name: "Russian Ruble" },
   { code: "RWF", symbol: "RF", name: "Rwanda Franc" },
-  { code: "SAR", symbol: "﷼", name: "Saudi Riyal" },
+  { code: "SAR", symbol: "SAR", name: "Saudi Riyal" },
   { code: "SBD", symbol: "SI$", name: "Solomon Islands Dollar" },
   { code: "SCR", symbol: "₨", name: "Seychelles Rupee" },
-  { code: "SDG", symbol: "ج.س.", name: "Sudanese Pound" },
+  { code: "SDG", symbol: "SDG", name: "Sudanese Pound" },
   { code: "SEK", symbol: "kr", name: "Swedish Krona" },
   { code: "SGD", symbol: "S$", name: "Singapore Dollar" },
   { code: "SHP", symbol: "£", name: "Saint Helena Pound" },
@@ -192,7 +193,7 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "THB", symbol: "฿", name: "Baht" },
   { code: "TJS", symbol: "SM", name: "Somoni" },
   { code: "TMT", symbol: "m", name: "Turkmenistan New Manat" },
-  { code: "TND", symbol: "د.ت", name: "Tunisian Dinar" },
+  { code: "TND", symbol: "TND", name: "Tunisian Dinar" },
   { code: "TOP", symbol: "T$", name: "Pa’anga" },
   { code: "TRY", symbol: "₺", name: "Turkish Lira" },
   { code: "TTD", symbol: "TT$", name: "Trinidad and Tobago Dollar" },
@@ -228,7 +229,7 @@ export const WORLD_CURRENCIES: Currency[] = [
   { code: "XTS", symbol: "XTS", name: "Codes specifically reserved for testing purposes" },
   { code: "XUA", symbol: "XUA", name: "ADB Unit of Account" },
   { code: "XXX", symbol: "XXX", name: "The codes assigned for transactions where no currency is involved" },
-  { code: "YER", symbol: "﷼", name: "Yemeni Rial" },
+  { code: "YER", symbol: "YER", name: "Yemeni Rial" },
   { code: "ZAR", symbol: "R", name: "Rand" },
   { code: "ZMW", symbol: "ZK", name: "Zambian Kwacha" },
   { code: "ZWL", symbol: "Z$", name: "Zimbabwe Dollar" },
@@ -247,26 +248,30 @@ export const CONTRIBUTIONS: {
   label: string;
   perYear: number;
 }[] = [
-  { key: "weekly", label: "Weekly (52/yr)", perYear: 52 },
-  { key: "biweekly", label: "Every 2 weeks (26/yr)", perYear: 26 },
-  { key: "monthly", label: "Monthly (12/yr)", perYear: 12 },
-  { key: "quarterly", label: "Quarterly (4/yr)", perYear: 4 },
-  { key: "annually", label: "Annually (1/yr)", perYear: 1 },
-];
+    { key: "weekly", label: "Weekly (52/yr)", perYear: 52 },
+    { key: "biweekly", label: "Every 2 weeks (26/yr)", perYear: 26 },
+    { key: "monthly", label: "Monthly (12/yr)", perYear: 12 },
+    { key: "quarterly", label: "Quarterly (4/yr)", perYear: 4 },
+    { key: "annually", label: "Annually (1/yr)", perYear: 1 },
+  ];
 
 /**
  * Atomic currency formatter: binds currency symbol and numeric value together.
  * Guarantees that symbol and amount NEVER wrap onto separate lines.
  */
+function getCurrencyPrefix(symbol: string): string {
+  return /^[A-Za-z]{2,4}$/.test(symbol) ? `${symbol}\u00A0` : symbol;
+}
+
 export function formatMoney(value: number, currency: Currency): string {
-  const safe = Number.isFinite(value) ? value : 0;
+  const safe = Number.isFinite(value) ? (Math.abs(value) < 0.005 ? 0 : value) : 0;
   const isNegative = safe < 0;
   const absVal = Math.abs(safe);
   const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(absVal);
-  const sym = currency.symbol;
+  const sym = getCurrencyPrefix(currency.symbol);
   return isNegative ? `-${sym}${formatted}` : `${sym}${formatted}`;
 }
 
@@ -275,15 +280,21 @@ export function formatMoneyPrecise(
   currency: Currency,
   fractionDigits = 4
 ): string {
-  const safe = Number.isFinite(value) ? value : 0;
+  const safe = Number.isFinite(value) ? (Math.abs(value) < Math.pow(10, -(fractionDigits + 1)) ? 0 : value) : 0;
   const isNegative = safe < 0;
   const absVal = Math.abs(safe);
   const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   }).format(absVal);
-  const sym = currency.symbol;
+  const sym = getCurrencyPrefix(currency.symbol);
   return isNegative ? `-${sym}${formatted}` : `${sym}${formatted}`;
+}
+
+export function formatPercent(value: number, digits = 2): string {
+  const safe = Number.isFinite(value) ? value : 0;
+  const normalized = Math.abs(safe) < Math.pow(10, -(digits + 1)) * 5 ? 0 : safe;
+  return `${normalized.toFixed(digits)}%`;
 }
 
 export type ActiveTab =
@@ -347,6 +358,47 @@ export default function CompoundInterest() {
       WORLD_CURRENCIES[0],
     [currencyCode]
   );
+
+  const isNegativePrincipal = useMemo(() => {
+    const trimmed = principal.trim();
+    if (!trimmed) return false;
+    const parsed = Number(trimmed.replace(/,/g, ""));
+    return Number.isFinite(parsed) && parsed < 0;
+  }, [principal]);
+
+  const isNegativeContribution = useMemo(() => {
+    const trimmed = contribution.trim();
+    if (!trimmed) return false;
+    const parsed = Number(trimmed.replace(/,/g, ""));
+    return Number.isFinite(parsed) && parsed < 0;
+  }, [contribution]);
+
+  const isNegativeYears = useMemo(() => {
+    const trimmed = years.trim();
+    if (!trimmed) return false;
+    const parsed = Number(trimmed.replace(/,/g, ""));
+    return Number.isFinite(parsed) && parsed < 0;
+  }, [years]);
+
+  const activeAdvancedCount = useMemo(() => {
+    let count = 0;
+    if (cleanNumber(contributionEscalation, 0) > 0) count += 1;
+    if (cleanNumber(annualFeeRate, 0) > 0) count += 1;
+    if (taxTreatment !== "taxable") count += 1;
+    if (oneTimeEvents.length > 0) count += 1;
+    return count;
+  }, [contributionEscalation, annualFeeRate, taxTreatment, oneTimeEvents.length]);
+
+  const handleToggleDrawdown = () => {
+    const nextEnabled = !drawdownEnabled;
+    if (nextEnabled && accumulationYears.trim() === "") {
+      const currentYears = cleanNumber(years, 0);
+      const defaultAccum =
+        currentYears > 2 ? Math.min(10, Math.floor(currentYears / 2)) : 10;
+      setAccumulationYears(String(defaultAccum));
+    }
+    setDrawdownEnabled(nextEnabled);
+  };
 
   // Only restore when an explicit shared URL is present (?p=...&c=...)
   // Normal page open / refresh starts 100% clean with NO silent localStorage repopulation.
@@ -423,7 +475,7 @@ export default function CompoundInterest() {
           setPlanMessage("Shared plan loaded from link");
           window.setTimeout(() => setPlanMessage(null), 3000);
         }
-      } catch {}
+      } catch { }
     }, 0);
 
     return () => window.clearTimeout(timer);
@@ -448,7 +500,12 @@ export default function CompoundInterest() {
       inflationRate: showInflation ? cleanNumber(inflation, 0) : 0,
       oneTimeEvents,
       drawdownEnabled,
-      accumulationYears: cleanNumber(accumulationYears, cleanNumber(years, 0)),
+      accumulationYears:
+        accumulationYears.trim() === ""
+          ? drawdownEnabled
+            ? 10
+            : cleanNumber(years, 0)
+          : cleanNumber(accumulationYears, 10),
       withdrawalAmount: cleanNumber(withdrawalAmount, 0),
       withdrawalFrequency,
       withdrawalType: "fixed" as const,
@@ -615,7 +672,7 @@ export default function CompoundInterest() {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
-    } catch {}
+    } catch { }
   };
 
   const downloadCSV = () => {
@@ -796,7 +853,7 @@ export default function CompoundInterest() {
                 Compound Interest Calculator
               </h2>
               <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-300">
-                Enterprise Engine
+                100% Client-Side
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -813,8 +870,17 @@ export default function CompoundInterest() {
           )}
           <button
             type="button"
+            onClick={() => window.print()}
+            className="print:hidden inline-flex min-h-[38px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition hover:border-blue-400 hover:text-slate-900 dark:hover:border-blue-500/50 dark:hover:text-white whitespace-nowrap"
+            title="Print or save projection summary as PDF via browser print"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Print / PDF
+          </button>
+          <button
+            type="button"
             onClick={share}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition hover:border-blue-400 hover:text-slate-900 dark:hover:border-blue-500/50 dark:hover:text-white whitespace-nowrap"
+            className="print:hidden inline-flex min-h-[38px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 transition hover:border-blue-400 hover:text-slate-900 dark:hover:border-blue-500/50 dark:hover:text-white whitespace-nowrap"
             title="Copy shareable plan link"
           >
             {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Share2 className="h-3.5 w-3.5" />}
@@ -927,6 +993,12 @@ export default function CompoundInterest() {
                       {currency.symbol}
                     </span>
                   </div>
+                  {isNegativePrincipal && (
+                    <p role="alert" className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      Initial investment cannot be negative; clamped to 0 in calculations.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -937,13 +1009,19 @@ export default function CompoundInterest() {
                       inputMode="decimal"
                       value={contribution}
                       onChange={(e) => setContribution(e.target.value)}
-                      className={`${inputClass} pr-12`}
+                      className={`${inputClass} pr-14`}
                       placeholder="e.g. 500"
                     />
                     <span className="pointer-events-none absolute right-3 top-2.5 font-mono text-xs font-semibold text-slate-400 whitespace-nowrap">
                       {currency.symbol}
                     </span>
                   </div>
+                  {isNegativeContribution && (
+                    <p role="alert" className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      Contribution amount cannot be negative; use Retirement Drawdown or Milestone Events for withdrawals.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -978,11 +1056,10 @@ export default function CompoundInterest() {
                       key={item}
                       type="button"
                       onClick={() => setContributionTiming(item)}
-                      className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
-                        contributionTiming === item
+                      className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${contributionTiming === item
                           ? "border-blue-500/50 bg-blue-600/15 text-blue-600 dark:text-blue-300 font-bold"
                           : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200"
-                      }`}
+                        }`}
                     >
                       {item === "end" ? "End of period" : "Beginning"}
                     </button>
@@ -1024,6 +1101,12 @@ export default function CompoundInterest() {
                       years
                     </span>
                   </div>
+                  {isNegativeYears && (
+                    <p role="alert" className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      Investment period must be 0 or greater (up to 100 years).
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1058,8 +1141,8 @@ export default function CompoundInterest() {
                       {taxTreatment === "taxable"
                         ? "Taxable account (annual drag)"
                         : taxTreatment === "deferred"
-                        ? "Tax-deferred (exit tax)"
-                        : "Tax-exempt (0% tax)"}
+                          ? "Tax-deferred (exit tax)"
+                          : "Tax-exempt (0% tax)"}
                     </p>
                   </div>
                   <div className="relative w-24">
@@ -1090,14 +1173,12 @@ export default function CompoundInterest() {
                     Inflation adjustment (Real Value)
                   </span>
                   <span
-                    className={`relative h-5 w-9 rounded-full transition ${
-                      showInflation ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
-                    }`}
+                    className={`relative h-5 w-9 rounded-full transition ${showInflation ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
+                      }`}
                   >
                     <span
-                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${
-                        showInflation ? "left-[18px]" : "left-0.5"
-                      }`}
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${showInflation ? "left-[18px]" : "left-0.5"
+                        }`}
                     />
                   </span>
                 </button>
@@ -1129,11 +1210,18 @@ export default function CompoundInterest() {
             <button
               type="button"
               onClick={() => setShowAdvancedCashFlows(!showAdvancedCashFlows)}
-              className="flex w-full items-center justify-between p-4 text-left font-bold text-xs text-slate-900 dark:text-slate-100 transition hover:bg-slate-100 dark:hover:bg-slate-900"
+              aria-expanded={showAdvancedCashFlows}
+              aria-controls="advanced-cash-flows-panel"
+              className="flex min-h-[44px] w-full items-center justify-between p-4 text-left font-bold text-xs text-slate-900 dark:text-slate-100 transition hover:bg-slate-100 dark:hover:bg-slate-900"
             >
               <span className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-blue-500" />
-                Advanced Cash Flows, Fees & Taxes
+                Advanced Cash Flows, Fees &amp; Taxes
+                {!showAdvancedCashFlows && activeAdvancedCount > 0 && (
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                    {activeAdvancedCount} active
+                  </span>
+                )}
               </span>
               {showAdvancedCashFlows ? (
                 <ChevronUp className="h-4 w-4 text-slate-500" />
@@ -1143,7 +1231,7 @@ export default function CompoundInterest() {
             </button>
 
             {showAdvancedCashFlows && (
-              <div className="border-t border-slate-200 p-4 space-y-4 dark:border-slate-800">
+              <div id="advanced-cash-flows-panel" className="border-t border-slate-200 p-4 space-y-4 dark:border-slate-800">
                 {/* Contribution Escalation */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -1293,28 +1381,33 @@ export default function CompoundInterest() {
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/55">
             <button
               type="button"
-              onClick={() => setDrawdownEnabled(!drawdownEnabled)}
-              className="flex w-full items-center justify-between p-4 text-left font-bold text-xs text-slate-900 dark:text-slate-100 transition hover:bg-slate-100 dark:hover:bg-slate-900"
+              onClick={handleToggleDrawdown}
+              aria-expanded={drawdownEnabled}
+              aria-controls="retirement-drawdown-panel"
+              className="flex min-h-[44px] w-full items-center justify-between p-4 text-left font-bold text-xs text-slate-900 dark:text-slate-100 transition hover:bg-slate-100 dark:hover:bg-slate-900"
             >
               <span className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-blue-500" />
                 Retirement & Drawdown Phase
               </span>
               <span
-                className={`relative h-5 w-9 rounded-full transition ${
-                  drawdownEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
-                }`}
+                className={`relative h-5 w-9 rounded-full transition ${drawdownEnabled ? "bg-blue-600" : "bg-slate-300 dark:bg-slate-700"
+                  }`}
               >
                 <span
-                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${
-                    drawdownEnabled ? "left-[18px]" : "left-0.5"
-                  }`}
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition ${drawdownEnabled ? "left-[18px]" : "left-0.5"
+                    }`}
                 />
               </span>
             </button>
 
             {drawdownEnabled && (
-              <div className="border-t border-slate-200 p-4 space-y-3.5 dark:border-slate-800">
+              <div id="retirement-drawdown-panel" className="border-t border-slate-200 p-4 space-y-3.5 dark:border-slate-800">
+                {cleanNumber(years, 0) <= cleanNumber(accumulationYears, 10) && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
+                    Set <strong>Investment period</strong> longer than your accumulation duration (e.g., 25–30 years) to simulate retirement withdrawals after Year {cleanNumber(accumulationYears, 10)}.
+                  </div>
+                )}
                 <div>
                   <label className={labelClass} htmlFor="accumulation-years">
                     Accumulation Phase Duration (Years until retirement)
@@ -1507,29 +1600,29 @@ export default function CompoundInterest() {
               </div>
 
               {/* Advanced Rates Grid */}
-              <div className="grid grid-cols-2 divide-x divide-slate-200 sm:grid-cols-4 dark:divide-slate-800">
-                <div className="p-3 text-center">
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Effective APY</p>
-                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{apy.toFixed(2)}%</p>
+              <div className="grid grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200 sm:grid-cols-4 dark:divide-slate-800">
+                <div className="min-w-0 p-3 text-center">
+                  <p className="text-[10px] uppercase font-bold tracking-wide text-slate-500 dark:text-slate-400">Effective APY</p>
+                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">{formatPercent(apy, 2)}</p>
                 </div>
-                <div className="p-3 text-center">
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Real Return</p>
-                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">{fisherReal.toFixed(2)}%</p>
+                <div className="min-w-0 p-3 text-center border-l border-slate-200 sm:border-l-0 dark:border-slate-800">
+                  <p className="text-[10px] uppercase font-bold tracking-wide text-slate-500 dark:text-slate-400">Real Return</p>
+                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">{formatPercent(fisherReal, 2)}</p>
                 </div>
-                <div className="p-3 text-center">
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Rule of 72</p>
-                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                <div className="min-w-0 p-3 text-center">
+                  <p className="text-[10px] uppercase font-bold tracking-wide text-slate-500 dark:text-slate-400">Rule of 72</p>
+                  <p className="mt-1 font-mono text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap tabular-nums">
                     {doublingYears ? `~${doublingYears.toFixed(1)}y` : "N/A"}
                   </p>
                 </div>
-                <div className="p-3 text-center">
-                  <p className="text-[10px] uppercase font-bold text-slate-400">
+                <div className="min-w-0 p-3 text-center border-l border-slate-200 sm:border-l-0 dark:border-slate-800">
+                  <p className="text-[10px] uppercase font-bold tracking-wide text-slate-500 dark:text-slate-400">
                     {canonicalInputs.contribution > 0 ? "MWRR (IRR)" : "CAGR"}
                   </p>
-                  <p className="mt-1 font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                  <p className="mt-1 font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap tabular-nums">
                     {canonicalInputs.contribution > 0 && result.annualizedIrr !== null
-                      ? `${result.annualizedIrr.toFixed(2)}%`
-                      : `${result.cagr.toFixed(2)}%`}
+                      ? formatPercent(result.annualizedIrr, 2)
+                      : formatPercent(result.cagr, 2)}
                   </p>
                 </div>
               </div>
@@ -1619,9 +1712,8 @@ export default function CompoundInterest() {
                     </div>
                     <div className="h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          goalAnalysis.status === "achieved" ? "bg-emerald-500" : "bg-blue-600"
-                        }`}
+                        className={`h-full rounded-full transition-all duration-500 ${goalAnalysis.status === "achieved" ? "bg-emerald-500" : "bg-blue-600"
+                          }`}
                         style={{ width: `${Math.min(100, goalAnalysis.fundedPercentage)}%` }}
                       />
                     </div>
@@ -1741,66 +1833,60 @@ export default function CompoundInterest() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("chart")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "chart"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "chart"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Chart
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("schedule")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "schedule"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "schedule"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Schedule
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("monte-carlo")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "monte-carlo"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "monte-carlo"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Risk / Monte Carlo
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("stress-test")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "stress-test"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "stress-test"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Stress Tests
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("methodology")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "methodology"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "methodology"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Audit & Formulas
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("plan-io")}
-                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                    activeTab === "plan-io"
+                  className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${activeTab === "plan-io"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
-                  }`}
+                    }`}
                 >
                   Plan Presets & JSON
                 </button>
@@ -1911,7 +1997,7 @@ export default function CompoundInterest() {
                     Return Scenarios (Side-by-Side Comparison)
                   </h3>
                   <div className="mt-2 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 overscroll-x-contain">
-                    <table className="w-full min-w-[560px] text-left text-xs">
+                    <table className="w-full min-w-[640px] text-left text-xs">
                       <thead className="bg-slate-100 text-[10px] uppercase tracking-wider text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                         <tr>
                           <th className="px-3 py-2.5 whitespace-nowrap">Scenario</th>
@@ -2038,17 +2124,17 @@ export default function CompoundInterest() {
             {activeTab === "monte-carlo" && (
               <div className="p-4 space-y-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Monte Carlo Risk & Sequence-of-Returns Engine
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                      Monte Carlo Risk &amp; Sequence-of-Returns Engine
                     </h3>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      Simulates 500 stochastic market paths incorporating annual volatility and negative return years.
+                      Simulates {cleanNumber(mcSimulationCount, 500).toLocaleString()} stochastic market paths incorporating annual volatility and negative return years.
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex shrink-0 flex-wrap items-center gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase" htmlFor="mc-sim-count">
+                      <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase" htmlFor="mc-sim-count">
                         Simulations
                       </label>
                       <select
@@ -2060,6 +2146,7 @@ export default function CompoundInterest() {
                         <option value="200">200 runs</option>
                         <option value="500">500 runs</option>
                         <option value="1000">1,000 runs</option>
+                        <option value="2000">2,000 runs</option>
                       </select>
                     </div>
                     <div>
@@ -2093,22 +2180,25 @@ export default function CompoundInterest() {
                           : `${monteCarloResult.probabilityOfLongevitySuccess}%`}
                       </span>
                       <span className="text-xs text-slate-500 whitespace-nowrap">
-                        {monteCarloResult.probabilityOfGoalSuccess >= 80
+                        {(goalValue > 0
+                          ? monteCarloResult.probabilityOfGoalSuccess
+                          : monteCarloResult.probabilityOfLongevitySuccess) >= 80
                           ? "High Confidence Plan"
-                          : monteCarloResult.probabilityOfGoalSuccess >= 50
-                          ? "Moderate Risk"
-                          : "Needs Adjustment"}
+                          : (goalValue > 0
+                            ? monteCarloResult.probabilityOfGoalSuccess
+                            : monteCarloResult.probabilityOfLongevitySuccess) >= 50
+                            ? "Moderate Risk"
+                            : "Needs Adjustment"}
                       </span>
                     </div>
                     <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                       <div
                         className="h-full rounded-full bg-blue-600 transition-all"
                         style={{
-                          width: `${
-                            goalValue > 0
+                          width: `${goalValue > 0
                               ? monteCarloResult.probabilityOfGoalSuccess
                               : monteCarloResult.probabilityOfLongevitySuccess
-                          }%`,
+                            }%`,
                         }}
                       />
                     </div>
@@ -2282,132 +2372,132 @@ export default function CompoundInterest() {
                     </p>
                   </div>
 
-                {/* Live Formula Substitution Box */}
-                <div className="rounded-xl border border-blue-200/80 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20 space-y-3">
-                  <h4 className="font-bold text-blue-900 dark:text-blue-200 flex items-center justify-between">
-                    <span>Active Plan Step-by-Step Mathematical Derivation</span>
-                    <span className="font-mono text-[11px] font-normal text-blue-700 dark:text-blue-300">
-                      RFC &amp; CFA Standard
-                    </span>
-                  </h4>
-                  <div className="space-y-2 font-mono text-[11px] bg-white/80 dark:bg-slate-950/60 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-slate-800 dark:text-slate-200 overflow-x-auto overscroll-x-contain">
-                    <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
-                      <strong>1. Discrete Lump-Sum Growth:</strong> A = P &times; (1 + r/m)^(m &times; t)
-                    </p>
-                    <p>
-                      A = {formatMoney(canonicalInputs.principal, currency)} &times; (1 + {(canonicalInputs.annualRate / 100).toFixed(4)} / {COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency]})^({COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency]} &times; {canonicalInputs.years.toFixed(1)})
-                    </p>
-                    <p className="text-emerald-700 dark:text-emerald-300 font-bold">
-                      &rarr; Lump Sum Terminal Value = {formatMoney(result.initialInvestment ? canonicalInputs.principal * Math.pow(1 + (canonicalInputs.annualRate / 100) / COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency], COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency] * canonicalInputs.years) : 0, currency)}
-                    </p>
-                    {canonicalInputs.principal > 0 && canonicalInputs.annualRate > 0 && (
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
-                        Theoretical Continuous Compounding Limit (P &times; e^(rt)): {formatMoney(canonicalInputs.principal * Math.exp((canonicalInputs.annualRate / 100) * canonicalInputs.years), currency)}
+                  {/* Live Formula Substitution Box */}
+                  <div className="rounded-xl border border-blue-200/80 bg-blue-50/60 p-4 dark:border-blue-900/40 dark:bg-blue-950/20 space-y-3">
+                    <h4 className="font-bold text-blue-900 dark:text-blue-200 flex items-center justify-between">
+                      <span>Active Plan Step-by-Step Mathematical Derivation</span>
+                      <span className="font-mono text-[11px] font-normal text-blue-700 dark:text-blue-300">
+                        RFC &amp; CFA Standard
+                      </span>
+                    </h4>
+                    <div className="space-y-2 font-mono text-[11px] bg-white/80 dark:bg-slate-950/60 p-3 rounded-lg border border-blue-200 dark:border-blue-900/30 text-slate-800 dark:text-slate-200 overflow-x-auto overscroll-x-contain">
+                      <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
+                        <strong>1. Discrete Lump-Sum Growth:</strong> A = P &times; (1 + r/m)^(m &times; t)
                       </p>
-                    )}
-
-                    {canonicalInputs.contribution > 0 && (
-                      <>
-                        <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
-                        <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
-                          <strong>2. Annuity Cash Flows ({canonicalInputs.contributionTiming === 'beginning' ? 'Annuity Due — Beginning' : 'Ordinary Annuity — End'}):</strong> FV_annuity = PMT &times; [ (1 + i)^n - 1 ] / i {canonicalInputs.contributionTiming === 'beginning' ? '&times; (1 + i)' : ''}
-                        </p>
-                        <p>
-                          PMT = {formatMoney(canonicalInputs.contribution, currency)} ({canonicalInputs.contributionFrequency}) &middot; Timing: {canonicalInputs.contributionTiming} of period
-                        </p>
+                      <p>
+                        A = {formatMoney(canonicalInputs.principal, currency)} &times; (1 + {(canonicalInputs.annualRate / 100).toFixed(4)} / {COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency]})^({COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency]} &times; {canonicalInputs.years.toFixed(1)})
+                      </p>
+                      <p className="text-emerald-700 dark:text-emerald-300 font-bold">
+                        &rarr; Lump Sum Terminal Value = {formatMoney(result.initialInvestment ? canonicalInputs.principal * Math.pow(1 + (canonicalInputs.annualRate / 100) / COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency], COMPOUNDING_PERIODS[canonicalInputs.compoundingFrequency] * canonicalInputs.years) : 0, currency)}
+                      </p>
+                      {canonicalInputs.principal > 0 && canonicalInputs.annualRate > 0 && (
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
-                          Simulation Recurrence: Daily factor (1 + r/m)^(m/365) with 365-day annual day-count convention. Over each 365-day period, this compounds lump sums exactly to (1 + r/m)^m (matching APY), while intra-year contributions ({canonicalInputs.contributionFrequency}) compound continuously from deposit day without arbitrary escrow delay.
+                          Theoretical Continuous Compounding Limit (P &times; e^(rt)): {formatMoney(canonicalInputs.principal * Math.exp((canonicalInputs.annualRate / 100) * canonicalInputs.years), currency)}
                         </p>
-                        <p className="text-blue-700 dark:text-blue-300 font-bold">
-                          &rarr; Projected Ending Portfolio Value = {formatMoney(result.futureValue, currency)}
-                        </p>
-                      </>
-                    )}
+                      )}
 
-                    {canonicalInputs.drawdownEnabled && (
-                      <>
-                        <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
-                        <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
-                          <strong>3. Retirement Drawdown Phase:</strong> {formatMoney(canonicalInputs.withdrawalAmount, currency)}/mo baseline starting Year {canonicalInputs.accumulationYears}.
-                        </p>
-                        {canonicalInputs.withdrawalInflationAdjusted && canonicalInputs.inflationRate > 0 && (
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
-                            Inflation Escalation: Distributions adjust continuously using (1 + {canonicalInputs.inflationRate}%/yr)^(t_drawdown), beginning at {formatMoney(canonicalInputs.withdrawalAmount * Math.pow(1 + canonicalInputs.inflationRate / 100, (365 / 12) / 365), currency)}/mo in Month 1 and scaling to {formatMoney(canonicalInputs.withdrawalAmount * Math.pow(1 + canonicalInputs.inflationRate / 100, canonicalInputs.years - canonicalInputs.accumulationYears), currency)}/mo in the final month.
+                      {canonicalInputs.contribution > 0 && (
+                        <>
+                          <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
+                          <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
+                            <strong>2. Annuity Cash Flows ({canonicalInputs.contributionTiming === 'beginning' ? 'Annuity Due — Beginning' : 'Ordinary Annuity — End'}):</strong> FV_annuity = PMT &times; [ (1 + i)^n - 1 ] / i {canonicalInputs.contributionTiming === 'beginning' ? '&times; (1 + i)' : ''}
                           </p>
-                        )}
-                        <p className="text-rose-700 dark:text-rose-300 font-sans text-[11px]">
-                          {result.isDepleted
-                            ? `Portfolio exhausts in Year ${result.depletedYear} under current distribution schedule.`
-                            : `Portfolio sustains through Year ${result.yearsUsed.toFixed(0)} with closing balance of ${formatMoney(result.futureValue, currency)}.`}
+                          <p>
+                            PMT = {formatMoney(canonicalInputs.contribution, currency)} ({canonicalInputs.contributionFrequency}) &middot; Timing: {canonicalInputs.contributionTiming} of period
+                          </p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                            Simulation Recurrence: Daily factor (1 + r/m)^(m/365) with 365-day annual day-count convention. Over each 365-day period, this compounds lump sums exactly to (1 + r/m)^m (matching APY), while intra-year contributions ({canonicalInputs.contributionFrequency}) compound continuously from deposit day without arbitrary escrow delay.
+                          </p>
+                          <p className="text-blue-700 dark:text-blue-300 font-bold">
+                            &rarr; Projected Ending Portfolio Value = {formatMoney(result.futureValue, currency)}
+                          </p>
+                        </>
+                      )}
+
+                      {canonicalInputs.drawdownEnabled && (
+                        <>
+                          <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
+                          <p className="text-slate-500 dark:text-slate-400 font-sans text-xs">
+                            <strong>3. Retirement Drawdown Phase:</strong> {formatMoney(canonicalInputs.withdrawalAmount, currency)}/mo baseline starting Year {canonicalInputs.accumulationYears}.
+                          </p>
+                          {canonicalInputs.withdrawalInflationAdjusted && canonicalInputs.inflationRate > 0 && (
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                              Inflation Escalation: Distributions adjust continuously using (1 + {canonicalInputs.inflationRate}%/yr)^(t_drawdown), beginning at {formatMoney(canonicalInputs.withdrawalAmount * Math.pow(1 + canonicalInputs.inflationRate / 100, (365 / 12) / 365), currency)}/mo in Month 1 and scaling to {formatMoney(canonicalInputs.withdrawalAmount * Math.pow(1 + canonicalInputs.inflationRate / 100, canonicalInputs.years - canonicalInputs.accumulationYears), currency)}/mo in the final month.
+                            </p>
+                          )}
+                          <p className="text-rose-700 dark:text-rose-300 font-sans text-[11px]">
+                            {result.isDepleted
+                              ? `Portfolio exhausts in Year ${result.depletedYear} under current distribution schedule.`
+                              : `Portfolio sustains through Year ${result.yearsUsed.toFixed(0)} with closing balance of ${formatMoney(result.futureValue, currency)}.`}
+                          </p>
+                        </>
+                      )}
+                      <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
+                      <div className="space-y-1.5 font-sans text-[10px]">
+                        <p className="text-slate-600 dark:text-slate-300">
+                          <strong>Unrounded Accounting Identity (Exact Decimal Precision):</strong>
                         </p>
-                      </>
-                    )}
-                    <div className="border-t border-slate-200 dark:border-slate-800 my-2 pt-2" />
-                    <div className="space-y-1.5 font-sans text-[10px]">
-                      <p className="text-slate-600 dark:text-slate-300">
-                        <strong>Unrounded Accounting Identity (Exact Decimal Precision):</strong>
-                      </p>
-                      <p className="font-mono text-slate-800 dark:text-slate-200 overflow-x-auto whitespace-nowrap">
-                        Invested ({formatMoneyPrecise(result.totalInvested, currency, 4)}) + Net Gains ({formatMoneyPrecise(result.netGains, currency, 4)})
-                        {(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0) > 0 &&
-                          ` − Cumulative Withdrawals (${formatMoneyPrecise(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0, currency, 4)})`}
-                        {' = Ending Balance ('}
-                        <span className="font-bold text-blue-700 dark:text-blue-300">
-                          {formatMoneyPrecise(result.futureValue, currency, 4)}
-                        </span>
-                        {')'}
-                      </p>
-                      <p className="text-slate-500 dark:text-slate-400">
-                        <strong>Displayed Rounded Figures:</strong> Summary metrics are rounded independently to 2 decimal places for display.
-                        {' '}Invested ({formatMoney(result.totalInvested, currency)}) + Net Gains ({formatMoney(result.netGains, currency)})
-                        {(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0) > 0 &&
-                          ` − Cumulative Withdrawals (${formatMoney(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0, currency)})`}
-                        {(() => {
-                          const cumW = result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0;
-                          const roundedInv = Number(result.totalInvested.toFixed(2));
-                          const roundedG = Number(result.netGains.toFixed(2));
-                          const roundedW = Number(cumW.toFixed(2));
-                          const roundedCompSum = roundedInv + roundedG - roundedW;
-                          const roundedBal = Number(result.futureValue.toFixed(2));
-                          const diff = Math.abs(roundedCompSum - roundedBal);
-                          if (diff >= 0.005) {
+                        <p className="font-mono text-slate-800 dark:text-slate-200 overflow-x-auto whitespace-nowrap">
+                          Invested ({formatMoneyPrecise(result.totalInvested, currency, 4)}) + Net Gains ({formatMoneyPrecise(result.netGains, currency, 4)})
+                          {(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0) > 0 &&
+                            ` − Cumulative Withdrawals (${formatMoneyPrecise(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0, currency, 4)})`}
+                          {' = Ending Balance ('}
+                          <span className="font-bold text-blue-700 dark:text-blue-300">
+                            {formatMoneyPrecise(result.futureValue, currency, 4)}
+                          </span>
+                          {')'}
+                        </p>
+                        <p className="text-slate-500 dark:text-slate-400">
+                          <strong>Displayed Rounded Figures:</strong> Summary metrics are rounded independently to 2 decimal places for display.
+                          {' '}Invested ({formatMoney(result.totalInvested, currency)}) + Net Gains ({formatMoney(result.netGains, currency)})
+                          {(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0) > 0 &&
+                            ` − Cumulative Withdrawals (${formatMoney(result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0, currency)})`}
+                          {(() => {
+                            const cumW = result.schedule[result.schedule.length - 1]?.cumulativeWithdrawals ?? 0;
+                            const roundedInv = Number(result.totalInvested.toFixed(2));
+                            const roundedG = Number(result.netGains.toFixed(2));
+                            const roundedW = Number(cumW.toFixed(2));
+                            const roundedCompSum = roundedInv + roundedG - roundedW;
+                            const roundedBal = Number(result.futureValue.toFixed(2));
+                            const diff = Math.abs(roundedCompSum - roundedBal);
+                            if (diff >= 0.005) {
+                              return (
+                                <>
+                                  {' sums to '}
+                                  <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
+                                    {formatMoney(roundedCompSum, currency)}
+                                  </span>
+                                  {', while the independently rounded ending balance is '}
+                                  <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
+                                    {formatMoney(result.futureValue, currency)}
+                                  </span>
+                                  {' (a standard ±'}{currency.symbol}{diff.toFixed(2)}{' artifact of independent 2-decimal half-up rounding of summands).'}
+                                </>
+                              );
+                            }
                             return (
                               <>
                                 {' sums to '}
                                 <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
                                   {formatMoney(roundedCompSum, currency)}
                                 </span>
-                                {', while the independently rounded ending balance is '}
-                                <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
-                                  {formatMoney(result.futureValue, currency)}
-                                </span>
-                                {' (a standard ±'}{currency.symbol}{diff.toFixed(2)}{' artifact of independent 2-decimal half-up rounding of summands).'}
+                                {', matching the independently rounded ending balance ('}{formatMoney(result.futureValue, currency)}{').'}
                               </>
                             );
-                          }
-                          return (
-                            <>
-                              {' sums to '}
-                              <span className="font-mono font-medium text-slate-700 dark:text-slate-300">
-                                {formatMoney(roundedCompSum, currency)}
-                              </span>
-                              {', matching the independently rounded ending balance ('}{formatMoney(result.futureValue, currency)}{').'}
-                            </>
-                          );
-                        })()}
-                      </p>
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-blue-800 dark:text-blue-300 pt-1">
+                      <span>Effective Annual Yield (APY): <strong>{apy.toFixed(3)}%</strong></span>
+                      <span>Fisher Real Return: <strong>{fisherReal.toFixed(3)}%</strong></span>
+                      <span>Rule of 72 Doubling: <strong>{doublingYears ? `~${doublingYears.toFixed(1)} years` : 'N/A'}</strong></span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between text-[11px] text-blue-800 dark:text-blue-300 pt-1">
-                    <span>Effective Annual Yield (APY): <strong>{apy.toFixed(3)}%</strong></span>
-                    <span>Fisher Real Return: <strong>{fisherReal.toFixed(3)}%</strong></span>
-                    <span>Rule of 72 Doubling: <strong>{doublingYears ? `~${doublingYears.toFixed(1)} years` : 'N/A'}</strong></span>
-                  </div>
-                </div>
 
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
-                  <strong>Regulatory Disclaimer:</strong> Projections and simulated outcomes generated by KivaroTools are estimates for illustrative and planning purposes only. They do not constitute fiduciary financial, legal, or tax advice. Actual investment returns are subject to market risks, volatility, and potential loss of principal.
-                </div>
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                    <strong>Regulatory Disclaimer:</strong> Projections and simulated outcomes generated by KivaroTools are estimates for illustrative and planning purposes only. They do not constitute fiduciary financial, legal, or tax advice. Actual investment returns are subject to market risks, volatility, and potential loss of principal.
+                  </div>
                 </div>
               </div>
             )}

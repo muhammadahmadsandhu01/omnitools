@@ -268,14 +268,14 @@ export function sanitizeFinancialInputs(raw: Partial<FinancialInputs>): Financia
 
   const oneTimeEvents: OneTimeEvent[] = Array.isArray(raw.oneTimeEvents)
     ? raw.oneTimeEvents
-        .filter((e) => e && typeof e === "object")
-        .map((e, idx) => ({
-          id: typeof e.id === "string" ? e.id : `evt-${idx}`,
-          year: clamp(cleanNumber(e.year, 1), 0.1, 100),
-          amount: clamp(cleanNumber(e.amount, 0), 0, 1e12),
-          type: e.type === "withdrawal" ? "withdrawal" : "deposit",
-          description: typeof e.description === "string" ? e.description : "",
-        }))
+      .filter((e) => e && typeof e === "object")
+      .map((e, idx) => ({
+        id: typeof e.id === "string" ? e.id : `evt-${idx}`,
+        year: clamp(cleanNumber(e.year, 1), 0.1, 100),
+        amount: clamp(cleanNumber(e.amount, 0), 0, 1e12),
+        type: e.type === "withdrawal" ? "withdrawal" : "deposit",
+        description: typeof e.description === "string" ? e.description : "",
+      }))
     : [];
 
   const drawdownEnabled = Boolean(raw.drawdownEnabled);
@@ -814,7 +814,12 @@ export function calculateIrr({
     return sum;
   }
 
-  // Bisection search between -0.99 and +3.00
+  // Exact zero-return short-circuit prevents bisection from returning -0.00%
+  if (Math.abs(npv(0)) < 1e-6) {
+    return 0;
+  }
+
+  // Bisection search between -0.95 and +3.00
   let low = -0.95;
   let high = 3.0;
   const fLow = npv(low);
@@ -830,7 +835,8 @@ export function calculateIrr({
     const fMid = npv(mid);
 
     if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-5) {
-      return mid * 100;
+      const pct = mid * 100;
+      return Math.abs(pct) < 0.005 ? 0 : pct;
     }
 
     if (fLow * fMid <= 0) {
@@ -840,7 +846,8 @@ export function calculateIrr({
     }
   }
 
-  return ((low + high) / 2) * 100;
+  const finalPct = ((low + high) / 2) * 100;
+  return Math.abs(finalPct) < 0.005 ? 0 : finalPct;
 }
 
 /**
