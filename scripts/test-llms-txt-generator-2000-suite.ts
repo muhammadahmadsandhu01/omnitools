@@ -1010,7 +1010,7 @@ assertTest(liveHtml.includes('Google-Extended'), 'T-2165', 'Live production page
 assertTest(liveHtml.includes('Applebot-Extended'), 'T-2166', 'Live production page mentions Applebot-Extended');
 assertTest(liveHtml.includes('CCBot'), 'T-2167', 'Live production page mentions CCBot');
 assertTest(liveHtml.includes('Bytespider'), 'T-2168', 'Live production page mentions Bytespider');
-assertTest(liveHtml.includes('Local Browser Processing'), 'T-2169', 'Live production page contains Privacy Disclosure');
+assertTest(liveHtml.includes('Privacy Disclosure'), 'T-2169', 'Live production page contains Privacy Disclosure');
 assertTest(liveHtml.includes('Next.js') && liveHtml.includes('route.ts'), 'T-2170', 'Live production page documents Next.js route handlers');
 
 // CDATA & XML Edge Ingestion Tests (Tests 2171–2190)
