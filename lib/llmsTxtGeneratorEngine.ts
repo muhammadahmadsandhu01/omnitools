@@ -1470,6 +1470,35 @@ export function calculateTokenBudget(
 const MARKETING_BUZZWORDS_REGEX = /\b(revolutionary|world-class|synergistic|best-in-class|cutting-edge|game-changing|unparalleled|next-generation|bleeding-edge|magical|supercharge|skyrocket|unrivaled)\b/i;
 const VAGUE_TITLE_REGEX = /^(click here|read more|learn more|link|page|untitled|here|more info|website)$/i;
 
+export function isValidHttpUrl(raw: string): boolean {
+    const trimmed = (raw || '').trim();
+    if (!trimmed || /\s/.test(trimmed)) return false;
+    if (!/^https?:\/\//i.test(trimmed)) return false;
+    try {
+        const parsed = new URL(trimmed);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+        const host = parsed.hostname;
+        if (!host || (!host.includes('.') && host !== 'localhost')) return false;
+        return /^[a-z0-9.-]+$/i.test(host);
+    } catch {
+        return false;
+    }
+}
+
+function stripMarketingBuzzwords(text: string, replacement: string): string {
+    const consecutiveBuzzwords = new RegExp(
+        `(?:${MARKETING_BUZZWORDS_REGEX.source})(?:[\\s,/-]+(?:${MARKETING_BUZZWORDS_REGEX.source}))*`,
+        'gi'
+    );
+    const dedupeWord = new RegExp(`\\b(${replacement})(?:\\s+\\1\\b)+`, 'gi');
+    return text
+        .replace(consecutiveBuzzwords, replacement)
+        .replace(dedupeWord, '$1')
+        .replace(/\s+([,.;:!?])/g, '$1')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 export function validateGeoWorkspace(workspace: GeoWorkspaceState): {
     lintIssues: GeoLintIssue[];
     healthScore: number;
@@ -1536,18 +1565,28 @@ export function validateGeoWorkspace(workspace: GeoWorkspaceState): {
         });
     }
 
-    // Rule 4: Relative URLs in llms.txt
-    const relativeLinks = activeLinks.filter((l) => !/^https?:\/\//i.test(l.url.trim()));
-    if (relativeLinks.length > 0) {
+    // Rule 4: Relative or Malformed URLs in llms.txt (and Canonical Base Site URL)
+    const invalidOrRelativeLinks = activeLinks.filter((l) => !isValidHttpUrl(l.url));
+    const hasInvalidSiteUrl = Boolean(workspace.siteUrl.trim()) && !isValidHttpUrl(workspace.siteUrl);
+    if (invalidOrRelativeLinks.length > 0 || hasInvalidSiteUrl) {
         penalty += 12;
+        const sampleBad = invalidOrRelativeLinks.slice(0, 2).map((l) => l.url);
+        if (hasInvalidSiteUrl && sampleBad.length < 2) {
+            sampleBad.push(workspace.siteUrl.trim());
+        }
+        const hasMalformed = invalidOrRelativeLinks.some((l) => /^https?:\/\//i.test(l.url.trim()) || /\s/.test(l.url.trim())) || hasInvalidSiteUrl;
         issues.push({
             id: 'lint_relative_urls',
             ruleCode: 'RELATIVE_URL_IN_LLMS_TXT',
             severity: 'HIGH',
             targetFile: 'llms.txt',
-            title: `${relativeLinks.length} Relative URL(s) Detected in llms.txt`,
-            explanation: `Found relative link path(s) (${relativeLinks.slice(0, 2).map((l) => l.url).join(', ')}). When developers paste your llms.txt into ChatGPT, Claude, or Cursor, relative URLs break because the LLM lacks the base origin.`,
-            remediation: 'Click Auto-Fix to prepend your canonical Site URL to all relative link paths.',
+            title: hasMalformed
+                ? `${invalidOrRelativeLinks.length + (hasInvalidSiteUrl ? 1 : 0)} Relative or Malformed URL(s) Detected in llms.txt`
+                : `${invalidOrRelativeLinks.length} Relative URL(s) Detected in llms.txt`,
+            explanation: `Found non-canonical or malformed URL(s) (${sampleBad.join(', ')}). Every link in llms.txt must be a valid absolute https:// URL without spaces so AI assistants can resolve it outside your origin.`,
+            remediation: hasMalformed
+                ? 'Fix malformed URL syntax in Tab 1 or click Auto-Fix to resolve relative paths against a valid canonical Site URL.'
+                : 'Click Auto-Fix to prepend your canonical Site URL to all relative link paths.',
             autoFixable: true,
         });
     }
@@ -1705,15 +1744,13 @@ export function validateGeoWorkspace(workspace: GeoWorkspaceState): {
 }
 
 export function autoFixGeoWorkspace(workspace: GeoWorkspaceState): GeoWorkspaceState {
-    const cleanSiteUrl = (workspace.siteUrl || 'https://example.com').trim().replace(/\/+$/, '');
+    const rawSiteUrl = (workspace.siteUrl || 'https://example.com').trim().replace(/\/+$/, '');
+    const cleanSiteUrl = isValidHttpUrl(rawSiteUrl) ? rawSiteUrl : 'https://example.com';
     const projectName = workspace.projectName?.trim() || 'Developer Platform & Documentation';
 
     let summaryBlockquote = workspace.summaryBlockquote?.trim() ||
         `Official technical documentation, API reference, and product guides for ${projectName}.`;
-    summaryBlockquote = summaryBlockquote
-        .replace(new RegExp(MARKETING_BUZZWORDS_REGEX.source, 'gi'), 'enterprise')
-        .replace(/\s+/g, ' ')
-        .trim();
+    summaryBlockquote = stripMarketingBuzzwords(summaryBlockquote, 'enterprise');
     if (summaryBlockquote.length > 340) {
         summaryBlockquote = `${summaryBlockquote.slice(0, 337).trim()}...`;
     }
@@ -1732,10 +1769,7 @@ export function autoFixGeoWorkspace(workspace: GeoWorkspaceState): GeoWorkspaceS
 
         const inferred = humanizeUrlSlugToTitleAndDescription(url, projectName);
         const title = VAGUE_TITLE_REGEX.test(link.title.trim()) ? inferred.title : link.title.trim();
-        const description = link.description
-            .replace(new RegExp(MARKETING_BUZZWORDS_REGEX.source, 'gi'), 'production-grade')
-            .replace(/\s+/g, ' ')
-            .trim() || inferred.description;
+        const description = stripMarketingBuzzwords(link.description, 'production-grade') || inferred.description;
 
         fixedLinks.push({
             ...link,
@@ -1929,7 +1963,7 @@ export function compileRobotsTxt(workspace: GeoWorkspaceState): string {
     const cleanSiteUrl = workspace.siteUrl.replace(/\/+$/, '');
     const lines: string[] = [
         `# ============================================================================`,
-        `# robots.txt — Generated by KivaroTools Client-Side GEO & AI Crawler Studio`,
+        `# robots.txt — RFC 9309 + IETF AIPREF AI Crawler Policy`,
         `# Target Domain: ${cleanSiteUrl}`,
         `# Active Strategy Preset: ${workspace.activePreset}`,
         `# Standards: RFC 9309 (Robots Exclusion Protocol) + IETF AIPREF (Content-Usage)`,

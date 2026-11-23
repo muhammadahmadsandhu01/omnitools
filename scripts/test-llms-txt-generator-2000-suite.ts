@@ -15,6 +15,8 @@
  * 10. Block 10 (Tests 1901–2150): Complete 10-Deliverable Compilers (llms.txt, llms-full.txt, llms-ctx.txt, robots.txt, ai.txt, tdmrep.json, Next.js route.ts, Edge Headers, CSV, XLSX, Audit Certificate) & High-Volume Fuzzing
  */
 
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
 import {
     LLMS_ENGINE_VERSION,
     MAX_SITEMAP_URLS,
@@ -33,6 +35,7 @@ import {
     calculateTokenBudget,
     validateGeoWorkspace,
     autoFixGeoWorkspace,
+    isValidHttpUrl,
     compileLlmsTxt,
     compileLlmsFullTxt,
     compileLlmsCtxTxt,
@@ -50,6 +53,9 @@ import {
     type LlmsSectionCategory,
     type LlmsLinkItem,
 } from '../lib/llmsTxtGeneratorEngine';
+import { LLMS_TXT_GENERATOR_FAQS } from '../components/seo/LlmsTxtGeneratorSeo';
+import LlmsTxtGeneratorSeo from '../components/seo/LlmsTxtGeneratorSeo';
+import { tools } from '../config/toolsData';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -1092,6 +1098,224 @@ for (let i = 2219; i <= 2250; i++) {
         `T-${i}`,
         `Polyglot symbol, currency, and emoji Markdown preservation test #${i}`
     );
+}
+
+// ====================================================================
+// BLOCK 12: URL VALIDATION, REFINED LINTER, SEO & SSR (Tests 2251–2355)
+// ====================================================================
+console.log('--- Block 12: URL Validation, Refined Linter, SEO & SSR (Tests 2251–2355) ---');
+
+// 12.1 isValidHttpUrl Validation (Tests 2251–2290)
+const validUrlCases = [
+    'https://example.com',
+    'https://example.com/',
+    'https://docs.example.com/api',
+    'https://kivarotools.com/seo/llms-txt-generator',
+    'https://sub.domain.co.uk:8080/path?q=1#hash',
+    'https://api.v2.service.org/v1/endpoints',
+    'http://localhost',
+    'http://localhost:3000',
+    'http://localhost:8080/docs',
+    'https://192.168.1.1/docs',
+    'https://cdn.platform.net/assets/spec.md',
+    'https://my-company-domain.internal/docs',
+    'http://test.local/path',
+    'https://github.com/org/repo',
+    'https://raw.githubusercontent.com/owner/repo/main/llms.txt',
+];
+
+validUrlCases.forEach((url, i) => {
+    assertTest(isValidHttpUrl(url) === true, `T-${2251 + i}`, `isValidHttpUrl accepts valid URL: "${url}"`);
+});
+
+const invalidUrlCases = [
+    '',
+    '   ',
+    'example.com',
+    'example.com/docs',
+    '/docs/quickstart',
+    '../guides/arch',
+    'ftp://files.example.com',
+    'file:///C:/Users/test/doc.txt',
+    'mailto:support@example.com',
+    'javascript:alert(1)',
+    'data:text/html,<h1>Hello</h1>',
+    'https://',
+    'http://',
+    'https:// ',
+    'https://example .com',
+    'https://exam ple.com/docs',
+    'https://example.com/with space in path',
+    'http://invalid_domain_without_dot',
+    'ws://example.com/socket',
+    'wss://example.com/socket',
+    'not a url at all',
+    'https://with invalid space.com',
+    'http://no_dot_domain',
+    'http://?query=1',
+    'http://#fragment',
+];
+
+invalidUrlCases.forEach((url, i) => {
+    assertTest(isValidHttpUrl(url) === false, `T-${2266 + i}`, `isValidHttpUrl rejects invalid URL: "${url}"`);
+});
+
+// 12.2 Rule 4 Linter with Relative & Malformed URLs (Tests 2291–2315)
+const block12BaseWorkspace = generateSampleGeoProject('saas_dev_platform');
+
+function makeTestLink(overrides: Partial<LlmsLinkItem> & { url: string; title: string }): LlmsLinkItem {
+    return {
+        id: `link-${Math.random().toString(36).slice(2, 9)}`,
+        description: 'Test description',
+        section: 'Core Documentation',
+        includedInLlmsTxt: true,
+        includedInFullTxt: true,
+        fullMarkdownContent: '# Content',
+        priorityScore: 50,
+        ...overrides,
+    };
+}
+
+// Case A: Pure relative URLs
+const relativeWs: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'https://docs.example.com',
+    links: [
+        makeTestLink({ id: 'l1', url: '/docs/quickstart', title: 'Quickstart', description: 'Getting started guide' }),
+        makeTestLink({ id: 'l2', url: '/api/v1', title: 'API Reference', description: 'Core API endpoints' }),
+    ],
+};
+const lintRelative = validateGeoWorkspace(relativeWs);
+const relIssue = lintRelative.lintIssues.find((i) => i.id === 'lint_relative_urls');
+assertTest(Boolean(relIssue), 'T-2291', 'Linter catches pure relative URLs');
+assertTest(relIssue?.title.includes('Relative URL(s) Detected') === true, 'T-2292', 'Pure relative URLs have clean title');
+
+// Case B: Malformed URLs with spaces or missing protocol
+const malformedWs: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'https://docs.example.com',
+    links: [
+        makeTestLink({ id: 'l1', url: 'https://docs.example.com/api with spaces', title: 'API', description: 'API docs' }),
+        makeTestLink({ id: 'l2', url: 'just-text-no-protocol', title: 'Overview', description: 'Overview docs' }),
+    ],
+};
+const lintMalformed = validateGeoWorkspace(malformedWs);
+const malIssue = lintMalformed.lintIssues.find((i) => i.id === 'lint_relative_urls');
+assertTest(Boolean(malIssue), 'T-2293', 'Linter catches malformed URLs with spaces or missing protocol');
+assertTest(malIssue?.title.includes('Relative or Malformed') === true, 'T-2294', 'Malformed URLs have informative title');
+
+// Case C: Invalid siteUrl itself
+const invalidSiteUrlWs: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'not a valid url',
+    links: [
+        makeTestLink({ id: 'l1', url: 'https://docs.example.com/api', title: 'API', description: 'API docs' }),
+    ],
+};
+const lintBadSite = validateGeoWorkspace(invalidSiteUrlWs);
+const badSiteIssue = lintBadSite.lintIssues.find((i) => i.id === 'lint_relative_urls');
+assertTest(Boolean(badSiteIssue), 'T-2295', 'Linter catches invalid canonical Base Site URL');
+assertTest(badSiteIssue?.title.includes('Relative or Malformed') === true, 'T-2296', 'Bad siteUrl triggers malformed notice');
+
+// Case D: Perfectly valid absolute URLs
+const validWs: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'https://docs.example.com',
+    links: [
+        makeTestLink({ id: 'l1', url: 'https://docs.example.com/quickstart', title: 'Quickstart', description: 'Guide' }),
+        makeTestLink({ id: 'l2', url: 'https://docs.example.com/api', title: 'API Reference', description: 'Endpoints' }),
+    ],
+};
+const lintValid = validateGeoWorkspace(validWs);
+const validIssue = lintValid.lintIssues.find((i) => i.id === 'lint_relative_urls');
+assertTest(!validIssue, 'T-2297', 'Valid URLs pass Rule 4 with 0 issues');
+
+// Additional permutations for Rule 4
+for (let i = 2298; i <= 2315; i++) {
+    const testUrl = i % 2 === 0 ? `https://docs.example.com/guide-${i}` : `/guide-${i}`;
+    const isRel = testUrl.startsWith('/');
+    const ws: GeoWorkspaceState = {
+        ...block12BaseWorkspace,
+        siteUrl: 'https://docs.example.com',
+        links: [makeTestLink({ id: `l-${i}`, url: testUrl, title: `Guide ${i}`, description: `Desc ${i}` })],
+    };
+    const res = validateGeoWorkspace(ws);
+    const hasRule4 = res.lintIssues.some((issue) => issue.id === 'lint_relative_urls');
+    assertTest(hasRule4 === isRel, `T-${i}`, `Rule 4 dynamic evaluation #${i}`);
+}
+
+// 12.3 Auto-Fix Engine with Invalid Fallbacks & Buzzword Stripping (Tests 2316–2335)
+// Case A: Bad siteUrl falls back to https://example.com in autoFix
+const badSiteToFix: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'bad-site-without-proto',
+    links: [
+        makeTestLink({ id: 'l1', url: '/docs/quickstart', title: 'Quickstart', description: 'Guide' }),
+    ],
+};
+const fixedBadSite = autoFixGeoWorkspace(badSiteToFix);
+assertTest(fixedBadSite.links[0].url.startsWith('https://example.com/'), 'T-2316', 'autoFix falls back to https://example.com on invalid siteUrl');
+
+// Case B: Marketing buzzwords stripped
+const buzzwordWs: GeoWorkspaceState = {
+    ...block12BaseWorkspace,
+    siteUrl: 'https://docs.example.com',
+    summaryBlockquote: 'Our revolutionary, cutting-edge, magical platform provides best-in-class tools.',
+    links: [
+        makeTestLink({ id: 'l1', url: 'https://docs.example.com/api', title: 'API', description: 'A game-changing, synergistic, unrivaled API.' }),
+    ],
+};
+const fixedBuzz = autoFixGeoWorkspace(buzzwordWs);
+assertTest(!/revolutionary|cutting-edge|magical|game-changing|synergistic|unrivaled/i.test(fixedBuzz.summaryBlockquote), 'T-2317', 'autoFix strips buzzwords from summaryBlockquote');
+assertTest(!/game-changing|synergistic|unrivaled/i.test(fixedBuzz.links[0].description), 'T-2318', 'autoFix strips buzzwords from link description');
+assertTest(!fixedBuzz.summaryBlockquote.includes('  '), 'T-2319', 'autoFix summaryBlockquote contains no double spaces');
+assertTest(!fixedBuzz.links[0].description.includes('  '), 'T-2320', 'autoFix link description contains no double spaces');
+
+for (let i = 2321; i <= 2335; i++) {
+    const wsWithBuzz: GeoWorkspaceState = {
+        ...block12BaseWorkspace,
+        siteUrl: 'https://docs.example.com',
+        summaryBlockquote: `A bleeding-edge, next-generation suite for ${i}.`,
+        links: [makeTestLink({ id: `l-${i}`, url: `/test-${i}`, title: `Test ${i}`, description: `A supercharge, skyrocket module ${i}.` })],
+    };
+    const fixed = autoFixGeoWorkspace(wsWithBuzz);
+    assertTest(
+        !/bleeding-edge|next-generation/i.test(fixed.summaryBlockquote) &&
+        !/supercharge|skyrocket/i.test(fixed.links[0].description) &&
+        fixed.links[0].url.startsWith('https://docs.example.com/'),
+        `T-${i}`,
+        `autoFix buzzword sanitization and relative path resolution #${i}`
+    );
+}
+
+// 12.4 Registry, Metadata, FAQ Schema & React SSR (Tests 2336–2355)
+const tool = tools.find((t) => t.slug === 'llms-txt-generator');
+assertTest(Boolean(tool), 'T-2336', 'llms-txt-generator found in toolsData registry');
+assertTest(tool?.categoryId === 'seo', 'T-2337', 'categoryId is "seo"');
+assertTest(tool?.status === 'published', 'T-2338', 'status is "published"');
+assertTest(tool?.isPopular === true, 'T-2339', 'isPopular is true');
+assertTest(Boolean(tool?.seoTitle?.includes('llms.txt Generator')), 'T-2340', 'seoTitle contains "llms.txt Generator"');
+assertTest(Boolean(tool?.seoDescription && tool.seoDescription.length > 50), 'T-2341', 'seoDescription > 50 chars');
+assertTest(Boolean(tool?.keywords && tool.keywords.length >= 15), 'T-2342', 'keywords has >= 15 items');
+assertTest(Boolean(tool?.featureList && tool.featureList.length >= 5), 'T-2343', 'featureList has >= 5 items');
+assertTest(Boolean(tool?.relatedToolSlugs && tool.relatedToolSlugs.length >= 5), 'T-2344', 'relatedToolSlugs has >= 5 items');
+
+// FAQ Schema checks
+assertTest(LLMS_TXT_GENERATOR_FAQS.length >= 12, 'T-2345', `LLMS_TXT_GENERATOR_FAQS has >= 12 items (got: ${LLMS_TXT_GENERATOR_FAQS.length})`);
+LLMS_TXT_GENERATOR_FAQS.slice(0, 5).forEach((faq, idx) => {
+    assertTest(faq.question.length > 15 && faq.answer.length > 40, `T-${2346 + idx}`, `FAQ ${idx + 1} is descriptive and thorough`);
+});
+
+// React SSR test
+try {
+    const markup = ReactDOMServer.renderToStaticMarkup(React.createElement(LlmsTxtGeneratorSeo));
+    assertTest(Boolean(markup), 'T-2351', 'LlmsTxtGeneratorSeo renders to static markup');
+    assertTest(markup.includes('llms.txt'), 'T-2352', 'Rendered markup contains "llms.txt"');
+    assertTest(markup.includes('robots.txt'), 'T-2353', 'Rendered markup contains "robots.txt"');
+    assertTest(markup.includes('FAQPage'), 'T-2354', 'Rendered markup includes FAQPage schema');
+    assertTest(markup.includes('HowTo'), 'T-2355', 'Rendered markup includes HowTo schema');
+} catch (err: any) {
+    assertTest(false, 'T-2351', `SSR failed: ${err?.message}`);
 }
 
 // ====================================================================

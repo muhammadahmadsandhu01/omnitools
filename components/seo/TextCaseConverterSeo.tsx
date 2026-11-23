@@ -178,28 +178,28 @@ export default function TextCaseConverterSeo() {
           <CheckCircle2 className="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
           <span>How to Convert Text Case in 5 Simple Steps</span>
         </h2>
-        <ol className="list-none pl-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm">
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+        <div role="list" className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm">
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-purple-600 dark:text-purple-400 block mb-1">Step 1: Enter or Paste Source Text</span>
             <span className="text-slate-600 dark:text-slate-300">Drop prose, headings, or code identifiers into Source Text, or click Load Sample to test mixed-case tokens immediately.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-purple-600 dark:text-purple-400 block mb-1">Step 2: Pick a Writing or Developer Format</span>
             <span className="text-slate-600 dark:text-slate-300">Switch between the Writing (7) and Developer (8) tabs and click any mode pill—the Converted Result updates in real time.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-purple-600 dark:text-purple-400 block mb-1">Step 3: Configure Preserve Lines &amp; Locale</span>
             <span className="text-slate-600 dark:text-slate-300">Keep Preserve Lines checked for multi-row lists, and open the Locale bar for Turkish, Dutch, German, Greek, or 191 ISO languages.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-purple-600 dark:text-purple-400 block mb-1">Step 4: Run Optional Whitespace Cleanups</span>
             <span className="text-slate-600 dark:text-slate-300">Use the 5 cleanup buttons under Source Text to trim margins, collapse extra spaces, remove blank lines, or convert CRLF to LF.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 sm:col-span-2">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 sm:col-span-2">
             <span className="font-bold text-purple-600 dark:text-purple-400 block mb-1">Step 5: Copy, Swap, or Download (.txt)</span>
             <span className="text-slate-600 dark:text-slate-300">Click Copy Result to copy to your clipboard, Swap to feed the output back for another pass, or Download (.txt) to save locally.</span>
-          </li>
-        </ol>
+          </div>
+        </div>
       </section>
 
       {/* SECTION 3: ALL 15 FORMATS REFERENCE TABLE */}
@@ -765,56 +765,56 @@ export default function TextCaseConverterSeo() {
         <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
           Continue your writing, SEO, or coding workflow with these related browser-based tools:
         </p>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+        <div role="list" className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/seo/text-analyzer" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               Word Counter &amp; Text Analyzer
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Check reading time, speaking pace, readability scores, grammar, and keyword density.
             </span>
-          </li>
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+          </div>
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/seo/meta-generator" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               Meta Tags &amp; Open Graph Generator
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Preview SERP titles, meta descriptions, and social sharing cards with length checks.
             </span>
-          </li>
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+          </div>
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/developer/json-formatter" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               JSON Formatter &amp; Validator
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Format, validate, repair, and minify JSON payloads after refactoring key names.
             </span>
-          </li>
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+          </div>
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/developer/regex-tester" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               Regex Tester &amp; Debugger
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Test regular expressions with live match highlighting and pattern debugging.
             </span>
-          </li>
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+          </div>
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/developer/base64-encoder" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               Base64 Encoder &amp; Decoder
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Encode or decode UTF-8 text, Base64URL tokens, and binary files locally.
             </span>
-          </li>
-          <li className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
+          </div>
+          <div role="listitem" className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-purple-300 transition-colors">
             <Link href="/seo/qr-generator" className="font-semibold text-purple-700 dark:text-purple-300 hover:underline block mb-1">
               QR Code Generator
             </Link>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               Generate vector and raster QR codes for URLs, Wi-Fi, and plain text.
             </span>
-          </li>
-        </ul>
+          </div>
+        </div>
       </section>
     </article>
   );

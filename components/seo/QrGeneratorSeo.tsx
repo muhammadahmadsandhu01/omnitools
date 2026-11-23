@@ -179,24 +179,24 @@ export default function QrGeneratorSeo() {
           <FileCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           <span>How to Create and Verify a Static QR Code in 4 Steps</span>
         </h2>
-        <ol className="list-none pl-0 m-0 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+        <div role="list" className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">Step 1: Choose Payload Type</span>
             <span className="text-slate-600 dark:text-slate-300">Select URL, Plain Text, Wi-Fi, Email, Phone, SMS, Contact (vCard 3.0), or Calendar Event (ICS).</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">Step 2: Enter &amp; Validate Details</span>
             <span className="text-slate-600 dark:text-slate-300">Fill in your content. Real-time validation checks protocol syntax, character escaping, and ISO byte limits.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">Step 3: Customize Colors, Margin &amp; Logo</span>
             <span className="text-slate-600 dark:text-slate-300">Set brand hex colors with live WCAG contrast checks, keep a 4-module quiet zone, and optionally add a center logo.</span>
-          </li>
-          <li className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+          </div>
+          <div role="listitem" className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
             <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1">Step 4: Verify Payload &amp; Export</span>
             <span className="text-slate-600 dark:text-slate-300">Click Verify Payload to optically decode the preview, then download SVG, A4 PDF, PNG, JPEG, or WebP—or copy SVG/PNG directly.</span>
-          </li>
-        </ol>
+          </div>
+        </div>
       </section>
 
       {/* SECTION 3: STATIC VS DYNAMIC QR CODES */}

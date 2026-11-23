@@ -41,6 +41,7 @@ import {
     parseExistingRobotsTxt,
     autoFixGeoWorkspace,
     compileAllGeoDeliverables,
+    isValidHttpUrl,
     exportGeoInventoryCsv,
     exportGeoInventoryXlsx,
     generateSampleGeoProject,
@@ -95,17 +96,17 @@ const GEO_PRESETS: {
         },
         {
             id: 'eu_dsm_ietf_compliance',
-            name: 'EU DSM Art. 4 & IETF AIPREF Compliance',
+            name: 'EU DSM Art. 4 & IETF AIPREF Signals',
             shortBadge: 'Content-Usage + tdmrep.json',
             description:
-                'Generates synchronized robots.txt IETF AIPREF Content-Usage directives, W3C /.well-known/tdmrep.json, and ai.txt machine-readable copyright reservations.',
+                'Generates synchronized robots.txt IETF AIPREF Content-Usage directives, W3C /.well-known/tdmrep.json, and ai.txt technical rights-reservation signals (not legal advice).',
         },
         {
             id: 'total_ai_lockdown',
-            name: 'Total AI Lockdown (Zero AI Bots)',
-            shortBadge: 'Block All 42 AI Bots + noai',
+            name: 'Total AI Lockdown (42 AI Bots Blocked)',
+            shortBadge: 'Block 42 AI • Keep 3 Search',
             description:
-                'Blocks every AI search, assistant, training, and scraping bot (preserving only standard Googlebot, Bingbot, and Applebot web search) with X-Robots-Tag: noai, noimageai.',
+                'Blocks all 42 AI search, assistant, training, and scraping bots while keeping 3 core web search engines (Googlebot, bingbot, Applebot) allowed — 45 total rules + X-Robots-Tag: noai.',
         },
     ];
 
@@ -248,6 +249,9 @@ export default function LlmsTxtGenerator() {
         | 'certificate_json'
     >('llms_txt');
     const [copiedExport, setCopiedExport] = useState<boolean>(false);
+    const [copiedBuilderPreview, setCopiedBuilderPreview] = useState<boolean>(false);
+    const [copiedRobotsPreview, setCopiedRobotsPreview] = useState<boolean>(false);
+    const [linkFormError, setLinkFormError] = useState<string | null>(null);
     const [recentlyAddedLinkId, setRecentlyAddedLinkId] = useState<string | null>(null);
     const [linkActionNotice, setLinkActionNotice] = useState<string | null>(null);
     const [sitemapActionNotice, setSitemapActionNotice] = useState<string | null>(null);
@@ -293,6 +297,24 @@ export default function LlmsTxtGenerator() {
     const totalSearchBotsCount = useMemo(
         () => workspace.bots.filter((b) => b.role === 'AI_SEARCH_CITATION').length,
         [workspace.bots]
+    );
+
+    const allowedFetchersCount = useMemo(
+        () =>
+            workspace.bots.filter(
+                (b) => b.role === 'USER_TRIGGERED_FETCHER' && b.permission === 'ALLOW'
+            ).length,
+        [workspace.bots]
+    );
+
+    const totalFetchersCount = useMemo(
+        () => workspace.bots.filter((b) => b.role === 'USER_TRIGGERED_FETCHER').length,
+        [workspace.bots]
+    );
+
+    const isSiteUrlValid = useMemo(
+        () => !workspace.siteUrl.trim() || isValidHttpUrl(workspace.siteUrl),
+        [workspace.siteUrl]
     );
 
     const blockedTrainingAndScrapersCount = useMemo(
@@ -451,26 +473,55 @@ export default function LlmsTxtGenerator() {
 
     const handleAddManualLink = () => {
         setErrorMessage(null);
-        const cleanBase = (workspace.siteUrl || 'https://docs.example.com').trim().replace(/\/+$/, '');
+        setLinkFormError(null);
+        const rawBase = (workspace.siteUrl || 'https://docs.example.com').trim().replace(/\/+$/, '');
+        const cleanBase = isValidHttpUrl(rawBase) ? rawBase : 'https://docs.example.com';
         const rawTitle = newLinkTitle.trim();
         const rawUrl = newLinkUrl.trim();
         const rawDesc = newLinkDesc.trim();
 
+        if (!rawUrl && !rawTitle) {
+            const msg = 'Enter a target page URL (e.g., https://docs.example.com/api or /docs/api) or a link title before adding.';
+            setLinkFormError(msg);
+            setErrorMessage(msg);
+            return;
+        }
+
         let resolvedUrl = rawUrl;
         if (!resolvedUrl) {
-            if (rawTitle) {
-                const slug = rawTitle
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '') || `page-${workspace.links.length + 1}`;
-                resolvedUrl = `${cleanBase}/docs/${slug}`;
-            } else {
-                resolvedUrl = `${cleanBase}/docs/endpoint-guide-${workspace.links.length + 1}`;
-            }
+            const slug = rawTitle
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') || `page-${workspace.links.length + 1}`;
+            resolvedUrl = `${cleanBase}/docs/${slug}`;
         } else if (resolvedUrl.startsWith('/')) {
+            if (/\s/.test(resolvedUrl)) {
+                const msg = 'Invalid relative path: remove spaces from the URL path (e.g., /docs/webhooks).';
+                setLinkFormError(msg);
+                setErrorMessage(msg);
+                return;
+            }
             resolvedUrl = `${cleanBase}${resolvedUrl}`;
+        } else if (/^[a-z0-9+.-]*[!@#$%^&*()\s].*:/i.test(resolvedUrl) || /\s/.test(resolvedUrl)) {
+            const msg = `Invalid URL "${rawUrl}". Enter a valid https:// URL or a /path without spaces or invalid scheme characters.`;
+            setLinkFormError(msg);
+            setErrorMessage(msg);
+            return;
         } else if (!/^https?:\/\//i.test(resolvedUrl)) {
+            if (/^[a-z][a-z0-9+.-]*:/i.test(resolvedUrl)) {
+                const msg = `Unsupported URL scheme in "${rawUrl}". Use http:// or https:// URLs only.`;
+                setLinkFormError(msg);
+                setErrorMessage(msg);
+                return;
+            }
             resolvedUrl = `https://${resolvedUrl}`;
+        }
+
+        if (!isValidHttpUrl(resolvedUrl)) {
+            const msg = `Invalid URL "${rawUrl}". Enter a complete https://domain.com/path URL (e.g., https://docs.example.com/api/auth).`;
+            setLinkFormError(msg);
+            setErrorMessage(msg);
+            return;
         }
 
         const inferred = humanizeUrlSlugToTitleAndDescription(resolvedUrl, workspace.projectName || 'Platform');
@@ -569,13 +620,11 @@ export default function LlmsTxtGenerator() {
                             </span>
                         </div>
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                            llms.txt, llms-full.txt &amp; AI Crawler (robots.txt) Generator
+                            llms.txt Generator, 12-Point Validator &amp; AI Crawler (robots.txt) Studio
                         </h2>
                         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            Build spec-compliant <code>llms.txt</code> &amp; <code>llms-full.txt</code> files from{' '}
-                            <code>sitemap.xml</code> or HTML DOM, configure 45 AI search &amp; training bots in{' '}
-                            <code>robots.txt</code> without RFC 9309 leaks, audit token budgets, and export Next.js{' '}
-                            <code>route.ts</code> or <code>tdmrep.json</code> locally.
+                            Build, validate, and auto-fix <code>llms.txt</code>, free <code>llms-full.txt</code>, and 45-bot AI{' '}
+                            <code>robots.txt</code> files locally in your browser. Paste or upload <code>sitemap.xml</code>, RSS, HTML, or existing drafts — ideal for localhost, private staging docs, and zero-CORS workflows without remote crawling.
                         </p>
                     </div>
 
@@ -856,12 +905,12 @@ export default function LlmsTxtGenerator() {
                 </div>
 
                 <div className="min-w-0 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-3.5">
-                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">AI Search Citations</div>
+                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Search &amp; Live Fetchers</div>
                     <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">
-                        {allowedSearchBotsCount} / {totalSearchBotsCount} Allowed
+                        {allowedSearchBotsCount + allowedFetchersCount} / {totalSearchBotsCount + totalFetchersCount} Allowed
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1 truncate">
-                        OAI-SearchBot • Claude • Perplexity
+                        {allowedSearchBotsCount}/{totalSearchBotsCount} Search • {allowedFetchersCount}/{totalFetchersCount} Fetchers
                     </div>
                 </div>
 
@@ -871,7 +920,7 @@ export default function LlmsTxtGenerator() {
                         {blockedTrainingAndScrapersCount} / {totalTrainingAndScrapersCount} Blocked
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1 truncate">
-                        GPTBot • ClaudeBot • CCBot • Extended
+                        12 Training • 2 Opt-Out • 14 Scrapers
                     </div>
                 </div>
 
@@ -1013,8 +1062,17 @@ export default function LlmsTxtGenerator() {
                                         value={workspace.siteUrl}
                                         onChange={(e) => setWorkspace((p) => ({ ...p, siteUrl: e.target.value }))}
                                         placeholder="https://docs.example.com"
-                                        className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                                        aria-invalid={!isSiteUrlValid}
+                                        className={`w-full px-3 py-2 rounded-xl border bg-slate-50 dark:bg-slate-800 font-mono ${!isSiteUrlValid
+                                            ? 'border-rose-500 dark:border-rose-500 focus:outline-rose-500'
+                                            : 'border-slate-300 dark:border-slate-700'
+                                            }`}
                                     />
+                                    {!isSiteUrlValid && (
+                                        <p className="mt-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                                            Enter a valid absolute URL starting with https:// (no spaces or invalid scheme characters).
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="text-xs">
@@ -1174,7 +1232,7 @@ export default function LlmsTxtGenerator() {
                                     </div>
                                     <div className="sm:col-span-7">
                                         <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                                            Target Page URL (Full URL or /path — auto-generated if blank)
+                                            Target Page URL (Full https:// URL or /path)
                                         </label>
                                         <input
                                             type="text"
@@ -1238,6 +1296,22 @@ export default function LlmsTxtGenerator() {
                                         </button>
                                     </div>
                                 </div>
+
+                                {linkFormError && (
+                                    <div
+                                        role="alert"
+                                        className="rounded-lg border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-3 py-2 text-[11px] font-semibold text-rose-800 dark:text-rose-200 flex items-center justify-between gap-2"
+                                    >
+                                        <span>⚠ {linkFormError}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLinkFormError(null)}
+                                            className="text-rose-700 dark:text-rose-300 hover:underline shrink-0"
+                                        >
+                                            Dismiss
+                                        </button>
+                                    </div>
+                                )}
 
                                 {linkActionNotice && (
                                     <div className="rounded-lg border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-2 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200 flex items-center justify-between gap-2">
@@ -1475,14 +1549,20 @@ export default function LlmsTxtGenerator() {
                                         onClick={() => {
                                             const txt = builderPreviewMode === 'llms_txt' ? compiled.llmsTxt : compiled.llmsFullTxt;
                                             void navigator.clipboard?.writeText(txt);
+                                            setCopiedBuilderPreview(true);
+                                            setTimeout(() => setCopiedBuilderPreview(false), 2000);
                                             setStatusBanner(
                                                 `Copied ${builderPreviewMode === 'llms_txt' ? 'llms.txt' : 'llms-full.txt'} to clipboard!`
                                             );
                                         }}
-                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white inline-flex items-center gap-1"
+                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white inline-flex items-center gap-1 transition cursor-pointer"
                                     >
-                                        <Copy className="w-3.5 h-3.5" />
-                                        <span>Copy</span>
+                                        {copiedBuilderPreview ? (
+                                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                        ) : (
+                                            <Copy className="w-3.5 h-3.5" />
+                                        )}
+                                        <span>{copiedBuilderPreview ? 'Copied!' : 'Copy'}</span>
                                     </button>
                                     <button
                                         type="button"
@@ -1701,6 +1781,9 @@ export default function LlmsTxtGenerator() {
                                     />
                                 </div>
                             </div>
+                            <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 rounded-lg px-3 py-2 leading-relaxed">
+                                <strong>Technical Signal Only (Not Legal Advice):</strong> W3C <code>/.well-known/tdmrep.json</code> and IETF <code>Content-Usage</code> directives express machine-readable opt-out preferences only and do not constitute legal advice or guarantee compliance under EU Directive 2019/790 (DSM Art. 4).
+                            </p>
                         </div>
 
                         {/* 45-Bot Interactive Directory */}
@@ -1925,12 +2008,18 @@ export default function LlmsTxtGenerator() {
                                         type="button"
                                         onClick={() => {
                                             void navigator.clipboard?.writeText(compiled.robotsTxt);
+                                            setCopiedRobotsPreview(true);
+                                            setTimeout(() => setCopiedRobotsPreview(false), 2000);
                                             setStatusBanner('Copied robots.txt to clipboard!');
                                         }}
-                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white inline-flex items-center gap-1"
+                                        className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white inline-flex items-center gap-1 transition cursor-pointer"
                                     >
-                                        <Copy className="w-3.5 h-3.5" />
-                                        <span>Copy</span>
+                                        {copiedRobotsPreview ? (
+                                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                        ) : (
+                                            <Copy className="w-3.5 h-3.5" />
+                                        )}
+                                        <span>{copiedRobotsPreview ? 'Copied!' : 'Copy'}</span>
                                     </button>
                                     <button
                                         type="button"
