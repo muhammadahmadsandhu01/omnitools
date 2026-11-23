@@ -240,8 +240,9 @@ export function tokenizeIdentifier(input: string): string[] {
   const raw = input.trim();
   if (raw.length === 0) return [];
 
-  // Step 1: Split along obvious word boundaries (whitespace, dashes, underscores, dots, slashes, backslashes, colons)
-  const segments = raw.split(/[\s\-_\./\\:;,+*~|]+/);
+  // Step 1: Split along obvious word boundaries and ASCII punctuation/symbols
+  // (preserves Unicode letters/unicameral scripts and digits while preventing stray "&", "@", "!", etc. in identifiers)
+  const segments = raw.split(/[\s\-_\./\\:;,+*~|&@!?#$%^()[\]{}<>="'`]+/);
   const tokens: string[] = [];
 
   for (const seg of segments) {
@@ -275,9 +276,17 @@ export function tokenizeIdentifier(input: string): string[] {
 /**
  * Convert string to UPPERCASE with optional locale support and safe error fallback.
  */
+const LOCALE_SENSITIVE_CASE_PREFIXES = new Set(['tr', 'az', 'lt', 'el', 'de', 'ga']);
+
+function needsLocaleCaseMapping(locale?: string): boolean {
+  if (!locale) return false;
+  const primary = locale.toLowerCase().split(/[-_]/)[0];
+  return LOCALE_SENSITIVE_CASE_PREFIXES.has(primary);
+}
+
 export function toUpperCase(input: string, locale?: string): string {
   if (!input) return '';
-  if (locale) {
+  if (locale && needsLocaleCaseMapping(locale)) {
     try {
       return input.toLocaleUpperCase(locale);
     } catch {
@@ -292,7 +301,7 @@ export function toUpperCase(input: string, locale?: string): string {
  */
 export function toLowerCase(input: string, locale?: string): string {
   if (!input) return '';
-  if (locale) {
+  if (locale && needsLocaleCaseMapping(locale)) {
     try {
       return input.toLocaleLowerCase(locale);
     } catch {

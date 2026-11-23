@@ -23,7 +23,7 @@
     "test:sip": "tsx scripts/test-sip-calculator-1000-suite.ts && tsx scripts/test-sip-150-suite.ts && tsx scripts/test-user-sip-suite.ts",
     "test:sql": "tsx scripts/test-sql-formatter.ts",
     "test:svg": "tsx scripts/test-svg-optimizer-150-suite.ts && tsx scripts/test-user-svg-optimizer-suite.ts && tsx scripts/test-svg-optimizer.ts",
-    "test:text-case": "tsx scripts/test-text-case-converter.ts",
+    "test:text-case": "tsx scripts/test-text-case-converter-1000-suite.ts && tsx scripts/test-text-case-converter.ts",
     "test:webp": "tsx scripts/test-webp-to-jpg-png.ts",
     "test:invoice": "tsx scripts/test-invoice-generator-1000-suite.ts && tsx scripts/test-invoice-generator.ts",
     "test:text-analyzer": "tsx scripts/test-text-analyzer.ts",

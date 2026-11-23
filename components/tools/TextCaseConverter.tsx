@@ -19,6 +19,7 @@ import {
   Search,
   X,
   Info,
+  ChevronDown,
 } from 'lucide-react';
 import {
   type CaseMode,
@@ -40,6 +41,44 @@ const SAMPLE_TEXT = `The quick brown fox jumps over the lazy dog.
 hello-world XMLHttpRequest parseJSONResponse userID
 version2Update foo.bar.baz database_column_name`;
 
+const CLEANUP_ACTIONS: ReadonlyArray<{
+  action: CleanupAction;
+  label: string;
+  toastLabel: string;
+  title: string;
+}> = [
+    {
+      action: 'trim',
+      label: 'Trim Outer',
+      toastLabel: 'Trim Whitespace',
+      title: 'Trim leading and trailing spaces from the entire text',
+    },
+    {
+      action: 'normalize-spaces',
+      label: 'Single Spaces',
+      toastLabel: 'Normalized Spaces',
+      title: 'Collapse multiple consecutive spaces and tabs into a single space',
+    },
+    {
+      action: 'remove-blank-lines',
+      label: 'Remove Blank Lines',
+      toastLabel: 'Removed Blank Lines',
+      title: 'Delete empty or whitespace-only lines',
+    },
+    {
+      action: 'trim-lines',
+      label: 'Trim Lines',
+      toastLabel: 'Trimmed Each Line',
+      title: 'Trim leading and trailing whitespace from each line',
+    },
+    {
+      action: 'normalize-line-endings',
+      label: 'CRLF → LF',
+      toastLabel: 'Normalized Line Endings (CRLF → LF)',
+      title: 'Convert Windows CRLF and classic Mac CR line endings to Unix LF',
+    },
+  ];
+
 export default function TextCaseConverter() {
   const [inputText, setInputText] = useState<string>('');
   const [activeMode, setActiveMode] = useState<CaseMode>('sentence');
@@ -47,6 +86,7 @@ export default function TextCaseConverter() {
   const [preserveLines, setPreserveLines] = useState<boolean>(true);
   const [locale, setLocale] = useState<string>('en-US');
   const [isLocaleModalOpen, setIsLocaleModalOpen] = useState<boolean>(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState<boolean>(false);
   const [languageSearchQuery, setLanguageSearchQuery] = useState<string>('');
   const [languageFilter, setLanguageFilter] = useState<'all' | 'bicameral' | 'unicameral'>('all');
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
@@ -55,6 +95,8 @@ export default function TextCaseConverter() {
 
   const outputRef = useRef<HTMLTextAreaElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const announce = useCallback((msg: string) => {
     setAriaAnnouncement(msg);
@@ -64,10 +106,23 @@ export default function TextCaseConverter() {
     (msg: string) => {
       setNotification(msg);
       announce(msg);
-      setTimeout(() => setNotification(''), 2500);
+      if (notificationTimerRef.current) {
+        clearTimeout(notificationTimerRef.current);
+      }
+      notificationTimerRef.current = setTimeout(() => {
+        setNotification('');
+      }, 2500);
     },
     [announce]
   );
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationTimerRef.current) clearTimeout(notificationTimerRef.current);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   const currentLanguage = useMemo(() => {
     return getLanguageByBcp47(locale) || ISO_LANGUAGES[0];
@@ -103,10 +158,21 @@ export default function TextCaseConverter() {
     return convertText(inputText, activeMode, { locale, preserveLines });
   }, [inputText, activeMode, locale, preserveLines]);
 
-  // Live text statistics
+  // Live text statistics (6 verified counters)
   const stats = useMemo(() => {
     return calculateTextStats(inputText);
   }, [inputText]);
+
+  const triggerCopyFeedback = () => {
+    setCopySuccess(true);
+    showNotification('Converted text copied to clipboard!');
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current);
+    }
+    copyTimerRef.current = setTimeout(() => {
+      setCopySuccess(false);
+    }, 2000);
+  };
 
   // Actions
   const handleCopy = async () => {
@@ -114,11 +180,13 @@ export default function TextCaseConverter() {
 
     // Stage 1: Modern Async Clipboard API
     try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.writeText === 'function'
+      ) {
         await navigator.clipboard.writeText(outputText);
-        setCopySuccess(true);
-        showNotification('Converted text copied to clipboard!');
-        setTimeout(() => setCopySuccess(false), 2000);
+        triggerCopyFeedback();
         return;
       }
     } catch {
@@ -132,9 +200,7 @@ export default function TextCaseConverter() {
         outputRef.current.select();
         const successful = document.execCommand('copy');
         if (successful) {
-          setCopySuccess(true);
-          showNotification('Converted text copied to clipboard!');
-          setTimeout(() => setCopySuccess(false), 2000);
+          triggerCopyFeedback();
           return;
         }
       }
@@ -206,7 +272,7 @@ export default function TextCaseConverter() {
   }, [activeMode]);
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-5">
       {/* SCREEN READER ANNOUNCER */}
       <div
         id="ariaAnnouncer"
@@ -218,21 +284,21 @@ export default function TextCaseConverter() {
         {ariaAnnouncement}
       </div>
 
-      {/* HEADER CONTROLS & PRIVACY BADGE */}
+      {/* COMPACT TOP TOOLBAR: PRIVACY TRUST SIGNAL + QUICK ACTIONS */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900/60 shadow-xs">
-          <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          <span>Local processing: 100% browser-side • Your text never leaves your device</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900/60">
+          <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
+          <span>Runs locally in your browser • Text stays on your device</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleLoadSample}
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 min-h-[40px] sm:min-h-[34px] px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-            <span>Load Sample Text</span>
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+            <span>Load Sample</span>
           </button>
 
           <button
@@ -240,10 +306,10 @@ export default function TextCaseConverter() {
             type="button"
             disabled={!inputText}
             onClick={handleClear}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-1.5 min-h-[40px] sm:min-h-[34px] px-3 py-1.5 text-xs font-semibold rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:hover:bg-transparent transition-colors cursor-pointer disabled:cursor-not-allowed"
             title="Clear input text"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Clear</span>
           </button>
         </div>
@@ -253,28 +319,28 @@ export default function TextCaseConverter() {
       {notification && (
         <div
           role="status"
-          className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 flex items-center justify-between text-xs sm:text-sm text-purple-800 dark:text-purple-200 shadow-xs transition-all animate-fadeIn"
+          className="px-3.5 py-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/50 flex items-center justify-between text-xs sm:text-sm text-purple-800 dark:text-purple-200 shadow-xs transition-all"
         >
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
             <span>{notification}</span>
           </div>
           <button
             type="button"
             onClick={() => setNotification('')}
-            className="text-purple-500 hover:text-purple-700 p-0.5 font-bold"
-            aria-label="Dismiss alert"
+            className="text-purple-500 hover:text-purple-700 dark:hover:text-purple-300 p-1 rounded-lg font-bold cursor-pointer"
+            aria-label="Dismiss notification"
           >
-            ✕
+            <X className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       )}
 
-      {/* MODE SELECTION PANEL */}
+      {/* STEP 1: CASE FORMAT SELECTOR */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-purple-600" />
+            <Sliders className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
               Choose Target Case Format
             </h2>
@@ -284,12 +350,13 @@ export default function TextCaseConverter() {
           <div
             role="tablist"
             aria-label="Case category groups"
-            className="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold"
+            className="grid grid-cols-2 sm:inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-semibold"
           >
             <button
               id="standardCasesTab"
               role="tab"
               aria-selected={activeGroup === 'standard'}
+              aria-controls="caseModesPanel"
               type="button"
               onClick={() => {
                 setActiveGroup('standard');
@@ -298,20 +365,20 @@ export default function TextCaseConverter() {
                   announce('Switched to Standard Writing Cases: Sentence case.');
                 }
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                activeGroup === 'standard'
+              className={`inline-flex items-center justify-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-xl transition-all cursor-pointer ${activeGroup === 'standard'
                   ? 'bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-300 shadow-xs font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
             >
-              <Type className="w-3.5 h-3.5" />
-              <span>Standard Writing Cases</span>
+              <Type className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Writing (7)</span>
             </button>
 
             <button
               id="developerCasesTab"
               role="tab"
               aria-selected={activeGroup === 'developer'}
+              aria-controls="caseModesPanel"
               type="button"
               onClick={() => {
                 setActiveGroup('developer');
@@ -320,20 +387,24 @@ export default function TextCaseConverter() {
                   announce('Switched to Developer Formats: camelCase.');
                 }
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                activeGroup === 'developer'
+              className={`inline-flex items-center justify-center gap-1.5 min-h-[36px] px-3 py-1.5 rounded-xl transition-all cursor-pointer ${activeGroup === 'developer'
                   ? 'bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-300 shadow-xs font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-              }`}
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
             >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>Developer Formats</span>
+              <Code2 className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>Developer (8)</span>
             </button>
           </div>
         </div>
 
         {/* MODE PILLS GRID */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+        <div
+          id="caseModesPanel"
+          role="tabpanel"
+          aria-labelledby={activeGroup === 'standard' ? 'standardCasesTab' : 'developerCasesTab'}
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2"
+        >
           {filteredModes.map((mode) => {
             const isSelected = activeMode === mode.id;
             return (
@@ -346,15 +417,16 @@ export default function TextCaseConverter() {
                   setActiveMode(mode.id);
                   announce(`Switched to ${mode.name}.`);
                 }}
-                className={`flex flex-col items-start p-3 rounded-2xl border text-left transition-all ${
-                  isSelected
-                    ? 'border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 shadow-xs ring-2 ring-purple-600/20'
+                className={`flex flex-col items-start min-h-[56px] p-3 rounded-2xl border text-left transition-all cursor-pointer ${isSelected
+                    ? 'border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 shadow-xs ring-2 ring-purple-600/20'
                     : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 text-slate-800 dark:text-slate-200'
-                }`}
+                  }`}
               >
-                <div className="flex items-center justify-between w-full">
+                <div className="flex items-center justify-between w-full gap-1">
                   <span className="text-xs font-bold truncate">{mode.name}</span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
+                  {isSelected && (
+                    <Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
+                  )}
                 </div>
                 <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate w-full">
                   {mode.example}
@@ -364,85 +436,121 @@ export default function TextCaseConverter() {
           })}
         </div>
 
-        {/* ACTIVE MODE SUMMARY & ADVANCED TOGGLES */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold text-slate-700 dark:text-slate-300">Active mode:</span>
-            <span className="font-mono px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
-              {activeModeDetails.name}
-            </span>
-            <span className="hidden xl:inline text-slate-400">• {activeModeDetails.description}</span>
-          </div>
+        {/* ACTIVE MODE SUMMARY & PROGRESSIVE-DISCLOSURE OPTIONS BAR */}
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1.5 flex-wrap text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Active:</span>
+              <span className="font-mono px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold">
+                {activeModeDetails.name}
+              </span>
+              <span className="hidden md:inline text-slate-500 dark:text-slate-400">
+                — {activeModeDetails.description}
+              </span>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            {/* Line boundary preservation toggle */}
-            <label className="inline-flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 select-none">
-              <input
-                id="preserveLinesCheckbox"
-                type="checkbox"
-                checked={preserveLines}
-                onChange={(e) => setPreserveLines(e.target.checked)}
-                className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
-              />
-              <span>Preserve Lines</span>
-            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Preserve Lines toggle always 1-click accessible */}
+              <label className="inline-flex items-center gap-2 min-h-[36px] px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 cursor-pointer text-slate-700 dark:text-slate-200 select-none font-medium">
+                <input
+                  id="preserveLinesCheckbox"
+                  type="checkbox"
+                  checked={preserveLines}
+                  onChange={(e) => setPreserveLines(e.target.checked)}
+                  className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                />
+                <span>Preserve Lines</span>
+              </label>
 
-            {/* Searchable ISO Locale Selector */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Locale & Advanced Options toggle (1-click disclosure, retains state when collapsed) */}
               <button
-                id="openLocaleModalButton"
                 type="button"
-                onClick={() => setIsLocaleModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-colors shadow-2xs"
-                title="Search ISO 639 language registry (191 supported languages: 184 ISO 639-1 + 7 ISO 639-3)"
+                aria-expanded={isAdvancedOpen}
+                aria-controls="localeOptionsPanel"
+                onClick={() => setIsAdvancedOpen((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 min-h-[36px] px-3 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-semibold transition-colors cursor-pointer"
               >
-                <Globe className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                <span className="font-semibold truncate max-w-[90px] sm:max-w-none">{currentLanguage.name}</span>
-                <span className="hidden sm:inline font-mono text-[10px] text-purple-500 dark:text-purple-400">({currentLanguage.bcp47})</span>
-                <span
-                  className={`hidden md:inline text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                    currentLanguage.hasBicameralCasing
-                      ? 'bg-purple-200/80 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
-                  }`}
-                >
-                  {currentLanguage.hasBicameralCasing ? 'Bicameral' : 'Unicameral'}
+                <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate max-w-[110px] sm:max-w-none">
+                  {currentLanguage.name} ({currentLanguage.bcp47})
                 </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`}
+                  aria-hidden="true"
+                />
               </button>
-
-              {/* Standard HTML Select synchronized with complete 191 ISO registry */}
-              <select
-                id="localeSelect"
-                value={locale}
-                onChange={(e) => {
-                  setLocale(e.target.value);
-                  const lang = getLanguageByBcp47(e.target.value);
-                  if (lang) {
-                    showNotification(
-                      `Language set to ${lang.name} (${lang.bcp47})${lang.hasBicameralCasing ? '' : ' • Unicameral Script'}`
-                    );
-                  }
-                }}
-                aria-label="Casing locale"
-                className="bg-transparent border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-purple-500 focus:outline-none max-w-[130px] sm:max-w-[160px]"
-              >
-                <optgroup label="Specialized Casing Rules">
-                  {SPECIAL_CASING_LANGUAGES.map((lang) => (
-                    <option key={`special-${lang.bcp47}`} value={lang.bcp47}>
-                      {lang.name} ({lang.bcp47})
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="All ISO 639 Languages">
-                  {ISO_LANGUAGES.map((lang) => (
-                    <option key={`all-${lang.bcp47}`} value={lang.bcp47}>
-                      {lang.name} ({lang.bcp47}) — {lang.hasBicameralCasing ? 'Bicameral' : 'Unicameral'}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
             </div>
           </div>
+
+          {/* COLLAPSIBLE LOCALE & SCRIPT OPTIONS PANEL */}
+          {isAdvancedOpen && (
+            <div
+              id="localeOptionsPanel"
+              className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+            >
+              <div className="space-y-0.5">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 block">
+                  Unicode Language Locale (191 ISO Entries)
+                </span>
+                <span className="text-slate-500 dark:text-slate-400 block">
+                  Applies locale-specific rules (Turkish İ/ı, Dutch IJ, German ß→SS, Greek final ς).
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  id="openLocaleModalButton"
+                  type="button"
+                  onClick={() => setIsLocaleModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 min-h-[38px] px-3 py-1.5 text-xs font-semibold rounded-xl bg-white hover:bg-purple-50 dark:bg-slate-900 dark:hover:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-colors cursor-pointer"
+                  title="Search ISO 639 language registry (191 supported languages: 184 ISO 639-1 + 7 ISO 639-3)"
+                >
+                  <Search className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span>Search 191 Languages</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${currentLanguage.hasBicameralCasing
+                        ? 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
+                        : 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300'
+                      }`}
+                  >
+                    {currentLanguage.hasBicameralCasing ? 'Bicameral' : 'Unicameral'}
+                  </span>
+                </button>
+
+                {/* Standard HTML Select synchronized with complete 191 ISO registry */}
+                <select
+                  id="localeSelect"
+                  value={locale}
+                  onChange={(e) => {
+                    setLocale(e.target.value);
+                    const lang = getLanguageByBcp47(e.target.value);
+                    if (lang) {
+                      showNotification(
+                        `Language set to ${lang.name} (${lang.bcp47})${lang.hasBicameralCasing ? '' : ' • Unicameral Script'}`
+                      );
+                    }
+                  }}
+                  aria-label="Casing locale"
+                  className="min-h-[38px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-purple-500 focus:outline-none max-w-[200px]"
+                >
+                  <optgroup label="Specialized Casing Rules">
+                    {SPECIAL_CASING_LANGUAGES.map((lang) => (
+                      <option key={`special-${lang.bcp47}`} value={lang.bcp47}>
+                        {lang.name} ({lang.bcp47})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="All ISO 639 Languages">
+                    {ISO_LANGUAGES.map((lang) => (
+                      <option key={`all-${lang.bcp47}`} value={lang.bcp47}>
+                        {lang.name} ({lang.bcp47}) — {lang.hasBicameralCasing ? 'Bicameral' : 'Unicameral'}
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -450,10 +558,10 @@ export default function TextCaseConverter() {
       {!currentLanguage.hasBicameralCasing && (
         <div
           role="note"
-          className="p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between shadow-2xs animate-fadeIn"
+          className="p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
             <span>
               <strong>Unicameral Script ({currentLanguage.name}):</strong> Characters in the {currentLanguage.script} script family do not distinguish upper and lower case. Case transformations preserve native characters and apply to embedded Latin or bicameral segments.
             </span>
@@ -461,18 +569,18 @@ export default function TextCaseConverter() {
         </div>
       )}
 
-      {/* WORKSPACE: INPUT & OUTPUT EDITORS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* STEP 2: SIDE-BY-SIDE INPUT & OUTPUT EDITORS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
         {/* LEFT COLUMN: SOURCE INPUT */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-xs flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-purple-600" />
+              <FileText className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
               <label htmlFor="inputTextarea" className="text-sm font-bold text-slate-900 dark:text-white">
                 Source Text
               </label>
             </div>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
               {stats.characters} chars • {stats.words} words
             </span>
           </div>
@@ -483,61 +591,41 @@ export default function TextCaseConverter() {
             rows={10}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type or paste your text here to convert its case in real-time..."
+            placeholder="Paste or type your text, headlines, or code identifiers here..."
             className="w-full flex-1 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950 font-mono text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-y min-h-[220px]"
           />
 
-          {/* QUICK CLEANUP TOOLS */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          {/* 5 VERIFIED TEXT CLEANUP UTILITIES */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                <Scissors className="w-3.5 h-3.5 text-purple-500" />
-                <span>Text Cleanups</span>
+                <Scissors className="w-3.5 h-3.5 text-purple-500" aria-hidden="true" />
+                <span>Text Cleanups (5)</span>
               </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleCleanup('trim', 'Trim Whitespace')}
-                className="px-2.5 py-1 text-xs rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-                title="Trim leading and trailing spaces"
-              >
-                Trim Outer
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCleanup('normalize-spaces', 'Normalized Spaces')}
-                className="px-2.5 py-1 text-xs rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-                title="Collapse multiple consecutive spaces into a single space"
-              >
-                Single Spaces
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCleanup('remove-blank-lines', 'Removed Blank Lines')}
-                className="px-2.5 py-1 text-xs rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-                title="Delete empty or whitespace-only lines"
-              >
-                Remove Blank Lines
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCleanup('trim-lines', 'Trimmed Each Line')}
-                className="px-2.5 py-1 text-xs rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
-                title="Trim whitespace from each line"
-              >
-                Trim Lines
-              </button>
+              {CLEANUP_ACTIONS.map((item) => (
+                <button
+                  key={item.action}
+                  type="button"
+                  disabled={!inputText}
+                  onClick={() => handleCleanup(item.action, item.toastLabel)}
+                  className="min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 disabled:opacity-45 disabled:hover:bg-slate-100 dark:disabled:hover:bg-slate-800 transition-colors cursor-pointer disabled:cursor-not-allowed"
+                  title={item.title}
+                >
+                  {item.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN: CONVERTED OUTPUT */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-xs flex flex-col space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-600" />
+              <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
               <label htmlFor="outputTextarea" className="text-sm font-bold text-slate-900 dark:text-white">
                 Converted Result
               </label>
@@ -548,11 +636,11 @@ export default function TextCaseConverter() {
                 <button
                   type="button"
                   onClick={handleSwap}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="inline-flex items-center gap-1 min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
                   title="Swap output back to input editor"
                 >
-                  <ArrowUpDown className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Swap</span>
+                  <ArrowUpDown className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Swap</span>
                 </button>
               )}
             </div>
@@ -564,27 +652,27 @@ export default function TextCaseConverter() {
             rows={10}
             readOnly
             value={outputText}
-            placeholder="Transformed text appears here automatically as you type..."
+            placeholder="Converted text appears here automatically as you type..."
             className="w-full flex-1 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-purple-50/30 dark:bg-slate-950 font-mono text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all resize-y min-h-[220px]"
           />
 
-          {/* ACTION BUTTONS */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+          {/* PRIMARY & SECONDARY OUTPUT ACTIONS */}
+          <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
             <button
               id="copyButton"
               type="button"
               disabled={!outputText}
               onClick={handleCopy}
-              className="flex-1 py-2.5 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+              className="flex-1 min-w-[140px] min-h-[44px] py-2.5 px-4 rounded-2xl bg-purple-600 hover:bg-purple-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 font-bold text-xs sm:text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
             >
               {copySuccess ? (
                 <>
-                  <Check className="w-4 h-4" />
+                  <Check className="w-4 h-4" aria-hidden="true" />
                   <span>Copied!</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-4 h-4" aria-hidden="true" />
                   <span>Copy Result</span>
                 </>
               )}
@@ -595,7 +683,7 @@ export default function TextCaseConverter() {
               type="button"
               disabled={!outputText}
               onClick={handleSelectAll}
-              className="py-2.5 px-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="min-h-[44px] py-2.5 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
               title="Select all converted text"
             >
               Select All
@@ -606,23 +694,23 @@ export default function TextCaseConverter() {
               type="button"
               disabled={!outputText}
               onClick={handleDownload}
-              className="py-2.5 px-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+              className="min-h-[44px] py-2.5 px-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
               title="Download result as a .txt file"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Download (.txt)</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* TEXT STATISTICS BAR */}
+      {/* LIVE TEXT STATISTICS BAR (6 VERIFIED COUNTERS) */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-5 rounded-3xl shadow-xs">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
           Live Text Statistics
         </h3>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 text-center">
           <div
             className="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
             title="User-perceived characters (grapheme clusters via Intl.Segmenter with Unicode code point fallback)"
@@ -694,7 +782,7 @@ export default function TextCaseConverter() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="localeModalTitle"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
           onClick={() => setIsLocaleModalOpen(false)}
         >
           <div
@@ -706,10 +794,10 @@ export default function TextCaseConverter() {
               <div>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                    <Globe className="w-4 h-4" />
+                    <Globe className="w-4 h-4" aria-hidden="true" />
                   </div>
                   <h3 id="localeModalTitle" className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                    ISO 639 Language & BCP 47 Locale Registry
+                    ISO 639 Language &amp; BCP 47 Locale Registry
                   </h3>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 pl-10">
@@ -721,49 +809,51 @@ export default function TextCaseConverter() {
                 id="closeLocaleModalButton"
                 type="button"
                 onClick={() => setIsLocaleModalOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 aria-label="Close language selector modal"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             {/* Search Input & Filter Pills */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50/50 dark:bg-slate-950/40">
               <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden="true" />
                 <input
                   id="languageSearchInput"
                   type="text"
                   value={languageSearchQuery}
                   onChange={(e) => setLanguageSearchQuery(e.target.value)}
-                  placeholder="Search by language name, native name, ISO code, or BCP 47 tag (e.g., Greek, el, tr, ar)..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Search by language name, native name, ISO code, or BCP 47 tag (e.g., Turkish, tr, nl, el)..."
+                  aria-label="Search languages"
+                  className="w-full pl-10 pr-14 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   autoFocus
                 />
                 {languageSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setLanguageSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    aria-label="Clear language search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
                   >
                     Clear
                   </button>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Filter:</span>
                 {(['all', 'bicameral', 'unicameral'] as const).map((filter) => (
                   <button
                     key={filter}
                     type="button"
+                    aria-pressed={languageFilter === filter}
                     onClick={() => setLanguageFilter(filter)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                      languageFilter === filter
+                    className={`min-h-[32px] px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${languageFilter === filter
                         ? 'bg-purple-600 text-white shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-purple-300'
-                    }`}
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-purple-300'
+                      }`}
                   >
                     {filter === 'all' && `All (${filteredLanguages.length})`}
                     {filter === 'bicameral' && 'Bicameral Only'}
@@ -778,7 +868,9 @@ export default function TextCaseConverter() {
               {filteredLanguages.length === 0 ? (
                 <div className="py-12 text-center text-slate-500 dark:text-slate-400">
                   <p className="text-sm font-medium">No languages match &ldquo;{languageSearchQuery}&rdquo;</p>
-                  <p className="text-xs mt-1">Try searching by English name, native script, ISO code (e.g. &ldquo;el&rdquo;), or BCP 47 tag.</p>
+                  <p className="text-xs mt-1">
+                    Try searching by English name, native script, ISO code (e.g. &ldquo;el&rdquo;), or BCP 47 tag.
+                  </p>
                 </div>
               ) : (
                 filteredLanguages.map((lang) => {
@@ -788,14 +880,13 @@ export default function TextCaseConverter() {
                       key={lang.bcp47}
                       type="button"
                       onClick={() => handleSelectLanguage(lang)}
-                      className={`w-full text-left p-3 rounded-2xl flex items-center justify-between gap-3 transition-colors ${
-                        isSelected
+                      className={`w-full text-left p-3 rounded-2xl flex items-center justify-between gap-3 transition-colors cursor-pointer ${isSelected
                           ? 'bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 border border-purple-200 dark:border-purple-800'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-200'
-                      }`}
+                        }`}
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold text-sm truncate">{lang.name}</span>
                           {lang.nativeName && lang.nativeName !== lang.name && (
                             <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
@@ -811,7 +902,7 @@ export default function TextCaseConverter() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
                             Tag: <code className="font-bold">{lang.bcp47}</code>
                           </span>
@@ -821,11 +912,10 @@ export default function TextCaseConverter() {
                           </span>
                           <span className="text-slate-300 dark:text-slate-700">•</span>
                           <span
-                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                              lang.hasBicameralCasing
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${lang.hasBicameralCasing
                                 ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400'
                                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                            }`}
+                              }`}
                           >
                             {lang.hasBicameralCasing ? 'Bicameral' : 'Unicameral'}
                           </span>
@@ -834,7 +924,7 @@ export default function TextCaseConverter() {
 
                       {isSelected && (
                         <div className="w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0">
-                          <Check className="w-3.5 h-3.5" />
+                          <Check className="w-3.5 h-3.5" aria-hidden="true" />
                         </div>
                       )}
                     </button>
@@ -845,11 +935,13 @@ export default function TextCaseConverter() {
 
             {/* Modal Footer */}
             <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 px-5">
-              <span>Selected: <strong className="text-slate-900 dark:text-white">{currentLanguage.name}</strong> ({currentLanguage.bcp47})</span>
+              <span>
+                Selected: <strong className="text-slate-900 dark:text-white">{currentLanguage.name}</strong> ({currentLanguage.bcp47})
+              </span>
               <button
                 type="button"
                 onClick={() => setIsLocaleModalOpen(false)}
-                className="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors"
+                className="min-h-[34px] px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition-colors cursor-pointer"
               >
                 Close
               </button>
