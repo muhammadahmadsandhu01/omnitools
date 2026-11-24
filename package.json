@@ -36,6 +36,7 @@
     "test:har": "tsx scripts/test-har-analyzer-2000-suite.ts",
     "test:llms-txt": "tsx scripts/test-llms-txt-generator-2000-suite.ts",
     "test:openapi": "tsx scripts/test-openapi-to-typescript-1000-suite.ts",
+    "test:sqlite": "tsx scripts/test-sqlite-explorer-1000-suite.ts",
     "typescript": "tsc --noEmit"
   },
   "dependencies": {
