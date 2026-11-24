@@ -1145,8 +1145,8 @@ export function generateTypeScriptFileCode(
 export function renderZodSchemaExpr(
     node: NormalizedSchemaNode,
     config: OpenApiCodegenConfig,
-    circularSchemas: Set<string>,
-    currentRootSchemaName: string,
+    circularSchemas: Set<string> = new Set(),
+    currentRootSchemaName = '',
     indentLevel = 0
 ): string {
     const applyNullability = (expr: string): string => {
