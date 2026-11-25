@@ -230,11 +230,13 @@ export default function HomeClient() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="max-w-3xl">
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
-              Free Browser Tools for Code, Documents &amp; Finance
+              Free Browser Tools,{' '}
+              <span className="text-blue-600 dark:text-blue-400">Private by Design.</span>
             </h1>
             <p className="mt-4 text-base leading-7 text-slate-700 sm:text-lg dark:text-slate-300">
-              Launch {publishedTools.length} focused web utilities and {SALARY_COUNTRIES.length} country
-              salary calculators directly in your browser—no account, no paywall, and no watermarks.
+              Run {publishedTools.length} fast utilities for code, documents, media, and{' '}
+              {SALARY_COUNTRIES.length} country salary calculators directly in your browser—no
+              account, no paywall, and no watermarks.
             </p>
 
             {/* Precision Workbench Spec Strip */}
