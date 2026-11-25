@@ -12,6 +12,11 @@ import {
 
 import { categories, tools } from '@/config/toolsData';
 import { SITE_URL, DEFAULT_OG_IMAGE } from '@/config/site';
+import {
+  DEVELOPER_CATEGORY_FAQS,
+  DEVELOPER_CATEGORY_SEO,
+} from '@/config/developerCategoryConfig';
+import DeveloperCategoryClient from '@/components/category/DeveloperCategoryClient';
 
 const PDF_SCRUBBER_GSC_TOKENS = new Set([
   'Title',
@@ -125,22 +130,33 @@ export async function generateMetadata({
     (tool) => tool.categoryId === category.id && tool.status === 'published' && !tool.hidden
   );
 
-  const categoryTitle =
-    category.seoTitle ||
+  const isDeveloper = category.id === 'developer';
+
+  const categoryTitle = isDeveloper
+    ? DEVELOPER_CATEGORY_SEO.seoTitle
+    : category.seoTitle ||
     (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
       ? category.name
       : `${category.name} Tools`);
 
-  const categoryDescription =
-    category.seoDescription ||
+  const categoryDescription = isDeveloper
+    ? DEVELOPER_CATEGORY_SEO.seoDescription
+    : category.seoDescription ||
     `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
 
+  const categoryKeywords = isDeveloper
+    ? [...DEVELOPER_CATEGORY_SEO.keywords]
+    : category.keywords;
+
   const canonicalUrl = `${SITE_URL}/${category.id}`;
+  const socialTitle = isDeveloper
+    ? `${categoryTitle} | KivaroTools`
+    : `${categoryTitle} — KivaroTools`;
 
   return {
     title: categoryTitle,
     description: categoryDescription,
-    keywords: category.keywords,
+    keywords: categoryKeywords,
     alternates: {
       canonical: canonicalUrl,
     },
@@ -149,7 +165,7 @@ export async function generateMetadata({
       follow: true,
     },
     openGraph: {
-      title: `${categoryTitle} — KivaroTools`,
+      title: socialTitle,
       description: categoryDescription,
       url: canonicalUrl,
       type: 'website',
@@ -159,7 +175,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       site: '@kivarotools',
       creator: '@kivarotools',
-      title: `${categoryTitle} — KivaroTools`,
+      title: socialTitle,
       description: categoryDescription,
       images: [`${SITE_URL}/og-image.png`],
     },
@@ -213,8 +229,8 @@ export default async function CategoryPage({
     (tool) => tool.categoryId === category.id && tool.status === 'published' && !tool.hidden
   );
 
-  const Icon = category.icon;
   const canonicalUrl = `${SITE_URL}/${category.id}`;
+  const isDeveloper = category.id === 'developer';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -229,9 +245,12 @@ export default async function CategoryPage({
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
     '@id': `${canonicalUrl}#collection`,
-    name: `${category.name} — KivaroTools`,
-    description:
-      category.description ||
+    name: isDeveloper
+      ? `${DEVELOPER_CATEGORY_SEO.seoTitle} | KivaroTools`
+      : `${category.name} — KivaroTools`,
+    description: isDeveloper
+      ? DEVELOPER_CATEGORY_SEO.seoDescription
+      : category.description ||
       `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
     url: canonicalUrl,
     mainEntity: {
@@ -246,6 +265,41 @@ export default async function CategoryPage({
       })),
     },
   };
+
+  if (isDeveloper) {
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: DEVELOPER_CATEGORY_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <DeveloperCategoryClient />
+      </>
+    );
+  }
+
+  const Icon = category.icon;
 
   return (
     <main className="w-full">
