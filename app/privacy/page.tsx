@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
       'KivaroTools Privacy Policy covering 100% client-side file processing, zero server storage, Google AdSense cookies, web analytics, and global GDPR/CCPA user rights.',
     inLanguage: 'en',
     datePublished: '2026-01-15',
-    dateModified: '2026-11-10',
+    dateModified: '2026-11-25',
     publisher: {
       '@type': 'Organization',
       name: 'KivaroTools',
@@ -196,10 +196,11 @@ export default function PrivacyPolicyPage() {
                 Browser Local Storage (<code>localStorage</code>) &amp; Session Memory
               </h3>
               <p className="text-sm leading-6 text-slate-600 dark:text-slate-400">
-                Certain tools offer optional convenience features—such as saving your dark/light theme preference, caching public
+                Certain tools offer optional convenience features—such as saving your dark/light theme preference, remembering up to 5
+                recently used tools on this device (<code>kivarotools_recent_tools_v1</code>), caching public
                 foreign exchange reference rates for offline use, or saving an Invoice Generator draft on your device—that store
                 data solely in your browser&apos;s local storage (<code>localStorage</code>). This data remains exclusively on your
-                device and can be cleared at any time using in-tool reset buttons or your browser settings.
+                device and can be cleared at any time using the Clear button, in-tool reset buttons, or your browser settings.
               </p>
             </div>
           </section>
@@ -324,8 +325,8 @@ export default function PrivacyPolicyPage() {
                   <tr>
                     <td className="p-3 font-medium text-slate-900 dark:text-white">Strictly Necessary</td>
                     <td className="p-3">Browser <code>localStorage</code></td>
-                    <td className="p-3">Stores dark/light theme preference and local tool workspace preferences on your device.</td>
-                    <td className="p-3">Clear via in-tool Reset button or browser site data settings.</td>
+                    <td className="p-3">Stores dark/light theme preference, up to 5 recently used tools (<code>kivarotools_recent_tools_v1</code>), and local tool workspace preferences on your device.</td>
+                    <td className="p-3">Clear via the Clear button, in-tool Reset button, or browser site data settings.</td>
                   </tr>
                   <tr>
                     <td className="p-3 font-medium text-slate-900 dark:text-white">Analytics</td>

@@ -1,623 +1,711 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
   ArrowUpRight,
-  Check,
+  Calculator,
+  Clock,
+  Code2,
+  Database,
+  FileText,
+  Globe,
+  Image as ImageIcon,
   LayoutGrid,
   LockKeyhole,
   Search,
   ShieldCheck,
-  Sparkles,
-  Wrench,
-  Zap,
+  X,
 } from 'lucide-react';
 
 import { categories, tools, type CategoryId } from '@/config/toolsData';
-import AdUnit from '@/components/ads/AdUnit';
+import { SALARY_COUNTRIES, type SalaryRegion } from '@/config/salaryCountries';
 import { HOME_FAQS } from '@/config/homeFaqs';
 
 export { HOME_FAQS };
 
 type FilterCategory = 'all' | CategoryId;
+type RegionFilter = 'All' | SalaryRegion;
 
-const GLOBAL_SALARY_COUNTRIES = [
-  { name: 'Pakistan', slug: 'pakistan', flag: '🇵🇰', currency: 'PKR' },
-  { name: 'United States', slug: 'united-states', flag: '🇺🇸', currency: 'USD' },
-  { name: 'United Kingdom', slug: 'united-kingdom', flag: '🇬🇧', currency: 'GBP' },
-  { name: 'Germany', slug: 'germany', flag: '🇩🇪', currency: 'EUR' },
-  { name: 'India', slug: 'india', flag: '🇮🇳', currency: 'INR' },
-  { name: 'Canada', slug: 'canada', flag: '🇨🇦', currency: 'CAD' },
-  { name: 'Australia', slug: 'australia', flag: '🇦🇺', currency: 'AUD' },
-  { name: 'Singapore', slug: 'singapore', flag: '🇸🇬', currency: 'SGD' },
-  { name: 'UAE', slug: 'united-arab-emirates', flag: '🇦🇪', currency: 'AED' },
-  { name: 'Saudi Arabia', slug: 'saudi-arabia', flag: '🇸🇦', currency: 'SAR' },
-  { name: 'France', slug: 'france', flag: '🇫🇷', currency: 'EUR' },
-  { name: 'Japan', slug: 'japan', flag: '🇯🇵', currency: 'JPY' },
-  { name: 'Switzerland', slug: 'switzerland', flag: '🇨🇭', currency: 'CHF' },
-  { name: 'Netherlands', slug: 'netherlands', flag: '🇳🇱', currency: 'EUR' },
-  { name: 'Ireland', slug: 'ireland', flag: '🇮🇪', currency: 'EUR' },
-  { name: 'New Zealand', slug: 'new-zealand', flag: '🇳🇿', currency: 'NZD' },
-  { name: 'Spain', slug: 'spain', flag: '🇪🇸', currency: 'EUR' },
-  { name: 'Italy', slug: 'italy', flag: '🇮🇹', currency: 'EUR' },
-  { name: 'South Africa', slug: 'south-africa', flag: '🇿🇦', currency: 'ZAR' },
-  { name: 'Brazil', slug: 'brazil', flag: '🇧🇷', currency: 'BRL' },
-  { name: 'Mexico', slug: 'mexico', flag: '🇲🇽', currency: 'MXN' },
-  { name: 'South Korea', slug: 'south-korea', flag: '🇰🇷', currency: 'KRW' },
-];
+interface RecentToolEntry {
+  href: string;
+  name: string;
+}
+
+const RECENT_STORAGE_KEY = 'kivarotools_recent_tools_v1';
+
+/** Tools that explicitly call external/server APIs for live data or URL inspection */
+const LIVE_API_TOOL_SLUGS = new Set([
+  'precious-metals',
+  'crypto-converter',
+  'meta-generator',
+]);
+
+/**
+ * 4 Task-First Workflow Lanes resolved dynamically from toolsData.ts
+ * so no hardcoded slug can ever become a 404 broken link.
+ */
+const WORKFLOW_LANE_DEFS = [
+  {
+    id: 'inspect-data',
+    title: 'Inspect & Query Data',
+    subtitle: 'Open binary databases, columnar files, and network traces locally.',
+    icon: Database,
+    accent: 'text-emerald-600 dark:text-emerald-400',
+    categoryFallback: 'developer' as CategoryId,
+    preferredSlugs: [
+      'sqlite-viewer',
+      'parquet-viewer',
+      'json-formatter',
+      'har-analyzer',
+    ],
+  },
+  {
+    id: 'documents-pdf',
+    title: 'Edit & Sanitize PDFs',
+    subtitle: 'Merge, compress, redact, sign, and convert documents in browser RAM.',
+    icon: FileText,
+    accent: 'text-orange-600 dark:text-orange-400',
+    categoryFallback: 'document' as CategoryId,
+    preferredSlugs: [
+      'pdf-merge-split',
+      'compress-pdf',
+      'pdf-scrubber',
+      'pdf-signer-bates-stamper',
+    ],
+  },
+  {
+    id: 'code-media',
+    title: 'Transform Code, Media & SEO',
+    subtitle: 'Compile API schemas, optimize images, and generate static QR or meta tags.',
+    icon: Code2,
+    accent: 'text-blue-600 dark:text-blue-400',
+    categoryFallback: 'media' as CategoryId,
+    preferredSlugs: [
+      'openapi-to-typescript',
+      'image-compressor',
+      'heic-to-jpg',
+      'qr-generator',
+    ],
+  },
+  {
+    id: 'finance-tax',
+    title: 'Calculate Salaries & Finance',
+    subtitle: 'Model take-home pay, mortgages, loans, investments, and clean PDF invoices.',
+    icon: Calculator,
+    accent: 'text-indigo-600 dark:text-indigo-400',
+    categoryFallback: 'finance' as CategoryId,
+    preferredSlugs: [
+      'salary-calculator',
+      'mortgage-calculator',
+      'emi-calculator',
+      'invoice-generator',
+    ],
+  },
+] as const;
+
+const REGION_TABS: RegionFilter[] = ['All', 'Americas', 'Europe', 'APAC', 'MENA', 'Africa'];
 
 export default function HomeClient() {
-  const [activeCategory, setActiveCategory] =
-    useState<FilterCategory>('all');
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>('all');
+  const [inlineFilter, setInlineFilter] = useState('');
+  const [activeRegion, setActiveRegion] = useState<RegionFilter>('All');
+  const [recentTools, setRecentTools] = useState<RecentToolEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(RECENT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setRecentTools(
+          parsed
+            .filter(
+              (item): item is RecentToolEntry =>
+                Boolean(item && typeof item.href === 'string' && typeof item.name === 'string')
+            )
+            .slice(0, 5)
+        );
+      }
+    } catch {
+      // Ignore storage errors in private browsing
+    }
+  }, []);
+
+  function recordToolVisit(href: string, name: string) {
+    try {
+      const next = [{ href, name }, ...recentTools.filter((item) => item.href !== href)].slice(0, 5);
+      setRecentTools(next);
+      window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // Ignore storage errors
+    }
+  }
+
+  function clearRecentTools() {
+    setRecentTools([]);
+    try {
+      window.localStorage.removeItem(RECENT_STORAGE_KEY);
+    } catch {
+      // Ignore
+    }
+  }
 
   const visibleCategories = useMemo(
     () => categories.filter((category) => !category.hidden),
     []
   );
 
+  const publishedTools = useMemo(
+    () => tools.filter((tool) => tool.status === 'published' && !tool.hidden),
+    []
+  );
+
+  const localOnlyCount = useMemo(
+    () => publishedTools.filter((tool) => !LIVE_API_TOOL_SLUGS.has(tool.slug)).length,
+    [publishedTools]
+  );
+
+  // Dynamically resolve workflow lane links from publishedTools (zero 404 risk)
+  const resolvedWorkflowLanes = useMemo(() => {
+    const bySlug = new Map(publishedTools.map((t) => [t.slug, t]));
+
+    return WORKFLOW_LANE_DEFS.map((lane) => {
+      const matched = lane.preferredSlugs
+        .map((slug) => bySlug.get(slug))
+        .filter((t): t is (typeof publishedTools)[number] => Boolean(t));
+
+      // Backfill up to 4 real tools from the lane's category if any preferred slug changed
+      if (matched.length < 4) {
+        const used = new Set(matched.map((t) => t.slug));
+        for (const candidate of publishedTools) {
+          if (candidate.categoryId === lane.categoryFallback && !used.has(candidate.slug)) {
+            matched.push(candidate);
+            used.add(candidate.slug);
+            if (matched.length === 4) break;
+          }
+        }
+      }
+
+      return {
+        ...lane,
+        links: matched.map((tool) => ({
+          label: tool.name,
+          href: `/${tool.categoryId}/${tool.slug}`,
+        })),
+      };
+    });
+  }, [publishedTools]);
+
   const filteredTools = useMemo(() => {
-    const visibleTools = tools.filter((tool) => tool.status === 'published' && !tool.hidden);
-    if (activeCategory === 'all') {
-      return visibleTools;
-    }
+    const q = inlineFilter.trim().toLowerCase();
+    return publishedTools.filter((tool) => {
+      if (activeCategory !== 'all' && tool.categoryId !== activeCategory) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        tool.name.toLowerCase().includes(q) ||
+        tool.slug.toLowerCase().includes(q) ||
+        tool.description.toLowerCase().includes(q)
+      );
+    });
+  }, [publishedTools, activeCategory, inlineFilter]);
 
-    return visibleTools.filter((tool) => tool.categoryId === activeCategory);
-  }, [activeCategory]);
-
-  const popularTools = useMemo(() => {
-    return tools.filter((tool) => tool.isPopular && tool.status === 'published' && !tool.hidden).slice(0, 6);
-  }, []);
+  const filteredCountries = useMemo(() => {
+    if (activeRegion === 'All') return SALARY_COUNTRIES;
+    return SALARY_COUNTRIES.filter((c) => c.region === activeRegion);
+  }, [activeRegion]);
 
   const getCategory = (categoryId: CategoryId) =>
     categories.find((category) => category.id === categoryId);
 
-  const homeAdSlot = process.env.NEXT_PUBLIC_ADSENSE_HOME_SLOT || '';
-
   return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
-      {/* Hero */}
-      <section className="relative overflow-hidden border-b border-slate-200 dark:border-slate-800">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-blue-500/[0.06] blur-3xl dark:bg-blue-500/[0.08]" />
-        </div>
-
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
-              <Sparkles className="h-4 w-4" />
-              Privacy-First Enterprise Browser Suite
-            </div>
-
-            <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl dark:text-white">
-              KivaroTools — Powerful Tools.
-              <span className="block text-blue-600">
-                Private by Design.
-              </span>
+    <main className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
+      {/* =====================================================================
+          1. COMPACT TECHNICAL WORKBENCH HERO (SINGLE H1 + SPEC STRIP)
+         ===================================================================== */}
+      <section className="relative border-b border-slate-200 bg-slate-50/70 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:22px_22px] dark:border-slate-800 dark:bg-slate-950 dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)]">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
+              Free Browser Tools for Code, Documents &amp; Finance
             </h1>
-
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg dark:text-slate-300">
-              Free, institutional-grade browser utilities for software engineers, financial planners,
-              businesses, and everyday digital workflows.
+            <p className="mt-4 text-base leading-7 text-slate-700 sm:text-lg dark:text-slate-300">
+              Launch {publishedTools.length} focused web utilities and {SALARY_COUNTRIES.length} country
+              salary calculators directly in your browser—no account, no paywall, and no watermarks.
             </p>
 
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              100% client-side execution for files &amp; code • Zero registration • Zero watermarks
-            </p>
+            {/* Precision Workbench Spec Strip */}
+            <dl className="mt-6 grid max-w-2xl grid-cols-2 gap-x-6 gap-y-3 border-y border-slate-200/90 py-3.5 font-mono text-xs sm:grid-cols-4 dark:border-slate-800">
+              <div>
+                <dt className="text-slate-500 dark:text-slate-400">Utilities</dt>
+                <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
+                  {publishedTools.length} Published
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500 dark:text-slate-400">Salary Models</dt>
+                <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
+                  {SALARY_COUNTRIES.length} Countries
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500 dark:text-slate-400">Local Engine</dt>
+                <dd className="mt-0.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                  {localOnlyCount} In-Browser
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500 dark:text-slate-400">Access</dt>
+                <dd className="mt-0.5 font-semibold text-slate-900 dark:text-white">
+                  Zero Signup
+                </dd>
+              </div>
+            </dl>
 
-            {/* Trust points */}
-            <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-slate-600 dark:text-slate-400">
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-blue-600" />
-                Client-side privacy
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <LockKeyhole className="h-4 w-4 text-blue-600" />
-                No account required
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <Zap className="h-4 w-4 text-blue-600" />
-                Web Worker &amp; WASM speed
-              </span>
-            </div>
-
-            {/* Crawlable Category Quick-Links for Search Engines & Users */}
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
+            {/* Quick Category Hub Links (Crawlable SSR + 44px touch targets) */}
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               {visibleCategories.map((cat) => {
                 const Icon = cat.icon;
                 return (
                   <Link
                     key={cat.id}
                     href={`/${cat.id}`}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-800 shadow-sm transition-colors hover:border-blue-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500 dark:hover:text-blue-400"
                   >
-                    <Icon className={`h-3.5 w-3.5 ${cat.color}`} />
+                    <Icon className={`h-4 w-4 ${cat.color}`} aria-hidden="true" />
                     <span>{cat.name}</span>
                   </Link>
                 );
               })}
             </div>
           </div>
+
+          {/* On-Device Recently Used Strip (Rendered only after >=1 visit; disclosed localStorage) */}
+          {recentTools.length > 0 && (
+            <div className="mt-8 flex flex-wrap items-center gap-2 border-t border-slate-200/90 pt-5 dark:border-slate-800">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                Recent on this device:
+              </span>
+              {recentTools.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="inline-flex min-h-[44px] items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 transition-colors hover:border-blue-500 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-500"
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <button
+                type="button"
+                onClick={clearRecentTools}
+                aria-label="Clear recently used tools stored locally in your browser"
+                className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-slate-400 dark:hover:text-white"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                Clear
+              </button>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                (Saved locally in browser storage only)
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Popular Tools */}
-      {popularTools.length > 0 && (
-        <section className="border-b border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/30">
-          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-            <div className="mb-7 flex items-end justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-                  Quick access
-                </p>
-
-                <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
-                  Popular Tools
-                </h2>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveCategory('all');
-                  document
-                    .getElementById('all-tools')
-                    ?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hidden items-center gap-1 text-sm font-medium text-blue-600 transition hover:text-blue-700 sm:flex"
-              >
-                View all
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {popularTools.map((tool) => {
-                const category = getCategory(tool.categoryId);
-
-                return (
-                  <Link
-                    key={tool.id}
-                    href={`/${tool.categoryId}/${tool.slug}`}
-                    className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:shadow-black/20"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="mb-3 inline-flex rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
-                          <Wrench className="h-5 w-5" />
-                        </div>
-
-                        <h3 className="font-semibold text-slate-900 dark:text-white">
-                          {tool.name}
-                        </h3>
-
-                        <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                          {tool.description}
-                        </p>
-                      </div>
-
-                      <ArrowUpRight className="h-5 w-5 shrink-0 text-slate-400 transition group-hover:text-blue-600" />
-                    </div>
-
-                    {category && (
-                      <p className="mt-4 text-xs font-medium text-slate-400">
-                        {category.name}
-                      </p>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* All Tools */}
+      {/* =====================================================================
+          2. FOUR TASK-FIRST WORKFLOW LANES (DYNAMICALLY RESOLVED FROM REGISTRY)
+         ===================================================================== */}
       <section
-        id="all-tools"
-        className="mx-auto max-w-7xl scroll-mt-24 px-4 py-14 sm:px-6 lg:px-8"
+        aria-labelledby="workflow-lanes-heading"
+        className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
       >
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-blue-600">
-            <LayoutGrid className="h-5 w-5" />
-            <span className="text-sm font-semibold uppercase tracking-wider">
-              Tool library
-            </span>
-          </div>
-
-          <div className="mt-2 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">
-                Explore Free Tools
+              <h2
+                id="workflow-lanes-heading"
+                className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white"
+              >
+                Start by Task
               </h2>
-
-              <p className="mt-2 text-slate-600 dark:text-slate-400">
-                Choose a category or browse the complete collection of {tools.filter((t) => t.status === 'published' && !t.hidden).length} utilities and 22 country salary calculators.
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Jump straight into common developer, document, media, and financial workflows.
               </p>
             </div>
+            <a
+              href="#tool-library"
+              className="inline-flex min-h-[44px] items-center gap-1 self-start text-sm font-semibold text-blue-700 hover:underline sm:self-auto dark:text-blue-400"
+            >
+              Browse all {publishedTools.length} tools
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
 
-            <span className="text-sm text-slate-500 dark:text-slate-400">
-              {filteredTools.length}{' '}
-              {filteredTools.length === 1 ? 'tool' : 'tools'}
-            </span>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {resolvedWorkflowLanes.map((lane) => {
+              const Icon = lane.icon;
+              return (
+                <div
+                  key={lane.id}
+                  className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-800 dark:bg-slate-900/60"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`h-5 w-5 shrink-0 ${lane.accent}`} aria-hidden="true" />
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      {lane.title}
+                    </h3>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-600 dark:text-slate-400">
+                    {lane.subtitle}
+                  </p>
+                  <ul className="mt-4 space-y-1 border-t border-slate-200/80 pt-3 dark:border-slate-800">
+                    {lane.links.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={() => recordToolVisit(item.href, item.label)}
+                          className="group flex min-h-[40px] items-center justify-between rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-800 transition-colors hover:bg-white hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-blue-400"
+                        >
+                          <span className="truncate">{item.label}</span>
+                          <ArrowUpRight
+                            className="h-3.5 w-3.5 shrink-0 text-slate-400 transition-colors group-hover:text-blue-700 dark:group-hover:text-blue-400"
+                            aria-hidden="true"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* =====================================================================
+          3. UNIFIED TOOL LIBRARY (SINGLE SSR-CRAWLABLE DIRECTORY)
+         ===================================================================== */}
+      <section
+        id="tool-library"
+        aria-labelledby="tool-library-heading"
+        className="mx-auto max-w-7xl scroll-mt-20 px-4 py-14 sm:px-6 lg:px-8"
+      >
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div>
+            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider">
+                Complete Directory
+              </span>
+            </div>
+            <h2
+              id="tool-library-heading"
+              className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white"
+            >
+              All {publishedTools.length} Browser Tools
+            </h2>
+          </div>
+
+          {/* Inline Quick Filter (44px height) */}
+          <div className="relative w-full sm:max-w-xs">
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            />
+            <input
+              type="search"
+              value={inlineFilter}
+              onChange={(e) => setInlineFilter(e.target.value)}
+              placeholder="Filter tools by name or format..."
+              aria-label="Filter tools in directory"
+              className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition-colors focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 motion-reduce:transition-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            />
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="mb-8 overflow-x-auto pb-2">
-          <div className="flex min-w-max gap-2">
+        {/* Category Filter Tabs (44px touch targets) */}
+        <div className="mt-6 overflow-x-auto pb-2">
+          <div className="flex min-w-max gap-2" role="tablist" aria-label="Filter tools by category">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeCategory === 'all'}
               onClick={() => setActiveCategory('all')}
-              aria-pressed={activeCategory === 'all'}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                activeCategory === 'all'
+              className={`min-h-[44px] rounded-xl border px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none ${activeCategory === 'all'
                   ? 'border-blue-600 bg-blue-600 text-white'
-                  : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
-              }`}
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                }`}
             >
-              <LayoutGrid className="h-4 w-4" />
-              All Tools
+              All ({publishedTools.length})
             </button>
 
             {visibleCategories.map((category) => {
-              const Icon = category.icon;
+              const count = publishedTools.filter((t) => t.categoryId === category.id).length;
               const isActive = activeCategory === category.id;
-
               return (
                 <button
                   key={category.id}
                   type="button"
+                  role="tab"
+                  aria-selected={isActive}
                   onClick={() => setActiveCategory(category.id)}
-                  aria-pressed={isActive}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                    isActive
+                  className={`min-h-[44px] rounded-xl border px-4 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none ${isActive
                       ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
-                  }`}
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                    }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  {category.name}
+                  {category.name} ({count})
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Tool Grid */}
+        {/* Compact, High-Scanability Tool Grid */}
         {filteredTools.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredTools.map((tool) => {
               const category = getCategory(tool.categoryId);
+              const Icon = category?.icon || ImageIcon;
+              const isLiveApi = LIVE_API_TOOL_SLUGS.has(tool.slug);
+              const href = `/${tool.categoryId}/${tool.slug}`;
 
               return (
                 <Link
                   key={tool.id}
-                  href={`/${tool.categoryId}/${tool.slug}`}
-                  className="group flex min-h-[190px] flex-col rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-800 dark:hover:shadow-black/20"
+                  href={href}
+                  onClick={() => recordToolVisit(href, tool.name)}
+                  className="group flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="rounded-xl bg-slate-100 p-2.5 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                      <Wrench className="h-5 w-5" />
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Icon
+                          className={`h-4 w-4 shrink-0 ${category?.color || 'text-blue-600'}`}
+                          aria-hidden="true"
+                        />
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                          {category?.name}
+                        </span>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold ${isLiveApi
+                            ? 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                            : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          }`}
+                      >
+                        {isLiveApi ? 'Local + API' : 'In-Browser'}
+                      </span>
                     </div>
 
-                    <ArrowUpRight className="h-5 w-5 text-slate-300 transition group-hover:text-blue-600 dark:text-slate-600" />
-                  </div>
-
-                  <div className="mt-5 flex-1">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                    <h3 className="mt-2.5 text-sm font-bold text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-400">
                       {tool.name}
                     </h3>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-400">
                       {tool.description}
                     </p>
                   </div>
 
-                  {category && (
-                    <div className="mt-5 flex items-center gap-2 text-xs font-medium text-slate-400">
-                      <span>{category.name}</span>
-
-                      {tool.isPopular && (
-                        <>
-                          <span>•</span>
-                          <span className="text-blue-600 dark:text-blue-400">
-                            Popular
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-3.5 flex items-center justify-between border-t border-slate-100 pt-2.5 text-xs font-semibold text-blue-700 dark:border-slate-800 dark:text-blue-400">
+                    <span>Open workspace</span>
+                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                  </div>
                 </Link>
               );
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-slate-300 px-6 py-16 text-center dark:border-slate-700">
-            <Search className="mx-auto h-8 w-8 text-slate-400" />
-
-            <h3 className="mt-4 font-semibold">
-              No tools in this category yet
-            </h3>
-
-            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
-              More tools are being added to this category.
+          <div className="mt-6 rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center dark:border-slate-700">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              No matching tools found
             </p>
-
             <button
               type="button"
-              onClick={() => setActiveCategory('all')}
-              className="mt-5 text-sm font-semibold text-blue-600 hover:text-blue-700"
+              onClick={() => {
+                setInlineFilter('');
+                setActiveCategory('all');
+              }}
+              className="mt-3 inline-flex min-h-[44px] items-center px-4 text-xs font-semibold text-blue-700 hover:underline dark:text-blue-400"
             >
-              Browse all tools
+              Reset filters
             </button>
           </div>
         )}
+      </section>
 
-        {/* Global Salary & Take-Home Pay Calculators (22 Countries) */}
-        {(activeCategory === 'all' || activeCategory === 'finance') && (
-          <div className="mt-12 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:rounded-3xl sm:p-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-5 dark:border-slate-800">
-              <div>
-                <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
-                  Global Salary & Take-Home Pay Calculators (22 Countries)
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Calculate gross-to-net pay, statutory income tax brackets, social contributions, and employer cost with 2026 rules:
-                </p>
+      {/* =====================================================================
+          4. 22-COUNTRY STATUTORY SALARY CALCULATOR STRIP
+         ===================================================================== */}
+      <section
+        aria-labelledby="country-salary-heading"
+        className="border-y border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <Globe className="h-4 w-4" aria-hidden="true" />
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider">
+                  International Payroll &amp; Tax
+                </span>
               </div>
-              <Link
-                href="/finance/salary-calculator"
-                className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              <h2
+                id="country-salary-heading"
+                className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
               >
-                <span>All Salary Calculators</span>
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
+                22 Country Salary &amp; Take-Home Pay Calculators
+              </h2>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Dedicated gross-to-net calculators with national tax brackets, social security caps, and employer cost breakdowns.
+              </p>
             </div>
+            <Link
+              href="/finance/salary-calculator"
+              className="inline-flex min-h-[44px] shrink-0 items-center gap-1 text-sm font-semibold text-blue-700 hover:underline dark:text-blue-400"
+            >
+              Open Global Salary Hub
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-              {GLOBAL_SALARY_COUNTRIES.map((country) => (
-                <Link
-                  key={country.slug}
-                  href={`/finance/salary-calculator/${country.slug}`}
-                  className="group flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/50 p-2.5 text-xs font-medium text-slate-700 transition hover:border-blue-400 hover:bg-white hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-slate-800 dark:hover:text-blue-400"
+          {/* Region Filter Tabs (44px touch targets) */}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {REGION_TABS.map((region) => {
+              const active = activeRegion === region;
+              return (
+                <button
+                  key={region}
+                  type="button"
+                  onClick={() => setActiveRegion(region)}
+                  className={`min-h-[44px] rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none ${active
+                      ? 'border-blue-600 bg-blue-600 text-white'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                    }`}
                 >
-                  <span className="text-base leading-none">{country.flag}</span>
-                  <div className="truncate">
-                    <span className="block truncate font-semibold text-slate-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
-                      {country.name}
-                    </span>
-                    <span className="text-[10px] text-slate-400">
-                      {country.currency}
-                    </span>
+                  {region === 'All' ? `All (${SALARY_COUNTRIES.length})` : region}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+            {filteredCountries.map((country) => (
+              <Link
+                key={country.slug}
+                href={`/finance/salary-calculator/${country.slug}`}
+                onClick={() =>
+                  recordToolVisit(
+                    `/finance/salary-calculator/${country.slug}`,
+                    `${country.name} Salary Calculator`
+                  )
+                }
+                className="group flex min-h-[52px] items-center gap-2.5 rounded-xl border border-slate-200 bg-white p-3 text-xs transition-colors hover:border-blue-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500"
+              >
+                <span className="text-base leading-none" aria-hidden="true">
+                  {country.flag}
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate font-semibold text-slate-900 group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-400">
+                    {country.name}
                   </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Ad */}
-      {homeAdSlot && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AdUnit slotId={homeAdSlot} />
-        </div>
-      )}
-
-      {/* Why KivaroTools */}
-      <section className="border-y border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/40">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-              Why KivaroTools
-            </p>
-
-            <h2 className="mt-2 text-3xl font-bold tracking-tight">
-              Enterprise precision without cloud privacy risks
-            </h2>
-
-            <p className="mt-4 text-slate-600 dark:text-slate-400">
-              KivaroTools combines deterministic mathematical engines and isolated browser Web Workers
-              so you can process sensitive data locally on your own hardware.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <FeatureCard
-              icon={<ShieldCheck className="h-5 w-5" />}
-              title="100% Client-Side File & Code Privacy"
-              description="PDFs, photos, JSON payloads, SQL queries, regex logs, and cryptographic keys execute strictly in local browser memory without remote file uploads."
-            />
-
-            <FeatureCard
-              icon={<Zap className="h-5 w-5" />}
-              title="Web Worker & TypedArray Speed"
-              description="Background threads and virtualized DOM trees let you inspect 25 MB JSON trees, flatten 50 MB spreadsheets, and merge 750 MB PDFs without browser freezes."
-            />
-
-            <FeatureCard
-              icon={<Wrench className="h-5 w-5" />}
-              title="Institutional-Grade Depth"
-              description="From 80% LTV PMI cancellation and 3,000-path Monte Carlo simulations to 19-dialect SQL linting and 5-pass target-KB image compression."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-              How it works
-            </p>
-
-            <h2 className="mt-2 text-3xl font-bold tracking-tight">
-              Three simple steps
-            </h2>
-
-            <p className="mt-4 max-w-lg leading-7 text-slate-600 dark:text-slate-400">
-              Find the tool you need, enter your data or drop your files,
-              and export clean results immediately with zero sign-up friction.
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StepCard
-              number="01"
-              title="Choose a tool"
-              description="Search by keyword (e.g. JSON, PITI, WebP, QR) or browse by category."
-            />
-
-            <StepCard
-              number="02"
-              title="Process locally"
-              description="Configure options as your browser computes results in real time."
-            />
-
-            <StepCard
-              number="03"
-              title="Export or copy"
-              description="Download watermark-free PDFs, Excel workbooks, ZIPs, SVGs, or copy code."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="border-t border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-              FAQ
-            </p>
-
-            <h2 className="mt-2 text-3xl font-bold tracking-tight">
-              Frequently asked questions
-            </h2>
-          </div>
-
-          <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-            {HOME_FAQS.map((faq, index) => (
-              <FaqItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-              />
+                  <div className="truncate font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                    {country.currency}
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="border-t border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
-          <div className="mx-auto inline-flex rounded-2xl bg-blue-50 p-3 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-            <Wrench className="h-6 w-6" />
+      {/* =====================================================================
+          5. ORIGINAL PUBLISHER CONTENT: HOW KIVAROTOOLS WORKS & DATA HANDLING
+         ===================================================================== */}
+      <section
+        aria-labelledby="architecture-transparency-heading"
+        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+      >
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <h2
+              id="architecture-transparency-heading"
+              className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+            >
+              How KivaroTools Works &amp; Handles Your Data
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+              Most online utility portals upload your PDFs, database files, or code snippets to remote servers before returning a download link. KivaroTools is built to keep routine file and code processing on your own device whenever technically possible, while clearly labeling the few tools that require live network lookups.
+            </p>
           </div>
 
-          <h2 className="mt-5 text-3xl font-bold tracking-tight">
-            Find the tool you need
-          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-7">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Local-First File &amp; Code Processing
+                </h3>
+              </div>
+              <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-400">
+                Utilities marked <strong>In-Browser</strong> run directly in your browser using standard Web APIs (Canvas, Web Workers, Web Crypto, and TypeScript parsers). Your documents, SQLite databases, Parquet datasets, and JSON payloads stay in local memory.
+              </p>
+            </div>
 
-          <p className="mx-auto mt-3 max-w-xl text-slate-600 dark:text-slate-400">
-            Browse the collection or use instant keyword search to get started.
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              document
-                .getElementById('all-tools')
-                ?.scrollIntoView({ behavior: 'smooth' })
-            }
-            className="mt-7 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            Browse all tools
-            <ArrowRight className="h-4 w-4" />
-          </button>
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-900/50">
+              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Transparent Live-API Boundaries
+                </h3>
+              </div>
+              <p className="mt-2 text-xs leading-6 text-slate-600 dark:text-slate-400">
+                Tools marked <strong>Local + API</strong> (Precious Metals, Currency &amp; Crypto Converter, and Meta Tag URL Auditor) make targeted outbound requests only to fetch market quotes or inspect a public URL you explicitly submit.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
-    </div>
-  );
-}
 
-function FeatureCard({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950">
-      <div className="inline-flex rounded-xl bg-blue-50 p-2.5 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-        {icon}
-      </div>
+      {/* =====================================================================
+          6. FREQUENTLY ASKED QUESTIONS (MATCHES JSON-LD FAQPage EXACTLY)
+         ===================================================================== */}
+      <section
+        aria-labelledby="home-faq-heading"
+        className="border-t border-slate-200 dark:border-slate-800"
+      >
+        <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
+          <h2
+            id="home-faq-heading"
+            className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white"
+          >
+            Frequently Asked Questions
+          </h2>
 
-      <h3 className="mt-5 font-semibold">{title}</h3>
-
-      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function StepCard({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 p-5 dark:border-slate-800">
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
-          {number}
-        </span>
-
-        <Check className="h-4 w-4 text-blue-600" />
-      </div>
-
-      <h3 className="mt-5 font-semibold">{title}</h3>
-
-      <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function FaqItem({
-  question,
-  answer,
-}: {
-  question: string;
-  answer: string;
-}) {
-  return (
-    <details className="group p-5 sm:p-6">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold marker:hidden">
-        <span>{question}</span>
-
-        <span className="shrink-0 text-xl text-slate-400 transition group-open:rotate-45">
-          +
-        </span>
-      </summary>
-
-      <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-400">
-        {answer}
-      </p>
-    </details>
+          <div className="mt-6 divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+            {HOME_FAQS.map((faq, index) => (
+              <details key={index} className="group p-5">
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-slate-900 marker:hidden sm:text-base dark:text-white">
+                  <span>{faq.question}</span>
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 text-xl text-slate-400 transition group-open:rotate-45 motion-reduce:transition-none"
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

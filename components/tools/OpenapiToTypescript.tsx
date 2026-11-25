@@ -112,19 +112,54 @@ function detectMalformedYamlSyntax(raw: string): string | null {
     let curlyDepth = 0;
     let firstUnclosedSquareLine = -1;
     let firstUnclosedCurlyLine = -1;
+    let blockScalarIndent: number | null = null;
 
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
         const line = lines[lineIdx];
+        const indentMatch = line.match(/^(\s*)/);
+        const lineIndent = indentMatch ? indentMatch[1].replace(/\t/g, '  ').length : 0;
+        const trimmedLine = line.trim();
+
+        if (blockScalarIndent !== null) {
+            if (!trimmedLine || lineIndent > blockScalarIndent) {
+                continue;
+            }
+            blockScalarIndent = null;
+        }
+
+        if (!inSingleQuote && !inDoubleQuote && squareDepth === 0 && curlyDepth === 0) {
+            if (/:\s*[|>][+-]?\s*(?:#.*)?$/.test(trimmedLine)) {
+                blockScalarIndent = lineIndent;
+                continue;
+            }
+        }
+
         for (let i = 0; i < line.length; i++) {
             const ch = line[i];
             const prev = i > 0 ? line[i - 1] : '';
+            const next = i + 1 < line.length ? line[i + 1] : '';
 
-            if (ch === "'" && !inDoubleQuote && prev !== '\\') {
-                inSingleQuote = !inSingleQuote;
+            if (ch === "'" && !inDoubleQuote) {
+                if (inSingleQuote) {
+                    if (next === "'") {
+                        i++;
+                        continue;
+                    }
+                    inSingleQuote = false;
+                    continue;
+                }
+                // Only open a YAML single-quoted scalar at a token boundary, not mid-word apostrophes (e.g. user's / don't)
+                if (i === 0 || /[\s:,[{-]/.test(prev)) {
+                    inSingleQuote = true;
+                }
                 continue;
             }
             if (ch === '"' && !inSingleQuote && prev !== '\\') {
-                inDoubleQuote = !inDoubleQuote;
+                if (inDoubleQuote) {
+                    inDoubleQuote = false;
+                } else if (i === 0 || /[\s:,[{-]/.test(prev)) {
+                    inDoubleQuote = true;
+                }
                 continue;
             }
             if (inSingleQuote || inDoubleQuote) continue;
@@ -281,16 +316,22 @@ export default function OpenapiToTypescript() {
         }
     };
 
+    const triggerBlobDownload = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
     const handleDownloadArtifact = () => {
         const blob = new Blob([currentOutputArtifact.code], {
             type: `${currentOutputArtifact.mime};charset=utf-8`,
         });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = currentOutputArtifact.filename;
-        a.click();
-        URL.revokeObjectURL(url);
+        triggerBlobDownload(blob, currentOutputArtifact.filename);
     };
 
     const handleDownloadXlsx = () => {
@@ -299,23 +340,13 @@ export default function OpenapiToTypescript() {
         const blob = new Blob([bytes as unknown as BlobPart], {
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'openapi-contract-inventory.xlsx';
-        a.click();
-        URL.revokeObjectURL(url);
+        triggerBlobDownload(blob, 'openapi-contract-inventory.xlsx');
     };
 
     const handleDownloadCsv = () => {
         if (!compiled) return;
         const blob = new Blob([compiled.inventoryCsv], { type: 'text/csv;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'openapi-endpoints-inventory.csv';
-        a.click();
-        URL.revokeObjectURL(url);
+        triggerBlobDownload(blob, 'openapi-endpoints-inventory.csv');
     };
 
     const filteredOperations = useMemo(() => {
@@ -370,8 +401,8 @@ export default function OpenapiToTypescript() {
                                     onClick={() => handleSelectSample(sample.id)}
                                     title={sample.description}
                                     className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${isSelected
-                                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                            : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                        : 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
                                         }`}
                                 >
                                     {sample.title}
@@ -391,8 +422,8 @@ export default function OpenapiToTypescript() {
                                 }}
                                 title="Click to open 10-Point Linter"
                                 className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-mono font-semibold border transition ${compiled.specHealthScore >= 90
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
-                                        : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800'
                                     }`}
                             >
                                 <span>{compiled.detectedSpecVersion}</span>
@@ -406,8 +437,8 @@ export default function OpenapiToTypescript() {
                             onClick={() => setShowOptionsDrawer((v) => !v)}
                             aria-expanded={showOptionsDrawer}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors ${showOptionsDrawer
-                                    ? 'border-indigo-500 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
-                                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-indigo-400'
+                                ? 'border-indigo-500 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
+                                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-indigo-400'
                                 }`}
                         >
                             <Sliders className="w-3.5 h-3.5" />
@@ -828,8 +859,8 @@ export default function OpenapiToTypescript() {
                                         aria-selected={active}
                                         onClick={() => setActiveOutputTab(tab.id)}
                                         className={`px-2.5 py-1 rounded-md text-xs font-semibold transition ${active
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                                            ? 'bg-indigo-600 text-white'
+                                            : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                                             }`}
                                     >
                                         {tab.label}
@@ -935,8 +966,8 @@ export default function OpenapiToTypescript() {
                                             }
                                         }}
                                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${active
-                                                ? 'bg-indigo-600 text-white shadow-xs'
-                                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400'
+                                            ? 'bg-indigo-600 text-white shadow-xs'
+                                            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400'
                                             }`}
                                     >
                                         <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -980,8 +1011,8 @@ export default function OpenapiToTypescript() {
                                                     type="button"
                                                     onClick={() => setMethodFilter(m)}
                                                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${methodFilter === m
-                                                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                                                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                                                         }`}
                                                 >
                                                     {m}
@@ -1123,8 +1154,8 @@ export default function OpenapiToTypescript() {
                                                 <span className="font-bold text-slate-700 dark:text-slate-200">{chk.label}</span>
                                                 <span
                                                     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${chk.passed
-                                                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                                                            : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
                                                         }`}
                                                 >
                                                     {chk.passed ? <CheckCircle2 className="w-3 h-3" /> : <Info className="w-3 h-3" />}

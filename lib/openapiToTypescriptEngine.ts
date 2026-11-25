@@ -109,16 +109,16 @@ export interface NormalizedEndpointOperation {
 export interface OpenApiLintIssue {
     id: string;
     ruleCode:
-        | 'OAPI_001_SWAGGER_2_LEGACY'
-        | 'OAPI_002_MISSING_OPERATION_ID'
-        | 'OAPI_003_DANGLING_REF_POINTER'
-        | 'OAPI_004_CIRCULAR_SCHEMA_REF'
-        | 'OAPI_005_UNDECLARED_PATH_PARAM'
-        | 'OAPI_006_MISSING_ERROR_RESPONSE'
-        | 'OAPI_007_DUPLICATE_DISCRIMINATOR'
-        | 'OAPI_008_UNTYPED_OBJECT_SCHEMA'
-        | 'OAPI_009_HTTP_INSECURE_SERVER'
-        | 'OAPI_010_MISSING_SCHEMA_DESCRIPTION';
+    | 'OAPI_001_SWAGGER_2_LEGACY'
+    | 'OAPI_002_MISSING_OPERATION_ID'
+    | 'OAPI_003_DANGLING_REF_POINTER'
+    | 'OAPI_004_CIRCULAR_SCHEMA_REF'
+    | 'OAPI_005_UNDECLARED_PATH_PARAM'
+    | 'OAPI_006_MISSING_ERROR_RESPONSE'
+    | 'OAPI_007_DUPLICATE_DISCRIMINATOR'
+    | 'OAPI_008_UNTYPED_OBJECT_SCHEMA'
+    | 'OAPI_009_HTTP_INSECURE_SERVER'
+    | 'OAPI_010_MISSING_SCHEMA_DESCRIPTION';
     severity: 'ERROR' | 'WARNING' | 'INFO';
     location: string;
     title: string;
@@ -260,19 +260,49 @@ function parseYamlScalar(rawVal: string): unknown {
         try {
             return JSON.parse(val);
         } catch {
+            const splitFlowItems = (innerStr: string): string[] => {
+                const items: string[] = [];
+                let cur = '';
+                let inS = false;
+                let inD = false;
+                let depth = 0;
+                for (let i = 0; i < innerStr.length; i++) {
+                    const ch = innerStr[i];
+                    if (inS) {
+                        cur += ch;
+                        if (ch === "'" && innerStr[i + 1] === "'") cur += innerStr[++i];
+                        else if (ch === "'") inS = false;
+                        continue;
+                    }
+                    if (inD) {
+                        cur += ch;
+                        if (ch === '\\' && i + 1 < innerStr.length) cur += innerStr[++i];
+                        else if (ch === '"') inD = false;
+                        continue;
+                    }
+                    if (ch === "'") { inS = true; cur += ch; continue; }
+                    if (ch === '"') { inD = true; cur += ch; continue; }
+                    if (ch === '[' || ch === '{') { depth++; cur += ch; continue; }
+                    if (ch === ']' || ch === '}') { depth = Math.max(0, depth - 1); cur += ch; continue; }
+                    if (ch === ',' && depth === 0) {
+                        if (cur.trim()) items.push(cur.trim());
+                        cur = '';
+                        continue;
+                    }
+                    cur += ch;
+                }
+                if (cur.trim()) items.push(cur.trim());
+                return items;
+            };
             if (val.startsWith('[') && val.endsWith(']')) {
-                const items = val
-                    .slice(1, -1)
-                    .split(',')
-                    .map((s) => s.trim())
-                    .filter(Boolean);
+                const items = splitFlowItems(val.slice(1, -1));
                 return items.map((item) => parseYamlScalar(item));
             }
             if (val.startsWith('{') && val.endsWith('}')) {
                 const objOut: Record<string, unknown> = {};
                 const inner = val.slice(1, -1).trim();
                 if (inner) {
-                    const pairs = inner.split(',').map((s) => s.trim()).filter(Boolean);
+                    const pairs = splitFlowItems(inner);
                     for (const pair of pairs) {
                         const cIdx = pair.indexOf(':');
                         if (cIdx !== -1) {
@@ -709,8 +739,8 @@ function normalizeSchemaObject(
         pattern: typeof s.pattern === 'string' ? s.pattern : undefined,
         minLength: typeof s.minLength === 'number' ? s.minLength : undefined,
         maxLength: typeof s.maxLength === 'number' ? s.maxLength : undefined,
-        minimum: typeof s.minimum === 'number' ? s.minimum : undefined,
-        maximum: typeof s.maximum === 'number' ? s.maximum : undefined,
+        minimum: typeof s.minimum === 'number' && s.exclusiveMinimum !== true ? s.minimum : undefined,
+        maximum: typeof s.maximum === 'number' && s.exclusiveMaximum !== true ? s.maximum : undefined,
         // OpenAPI 3.1: exclusiveMinimum/Maximum are numbers; OpenAPI 3.0: they are booleans (minimum is then the exclusive bound)
         exclusiveMinimum: typeof s.exclusiveMinimum === 'number'
             ? s.exclusiveMinimum
@@ -760,15 +790,15 @@ function normalizeSchemaObject(
         node.items = s.items
             ? normalizeSchemaObject(s.items, `${cleanName}Item`, knownSchemaMap, danglingRefs)
             : {
-                  name: `${cleanName}Item`,
-                  rawName: `${cleanName}Item`,
-                  type: 'any',
-                  nullable: false,
-                  readOnly: false,
-                  writeOnly: false,
-                  deprecated: false,
-                  description: '',
-              };
+                name: `${cleanName}Item`,
+                rawName: `${cleanName}Item`,
+                type: 'any',
+                nullable: false,
+                readOnly: false,
+                writeOnly: false,
+                deprecated: false,
+                description: '',
+            };
     }
 
     return node;
@@ -1104,7 +1134,9 @@ export function generateTypeScriptFileCode(
 
         const respType = op.primarySuccessSchema
             ? renderTypeScriptTypeExpr(op.primarySuccessSchema, config, 0)
-            : 'Record<string, unknown>';
+            : op.primarySuccessStatus === 204
+                ? 'void'
+                : 'Record<string, unknown>';
         out.push(`export type ${opPascal}Response = ${respType};`);
         out.push(``);
     }
@@ -1252,12 +1284,12 @@ export function renderZodSchemaExpr(
     if (node.type === 'array') {
         const itemSchema = node.items
             ? renderZodSchemaExpr(
-                  node.items,
-                  config,
-                  circularSchemas,
-                  currentRootSchemaName,
-                  indentLevel
-              )
+                node.items,
+                config,
+                circularSchemas,
+                currentRootSchemaName,
+                indentLevel
+            )
             : 'z.unknown()';
         let a = `z.array(${itemSchema})`;
         if (node.minItems !== undefined) a += `.min(${node.minItems})`;
@@ -1298,9 +1330,15 @@ export function renderZodSchemaExpr(
                 indentLevel + 1
             );
             if (!isReq) {
-                childZod = config.optionalWithNullish
-                    ? `${childZod}.nullish()`
-                    : `${childZod}.optional()`;
+                if (config.optionalWithNullish) {
+                    if (!childZod.endsWith('.nullish()')) {
+                        childZod = childZod.endsWith('.nullable()')
+                            ? `${childZod.slice(0, -'.nullable()'.length)}.nullish()`
+                            : `${childZod}.nullish()`;
+                    }
+                } else if (!childZod.endsWith('.optional()') && !childZod.endsWith('.nullish()')) {
+                    childZod = `${childZod}.optional()`;
+                }
             }
             lines.push(`${pad}${formatPropertyKey(propKey)}: ${childZod},`);
         }
@@ -1676,9 +1714,15 @@ export function generateMswAndClientFiles(
 
         mswLines.push(`export function ${fnName}(overrideResponse?: unknown) {`);
         mswLines.push(`  return http.${mswMethod}(\`\${BASE_URL}${mswPath}\`, () => {`);
-        mswLines.push(
-            `    return HttpResponse.json(overrideResponse ?? ${mockLiteral}, { status: ${op.primarySuccessStatus} });`
-        );
+        if (op.primarySuccessStatus === 204 && !op.primarySuccessSchema) {
+            mswLines.push(
+                `    return overrideResponse !== undefined ? HttpResponse.json(overrideResponse, { status: 200 }) : new HttpResponse(null, { status: 204 });`
+            );
+        } else {
+            mswLines.push(
+                `    return HttpResponse.json(overrideResponse ?? ${mockLiteral}, { status: ${op.primarySuccessStatus} });`
+            );
+        }
         mswLines.push(`  });`);
         mswLines.push(`}`);
         mswLines.push(``);
@@ -1749,6 +1793,9 @@ export function generateMswAndClientFiles(
         `    if (!res.ok) {`,
         `      throw new Error(\`HTTP \${res.status} \${res.statusText} on \${path}\`);`,
         `    }`,
+        `    if (res.status === 204 || res.headers.get('content-length') === '0') {`,
+        `      return undefined as TResponse;`,
+        `    }`,
         `    return (await res.json()) as TResponse;`,
         `  }`,
         ``,
@@ -1760,7 +1807,10 @@ export function generateMswAndClientFiles(
         const opPascal = toPascalCaseIdentifier(op.operationId);
         const interpolatedPath = op.path.replace(
             /\{([^}]+)\}/g,
-            '${encodeURIComponent(String(params.$1))}'
+            (_, pName: string) =>
+                isValidTsIdentifier(pName)
+                    ? `\${encodeURIComponent(String(params.${pName}))}`
+                    : `\${encodeURIComponent(String(params[${JSON.stringify(pName)}]))}`
         );
         const hasPath = op.parameters.some((p) => p.in === 'path');
         const hasQuery = op.parameters.some((p) => p.in === 'query');
@@ -2104,9 +2154,35 @@ export function verifyGeneratedCodeInvariants(
         let inSingle = false;
         let inDouble = false;
         let inTick = false;
+        let inLineComment = false;
+        let inBlockComment = false;
         for (let i = 0; i < code.length; i++) {
             const c = code[i];
+            const next = code[i + 1];
             const prev = code[i - 1];
+            if (inLineComment) {
+                if (c === '\n') inLineComment = false;
+                continue;
+            }
+            if (inBlockComment) {
+                if (c === '*' && next === '/') {
+                    inBlockComment = false;
+                    i++;
+                }
+                continue;
+            }
+            if (!inSingle && !inDouble && !inTick) {
+                if (c === '/' && next === '/') {
+                    inLineComment = true;
+                    i++;
+                    continue;
+                }
+                if (c === '/' && next === '*') {
+                    inBlockComment = true;
+                    i++;
+                    continue;
+                }
+            }
             if (c === "'" && !inDouble && !inTick && prev !== '\\') inSingle = !inSingle;
             else if (c === '"' && !inSingle && !inTick && prev !== '\\') inDouble = !inDouble;
             else if (c === '`' && !inSingle && !inDouble && prev !== '\\') inTick = !inTick;

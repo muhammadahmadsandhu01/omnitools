@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, X } from 'lucide-react';
 import {
   useEffect,
@@ -11,32 +12,25 @@ import {
 } from 'react';
 
 import { categories, tools } from '@/config/toolsData';
+import { SALARY_COUNTRIES } from '@/config/salaryCountries';
 
+const RECENT_STORAGE_KEY = 'kivarotools_recent_tools_v1';
 
-const COUNTRY_SEARCH_ITEMS = [
-  { name: 'United States Salary Calculator (IRS & FICA)', slug: 'salary-calculator/united-states', categoryId: 'finance', keywords: 'usa us paycheck tax 401k w4 state tax' },
-  { name: 'United Kingdom Salary Calculator (HMRC PAYE & NI)', slug: 'salary-calculator/united-kingdom', categoryId: 'finance', keywords: 'uk britain england scotland paye national insurance pension' },
-  { name: 'Germany Salary Calculator (Brutto Netto & Steuerklasse)', slug: 'salary-calculator/germany', categoryId: 'finance', keywords: 'deutschland lohnsteuer soli sozialversicherung' },
-  { name: 'India Salary Calculator (New vs Old Tax Regime 115BAC)', slug: 'salary-calculator/india', categoryId: 'finance', keywords: 'inhand salary epf 80c 87a rebate inr' },
-  { name: 'Pakistan Salary Calculator (FBR Salaried Tax Slabs)', slug: 'salary-calculator/pakistan', categoryId: 'finance', keywords: 'pk pkr fbr income tax eobi take home pay' },
-  { name: 'Canada Salary Calculator (CRA Federal, CPP & EI)', slug: 'salary-calculator/canada', categoryId: 'finance', keywords: 'ca cad ontario bc alberta paycheck tax' },
-  { name: 'Australia Salary Calculator (ATO Stage 3, LITO & Super)', slug: 'salary-calculator/australia', categoryId: 'finance', keywords: 'au aud medicare levy superannuation payg' },
-  { name: 'Singapore Salary Calculator (IRAS Tax & CPF)', slug: 'salary-calculator/singapore', categoryId: 'finance', keywords: 'sg sgd cpf ordinary wage ceiling' },
-  { name: 'UAE Salary Calculator (0% Tax, GPSSA & Gratuity)', slug: 'salary-calculator/united-arab-emirates', categoryId: 'finance', keywords: 'dubai abu dhabi aed expat end of service' },
-  { name: 'Saudi Arabia Salary Calculator (0% Tax & GOSI)', slug: 'salary-calculator/saudi-arabia', categoryId: 'finance', keywords: 'ksa riyadh sar gosi saned expat' },
-  { name: 'France Salary Calculator (IR & URSSAF Net Pay)', slug: 'salary-calculator/france', categoryId: 'finance', keywords: 'fr eur salaire brut en net csg crds' },
-  { name: 'Japan Salary Calculator (Shotokuzei, Juminzei & Shakai Hoken)', slug: 'salary-calculator/japan', categoryId: 'finance', keywords: 'jp jpy tokyo nenkin kenko hoken' },
-  { name: 'Switzerland Salary Calculator (Federal, Cantonal & AHV/BVG)', slug: 'salary-calculator/switzerland', categoryId: 'finance', keywords: 'ch chf zurich geneva pillar 2' },
-  { name: 'Netherlands Salary Calculator (Box 1, AHK & 30% Ruling)', slug: 'salary-calculator/netherlands', categoryId: 'finance', keywords: 'nl eur dutch arbeidskorting expat' },
-  { name: 'Ireland Salary Calculator (PAYE, USC & PRSI)', slug: 'salary-calculator/ireland', categoryId: 'finance', keywords: 'ie eur dublin revenue tax credits' },
-  { name: 'New Zealand Salary Calculator (IRD PAYE, ACC & KiwiSaver)', slug: 'salary-calculator/new-zealand', categoryId: 'finance', keywords: 'nz nzd auckland kiwisaver' },
-  { name: 'Spain Salary Calculator (IRPF & Seguridad Social)', slug: 'salary-calculator/spain', categoryId: 'finance', keywords: 'es eur madrid sueldo neto autonomo' },
-  { name: 'Italy Salary Calculator (IRPEF, INPS & Stipendio Netto)', slug: 'salary-calculator/italy', categoryId: 'finance', keywords: 'it eur rome milan cuneo fiscale' },
-  { name: 'South Africa Salary Calculator (SARS PAYE, Rebate & UIF)', slug: 'salary-calculator/south-africa', categoryId: 'finance', keywords: 'za zar sars medical tax credit' },
-  { name: 'Brazil Salary Calculator (IRPF, CLT INSS & FGTS)', slug: 'salary-calculator/brazil', categoryId: 'finance', keywords: 'br brl salario liquido clt' },
-  { name: 'Mexico Salary Calculator (SAT ISR & IMSS Cuotas)', slug: 'salary-calculator/mexico', categoryId: 'finance', keywords: 'mx mxn sueldo neto nomina' },
-  { name: 'South Korea Salary Calculator (NTS Tax & 4 Insurances)', slug: 'salary-calculator/south-korea', categoryId: 'finance', keywords: 'kr krw seoul national pension' },
-];
+function recordRecentTool(href: string, name: string) {
+  try {
+    const raw = window.localStorage.getItem(RECENT_STORAGE_KEY);
+    const prev = raw ? JSON.parse(raw) : [];
+    const list = Array.isArray(prev)
+      ? prev.filter((item: { href?: string }) => item && item.href !== href)
+      : [];
+    window.localStorage.setItem(
+      RECENT_STORAGE_KEY,
+      JSON.stringify([{ href, name }, ...list].slice(0, 5))
+    );
+  } catch {
+    // Ignore storage errors in private browsing
+  }
+}
 
 interface ToolSearchProps {
   className?: string;
@@ -47,6 +41,7 @@ export default function ToolSearch({
   className = '',
   onNavigate,
 }: ToolSearchProps) {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -56,14 +51,32 @@ export default function ToolSearch({
 
   const normalizedQuery = query.trim().toLowerCase();
 
+  // Global Ctrl+K / Cmd+K shortcut to focus search
+  useEffect(() => {
+    function handleGlobalKeyDown(event: globalThis.KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        setIsOpen(true);
+      }
+    }
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
+
   const results = useMemo(() => {
     if (!normalizedQuery) return [];
 
     const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+    const financeCategory = categories.find((item) => item.id === 'finance');
 
-    const countryMatches = COUNTRY_SEARCH_ITEMS.map((c) => {
-      const name = c.name.toLowerCase();
-      const kw = c.keywords.toLowerCase();
+    const countryMatches = SALARY_COUNTRIES.map((c) => {
+      const name = c.searchName.toLowerCase();
+      const kw = c.searchKeywords.toLowerCase();
       let score = 0;
       if (name.includes(normalizedQuery)) score += 55;
       if (kw.includes(normalizedQuery)) score += 35;
@@ -75,13 +88,13 @@ export default function ToolSearch({
       return {
         tool: {
           id: `country-${c.slug}`,
-          name: c.name,
-          slug: c.slug,
+          name: c.searchName,
+          slug: `salary-calculator/${c.slug}`,
           categoryId: 'finance' as const,
           description: 'Dedicated statutory tax & net take-home pay calculator',
           status: 'published' as const,
         },
-        category: categories.find((item) => item.id === 'finance'),
+        category: financeCategory,
         score,
       };
     }).filter((item) => item.score > 0);
@@ -103,7 +116,6 @@ export default function ToolSearch({
 
         let score = 0;
 
-        // Exact / beginning matches should appear first.
         if (name === normalizedQuery || slug === normalizedQuery) score += 120;
         if (name.startsWith(normalizedQuery) || slug.startsWith(normalizedQuery)) score += 70;
         if (name.includes(normalizedQuery)) score += 45;
@@ -113,7 +125,6 @@ export default function ToolSearch({
         if (description.includes(normalizedQuery)) score += 15;
         if (featuresJoined.includes(normalizedQuery)) score += 10;
 
-        // Multi-word token matching (e.g. "gold tola", "json excel", "compress 50kb")
         if (queryTokens.length > 1) {
           const combined = `${name} ${slug} ${seoTitle} ${keywordsJoined} ${description} ${featuresJoined}`;
           const matchedTokens = queryTokens.filter((tok) => combined.includes(tok));
@@ -175,7 +186,6 @@ export default function ToolSearch({
 
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-
       setActiveIndex((current) =>
         current < results.length - 1 ? current + 1 : 0
       );
@@ -183,7 +193,6 @@ export default function ToolSearch({
 
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-
       setActiveIndex((current) =>
         current > 0 ? current - 1 : results.length - 1
       );
@@ -191,11 +200,14 @@ export default function ToolSearch({
 
     if (event.key === 'Enter') {
       event.preventDefault();
-
-      if (activeIndex >= 0 && results[activeIndex]) {
-        const { tool } = results[activeIndex];
-
-        window.location.href = `/${tool.categoryId}/${tool.slug}`;
+      const selected = activeIndex >= 0 ? results[activeIndex] : results[0];
+      if (selected) {
+        const href = `/${selected.tool.categoryId}/${selected.tool.slug}`;
+        recordRecentTool(href, selected.tool.name);
+        setIsOpen(false);
+        setQuery('');
+        onNavigate?.();
+        router.push(href);
       }
     }
 
@@ -215,10 +227,7 @@ export default function ToolSearch({
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative w-full ${className}`}
-    >
+    <div ref={containerRef} className={`relative w-full ${className}`}>
       {/* Search input */}
       <div className="group relative">
         <Search
@@ -238,7 +247,7 @@ export default function ToolSearch({
             if (query.trim()) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search tools (e.g. JSON, PDF, Mortgage, QR, WebP)..."
+          placeholder="Search 42 tools & 22 countries..."
           autoComplete="off"
           spellCheck={false}
           role="combobox"
@@ -246,10 +255,10 @@ export default function ToolSearch({
           aria-autocomplete="list"
           aria-controls="tool-search-results"
           aria-label="Search tools"
-          className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-9 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-blue-500 dark:focus:bg-slate-800"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-14 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-blue-500 dark:focus:bg-slate-800"
         />
 
-        {query && (
+        {query ? (
           <button
             type="button"
             onClick={clearSearch}
@@ -258,6 +267,13 @@ export default function ToolSearch({
           >
             <X className="h-4 w-4" />
           </button>
+        ) : (
+          <kbd
+            aria-hidden="true"
+            className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-400 sm:inline-block dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500"
+          >
+            Ctrl K
+          </kbd>
         )}
       </div>
 
@@ -282,22 +298,21 @@ export default function ToolSearch({
                   aria-selected={activeIndex === index}
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => {
+                    recordRecentTool(`/${tool.categoryId}/${tool.slug}`, tool.name);
                     setIsOpen(false);
                     setQuery('');
                     onNavigate?.();
                   }}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                    activeIndex === index
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${activeIndex === index
                       ? 'bg-blue-50 dark:bg-blue-950/40'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                      activeIndex === index
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${activeIndex === index
                         ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400'
                         : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                    }`}
+                      }`}
                   >
                     {category?.icon ? (
                       <category.icon className="h-4 w-4" />
@@ -317,11 +332,10 @@ export default function ToolSearch({
                   </div>
 
                   <ArrowRight
-                    className={`h-4 w-4 shrink-0 transition-all ${
-                      activeIndex === index
+                    className={`h-4 w-4 shrink-0 transition-all ${activeIndex === index
                         ? 'translate-x-0 text-blue-600 opacity-100 dark:text-blue-400'
                         : '-translate-x-1 text-slate-400 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'
-                    }`}
+                      }`}
                   />
                 </Link>
               ))}
@@ -341,7 +355,7 @@ export default function ToolSearch({
               </p>
 
               <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                Try searching by format or feature (e.g. JSON, CSV, EMI, Gold, QR, WebP).
+                Try searching by format or feature (e.g. JSON, SQLite, Parquet, PDF, EMI, UK tax).
               </p>
             </div>
           )}

@@ -707,7 +707,7 @@ function extractCellPayloadWithOverflow(
     totalPayloadSize: number
 ): Uint8Array {
     const maxLocal = usableSize - 35;
-    const minLocal = ((usableSize - 12) * 32) / 255 - 23;
+    const minLocal = Math.floor(((usableSize - 12) * 32) / 255) - 23;
 
     if (totalPayloadSize <= maxLocal) {
         return dbBytes.subarray(cellPayloadStart, Math.min(dbBytes.length, cellPayloadStart + totalPayloadSize));
@@ -1431,6 +1431,124 @@ function buildTableBTreePages(
  * Serializes the entire workspace into a valid, standards-compliant SQLite 3 binary file (Uint8Array)
  * that passes `PRAGMA integrity_check` in native C sqlite3 / Python sqlite3.
  */
+function sqliteStorageClassRank(v: SqliteCellValue): number {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number' || typeof v === 'boolean') return 1;
+    if (typeof v === 'string') return 2;
+    return 3;
+}
+
+function compareSqliteCellValues(a: SqliteCellValue, b: SqliteCellValue): number {
+    const ra = sqliteStorageClassRank(a);
+    const rb = sqliteStorageClassRank(b);
+    if (ra !== rb) return ra - rb;
+    if (ra === 0) return 0;
+    if (ra === 1) return Number(a) - Number(b);
+    const sa = String(a);
+    const sb = String(b);
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+}
+
+function buildSingleIndexLeafPage(payloads: Uint8Array[], pageSize: number): Uint8Array {
+    const pageBytes = new Uint8Array(pageSize);
+    const dv = new DataView(pageBytes.buffer);
+    dv.setUint8(0, 0x0a); // Leaf Index B-Tree (0x0a)
+    dv.setUint16(1, 0, false);
+
+    let contentOffset = pageSize;
+    let ptrOffset = 8;
+    let writtenCells = 0;
+
+    for (const payload of payloads) {
+        const lenVarint = writeSqliteVarint(payload.length);
+        const cellTotalLen = lenVarint.length + payload.length;
+        if (ptrOffset + 2 + cellTotalLen > contentOffset) break;
+
+        contentOffset -= cellTotalLen;
+        pageBytes.set(lenVarint, contentOffset);
+        pageBytes.set(payload, contentOffset + lenVarint.length);
+        dv.setUint16(ptrOffset, contentOffset, false);
+        ptrOffset += 2;
+        writtenCells++;
+    }
+
+    dv.setUint16(3, writtenCells, false);
+    dv.setUint16(5, contentOffset === 65536 ? 0 : contentOffset, false);
+    dv.setUint8(7, 0);
+    return pageBytes;
+}
+
+function buildIndexBTreePages(
+    payloads: Uint8Array[],
+    pageSize: number,
+    startPageNumber: number
+): Uint8Array[] {
+    if (payloads.length === 0) {
+        return [buildSingleIndexLeafPage([], pageSize)];
+    }
+
+    // Partition payloads into leaf chunks + promoted separator keys for Interior Index B-Tree (0x02)
+    const leafChunks: Uint8Array[][] = [];
+    const separators: Uint8Array[] = [];
+    let currentChunk: Uint8Array[] = [];
+    let usedBytes = 8;
+
+    for (let i = 0; i < payloads.length; i++) {
+        const p = payloads[i];
+        const cellTotal = 2 + writeSqliteVarint(p.length).length + p.length;
+        if (usedBytes + cellTotal > pageSize - 32 && currentChunk.length > 0) {
+            leafChunks.push(currentChunk);
+            // Promote current key as separator between previous leaf and next leaf (SQLite index B-tree invariant)
+            separators.push(p);
+            currentChunk = [];
+            usedBytes = 8;
+        } else {
+            currentChunk.push(p);
+            usedBytes += cellTotal;
+        }
+    }
+    leafChunks.push(currentChunk);
+
+    if (leafChunks.length === 1) {
+        return [buildSingleIndexLeafPage(leafChunks[0], pageSize)];
+    }
+
+    const rootPageBytes = new Uint8Array(pageSize);
+    const rdv = new DataView(rootPageBytes.buffer);
+    rdv.setUint8(0, 0x02); // Interior Index B-Tree (0x02)
+    rdv.setUint16(1, 0, false);
+
+    const leafPages = leafChunks.map((ch) => buildSingleIndexLeafPage(ch, pageSize));
+    const rightMostPageNum = startPageNumber + leafPages.length;
+    rdv.setUint32(8, rightMostPageNum, false);
+
+    let contentOffset = pageSize;
+    let ptrOffset = 12;
+    let interiorCells = 0;
+
+    for (let i = 0; i < separators.length; i++) {
+        const childPageNum = startPageNumber + 1 + i;
+        const sepPayload = separators[i];
+        const lenVarint = writeSqliteVarint(sepPayload.length);
+        const cellLen = 4 + lenVarint.length + sepPayload.length;
+        if (ptrOffset + 2 + cellLen > contentOffset) break;
+
+        contentOffset -= cellLen;
+        rdv.setUint32(contentOffset, childPageNum, false);
+        rootPageBytes.set(lenVarint, contentOffset + 4);
+        rootPageBytes.set(sepPayload, contentOffset + 4 + lenVarint.length);
+        rdv.setUint16(ptrOffset, contentOffset, false);
+        ptrOffset += 2;
+        interiorCells++;
+    }
+
+    rdv.setUint16(3, interiorCells, false);
+    rdv.setUint16(5, contentOffset === 65536 ? 0 : contentOffset, false);
+    rdv.setUint8(7, 0);
+
+    return [rootPageBytes, ...leafPages];
+}
+
 export function exportBinarySqliteDatabase(workspace: SqliteWorkspaceState): Uint8Array {
     const pageSize = 4096;
     const tablePages: Uint8Array[] = [];
@@ -1446,7 +1564,7 @@ export function exportBinarySqliteDatabase(workspace: SqliteWorkspaceState): Uin
             (c) => c.isPrimaryKey && /^INTEGER$/i.test(c.rawType) && !table.withoutRowId
         );
 
-        const rowCells: { rowid: number; payload: Uint8Array }[] = table.rows.map((row, rIdx) => {
+        const rowEntries = table.rows.map((row, rIdx) => {
             const pkVal = intPkIdx !== -1 ? row[table.columns[intPkIdx].name] : null;
             const rowid = typeof pkVal === 'number' && Number.isInteger(pkVal) && pkVal > 0 ? pkVal : rIdx + 1;
             const vals = table.columns.map((c, cIdx) => {
@@ -1455,12 +1573,13 @@ export function exportBinarySqliteDatabase(workspace: SqliteWorkspaceState): Uin
             });
             return {
                 rowid,
+                row,
                 payload: encodeSqliteRecordPayload(vals),
             };
         });
 
-        rowCells.sort((a, b) => a.rowid - b.rowid);
-        const builtPages = buildTableBTreePages(rowCells, pageSize, false, rootPage);
+        rowEntries.sort((a, b) => a.rowid - b.rowid);
+        const builtPages = buildTableBTreePages(rowEntries, pageSize, false, rootPage);
         tablePages.push(...builtPages);
         nextPageNum += builtPages.length;
 
@@ -1478,6 +1597,54 @@ export function exportBinarySqliteDatabase(workspace: SqliteWorkspaceState): Uin
             createSql.replace(/;\s*$/, ''),
         ]);
         schemaCells.push({ rowid: schemaRowId++, payload: schemaPayload });
+
+        // Serialize explicit secondary indexes as valid SQLite 3 Index B-Tree pages (0x0a / 0x02)
+        for (const idx of table.indexes || []) {
+            if (!idx.name || idx.name.toLowerCase().startsWith('sqlite_autoindex_')) continue;
+            const idxRootPage = nextPageNum;
+            const idxCols = idx.columns.filter(Boolean);
+            const idxRecords = rowEntries.map((entry) => {
+                const keyVals: SqliteCellValue[] = idxCols.map((colName) => {
+                    const matchedKey = Object.keys(entry.row).find((k) => k.toLowerCase() === colName.toLowerCase());
+                    return matchedKey !== undefined ? entry.row[matchedKey] : null;
+                });
+                return {
+                    keys: [...keyVals, entry.rowid],
+                    payload: encodeSqliteRecordPayload([...keyVals, entry.rowid]),
+                };
+            });
+
+            idxRecords.sort((a, b) => {
+                for (let k = 0; k < a.keys.length; k++) {
+                    const cmp = compareSqliteCellValues(a.keys[k], b.keys[k]);
+                    if (cmp !== 0) return cmp;
+                }
+                return 0;
+            });
+
+            const idxPages = buildIndexBTreePages(
+                idxRecords.map((r) => r.payload),
+                pageSize,
+                idxRootPage
+            );
+            tablePages.push(...idxPages);
+            nextPageNum += idxPages.length;
+
+            const idxSql =
+                idx.sql?.trim().replace(/;\s*$/, '') ||
+                `CREATE ${idx.isUnique ? 'UNIQUE ' : ''}INDEX "${idx.name}" ON "${table.name}" (${idxCols
+                    .map((c) => `"${c}"`)
+                    .join(', ')})`;
+
+            const idxSchemaPayload = encodeSqliteRecordPayload([
+                'index',
+                idx.name,
+                table.name,
+                idxRootPage,
+                idxSql,
+            ]);
+            schemaCells.push({ rowid: schemaRowId++, payload: idxSchemaPayload });
+        }
     }
 
     const page1Arr = buildSingleLeafPage(schemaCells, pageSize, true);
@@ -1688,14 +1855,44 @@ export function parseSqliteOrDuckDbFile(
         }
     }
 
-    // Fallback: Parse as CSV / TSV
+    // Fallback: Parse as CSV / TSV (RFC-4180 quote-aware)
+    const parseDelimitedLine = (line: string, sep: string): string[] => {
+        const out: string[] = [];
+        let cur = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (inQuotes) {
+                if (ch === '"') {
+                    if (line[i + 1] === '"') {
+                        cur += '"';
+                        i++;
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    cur += ch;
+                }
+            } else if (ch === '"') {
+                inQuotes = true;
+            } else if (ch === sep) {
+                out.push(cur.trim());
+                cur = '';
+            } else {
+                cur += ch;
+            }
+        }
+        out.push(cur.trim());
+        return out;
+    };
+
     const lines = trimmed.split(/\r?\n/).filter((l) => l.trim().length > 0);
     if (lines.length >= 2) {
         const delim = lines[0].includes('\t') ? '\t' : ',';
-        const headers = lines[0].split(delim).map((h, idx) => h.replace(/^["']|["']$/g, '').trim() || `col_${idx + 1}`);
+        const headers = parseDelimitedLine(lines[0], delim).map((h, idx) => h.replace(/^['"]|['"]$/g, '').trim() || `col_${idx + 1}`);
         const tblName = fileName.replace(/\.[a-z0-9]+$/i, '').replace(/[^A-Za-z0-9_]/g, '_') || 'imported_csv';
         const rows: Record<string, SqliteCellValue>[] = lines.slice(1).map((line) => {
-            const cells = line.split(delim).map((c) => c.replace(/^["']|["']$/g, '').trim());
+            const cells = parseDelimitedLine(line, delim);
             const obj: Record<string, SqliteCellValue> = {};
             headers.forEach((h, i) => {
                 const v = cells[i] ?? '';
@@ -1741,14 +1938,115 @@ export function parseSqliteOrDuckDbFile(
 // 6. DUAL SQLITE + DUCKDB ANALYTICAL SQL EXECUTION ENGINE
 // ============================================================================
 
+function splitTopLevelBoolean(expr: string, keyword: 'OR' | 'AND'): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let depth = 0;
+    let inSingle = false;
+    let inDouble = false;
+    let pendingBetweenAnd = false;
+    const kwUpper = keyword.toUpperCase();
+    const kwLen = kwUpper.length;
+
+    const isWordBoundary = (ch: string | undefined) => !ch || !/[A-Za-z0-9_]/.test(ch);
+
+    for (let i = 0; i < expr.length; i++) {
+        const ch = expr[i];
+        if (inSingle) {
+            current += ch;
+            if (ch === "'" && expr[i + 1] === "'") {
+                current += expr[++i];
+            } else if (ch === "'") {
+                inSingle = false;
+            }
+            continue;
+        }
+        if (inDouble) {
+            current += ch;
+            if (ch === '"' && expr[i + 1] === '"') {
+                current += expr[++i];
+            } else if (ch === '"') {
+                inDouble = false;
+            }
+            continue;
+        }
+        if (ch === "'") {
+            inSingle = true;
+            current += ch;
+            continue;
+        }
+        if (ch === '"') {
+            inDouble = true;
+            current += ch;
+            continue;
+        }
+        if (ch === '(') {
+            depth++;
+            current += ch;
+            continue;
+        }
+        if (ch === ')') {
+            depth = Math.max(0, depth - 1);
+            current += ch;
+            continue;
+        }
+
+        if (depth === 0) {
+            if (
+                kwUpper === 'AND' &&
+                expr.slice(i, i + 7).toUpperCase() === 'BETWEEN' &&
+                isWordBoundary(expr[i - 1]) &&
+                isWordBoundary(expr[i + 7])
+            ) {
+                pendingBetweenAnd = true;
+            }
+
+            if (
+                expr.slice(i, i + kwLen).toUpperCase() === kwUpper &&
+                isWordBoundary(expr[i - 1]) &&
+                isWordBoundary(expr[i + kwLen])
+            ) {
+                if (kwUpper === 'AND' && pendingBetweenAnd) {
+                    pendingBetweenAnd = false;
+                    current += expr.slice(i, i + kwLen);
+                    i += kwLen - 1;
+                    continue;
+                }
+                parts.push(current.trim());
+                current = '';
+                i += kwLen - 1;
+                continue;
+            }
+        }
+        current += ch;
+    }
+    if (current.trim()) parts.push(current.trim());
+    return parts;
+}
+
 function evaluateWhereCondition(row: Record<string, SqliteCellValue>, whereClause: string): boolean {
     let clean = whereClause.trim();
     while (clean.startsWith('(') && clean.endsWith(')')) {
         let depth = 0;
+        let inSingle = false;
+        let inDouble = false;
         let balanced = true;
         for (let i = 0; i < clean.length - 1; i++) {
-            if (clean[i] === '(') depth++;
-            else if (clean[i] === ')') depth--;
+            const ch = clean[i];
+            if (inSingle) {
+                if (ch === "'" && clean[i + 1] === "'") i++;
+                else if (ch === "'") inSingle = false;
+                continue;
+            }
+            if (inDouble) {
+                if (ch === '"' && clean[i + 1] === '"') i++;
+                else if (ch === '"') inDouble = false;
+                continue;
+            }
+            if (ch === "'") inSingle = true;
+            else if (ch === '"') inDouble = true;
+            else if (ch === '(') depth++;
+            else if (ch === ')') depth--;
             if (depth === 0) {
                 balanced = false;
                 break;
@@ -1759,17 +2057,16 @@ function evaluateWhereCondition(row: Record<string, SqliteCellValue>, whereClaus
     }
     if (!clean) return true;
 
-    // Handle OR at top level
-    const orParts = clean.split(/\s+OR\s+/i);
+    // Handle OR at top level (quote-aware & parenthesis-aware)
+    const orParts = splitTopLevelBoolean(clean, 'OR');
     if (orParts.length > 1) {
         return orParts.some((p) => evaluateWhereCondition(row, p));
     }
 
-    // Protect BETWEEN ... AND ... before splitting on boolean AND
-    const protectedBetween = clean.replace(/(\bBETWEEN\s+\S+)\s+AND\s+(\S+)/gi, '$1 @@BETWEEN_AND@@ $2');
-    const andParts = protectedBetween.split(/\s+AND\s+/i);
+    // Handle AND at top level (quote-aware, parenthesis-aware, BETWEEN-safe)
+    const andParts = splitTopLevelBoolean(clean, 'AND');
     if (andParts.length > 1) {
-        return andParts.every((p) => evaluateWhereCondition(row, p.replace(/@@BETWEEN_AND@@/g, 'AND')));
+        return andParts.every((p) => evaluateWhereCondition(row, p));
     }
 
     const resolveColValue = (rawCol: string): SqliteCellValue => {
@@ -1829,21 +2126,28 @@ function evaluateWhereCondition(row: Record<string, SqliteCellValue>, whereClaus
         const leftVal = resolveColValue(cmpMatch[1]);
         const op = cmpMatch[2];
         const rawRight = cmpMatch[3].trim();
-        const rightVal = /^['"](.*)['"]$/.test(rawRight)
-            ? rawRight.slice(1, -1)
-            : /^true$/i.test(rawRight)
-                ? 1
-                : /^false$/i.test(rawRight)
-                    ? 0
-                    : /^-?\d+(?:\.\d+)?$/.test(rawRight)
-                        ? Number(rawRight)
-                        : resolveColValue(rawRight);
+        const rightVal: SqliteCellValue = /^NULL$/i.test(rawRight)
+            ? null
+            : /^'(.*)'$/.test(rawRight)
+                ? rawRight.slice(1, -1).replace(/''/g, "'")
+                : /^"(.*)"$/.test(rawRight)
+                    ? rawRight.slice(1, -1).replace(/""/g, '"')
+                    : /^true$/i.test(rawRight)
+                        ? 1
+                        : /^false$/i.test(rawRight)
+                            ? 0
+                            : /^-?\d+(?:\.\d+)?$/.test(rawRight)
+                                ? Number(rawRight)
+                                : resolveColValue(rawRight);
+
+        // SQL standard: any comparison with NULL evaluates to UNKNOWN (false)
+        if (leftVal === null || leftVal === undefined || rightVal === null || rightVal === undefined) {
+            return false;
+        }
 
         const numLeft = Number(leftVal);
         const numRight = Number(rightVal);
         const bothNumeric =
-            leftVal !== null &&
-            rightVal !== null &&
             leftVal !== '' &&
             rightVal !== '' &&
             !Number.isNaN(numLeft) &&
@@ -1852,17 +2156,17 @@ function evaluateWhereCondition(row: Record<string, SqliteCellValue>, whereClaus
         if (op === '=' || op === '==') {
             return bothNumeric
                 ? numLeft === numRight
-                : String(leftVal ?? '').toLowerCase() === String(rightVal ?? '').toLowerCase();
+                : String(leftVal).toLowerCase() === String(rightVal).toLowerCase();
         }
         if (op === '!=' || op === '<>') {
             return bothNumeric
                 ? numLeft !== numRight
-                : String(leftVal ?? '').toLowerCase() !== String(rightVal ?? '').toLowerCase();
+                : String(leftVal).toLowerCase() !== String(rightVal).toLowerCase();
         }
-        if (op === '>') return bothNumeric ? numLeft > numRight : String(leftVal ?? '') > String(rightVal ?? '');
-        if (op === '>=') return bothNumeric ? numLeft >= numRight : String(leftVal ?? '') >= String(rightVal ?? '');
-        if (op === '<') return bothNumeric ? numLeft < numRight : String(leftVal ?? '') < String(rightVal ?? '');
-        if (op === '<=') return bothNumeric ? numLeft <= numRight : String(leftVal ?? '') <= String(rightVal ?? '');
+        if (op === '>') return bothNumeric ? numLeft > numRight : String(leftVal) > String(rightVal);
+        if (op === '>=') return bothNumeric ? numLeft >= numRight : String(leftVal) >= String(rightVal);
+        if (op === '<') return bothNumeric ? numLeft < numRight : String(leftVal) < String(rightVal);
+        if (op === '<=') return bothNumeric ? numLeft <= numRight : String(leftVal) <= String(rightVal);
     }
 
     return true;
@@ -2238,8 +2542,13 @@ export function executeSqlQuery(
                 isUnique: /\bUNIQUE\b/i.test(restDef),
                 defaultValue: defLiteral !== null ? String(defLiteral) : null,
             };
+            const colClause = `"${colName}" ${rawType}${restDef ? ` ${restDef.trim()}` : ''}`;
+            const updatedCreateSql = t.createSql && t.createSql.includes(')')
+                ? t.createSql.replace(/\)(\s*(?:WITHOUT\s+ROWID|STRICT|\s)*)$/i, `, ${colClause})$1`)
+                : `CREATE TABLE "${t.name}" (${[...t.columns, newCol].map((c) => `"${c.name}" ${c.rawType}`).join(', ')})`;
             return {
                 ...t,
+                createSql: updatedCreateSql,
                 columns: [...t.columns, newCol],
                 rows: t.rows.map((r) => ({ ...r, [colName]: defLiteral })),
             };
@@ -2441,12 +2750,13 @@ export function executeSqlQuery(
                 updatedWorkspace: workspace,
             };
         }
-        const assignments = setPart.split(',').map((pair) => {
+        const assignmentTokens = setPart.split(/,(?=(?:[^']*'[^']*')*[^']*$)/);
+        const assignments = assignmentTokens.map((pair) => {
             const eq = pair.indexOf('=');
             const col = pair.slice(0, eq).replace(/["`[\]]/g, '').trim();
             const rawV = pair.slice(eq + 1).trim();
-            const val: SqliteCellValue = /^'(.*)'$/.test(rawV)
-                ? rawV.slice(1, -1)
+            const val: SqliteCellValue = /^'([\s\S]*)'$/.test(rawV)
+                ? rawV.slice(1, -1).replace(/''/g, "'")
                 : /^NULL$/i.test(rawV)
                     ? null
                     : /^-?\d+(?:\.\d+)?$/.test(rawV)
@@ -2534,9 +2844,26 @@ export function executeSqlQuery(
     const isDistinct = Boolean(selMatch[1]);
     const selectListRaw = selMatch[2].trim();
     const fromTableName = selMatch[3].replace(/["`[\]]/g, '').trim();
+    const fromAlias = selMatch[4] ? selMatch[4].replace(/["`[\]]/g, '').trim() : null;
     const joinTableName = selMatch[5] ? selMatch[5].replace(/["`[\]]/g, '').trim() : null;
-    const joinLeftKey = selMatch[7] ? selMatch[7].replace(/["`[\]]/g, '').split('.').pop()! : null;
-    const joinRightKey = selMatch[8] ? selMatch[8].replace(/["`[\]]/g, '').split('.').pop()! : null;
+    const joinAlias = selMatch[6] ? selMatch[6].replace(/["`[\]]/g, '').trim() : null;
+    const rawJoinLeft = selMatch[7] ? selMatch[7].replace(/["`[\]]/g, '').trim() : null;
+    const rawJoinRight = selMatch[8] ? selMatch[8].replace(/["`[\]]/g, '').trim() : null;
+    let joinLeftKey = rawJoinLeft ? rawJoinLeft.split('.').pop()! : null;
+    let joinRightKey = rawJoinRight ? rawJoinRight.split('.').pop()! : null;
+    if (rawJoinLeft && rawJoinRight && joinTableName) {
+        const leftPrefix = rawJoinLeft.includes('.') ? rawJoinLeft.split('.')[0].toLowerCase() : null;
+        const rightPrefix = rawJoinRight.includes('.') ? rawJoinRight.split('.')[0].toLowerCase() : null;
+        const isRightMatch = (p: string | null) =>
+            p !== null && (p === joinTableName.toLowerCase() || (joinAlias !== null && p === joinAlias.toLowerCase()));
+        const isLeftMatch = (p: string | null) =>
+            p !== null && (p === fromTableName.toLowerCase() || (fromAlias !== null && p === fromAlias.toLowerCase()));
+        if (isRightMatch(leftPrefix) && isLeftMatch(rightPrefix)) {
+            const tmp = joinLeftKey;
+            joinLeftKey = joinRightKey;
+            joinRightKey = tmp;
+        }
+    }
     const whereClause = selMatch[9] ? selMatch[9].trim() : '';
     const groupByClause = selMatch[10] ? selMatch[10].trim() : '';
     const havingClause = selMatch[11] ? selMatch[11].trim() : '';
@@ -4209,16 +4536,8 @@ export function generateSampleDatabase(
                             isImplicitInferred: false,
                         },
                     ],
-                    indexes: [
-                        {
-                            name: 'idx_users_organization_id',
-                            tableName: 'users',
-                            columns: ['organization_id'],
-                            isUnique: false,
-                            rootPage: 5,
-                            sql: 'CREATE INDEX "idx_users_organization_id" ON "users" ("organization_id")',
-                        },
-                    ],
+                    // Intentionally unindexed on initial load to demo 1-Click Auto-Optimize (76/100 -> 100/100)
+                    indexes: [],
                     rows: [
                         { id: 101, organization_id: 1, full_name: 'Elena Rostova', role: 'Principal Architect', plan_tier: 'Enterprise', last_login_unix: 1762387200 },
                         { id: 102, organization_id: 1, full_name: 'Marcus Vance', role: 'DevOps Lead', plan_tier: 'Enterprise', last_login_unix: 1762390800 },
@@ -4254,16 +4573,8 @@ export function generateSampleDatabase(
                             isImplicitInferred: false,
                         },
                     ],
-                    indexes: [
-                        {
-                            name: 'idx_orders_user_id',
-                            tableName: 'orders',
-                            columns: ['user_id'],
-                            isUnique: false,
-                            rootPage: 6,
-                            sql: 'CREATE INDEX "idx_orders_user_id" ON "orders" ("user_id")',
-                        },
-                    ],
+                    // Intentionally unindexed on initial load to demo 1-Click Auto-Optimize (76/100 -> 100/100)
+                    indexes: [],
                     rows: [
                         { id: 5001, user_id: 101, sku_code: 'EDGE-CLUSTER-PRO', amount_usd: 1250.0, status: 'PAID', metadata_json: '{"nodes":16,"region":"us-east-1"}' },
                         { id: 5002, user_id: 101, sku_code: 'WASM-WORKER-ADDON', amount_usd: 450.0, status: 'PAID', metadata_json: '{"isolates":500}' },

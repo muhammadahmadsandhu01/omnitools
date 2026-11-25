@@ -516,6 +516,13 @@ export function computeHmacBytes(
 }
 
 const BASE64_STD = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const BASE64_LOOKUP = (() => {
+    const table = new Int16Array(128).fill(-1);
+    for (let i = 0; i < BASE64_STD.length; i++) {
+        table[BASE64_STD.charCodeAt(i)] = i;
+    }
+    return table;
+})();
 
 export function uint8ArrayToBase64(bytes: Uint8Array): string {
     let out = '';
@@ -548,17 +555,12 @@ export function base64OrUrlToUint8Array(b64Input: string): Uint8Array {
     const padLen = (4 - (cleaned.length % 4)) % 4;
     const padded = cleaned + '='.repeat(padLen);
 
-    const lookup = new Int16Array(128).fill(-1);
-    for (let i = 0; i < BASE64_STD.length; i++) {
-        lookup[BASE64_STD.charCodeAt(i)] = i;
-    }
-
     const out: number[] = [];
     for (let i = 0; i < padded.length; i += 4) {
-        const c0 = lookup[padded.charCodeAt(i) & 0x7f];
-        const c1 = lookup[padded.charCodeAt(i + 1) & 0x7f];
-        const c2 = padded[i + 2] === '=' ? -1 : lookup[padded.charCodeAt(i + 2) & 0x7f];
-        const c3 = padded[i + 3] === '=' ? -1 : lookup[padded.charCodeAt(i + 3) & 0x7f];
+        const c0 = BASE64_LOOKUP[padded.charCodeAt(i) & 0x7f];
+        const c1 = BASE64_LOOKUP[padded.charCodeAt(i + 1) & 0x7f];
+        const c2 = padded[i + 2] === '=' ? -1 : BASE64_LOOKUP[padded.charCodeAt(i + 2) & 0x7f];
+        const c3 = padded[i + 3] === '=' ? -1 : BASE64_LOOKUP[padded.charCodeAt(i + 3) & 0x7f];
         if (c0 < 0 || c1 < 0) break;
         out.push((c0 << 2) | (c1 >>> 4));
         if (c2 >= 0) {
@@ -577,6 +579,14 @@ export function utf8ToBytes(str: string): Uint8Array {
 
 export function bytesToUtf8(bytes: Uint8Array): string {
     return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+}
+
+function safeDecodeUriComponent(val: string): string {
+    try {
+        return decodeURIComponent(val);
+    } catch {
+        return val;
+    }
 }
 
 export function bytesToHex(bytes: Uint8Array, maxLen = 64): string {
@@ -1178,15 +1188,11 @@ export function parseSaml2Payload(
     // Extract SAMLRequest or SAMLResponse from URL query string if pasted as URL
     const urlMatch = /(?:^|[?&\s])(?:SAMLRequest|SAMLResponse)=([^&#\s]+)/i.exec(working);
     if (urlMatch) {
-        working = decodeURIComponent(urlMatch[1]);
+        working = safeDecodeUriComponent(urlMatch[1]);
         detectedInputBinding = 'HTTP-Redirect (DEFLATE + Base64)';
     } else if (!working.startsWith('<') && working.includes('%')) {
-        try {
-            working = decodeURIComponent(working);
-            detectedInputBinding = 'HTTP-Redirect (DEFLATE + Base64)';
-        } catch {
-            // keep working as-is
-        }
+        working = safeDecodeUriComponent(working);
+        detectedInputBinding = 'HTTP-Redirect (DEFLATE + Base64)';
     }
 
     let xmlText = working;
@@ -1731,7 +1737,7 @@ const SENSITIVE_CLAIM_KEY_REGEX =
 export function analyzeTokenAndCompileReport(
     inputs: DebuggerInputs
 ): ComprehensiveTokenReport {
-    const refUnix = inputs.simulatedCurrentUnixTimestamp ?? DEFAULT_REFERENCE_UNIX_SEC;
+    const refUnix = inputs.simulatedCurrentUnixTimestamp ?? Math.floor(Date.now() / 1000);
     const skew = Math.max(0, inputs.clockSkewToleranceSeconds || 0);
 
     // PKCE Verification
@@ -1776,7 +1782,7 @@ export function analyzeTokenAndCompileReport(
     } else if (/^https?:\/\//i.test(raw) && /(?:id_token|access_token|token)=([^&#]+)/i.test(raw)) {
         const m = /(?:id_token|access_token|token)=([^&#]+)/i.exec(raw);
         if (m) {
-            raw = decodeURIComponent(m[1]);
+            raw = safeDecodeUriComponent(m[1]);
             strippedWrapperType = 'URL_PARAM';
         }
     }
@@ -2156,8 +2162,15 @@ export function analyzeTokenAndCompileReport(
         const ctBytes = base64OrUrlToUint8Array(ctB64 || '');
         const tagBytes = base64OrUrlToUint8Array(tagB64 || '');
 
+        let jweHeaderValid = false;
         try {
-            headerObject = JSON.parse(bytesToUtf8(hBytes)) as Record<string, unknown>;
+            const parsedHdr = JSON.parse(bytesToUtf8(hBytes));
+            if (parsedHdr && typeof parsedHdr === 'object' && !Array.isArray(parsedHdr)) {
+                headerObject = parsedHdr as Record<string, unknown>;
+                jweHeaderValid = true;
+            } else {
+                headerObject = { alg: 'dir', enc: 'A256GCM' };
+            }
         } catch {
             headerObject = { alg: 'dir', enc: 'A256GCM' };
         }
@@ -2177,21 +2190,28 @@ export function analyzeTokenAndCompileReport(
         const decryptedText = bytesToUtf8(decryptedBytes);
 
         let decryptedPlaintextJson = decryptedText;
-        try {
-            payloadObject = JSON.parse(decryptedText) as Record<string, unknown>;
-            decryptedPlaintextJson = JSON.stringify(payloadObject, null, 2);
-            verificationStatus = tagMatches ? 'DECRYPTED_VERIFIED' : 'INVALID_SIGNATURE';
-            verificationBadgeLabel = tagMatches
-                ? `✓ JWE ${enc} DECRYPTED & GCM TAG VERIFIED`
-                : `⚠️ JWE ${enc} AUTH TAG MISMATCH`;
-        } catch {
-            payloadObject = {
-                jweNote: 'Encrypted JWE Ciphertext (Provide matching CEK/Secret to decrypt)',
-                ciphertextByteLength: ctBytes.length,
-            };
-            decryptedPlaintextJson = JSON.stringify(payloadObject, null, 2);
-            verificationStatus = 'UNVERIFIED_ASYMMETRIC_OR_SAML';
-            verificationBadgeLabel = `JWE 5-PART INSPECTED (${enc})`;
+        if (!hB64 || !jweHeaderValid || (!ctB64 && !tagB64)) {
+            payloadObject = {};
+            decryptedPlaintextJson = '{}';
+            verificationStatus = 'MALFORMED_TOKEN';
+            verificationBadgeLabel = 'MALFORMED JWE TOKEN FORMAT';
+        } else {
+            try {
+                payloadObject = JSON.parse(decryptedText) as Record<string, unknown>;
+                decryptedPlaintextJson = JSON.stringify(payloadObject, null, 2);
+                verificationStatus = tagMatches ? 'DECRYPTED_VERIFIED' : 'INVALID_SIGNATURE';
+                verificationBadgeLabel = tagMatches
+                    ? `✓ JWE ${enc} DECRYPTED & GCM TAG VERIFIED`
+                    : `⚠️ JWE ${enc} AUTH TAG MISMATCH`;
+            } catch {
+                payloadObject = {
+                    jweNote: 'Encrypted JWE Ciphertext (Provide matching CEK/Secret to decrypt)',
+                    ciphertextByteLength: ctBytes.length,
+                };
+                decryptedPlaintextJson = JSON.stringify(payloadObject, null, 2);
+                verificationStatus = 'UNVERIFIED_ASYMMETRIC_OR_SAML';
+                verificationBadgeLabel = `JWE 5-PART INSPECTED (${enc})`;
+            }
         }
 
         headerByteLength = hBytes.length;
@@ -2279,13 +2299,23 @@ export function analyzeTokenAndCompileReport(
             payloadByteLength = pBytes.length;
             signatureOrTagByteLength = sBytes.length;
 
+            let headerParsedOk = false;
+            let payloadParsedOk = false;
             try {
-                headerObject = JSON.parse(bytesToUtf8(hBytes)) as Record<string, unknown>;
+                const hParsed = JSON.parse(bytesToUtf8(hBytes));
+                if (hParsed && typeof hParsed === 'object' && !Array.isArray(hParsed)) {
+                    headerObject = hParsed as Record<string, unknown>;
+                    headerParsedOk = true;
+                }
             } catch {
                 headerObject = {};
             }
             try {
-                payloadObject = JSON.parse(bytesToUtf8(pBytes)) as Record<string, unknown>;
+                const pParsed = JSON.parse(bytesToUtf8(pBytes));
+                if (pParsed && typeof pParsed === 'object' && !Array.isArray(pParsed)) {
+                    payloadObject = pParsed as Record<string, unknown>;
+                    payloadParsedOk = true;
+                }
             } catch {
                 payloadObject = {};
             }
@@ -2328,7 +2358,10 @@ export function analyzeTokenAndCompileReport(
             });
 
             const signingInput = `${hB64}.${pB64}`;
-            if (alg.toLowerCase() === 'none' || !sB64) {
+            if (!headerParsedOk || !payloadParsedOk) {
+                verificationStatus = 'MALFORMED_TOKEN';
+                verificationBadgeLabel = 'MALFORMED JWT (INVALID BASE64URL / JSON)';
+            } else if (alg.toLowerCase() === 'none' || !sB64) {
                 verificationStatus = 'INSECURE_ALG_NONE';
                 verificationBadgeLabel = '🚨 UNSECURED (alg: none / NO SIGNATURE)';
             } else if (alg === 'HS256' || alg === 'HS384' || alg === 'HS512') {
@@ -2614,6 +2647,39 @@ export function analyzeTokenAndCompileReport(
         });
     }
 
+    // Expected Issuer / Audience validation (when user specifies expected values)
+    const expIssTrim = (inputs.expectedIssuer || '').trim();
+    if (expIssTrim && payloadObject.iss && String(payloadObject.iss) !== expIssTrim) {
+        securityFindings.push({
+            ruleId: 'JWT-ISS-MISMATCH',
+            ruleNumber: 9,
+            title: 'Issuer (iss) Does Not Match Expected Issuer',
+            severity: 'WARNING',
+            cweOrRfcRef: 'RFC 7519 §4.1.1 / RFC 8725 §3.8',
+            evidence: `Token iss="${String(payloadObject.iss)}" != expected "${expIssTrim}".`,
+            remediation: 'Verify the token was minted by your trusted identity provider or update the Expected Issuer filter.',
+            autoFixAvailable: false,
+        });
+    }
+    const expAudTrim = (inputs.expectedAudience || '').trim();
+    if (expAudTrim && payloadObject.aud) {
+        const audList = Array.isArray(payloadObject.aud)
+            ? payloadObject.aud.map(String)
+            : [String(payloadObject.aud)];
+        if (!audList.includes(expAudTrim)) {
+            securityFindings.push({
+                ruleId: 'JWT-AUD-MISMATCH',
+                ruleNumber: 9,
+                title: 'Audience (aud) Does Not Match Expected Audience',
+                severity: 'WARNING',
+                cweOrRfcRef: 'RFC 7519 §4.1.3 / RFC 8725 §3.9',
+                evidence: `Token aud="${audList.join(', ')}" does not include expected "${expAudTrim}".`,
+                remediation: 'Reject tokens not intended for this API audience or update the Expected Audience filter.',
+                autoFixAvailable: false,
+            });
+        }
+    }
+
     // Rule 9: Missing iss, aud, sub, or jti
     if (!payloadObject.iss || !payloadObject.aud || !payloadObject.sub || !payloadObject.jti) {
         securityFindings.push({
@@ -2842,7 +2908,7 @@ export function autoFixTokenVulnerabilities(
 ): { nextInputs: DebuggerInputs; fixSummary: string } {
     const report = analyzeTokenAndCompileReport(inputs);
     const strongSecret = 'kivaro-256-bit-production-hmac-key-2026-secure!';
-    const refUnix = inputs.simulatedCurrentUnixTimestamp ?? DEFAULT_REFERENCE_UNIX_SEC;
+    const refUnix = inputs.simulatedCurrentUnixTimestamp ?? Math.floor(Date.now() / 1000);
 
     if (report.detectedProtocol === 'SAML2' && report.samlForensics) {
         const cleanNameId =
@@ -3416,9 +3482,9 @@ export function getDefaultDebuggerInputs(): DebuggerInputs {
         pasetoFooterInput: '{"kid":"k4.pid.kivaro-ed25519-01"}',
         pasetoImplicitAssertion: '',
         clockSkewToleranceSeconds: 30,
-        simulatedCurrentUnixTimestamp: DEFAULT_REFERENCE_UNIX_SEC,
-        expectedIssuer: 'https://auth.kivarotools.com',
-        expectedAudience: 'https://api.kivarotools.com',
+        simulatedCurrentUnixTimestamp: null,
+        expectedIssuer: '',
+        expectedAudience: '',
         pkceCodeVerifier: 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk',
         pkceExpectedChallenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
     };
@@ -3428,7 +3494,10 @@ export function getPresetDebuggerInputs(presetId: PresetScenarioId): {
     inputs: DebuggerInputs;
     description: string;
 } {
-    const base = getDefaultDebuggerInputs();
+    const base: DebuggerInputs = {
+        ...getDefaultDebuggerInputs(),
+        simulatedCurrentUnixTimestamp: DEFAULT_REFERENCE_UNIX_SEC,
+    };
     const strongSecret = 'kivaro-256-bit-production-hmac-key-2026!';
 
     if (presetId === 'oidc_jwt_hs256_verified') {
