@@ -234,7 +234,7 @@ export default function PrivacyPolicyPage() {
                   <li>
                     Users may opt out of personalized advertising at any time by visiting{' '}
                     <a
-                      href="https://www.google.com/settings/ads"
+                      href="https://adssettings.google.com/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400"

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import Script from 'next/script';
 import Link from 'next/link';
 import {
   Code2,
@@ -530,20 +529,18 @@ gtag('config', 'G-263WZKH2LL');`,
           data-key="twpg3hiqDH4n7rhyfDlD2Q"
           async
         ></script>
+        {/* Google AdSense — placed directly in <head> for instant site verification */}
+        {adsenseId && /^ca-pub-\d{10,20}$/.test(adsenseId.trim()) && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId.trim()}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body
         className={`${inter.variable} ${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100`}
       >
-        {/* Google AdSense — only load when an actual publisher ID is configured */}
-        {adsenseId && (
-          <Script
-            id="adsense"
-            async
-            strategy="afterInteractive"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseId}`}
-            crossOrigin="anonymous"
-          />
-        )}
 
         <ThemeProvider>
           <div className="flex min-h-screen flex-col">
