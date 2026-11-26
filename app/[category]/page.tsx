@@ -7,7 +7,6 @@ import {
   Home,
   ShieldCheck,
   CheckCircle2,
-  Globe,
 } from 'lucide-react';
 
 import { categories, tools } from '@/config/toolsData';
@@ -16,7 +15,12 @@ import {
   DEVELOPER_CATEGORY_FAQS,
   DEVELOPER_CATEGORY_SEO,
 } from '@/config/developerCategoryConfig';
+import {
+  FINANCE_CATEGORY_FAQS,
+  FINANCE_CATEGORY_SEO,
+} from '@/config/financeCategoryConfig';
 import DeveloperCategoryClient from '@/components/category/DeveloperCategoryClient';
+import FinanceCategoryClient from '@/components/category/FinanceCategoryClient';
 
 const PDF_SCRUBBER_GSC_TOKENS = new Set([
   'Title',
@@ -42,31 +46,6 @@ type CategoryPageProps = {
     category: string;
   }>;
 };
-
-const FINANCE_COUNTRY_LINKS = [
-  { slug: 'united-states', name: 'United States Salary Calculator' },
-  { slug: 'united-kingdom', name: 'United Kingdom PAYE & NI Calculator' },
-  { slug: 'germany', name: 'Germany Brutto-Netto Calculator' },
-  { slug: 'canada', name: 'Canada Federal & Provincial Calculator' },
-  { slug: 'australia', name: 'Australia ATO & Super Calculator' },
-  { slug: 'india', name: 'India New vs Old Tax Regime Calculator' },
-  { slug: 'pakistan', name: 'Pakistan FBR Salaried Tax Calculator' },
-  { slug: 'united-arab-emirates', name: 'UAE Gratuity & Net Pay Calculator' },
-  { slug: 'saudi-arabia', name: 'Saudi Arabia GOSI Salary Calculator' },
-  { slug: 'singapore', name: 'Singapore IRAS & CPF Calculator' },
-  { slug: 'france', name: 'France Salaire Brut en Net Calculator' },
-  { slug: 'japan', name: 'Japan Income & Social Insurance Calculator' },
-  { slug: 'switzerland', name: 'Switzerland Cantonal Tax Calculator' },
-  { slug: 'netherlands', name: 'Netherlands Box 1 & 30% Ruling Calculator' },
-  { slug: 'ireland', name: 'Ireland PAYE, USC & PRSI Calculator' },
-  { slug: 'new-zealand', name: 'New Zealand PAYE & KiwiSaver Calculator' },
-  { slug: 'spain', name: 'Spain IRPF & Seguridad Social Calculator' },
-  { slug: 'italy', name: 'Italy IRPEF & INPS Salary Calculator' },
-  { slug: 'south-africa', name: 'South Africa SARS PAYE Calculator' },
-  { slug: 'brazil', name: 'Brazil IRPF & INSS Salary Calculator' },
-  { slug: 'mexico', name: 'Mexico ISR & IMSS Payroll Calculator' },
-  { slug: 'south-korea', name: 'South Korea NTS Net Pay Calculator' },
-] as const;
 
 export function generateStaticParams() {
   return categories
@@ -131,27 +110,35 @@ export async function generateMetadata({
   );
 
   const isDeveloper = category.id === 'developer';
+  const isFinance = category.id === 'finance';
 
   const categoryTitle = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoTitle
-    : category.seoTitle ||
-    (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
-      ? category.name
-      : `${category.name} Tools`);
+    : isFinance
+      ? FINANCE_CATEGORY_SEO.seoTitle
+      : category.seoTitle ||
+      (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
+        ? category.name
+        : `${category.name} Tools`);
 
   const categoryDescription = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoDescription
-    : category.seoDescription ||
-    `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
+    : isFinance
+      ? FINANCE_CATEGORY_SEO.seoDescription
+      : category.seoDescription ||
+      `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
 
   const categoryKeywords = isDeveloper
     ? [...DEVELOPER_CATEGORY_SEO.keywords]
-    : category.keywords;
+    : isFinance
+      ? [...FINANCE_CATEGORY_SEO.keywords]
+      : category.keywords;
 
   const canonicalUrl = `${SITE_URL}/${category.id}`;
-  const socialTitle = isDeveloper
-    ? `${categoryTitle} | KivaroTools`
-    : `${categoryTitle} — KivaroTools`;
+  const socialTitle =
+    isDeveloper || isFinance
+      ? `${categoryTitle} | KivaroTools`
+      : `${categoryTitle} — KivaroTools`;
 
   return {
     title: categoryTitle,
@@ -231,6 +218,7 @@ export default async function CategoryPage({
 
   const canonicalUrl = `${SITE_URL}/${category.id}`;
   const isDeveloper = category.id === 'developer';
+  const isFinance = category.id === 'finance';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -247,11 +235,15 @@ export default async function CategoryPage({
     '@id': `${canonicalUrl}#collection`,
     name: isDeveloper
       ? `${DEVELOPER_CATEGORY_SEO.seoTitle} | KivaroTools`
-      : `${category.name} — KivaroTools`,
+      : isFinance
+        ? `${FINANCE_CATEGORY_SEO.seoTitle} | KivaroTools`
+        : `${category.name} — KivaroTools`,
     description: isDeveloper
       ? DEVELOPER_CATEGORY_SEO.seoDescription
-      : category.description ||
-      `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
+      : isFinance
+        ? FINANCE_CATEGORY_SEO.seoDescription
+        : category.description ||
+        `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
     url: canonicalUrl,
     mainEntity: {
       '@type': 'ItemList',
@@ -299,6 +291,39 @@ export default async function CategoryPage({
     );
   }
 
+  if (isFinance) {
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FINANCE_CATEGORY_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <FinanceCategoryClient />
+      </>
+    );
+  }
+
   const Icon = category.icon;
 
   return (
@@ -320,7 +345,6 @@ export default async function CategoryPage({
           className="mb-8"
         >
           <ol className="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-
             <li>
               <Link
                 href="/"
@@ -344,14 +368,12 @@ export default async function CategoryPage({
             >
               {category.name}
             </li>
-
           </ol>
         </nav>
 
         {/* Category Header */}
         <header className="mb-10 border-b border-slate-200 pb-8 dark:border-slate-800">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-
             {/* Category Icon */}
             <div
               className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 ${category.color}`}
@@ -382,14 +404,12 @@ export default async function CategoryPage({
                   `Explore free ${category.name.toLowerCase()} tools designed to be fast, simple, and easy to use with 100% client-side privacy.`}
               </p>
             </div>
-
           </div>
         </header>
 
         {/* Tools */}
         {categoryTools.length > 0 ? (
           <section aria-labelledby="category-tools-heading">
-
             <div className="mb-5">
               <h2
                 id="category-tools-heading"
@@ -412,7 +432,6 @@ export default async function CategoryPage({
                 >
                   {/* Card Top */}
                   <div className="mb-5 flex items-start justify-between gap-4">
-
                     <div
                       className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 ${category.color}`}
                     >
@@ -430,8 +449,7 @@ export default async function CategoryPage({
 
                   {/* Card Content */}
                   <div className="flex flex-1 flex-col">
-
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-lg font-semibold text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
                       {tool.name}
                     </h3>
 
@@ -449,13 +467,12 @@ export default async function CategoryPage({
                         ))}
                       </ul>
                     )}
-
                   </div>
 
                   {/* Card Action */}
                   <div className="mt-5 flex items-center justify-between text-sm font-semibold text-blue-600 transition-colors group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300">
                     <span>Open tool</span>
-                    <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                    <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
                       <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
                       Client-Side
                     </span>
@@ -463,35 +480,6 @@ export default async function CategoryPage({
                 </Link>
               ))}
             </div>
-
-            {/* 22 Country Statutory Salary Calculators Directory on /finance Category Hub */}
-            {category.id === 'finance' && (
-              <div className="mt-12 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                  <Globe className="h-5 w-5" />
-                  <span className="text-xs font-bold uppercase tracking-wider">
-                    Global Statutory Payroll &amp; Tax Engines
-                  </span>
-                </div>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  22 Country Salary &amp; Net Take-Home Pay Calculators
-                </h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                  Calculate gross-to-net paycheck take-home pay, progressive income tax brackets, social security deductions, and employer payroll cost across 22 jurisdictions:
-                </p>
-                <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {FINANCE_COUNTRY_LINKS.map((country) => (
-                    <Link
-                      key={country.slug}
-                      href={`/finance/salary-calculator/${country.slug}`}
-                      className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
-                    >
-                      {country.name} &rarr;
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Category Architecture & Cross-Category Hub Links */}
             <div className="mt-14 rounded-3xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900">
@@ -526,7 +514,6 @@ export default async function CategoryPage({
           /* Empty State */
           <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-16 text-center dark:border-slate-700 dark:bg-slate-900/50">
             <div className="mx-auto max-w-md">
-
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-900">
                 <Icon
                   className={`h-7 w-7 ${category.color}`}
@@ -554,11 +541,9 @@ export default async function CategoryPage({
                   aria-hidden="true"
                 />
               </Link>
-
             </div>
           </section>
         )}
-
       </div>
     </main>
   );
