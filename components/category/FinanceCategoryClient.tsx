@@ -25,11 +25,11 @@ import { categories, tools, type CategoryId } from '@/config/toolsData';
 import { SALARY_COUNTRIES, type SalaryRegion } from '@/config/salaryCountries';
 import AdUnit from '@/components/ads/AdUnit';
 import {
-    FINANCE_ARCHITECTURE_PILLARS,
-    FINANCE_CATEGORY_FAQS,
-    FINANCE_CATEGORY_SEO,
     FINANCE_LIVE_API_SLUGS,
     FINANCE_TOOL_SPECS,
+    getFinanceArchitecturePillars,
+    getFinanceCategoryFaqs,
+    getFinanceCategorySeo,
     resolveFinanceToolGroups,
 } from '@/config/financeCategoryConfig';
 
@@ -75,6 +75,21 @@ export default function FinanceCategoryClient() {
                     !tool.hidden
             ),
         []
+    );
+
+    const financeSeo = useMemo(
+        () => getFinanceCategorySeo(financeTools),
+        [financeTools]
+    );
+
+    const financeArchitecturePillars = useMemo(
+        () => getFinanceArchitecturePillars(financeTools),
+        [financeTools]
+    );
+
+    const financeFaqs = useMemo(
+        () => getFinanceCategoryFaqs(financeTools),
+        [financeTools]
     );
 
     const allGroups = useMemo(
@@ -170,14 +185,14 @@ export default function FinanceCategoryClient() {
 
                     <div className="max-w-3xl">
                         <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
-                            {FINANCE_CATEGORY_SEO.h1Primary}
+                            {financeSeo.h1Primary}
                             <span className="block text-blue-600 dark:text-blue-400">
-                                {FINANCE_CATEGORY_SEO.h1Accent}
+                                {financeSeo.h1Accent}
                             </span>
                         </h1>
 
                         <p className="mt-4 text-base leading-7 text-slate-700 sm:text-lg dark:text-slate-300">
-                            {FINANCE_CATEGORY_SEO.heroLead}
+                            {financeSeo.heroLead}
                         </p>
 
                         {/* Precision Workbench Spec Strip */}
@@ -245,7 +260,7 @@ export default function FinanceCategoryClient() {
                                     className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400"
                                     aria-hidden="true"
                                 />
-                                <span>22 Country Tax Engines</span>
+                                <span>{SALARY_COUNTRIES.length} Country Tax Engines</span>
                             </a>
                         </div>
                     </div>
@@ -489,7 +504,7 @@ export default function FinanceCategoryClient() {
             )}
 
             {/* =====================================================================
-          3. 22 STATUTORY COUNTRY SALARY & TAX CALCULATORS (REGION FILTERED)
+          3. STATUTORY COUNTRY SALARY & TAX CALCULATORS (REGION FILTERED)
          ===================================================================== */}
             <section
                 id="country-salary-engines"
@@ -509,7 +524,7 @@ export default function FinanceCategoryClient() {
                                 id="country-salary-engines-heading"
                                 className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl dark:text-white"
                             >
-                                22 Country Salary &amp; Net Take-Home Pay Calculators
+                                {SALARY_COUNTRIES.length} Country Salary &amp; Net Take-Home Pay Calculators
                             </h2>
                             <p className="mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-400">
                                 Filter by region to jump directly into country-specific income tax brackets, social security caps, and employer payroll breakdowns across Americas, Europe, APAC, MENA, and Africa.
@@ -613,7 +628,7 @@ export default function FinanceCategoryClient() {
                             Transparent Financial Modeling &amp; Local Privacy
                         </h2>
                         <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                            Salary offers, mortgage down payments, startup burn schedules, and client invoices contain sensitive personal and corporate figures. Eight of our ten finance calculators run completely inside your browser with zero server uploads, while our Precious Metals and Currency &amp; Crypto converters connect to public market feeds strictly to retrieve live spot and mid-market exchange rates.
+                            Salary offers, mortgage down payments, startup burn schedules, and client invoices contain sensitive personal and corporate figures. {localToolCount} of our {financeTools.length} finance calculators run completely inside your browser with zero server uploads, while our {liveApiToolCount} live-rate converters (Precious Metals and Currency &amp; Crypto) connect to public market feeds strictly to retrieve live spot and mid-market exchange rates.
                         </p>
                         <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
                             Every calculator pairs transparent formulas—reducing-balance amortization, CFPB 80%/78% LTV PMI thresholds, statutory payroll tax waterfalls, and multi-path Monte Carlo simulations—with clean CSV, Excel, or A4 PDF exports and zero bank upsells.
@@ -660,7 +675,7 @@ export default function FinanceCategoryClient() {
                             </div>
 
                             <ol className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                {FINANCE_ARCHITECTURE_PILLARS.map((item) => (
+                                {financeArchitecturePillars.map((item) => (
                                     <li
                                         key={item.step}
                                         className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950"
@@ -720,7 +735,7 @@ export default function FinanceCategoryClient() {
                     </h2>
 
                     <div className="mt-6 divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-                        {FINANCE_CATEGORY_FAQS.map((faq, index) => (
+                        {financeFaqs.map((faq, index) => (
                             <details key={index} className="group p-5">
                                 <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold text-slate-900 marker:hidden sm:text-base dark:text-white">
                                     <span>{faq.question}</span>

@@ -19,8 +19,13 @@ import {
   FINANCE_CATEGORY_FAQS,
   FINANCE_CATEGORY_SEO,
 } from '@/config/financeCategoryConfig';
+import {
+  DOCUMENT_CATEGORY_FAQS,
+  DOCUMENT_CATEGORY_SEO,
+} from '@/config/documentCategoryConfig';
 import DeveloperCategoryClient from '@/components/category/DeveloperCategoryClient';
 import FinanceCategoryClient from '@/components/category/FinanceCategoryClient';
+import DocumentCategoryClient from '@/components/category/DocumentCategoryClient';
 
 const PDF_SCRUBBER_GSC_TOKENS = new Set([
   'Title',
@@ -111,32 +116,39 @@ export async function generateMetadata({
 
   const isDeveloper = category.id === 'developer';
   const isFinance = category.id === 'finance';
+  const isDocument = category.id === 'document';
 
   const categoryTitle = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoTitle
     : isFinance
       ? FINANCE_CATEGORY_SEO.seoTitle
-      : category.seoTitle ||
-      (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
-        ? category.name
-        : `${category.name} Tools`);
+      : isDocument
+        ? DOCUMENT_CATEGORY_SEO.seoTitle
+        : category.seoTitle ||
+        (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
+          ? category.name
+          : `${category.name} Tools`);
 
   const categoryDescription = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoDescription
     : isFinance
       ? FINANCE_CATEGORY_SEO.seoDescription
-      : category.seoDescription ||
-      `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
+      : isDocument
+        ? DOCUMENT_CATEGORY_SEO.seoDescription
+        : category.seoDescription ||
+        `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
 
   const categoryKeywords = isDeveloper
     ? [...DEVELOPER_CATEGORY_SEO.keywords]
     : isFinance
       ? [...FINANCE_CATEGORY_SEO.keywords]
-      : category.keywords;
+      : isDocument
+        ? [...DOCUMENT_CATEGORY_SEO.keywords]
+        : category.keywords;
 
   const canonicalUrl = `${SITE_URL}/${category.id}`;
   const socialTitle =
-    isDeveloper || isFinance
+    isDeveloper || isFinance || isDocument
       ? `${categoryTitle} | KivaroTools`
       : `${categoryTitle} — KivaroTools`;
 
@@ -219,13 +231,19 @@ export default async function CategoryPage({
   const canonicalUrl = `${SITE_URL}/${category.id}`;
   const isDeveloper = category.id === 'developer';
   const isFinance = category.id === 'finance';
+  const isDocument = category.id === 'document';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
-      { '@type': 'ListItem', position: 2, name: category.name, item: canonicalUrl },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: isDocument ? 'PDF & Document Utilities' : category.name,
+        item: canonicalUrl,
+      },
     ],
   };
 
@@ -237,13 +255,17 @@ export default async function CategoryPage({
       ? `${DEVELOPER_CATEGORY_SEO.seoTitle} | KivaroTools`
       : isFinance
         ? `${FINANCE_CATEGORY_SEO.seoTitle} | KivaroTools`
-        : `${category.name} — KivaroTools`,
+        : isDocument
+          ? `${DOCUMENT_CATEGORY_SEO.seoTitle} | KivaroTools`
+          : `${category.name} — KivaroTools`,
     description: isDeveloper
       ? DEVELOPER_CATEGORY_SEO.seoDescription
       : isFinance
         ? FINANCE_CATEGORY_SEO.seoDescription
-        : category.description ||
-        `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
+        : isDocument
+          ? DOCUMENT_CATEGORY_SEO.seoDescription
+          : category.description ||
+          `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
     url: canonicalUrl,
     mainEntity: {
       '@type': 'ItemList',
@@ -320,6 +342,39 @@ export default async function CategoryPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
         <FinanceCategoryClient />
+      </>
+    );
+  }
+
+  if (isDocument) {
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: DOCUMENT_CATEGORY_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <DocumentCategoryClient />
       </>
     );
   }

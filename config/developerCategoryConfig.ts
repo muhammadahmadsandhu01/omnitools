@@ -1,4 +1,4 @@
-import type { Tool } from '@/config/toolsData';
+import { tools, type Tool } from '@/config/toolsData';
 
 export interface DeveloperSubtopicGroup {
     id: string;
@@ -14,37 +14,55 @@ export interface DeveloperFaqItem {
 }
 
 /**
- * Evidence-backed SEO metadata for /developer (KivaroTools Category Page).
+ * Returns all currently published, visible developer tools from toolsData.ts.
+ */
+export function getPublishedDeveloperTools(): Tool[] {
+    return tools.filter(
+        (tool) =>
+            tool.categoryId === 'developer' &&
+            tool.status === 'published' &&
+            !tool.hidden
+    );
+}
+
+/**
+ * Evidence-backed SEO metadata for /developer (KivaroTools Category Page)
+ * with automatic live tool counts derived from config/toolsData.ts.
  * Note: app/layout.tsx applies `template: '%s | KivaroTools'`, so `seoTitle`
  * renders as "Free Online Developer Tools | KivaroTools" (41 characters).
  */
-export const DEVELOPER_CATEGORY_SEO = {
-    seoTitle: 'Free Online Developer Tools',
-    seoDescription:
-        'Use 13 free online developer tools & utilities in your browser: format JSON & SQL, inspect SQLite/Parquet/HAR, debug JWT/SAML, and test Regex locally.',
-    h1Primary: 'Free Online Developer Tools',
-    h1Accent: '& Local Browser Utilities.',
-    heroLead:
-        'Format JSON and 19 SQL dialects, inspect SQLite, DuckDB, Parquet, and HAR files, generate TypeScript and Zod schemas from OpenAPI, debug JWT/PASETO/SAML tokens, and build 7-dialect cron schedules—directly in your browser with zero server uploads.',
-    keywords: [
-        'free online developer tools',
-        'online dev tools',
-        'online developer tools',
-        'developer utilities online',
-        'online developer utilities',
-        'developer tools online',
-        'privacy-first developer tools',
-        'client-side developer tools',
-        'developer toolbox online',
-        'web developer tools online',
-        'free developer utilities',
-        'free online tools for developers',
-        'web developer utilities',
-    ],
-} as const;
+export function getDeveloperCategorySeo(
+    developerTools: Tool[] = getPublishedDeveloperTools()
+) {
+    const totalTools = developerTools.length;
+
+    return {
+        seoTitle: 'Free Online Developer Tools',
+        seoDescription: `Use ${totalTools} free online developer tools & utilities in your browser: format JSON & SQL, inspect SQLite/Parquet/HAR, debug JWT/SAML, and test Regex locally.`,
+        h1Primary: 'Free Online Developer Tools',
+        h1Accent: '& Local Browser Utilities.',
+        heroLead:
+            'Format JSON and 19 SQL dialects, inspect SQLite, DuckDB, Parquet, and HAR files, generate TypeScript and Zod schemas from OpenAPI, debug JWT/PASETO/SAML tokens, and build 7-dialect cron schedules—directly in your browser with zero server uploads.',
+        keywords: [
+            'free online developer tools',
+            'online dev tools',
+            'online developer tools',
+            'developer utilities online',
+            'online developer utilities',
+            'developer tools online',
+            'privacy-first developer tools',
+            'client-side developer tools',
+            'developer toolbox online',
+            'web developer tools online',
+            'free developer utilities',
+            'free online tools for developers',
+            'web developer utilities',
+        ],
+    } as const;
+}
 
 /**
- * 5 logical subtopic workbenches covering all 13 published developer tools
+ * 5 logical subtopic workbenches covering published developer tools
  * in config/toolsData.ts without inventing routes or omitting flagship tools.
  */
 export const DEVELOPER_SUBTOPIC_GROUPS: readonly DeveloperSubtopicGroup[] = [
@@ -156,43 +174,60 @@ export const DEVELOPER_DEVTOOLS_VERIFICATION_STEPS = [
 
 /**
  * Category-level FAQs rendered in visible <details> accordions and mirrored
- * verbatim in FAQPage JSON-LD schema on /developer.
+ * verbatim in FAQPage JSON-LD schema on /developer—tool counts update automatically.
  */
-export const DEVELOPER_CATEGORY_FAQS: readonly DeveloperFaqItem[] = [
-    {
-        question: 'Do KivaroTools online developer tools upload my code, tokens, or files to a server?',
-        answer:
-            'No. All 13 developer utilities on this page execute locally inside your browser using standard Web APIs, Web Workers, and client-side parsers. Your JSON payloads, SQL queries, JWT/SAML tokens, HAR captures, SQLite databases, and Parquet files remain in local browser memory with zero server uploads.',
-    },
-    {
-        question: 'How can I verify that these developer utilities run 100% client-side?',
-        answer:
-            'Open any developer tool, press F12 to open DevTools, switch to the Network tab, filter by Fetch/XHR, and clear the log. When you format code, decode a token, or open a local database or HAR file, you can confirm directly that no payload data is transmitted to a backend server.',
-    },
-    {
-        question: 'Are these online developer utilities free to use without an account?',
-        answer:
-            'Yes. Every tool in the KivaroTools developer directory is free to use with no account registration, no login wall, and no paywalled export limits.',
-    },
-    {
-        question: 'Can browser-based developer tools handle large JSON, Parquet, SQLite, or HAR files?',
-        answer:
-            'Yes. Heavy utilities are built around local TypedArrays, streaming parsers, and virtualized views—supporting up to 25 MB in the JSON Formatter and Base64 tool, up to 50 MB (200,000 rows) in the JSON Converter, and up to 250 MB in the Parquet, Avro & Feather Viewer, bounded only by your device RAM.',
-    },
-    {
-        question: 'How is an online developer utilities hub different from Chrome DevTools or an IDE?',
-        answer:
-            'Browser DevTools inspect live pages and IDEs manage full codebases, whereas an online developer utilities hub gives you instant, zero-install workbenches for ad-hoc tasks—such as scrubbing secrets from a HAR file, inspecting a Parquet schema, auditing a SAML 2.0 assertion, or simulating a 7-dialect cron schedule.',
-    },
-    {
-        question: 'Where can I find related technical tools like llms.txt, case conversion, or meta tag generators?',
-        answer:
-            'KivaroTools keeps llms.txt & AI crawler robots.txt generation, 15-format developer text case conversion (camelCase, snake_case, PascalCase), and Next.js metadata generation under the SEO & Text Tools category, with direct cross-links provided below the developer directory.',
-    },
-] as const;
+export function getDeveloperCategoryFaqs(
+    developerTools: Tool[] = getPublishedDeveloperTools()
+): readonly DeveloperFaqItem[] {
+    const totalTools = developerTools.length;
+
+    return [
+        {
+            question:
+                'Do KivaroTools online developer tools upload my code, tokens, or files to a server?',
+            answer: `No. All ${totalTools} developer utilities on this page execute locally inside your browser using standard Web APIs, Web Workers, and client-side parsers. Your JSON payloads, SQL queries, JWT/SAML tokens, HAR captures, SQLite databases, and Parquet files remain in local browser memory with zero server uploads.`,
+        },
+        {
+            question:
+                'How can I verify that these developer utilities run 100% client-side?',
+            answer:
+                'Open any developer tool, press F12 to open DevTools, switch to the Network tab, filter by Fetch/XHR, and clear the log. When you format code, decode a token, or open a local database or HAR file, you can confirm directly that no payload data is transmitted to a backend server.',
+        },
+        {
+            question:
+                'Are these online developer utilities free to use without an account?',
+            answer:
+                'Yes. Every tool in the KivaroTools developer directory is free to use with no account registration, no login wall, and no paywalled export limits.',
+        },
+        {
+            question:
+                'Can browser-based developer tools handle large JSON, Parquet, SQLite, or HAR files?',
+            answer:
+                'Yes. Heavy utilities are built around local TypedArrays, streaming parsers, and virtualized views—supporting up to 25 MB in the JSON Formatter and Base64 tool, up to 50 MB (200,000 rows) in the JSON Converter, and up to 250 MB in the Parquet, Avro & Feather Viewer, bounded only by your device RAM.',
+        },
+        {
+            question:
+                'How is an online developer utilities hub different from Chrome DevTools or an IDE?',
+            answer:
+                'Browser DevTools inspect live pages and IDEs manage full codebases, whereas an online developer utilities hub gives you instant, zero-install workbenches for ad-hoc tasks—such as scrubbing secrets from a HAR file, inspecting a Parquet schema, auditing a SAML 2.0 assertion, or simulating a 7-dialect cron schedule.',
+        },
+        {
+            question:
+                'Where can I find related technical tools like llms.txt, case conversion, or meta tag generators?',
+            answer:
+                'KivaroTools keeps llms.txt & AI crawler robots.txt generation, 15-format developer text case conversion (camelCase, snake_case, PascalCase), and Next.js metadata generation under the SEO & Text Tools category, with direct cross-links provided below the developer directory.',
+        },
+    ] as const;
+}
 
 /**
- * Helper that resolves all published developer tools into the 5 defined groups
+ * Default pre-computed exports (automatically derived from toolsData.ts).
+ */
+export const DEVELOPER_CATEGORY_SEO = getDeveloperCategorySeo();
+export const DEVELOPER_CATEGORY_FAQS = getDeveloperCategoryFaqs();
+
+/**
+ * Helper that resolves all published developer tools into the defined groups
  * plus a safe fallback bucket so newly added tools in toolsData.ts always appear.
  */
 export function resolveDeveloperToolGroups(developerTools: Tool[]) {
