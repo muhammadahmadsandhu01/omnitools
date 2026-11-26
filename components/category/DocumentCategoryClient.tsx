@@ -176,7 +176,7 @@ export default function DocumentCategoryClient() {
                     <div className="max-w-3xl">
                         <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl dark:text-white">
                             {documentSeo.h1Primary}
-                            <span className="block text-orange-600 dark:text-orange-400">
+                            <span className="block text-blue-600 dark:text-blue-400">
                                 {documentSeo.h1Accent}
                             </span>
                         </h1>
