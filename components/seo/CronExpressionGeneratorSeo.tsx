@@ -85,38 +85,6 @@ export const CRON_GENERATOR_FAQS: { question: string; answer: string }[] = [
 ];
 
 export default function CronExpressionGeneratorSeo() {
-    const softwareSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'KivaroTools Cron Expression Generator, 7-Dialect Visual Builder & DST Simulator',
-        applicationCategory: 'DeveloperApplication',
-        operatingSystem: 'All (100% Client-Side Web Browser)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '210',
-            bestRating: '5',
-            worstRating: '1',
-        },
-        description:
-            'Free client-side 7-dialect Cron expression generator, visual builder, plain-English explainer, Daylight Saving Time (DST) skip simulator, 14-rule reliability linter, and Kubernetes/systemd/Terraform config compiler.',
-        featureList: [
-            '7-Dialect Cron AST Parser: POSIX/Linux (5-Field), Kubernetes CronJob, GitHub Actions, Spring @Scheduled (6-Field), Java Quartz (6/7-Field with L, W, LW, #, ?), AWS EventBridge, and Jenkins H Hash-Jitter',
-            'Bidirectional Visual Field Builder + Plain-English to Cron Compiler + Crontab.guru Style Human Explainer',
-            'Multi-Timezone Execution Simulator across 24+ Global IANA Timezones + 6-Region Global World Clock Matrix',
-            'Monthly Execution Density Calendar Heatmap & Two-Job Schedule Collision Detector',
-            '14-Rule Production Cron Reliability & DST Pitfall Linter with Deterministic 1-Click Auto-Fixer',
-            'Cross-Dialect AST Transpiler (POSIX <-> Quartz <-> AWS EventBridge <-> Spring <-> Jenkins <-> systemd OnCalendar)',
-            '10-Platform DevOps Config Compiler (K8s CronJob YAML, systemd .timer/.service, Linux crontab + flock, GitHub Actions, Terraform, Vercel, Cloudflare Workers, Node.js, Python, Go)',
-            'RFC 5545 .ics Calendar Exporter + CWE-1236 Safe .xlsx & .csv Schedule Audit Reports',
-        ],
-    };
-
     const howToSchema = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
@@ -169,10 +137,6 @@ export default function CronExpressionGeneratorSeo() {
             aria-label="Cron Expression Generator and 7-Dialect Schedule Simulator Technical Documentation"
             className="mt-12 space-y-10 text-slate-700 dark:text-slate-300 w-full min-w-0 max-w-full overflow-x-hidden"
         >
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}

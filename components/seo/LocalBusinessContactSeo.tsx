@@ -200,30 +200,9 @@ export default function LocalBusinessContactSeo() {
     ],
   };
 
-  const softwareAppSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
-    name: LOCAL_BUSINESS_CONTACT_SEO_META.title,
-    description: LOCAL_BUSINESS_CONTACT_SEO_META.description,
-    url: LOCAL_BUSINESS_CONTACT_SEO_META.canonicalUrl,
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'All (Web Browser — Chrome, Edge, Firefox, Safari, iOS, Android)',
-    offers: {
-      '@type': 'Offer',
-      price: '0.00',
-      priceCurrency: 'USD',
-    },
-  };
-
   return (
     <article className="mt-16 w-full min-w-0 max-w-full overflow-x-hidden space-y-12 text-slate-700 dark:text-slate-300">
-      {/* Structured Data Scripts (SoftwareApplication, FAQPage & HowTo — < escaped) */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(softwareAppSchema).replace(/</g, '\\u003c'),
-        }}
-      />
+      {/* Structured Data Scripts (FAQPage & HowTo — < escaped) */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

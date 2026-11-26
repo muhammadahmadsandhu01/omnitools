@@ -153,29 +153,9 @@ export default function ContractorVsEmployeeSeo() {
         ],
     };
 
-    const softwareAppSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'KivaroTools Universal Contractor vs. Full-Time (W-2 / 1099 / S-Corp / IR35 / Global EOR) Calculator',
-        applicationCategory: 'FinanceApplication',
-        operatingSystem: 'Web Browser (100% Client-Side Local Execution)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '194',
-            bestRating: '5',
-            worstRating: '1',
-        },
-    };
-
     return (
         <article className="mt-16 w-full min-w-0 max-w-full overflow-x-hidden space-y-12 text-slate-700 dark:text-slate-300">
-            {/* Structured Data Scripts (FAQPage, HowTo & SoftwareApplication) */}
+            {/* Structured Data Scripts (FAQPage & HowTo) */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -183,10 +163,6 @@ export default function ContractorVsEmployeeSeo() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
             />
 
             {/* ============================================================================

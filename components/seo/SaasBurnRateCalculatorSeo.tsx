@@ -84,39 +84,6 @@ export const SAAS_BURN_RATE_CALCULATOR_FAQS: FaqItem[] = [
 ];
 
 export default function SaasBurnRateCalculatorSeo() {
-    const jsonLdSoftwareApp = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'SaaS Burn Rate, Runway & Equity Dilution Calculator',
-        applicationCategory: 'FinanceApplication',
-        operatingSystem: 'All (Client-Side Browser Execution)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '182',
-            bestRating: '5',
-            worstRating: '1',
-        },
-        description:
-            'Scenario-based startup finance and cap-table modeling calculator for gross and net burn rate, static vs. 60-month dynamic cash runway, Default Alive breakeven analysis, modeled Burn Multiple, Pre/Post-Money SAFE conversion, option-pool dilution, and M&A exit waterfall scenarios.',
-        featureList: [
-            'Gross Burn Rate, Net Burn Rate & Static vs. 60-Month Dynamic Compounding Cash Runway Simulation',
-            'Default Alive Trajectory Check, Projected Zero-Cash Date & Configurable 6-Month Raise-By Indicator',
-            'Modeled Burn Multiple (Annualized Net Burn ÷ Annualized Forward Net New ARR)',
-            'Binary-Search Target Runway & Breakeven Solver (Calculated Monthly Cost Cut or Revenue Growth %)',
-            'Headcount Hiring Plan Builder & Scheduled Funding Round Cash Flow Integration',
-            'Additive YC Post-Money SAFE, Pre-Money SAFE & Simple-Interest Convertible Note Dilution Modeling',
-            'Pre-Money Option Pool Carve-Out vs. Post-Money Shared Pool Dilution Comparison',
-            'Scenario-Based M&A Exit Waterfall (1x–2x Non-Participating vs. Participating, Seniority & SAFE Treatment)',
-            'Built-In 5-Point Conservation Verification Layer + 3-Sheet Excel (.xlsx) & CSV Export',
-        ],
-    };
-
     const jsonLdFaqPage = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
@@ -166,10 +133,6 @@ export default function SaasBurnRateCalculatorSeo() {
 
     return (
         <article className="mt-16 space-y-12 w-full min-w-0 max-w-full overflow-x-hidden text-slate-700 dark:text-slate-300">
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftwareApp) }}
-            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaqPage) }}

@@ -468,7 +468,7 @@ export const tools: Tool[] = [
       'Create and download clean A4 PDF invoices in your browser with no signup or watermark. Supports 150+ ISO-4217 currencies, per-line discounts, multiple tax rows, partial payments, IBAN/SWIFT bank details, and CSV/JSON export.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Free Online Invoice Generator — PDF, CSV & JSON (No Signup)',
+    seoTitle: 'Free Online Invoice Generator — PDF, CSV (No Signup)',
     seoDescription:
       'Create clean A4 PDF invoices free with no signup or watermark. Supports 150+ currencies, IBAN/SWIFT, line discounts, multi-tax, partial payments & CSV/JSON.',
     keywords: [
@@ -575,7 +575,7 @@ export const tools: Tool[] = [
       'Model compound growth with annual step-up contributions, 5 discrete compounding frequencies, AUM fee and tax drag, Fisher real purchasing power, retirement drawdown, and 2,000-path Monte Carlo risk analysis.',
     isPopular: true,
     status: 'published',
-    seoTitle: 'Compound Interest Calculator — Daily, Tax, Inflation & CSV',
+    seoTitle: 'Compound Interest Calculator — Daily, Tax & Inflation',
     seoDescription:
       'Free daily & monthly compound interest calculator in 180 currencies (ZAR, PHP, NGN, USD). Model tax drag, inflation real value, withdrawals & CSV export.',
     keywords: [

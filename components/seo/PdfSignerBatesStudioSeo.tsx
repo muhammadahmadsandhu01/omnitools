@@ -99,38 +99,6 @@ export const PDF_SIGNER_BATES_FAQS: { question: string; answer: string }[] = [
 ];
 
 export default function PdfSignerBatesStudioSeo() {
-    const softwareSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'KivaroTools Client-Side PDF Digital Signer, Watermark & Bates Stamping Studio',
-        applicationCategory: 'BusinessApplication',
-        operatingSystem: 'All (100% Client-Side Web Browser)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '284',
-            bestRating: '5',
-            worstRating: '1',
-        },
-        description:
-            'Free 100% client-side PDF digital signer (/ByteRange & SHA-256 audit certificate), diagonal tiled underlay/overlay watermark generator, and multi-PDF continuous legal Bates & Court Exhibit stamper with 94% Shrink-to-Fit margin protection.',
-        featureList: [
-            'Unified 4-Pipeline Client-Side PDF 1.7 Binary Engine: Digital Signature + Multi-Layer Watermark + Sequential Bates Numbering + Page 1 Court Exhibit Sticker',
-            'ISO 32000-1 /Type /Sig Dictionary (/SubFilter /adbe.pkcs7.detached & Two-Pass /ByteRange) + Appended SHA-256 Certificate of Completion Page',
-            'HTML5 Touch/Mouse Handwritten Vector Signature Pad + Automatic ITU-R BT.601 Luminance White-Background Remover for Wet-Ink Signature Photos',
-            '94% Shrink-Page-to-Fit Safe MarginBox Transformation (Prevents Bates Numbers & Footers from Overwriting Bottom Contract Footnotes)',
-            'Multi-PDF Continuous Sequential Batch Bates Numbering (Prefix + 6-Digit Zero-Padding + Suffix, Skip Cover Page) + Page 1 EXHIBIT A Sticker',
-            'Background Underlay (Behind Text) vs. Foreground Overlay (/ExtGState Alpha) Repeating Diagonal Tiled Watermark with 9 Dynamic Forensic Macros',
-            '12-Rule Legal, eDiscovery & Cryptographic Readiness Linter with Deterministic 1-Click Auto-Fixer and Built-In 1-Byte Tamper Verifier',
-            'Batch .ZIP Archive + CWE-1236 Safe eDiscovery Bates Production Log (.xlsx & .csv) + Cryptographic Verification Certificate (.json)',
-        ],
-    };
-
     const howToSchema = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
@@ -183,10 +151,6 @@ export default function PdfSignerBatesStudioSeo() {
             aria-label="PDF Digital Signer, Watermark and Legal Bates Stamping Technical Documentation"
             className="mt-12 space-y-10 text-slate-700 dark:text-slate-300 w-full min-w-0 max-w-full overflow-x-hidden"
         >
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }}
-            />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}

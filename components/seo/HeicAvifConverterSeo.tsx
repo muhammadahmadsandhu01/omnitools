@@ -152,40 +152,9 @@ export default function HeicAvifConverterSeo() {
         ],
     };
 
-    const softwareAppSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'KivaroTools HEIC & AVIF to JPG/PNG/WebP/PDF Batch Converter & EXIF Privacy Studio',
-        applicationCategory: 'MultimediaApplication',
-        operatingSystem: 'Web Browser (100% Client-Side Local Execution)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '265',
-            bestRating: '5',
-            worstRating: '1',
-        },
-        featureList: [
-            '100% Client-Side Batch Conversion (.HEIC, .HEIF, .AVIF, .WebP, .PNG, .JPG -> JPG, PNG, WebP & Multi-Page PDF)',
-            'Forensic Binary ISOBMFF (ftyp, meta, ispe, colr, pixi, irot, imir, auxC, Exif, mdat) Container Inspector',
-            'Misnamed File Magic-Byte Auto-Recovery (WhatsApp/Telegram .heic JPEG detection)',
-            '16-Tag Binary EXIF & GPS Privacy Scrubber (Strip All, Keep Camera/Strip GPS, Preserve All) with Output Re-Verification',
-            'Display P3 Wide Color Gamut (colr nclx Primaries 12) to Perceptual sRGB Mapping Pipeline',
-            'Transparent Alpha Matte Background Fill Picker (#FFFFFF White, #F8FAFC Slate, #FEF3C7 Cream, Custom Hex)',
-            'Binary-Search Target Max File Size (KB) Compressor (<= 50 KB, <= 100 KB, <= 200 KB, <= 500 KB, <= 1 MB)',
-            'Real Pixel-by-Pixel MSE, PSNR (dB) & Wang-Bovik SSIM Signal Fidelity Telemetry',
-            'One-Click Batch ZIP (.zip), Printable Contact Sheet PDF (.pdf), and CWE-1236 Safe Excel (.xlsx) Privacy Audit Manifests',
-        ],
-    };
-
     return (
         <article className="mt-16 w-full min-w-0 max-w-full overflow-x-hidden space-y-12 text-slate-700 dark:text-slate-300">
-            {/* Structured Data Scripts (FAQPage, HowTo & SoftwareApplication) */}
+            {/* Structured Data Scripts (FAQPage & HowTo) */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -193,10 +162,6 @@ export default function HeicAvifConverterSeo() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
             />
 
             {/* ============================================================================

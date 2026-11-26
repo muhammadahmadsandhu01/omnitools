@@ -149,38 +149,9 @@ export default function JwtPasetoSamlDebuggerSeo() {
         ],
     };
 
-    const softwareAppSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        name: 'KivaroTools Universal JWT, PASETO & SAML 2.0 Debugger, Verifier & SSO Security Linter',
-        applicationCategory: 'DeveloperApplication',
-        operatingSystem: 'Web Browser (100% Client-Side Local Execution)',
-        offers: {
-            '@type': 'Offer',
-            price: '0',
-            priceCurrency: 'USD',
-        },
-        aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            ratingCount: '215',
-            bestRating: '5',
-            worstRating: '1',
-        },
-        featureList: [
-            '100% Client-Side 5-Protocol Token Debugger (JWT JWS, RFC 9901 SD-JWT, 5-Part JWE, PASETO v1–v4, and OASIS SAML 2.0)',
-            'Built-In 65-Password Weak HMAC Secret Dictionary Auditor (HS256, HS384, HS512)',
-            '16-Rule Cryptographic & SSO Security Vulnerability Linter with 1-Click Deterministic Auto-Fixer',
-            'PASETO Binary 64-Bit Little-Endian Pre-Authentication Encoding (PAE) & Implicit Assertion Inspector',
-            'SAML 2.0 Bidirectional HTTP-Redirect (RFC 1951 Raw DEFLATE + Base64 + URL) <-> HTTP-POST (Base64) <-> Raw XML Workbench',
-            'Cross-Protocol Identity Translator (SAML 2.0 Assertion <-> OIDC JWT <-> PASETO v4.public)',
-            'Integrated Cryptographic Key Studio (JWK / JWKS <-> SPKI/PKCS#8 PEM <-> PASERK + RFC 7638 Thumbprint kid)',
-            '8-Language Production Backend Verification Code Generator + CWE-1236 Safe Excel (.xlsx) & CSV Audit Exports',
-        ],
-    };
-
     return (
         <article className="mt-16 w-full min-w-0 max-w-full overflow-x-hidden space-y-12 text-slate-700 dark:text-slate-300">
+            {/* Structured Data Scripts (FAQPage & HowTo) */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
@@ -188,10 +159,6 @@ export default function JwtPasetoSamlDebuggerSeo() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
             />
 
             {/* ============================================================================
