@@ -27,10 +27,15 @@ import {
   SEO_CATEGORY_FAQS,
   SEO_CATEGORY_SEO,
 } from '@/config/seoCategoryConfig';
+import {
+  MEDIA_CATEGORY_FAQS,
+  MEDIA_CATEGORY_SEO,
+} from '@/config/mediaCategoryConfig';
 import DeveloperCategoryClient from '@/components/category/DeveloperCategoryClient';
 import FinanceCategoryClient from '@/components/category/FinanceCategoryClient';
 import DocumentCategoryClient from '@/components/category/DocumentCategoryClient';
 import SeoCategoryClient from '@/components/category/SeoCategoryClient';
+import MediaCategoryClient from '@/components/category/MediaCategoryClient';
 
 const PDF_SCRUBBER_GSC_TOKENS = new Set([
   'Title',
@@ -123,6 +128,7 @@ export async function generateMetadata({
   const isFinance = category.id === 'finance';
   const isDocument = category.id === 'document';
   const isSeo = category.id === 'seo';
+  const isMedia = category.id === 'media';
 
   const categoryTitle = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoTitle
@@ -132,10 +138,12 @@ export async function generateMetadata({
         ? DOCUMENT_CATEGORY_SEO.seoTitle
         : isSeo
           ? SEO_CATEGORY_SEO.seoTitle
-          : category.seoTitle ||
-          (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
-            ? category.name
-            : `${category.name} Tools`);
+          : isMedia
+            ? MEDIA_CATEGORY_SEO.seoTitle
+            : category.seoTitle ||
+            (category.name.endsWith('Tools') || category.name.endsWith('Utilities')
+              ? category.name
+              : `${category.name} Tools`);
 
   const categoryDescription = isDeveloper
     ? DEVELOPER_CATEGORY_SEO.seoDescription
@@ -145,8 +153,10 @@ export async function generateMetadata({
         ? DOCUMENT_CATEGORY_SEO.seoDescription
         : isSeo
           ? SEO_CATEGORY_SEO.seoDescription
-          : category.seoDescription ||
-          `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
+          : isMedia
+            ? MEDIA_CATEGORY_SEO.seoDescription
+            : category.seoDescription ||
+            `Explore ${categoryTools.length} free ${category.name.toLowerCase()} from KivaroTools. Fast, easy-to-use browser-based utilities with 100% client-side privacy.`;
 
   const categoryKeywords = isDeveloper
     ? [...DEVELOPER_CATEGORY_SEO.keywords]
@@ -156,11 +166,13 @@ export async function generateMetadata({
         ? [...DOCUMENT_CATEGORY_SEO.keywords]
         : isSeo
           ? [...SEO_CATEGORY_SEO.keywords]
-          : category.keywords;
+          : isMedia
+            ? [...MEDIA_CATEGORY_SEO.keywords]
+            : category.keywords;
 
   const canonicalUrl = `${SITE_URL}/${category.id}`;
   const socialTitle =
-    isDeveloper || isFinance || isDocument || isSeo
+    isDeveloper || isFinance || isDocument || isSeo || isMedia
       ? `${categoryTitle} | KivaroTools`
       : `${categoryTitle} — KivaroTools`;
 
@@ -245,6 +257,7 @@ export default async function CategoryPage({
   const isFinance = category.id === 'finance';
   const isDocument = category.id === 'document';
   const isSeo = category.id === 'seo';
+  const isMedia = category.id === 'media';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -258,7 +271,9 @@ export default async function CategoryPage({
           ? 'PDF & Document Utilities'
           : isSeo
             ? 'SEO, GEO & Text Tools'
-            : category.name,
+            : isMedia
+              ? 'Private Image Tools'
+              : category.name,
         item: canonicalUrl,
       },
     ],
@@ -276,7 +291,9 @@ export default async function CategoryPage({
           ? `${DOCUMENT_CATEGORY_SEO.seoTitle} | KivaroTools`
           : isSeo
             ? `${SEO_CATEGORY_SEO.seoTitle} | KivaroTools`
-            : `${category.name} — KivaroTools`,
+            : isMedia
+              ? `${MEDIA_CATEGORY_SEO.seoTitle} | KivaroTools`
+              : `${category.name} — KivaroTools`,
     description: isDeveloper
       ? DEVELOPER_CATEGORY_SEO.seoDescription
       : isFinance
@@ -285,8 +302,10 @@ export default async function CategoryPage({
           ? DOCUMENT_CATEGORY_SEO.seoDescription
           : isSeo
             ? SEO_CATEGORY_SEO.seoDescription
-            : category.description ||
-            `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
+            : isMedia
+              ? MEDIA_CATEGORY_SEO.seoDescription
+              : category.description ||
+              `Explore ${categoryTools.length} free browser-based ${category.name.toLowerCase()} on KivaroTools.`,
     url: canonicalUrl,
     mainEntity: {
       '@type': 'ItemList',
@@ -429,6 +448,39 @@ export default async function CategoryPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
         <SeoCategoryClient />
+      </>
+    );
+  }
+
+  if (isMedia) {
+    const faqSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: MEDIA_CATEGORY_FAQS.map((faq) => ({
+        '@type': 'Question',
+        name: faq.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faq.answer,
+        },
+      })),
+    };
+
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        />
+        <MediaCategoryClient />
       </>
     );
   }
@@ -602,7 +654,7 @@ export default async function CategoryPage({
                 Why Professionals Choose KivaroTools for {category.name}
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">
-                {category.description} Every utility in our {category.name.toLowerCase()} suite executes locally inside your browser memory with zero server uploads and includes comprehensive methodology documentation, formula verification tables, and interactive FAQs directly below the workspace.
+                {category.description} Every utility in our {category.name.toLowerCase()} suite executes locally inside your browser memory with zero server uploads and includes comprehensive methodology documentation and interactive FAQs directly below the workspace.
               </p>
               <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-100 pt-6 dark:border-slate-800">
                 {categories
