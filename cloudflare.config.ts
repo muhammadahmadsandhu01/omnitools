@@ -7,6 +7,8 @@ export default defineConfig({
     compatibilityDate: "2026-10-19",
     compatibilityFlags: ["nodejs_compat"],
     domains: ["kivarotools.com"],
+    workersDev: true,
+    previewUrls: true,
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",
