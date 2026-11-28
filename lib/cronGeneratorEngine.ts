@@ -246,6 +246,13 @@ export const SUPPORTED_IANA_TIMEZONES: {
             fallDstDate: '2026-10-25 02:00–02:59 Repeats (Last Sunday in October)',
         },
         {
+            id: 'Europe/Amsterdam',
+            label: 'Europe/Amsterdam (Netherlands — CET/CEST)',
+            observesDst: true,
+            springDstDate: '2026-03-29 02:00 → 03:00 (Last Sunday in March)',
+            fallDstDate: '2026-10-25 02:00–02:59 Repeats (Last Sunday in October)',
+        },
+        {
             id: 'Asia/Karachi',
             label: 'Asia/Karachi (Pakistan Standard Time — PKT UTC+5)',
             observesDst: false,
@@ -2456,7 +2463,6 @@ export function analyzeAndSimulateCron(
 
     // Rule 5: Numeric Day-of-Week `0` in Quartz / AWS EventBridge (1-7 Indexing Bug)
     if (
-        isValidSyntax &&
         (detectedDialect === 'QUARTZ_6_7' || detectedDialect === 'AWS_EVENTBRIDGE_6') &&
         /\b0\b/.test(dowField.rawToken)
     ) {
@@ -2945,7 +2951,7 @@ export function exportCronAuditCsv(report: ComprehensiveCronReport): string {
             'Runs Per Day / Month / Year',
             `${report.frequencyBudget.runsPerDay}/day • ${report.frequencyBudget.runsPerMonth30d}/mo • ${report.frequencyBudget.runsPerYear365d}/yr`,
             `Min Interval: ${report.frequencyBudget.minIntervalHumanLabel}`,
-            `Monthly Compute: ${report.frequencyBudget.monthlyComputeMinutes} mins (${report.frequencyBudget.githubActionsFreeTierPercent}% of GHA 2000m)`,
+            `Monthly Compute: ${report.frequencyBudget.monthlyComputeMinutes} mins (${report.frequencyBudget.githubActionsFreeTierPercent >= 999 ? '999%+' : `${report.frequencyBudget.githubActionsFreeTierPercent}%`} of GHA 2000m)`,
         ],
     ];
 
@@ -3005,7 +3011,7 @@ export function exportCronAuditXlsx(report: ComprehensiveCronReport): Uint8Array
         ['Category', 'Metric / Rule / Run', 'Value / Local Timestamp', 'Dialect / Severity / UTC', 'Details & Remediation'],
         ['Schedule Summary', 'Cron Expression', report.cleanCronExpression, report.detectedDialect, report.plainEnglishDescription],
         ['Schedule Summary', 'Reliability Grade', `${report.reliabilityScore}/100 (${report.reliabilityGrade})`, `${report.lintFindings.length} Alerts`, report.dstHazard.hazardExplanation],
-        ['Frequency & Budget', 'Monthly Executions', `${report.frequencyBudget.runsPerMonth30d} runs/mo`, `${report.frequencyBudget.monthlyComputeMinutes} compute mins`, `${report.frequencyBudget.githubActionsFreeTierPercent}% of GitHub Actions 2,000m Free Tier`],
+        ['Frequency & Budget', 'Monthly Executions', `${report.frequencyBudget.runsPerMonth30d} runs/mo`, `${report.frequencyBudget.monthlyComputeMinutes} compute mins`, `${report.frequencyBudget.githubActionsFreeTierPercent >= 999 ? '999%+' : `${report.frequencyBudget.githubActionsFreeTierPercent}%`} of GitHub Actions 2,000m Free Tier`],
         ['Transpiler', 'AWS EventBridge', report.crossDialectTranslations.awsEventBridgeCron, 'AWS_EVENTBRIDGE_6', '6-Field with ? mutual exclusion'],
         ['Transpiler', 'Java Quartz 7-Field', report.crossDialectTranslations.quartz7Expression, 'QUARTZ_6_7', '7-Field with Seconds & Year'],
         ['Transpiler', 'Systemd OnCalendar', report.crossDialectTranslations.systemdOnCalendar, 'systemd.timer', 'Linux systemd timer calendar spec'],
