@@ -55,7 +55,7 @@ export interface DealerPayoutTiers {
   meltWholesale: number; // 100% Intrinsic spot value
   refinerHighVolume: number; // Default ~95%
   dealerBullionCash: number; // Default ~88% (85%–90%)
-  pawnShopQuickCash: number; // Default ~75% (70%–80%)
+  pawnShopQuickCash: number; // Default ~75% (50%–75% typical pawn range)
   userModeledSell: number; // User custom discount & fee
   userModeledBuy: number; // User custom buy premium
 }
@@ -199,7 +199,7 @@ export const UNITS: Record<WeightUnit, UnitDefinition> = {
     label: 'Tola (South Asian / Gulf standard)',
     short: 'tola',
     gramsPerUnit: TOLA_TO_GRAMS,
-    description: 'Traditional Vedic & Middle Eastern standard = 180 grains = 11.6638 g = 0.375 troy oz.',
+    description: 'Traditional South Asian & Gulf standard = 180 grains = 11.6638 g = 0.375 troy oz.',
     isTroy: true,
   },
   kg: {
@@ -212,7 +212,7 @@ export const UNITS: Record<WeightUnit, UnitDefinition> = {
   },
   '10g': {
     key: '10g',
-    label: '10 Grams (10g / Bhori)',
+    label: '10 Grams (10g)',
     short: '10g',
     gramsPerUnit: TEN_GRAMS_TO_GRAMS,
     description: 'Common Indian and Asian retail denomination = 10.0 grams.',
@@ -236,79 +236,79 @@ export const GOLD_PURITIES: PurityTier[] = [
   {
     id: '24K',
     metal: 'XAU',
-    label: '24 Karat (24K) — 99.9% Pure Fine Gold',
+    label: '24 Karat (24K / 24ct) — 99.9% Pure Fine Gold',
     shortLabel: '24K (99.9%)',
     fineness: 0.999,
     partsPerThousand: 999,
     karatEquivalent: '24K',
     description: 'Investment bullion bars, sovereign minted coins (999 or 999.9 fineness).',
-    commonHallmarks: ['999', '999.9', '24K', '.999'],
+    commonHallmarks: ['999', '999.9', '24K', '24ct', '.999'],
   },
   {
     id: '22K',
     metal: 'XAU',
-    label: '22 Karat (22K) — 91.67% Fine Gold (Crown Gold)',
+    label: '22 Karat (22K / 22ct) — 91.67% Fine Gold (Crown Gold)',
     shortLabel: '22K (91.7%)',
     fineness: 22 / 24, // 0.9166666666666666
     partsPerThousand: 916.7,
     karatEquivalent: '22K',
     description: 'Traditional South Asian, Middle Eastern bridal jewelry and British Sovereigns.',
-    commonHallmarks: ['916', '22K', '.916'],
+    commonHallmarks: ['916', '22K', '22ct', '.916'],
   },
   {
     id: '21K',
     metal: 'XAU',
-    label: '21 Karat (21K) — 87.5% Fine Gold',
+    label: '21 Karat (21K / 21ct) — 87.5% Fine Gold',
     shortLabel: '21K (87.5%)',
     fineness: 21 / 24, // 0.875
     partsPerThousand: 875.0,
     karatEquivalent: '21K',
     description: 'Popular in Arabian Gulf, Egypt, and Mediterranean fine artisanal jewelry.',
-    commonHallmarks: ['875', '21K', '.875'],
+    commonHallmarks: ['875', '21K', '21ct', '.875'],
   },
   {
     id: '18K',
     metal: 'XAU',
-    label: '18 Karat (18K) — 75.0% Fine Gold',
-    shortLabel: '18K (75.0%)',
+    label: '18 Karat / 18 Carat (18K / 18ct) — 75.0% Fine Gold',
+    shortLabel: '18K / 18ct (75.0%)',
     fineness: 18 / 24, // 0.750
     partsPerThousand: 750.0,
     karatEquivalent: '18K',
     description: 'Global standard for luxury diamond mountings, fine jewelry and Swiss timepieces.',
-    commonHallmarks: ['750', '18K', '18KT', '.750'],
+    commonHallmarks: ['750', '18K', '18KT', '18ct', '.750'],
   },
   {
     id: '14K',
     metal: 'XAU',
-    label: '14 Karat (14K) — 58.33% Fine Gold',
+    label: '14 Karat (14K / 14ct) — 58.33% Fine Gold',
     shortLabel: '14K (58.3%)',
     fineness: 14 / 24, // 0.5833333333333334
     partsPerThousand: 583.3,
     karatEquivalent: '14K',
     description: 'Most common North American everyday durable jewelry alloy (stamped 585 or 14K).',
-    commonHallmarks: ['585', '583', '14K', '14KT', '.585'],
+    commonHallmarks: ['585', '583', '14K', '14KT', '14ct', '.585'],
   },
   {
     id: '10K',
     metal: 'XAU',
-    label: '10 Karat (10K) — 41.67% Fine Gold',
+    label: '10 Karat (10K / 10ct) — 41.67% Fine Gold',
     shortLabel: '10K (41.7%)',
     fineness: 10 / 24, // 0.4166666666666667
     partsPerThousand: 416.7,
     karatEquivalent: '10K',
     description: 'Minimum legal karat standard in the United States; common in school class rings.',
-    commonHallmarks: ['417', '416', '10K', '10KT', '.417'],
+    commonHallmarks: ['417', '416', '10K', '10KT', '10ct', '.417'],
   },
   {
     id: '9K',
     metal: 'XAU',
-    label: '9 Karat (9K) — 37.5% Fine Gold',
-    shortLabel: '9K (37.5%)',
+    label: '9 Karat / 9 Carat (9K / 9ct) — 37.5% Fine Gold',
+    shortLabel: '9K / 9ct (37.5%)',
     fineness: 9 / 24, // 0.375
     partsPerThousand: 375.0,
     karatEquivalent: '9K',
-    description: 'Popular entry-level commercial jewelry hallmark in the UK, Australia, and New Zealand.',
-    commonHallmarks: ['375', '9K', '.375'],
+    description: 'Popular commercial jewelry hallmark in the UK, South Africa, Australia, and New Zealand.',
+    commonHallmarks: ['375', '9K', '9ct', '.375'],
   },
 ];
 
@@ -587,7 +587,7 @@ export function calculateDealerPayoutTiers(
   // Industry benchmark estimates:
   // - Refiner (high volume direct melt): ~95%
   // - Bullion dealer / local jeweler cash offer: ~88% (85%–90% range)
-  // - Pawn shop / mall cash buyer: ~75% (70%–80% range)
+  // - Pawn shop / quick cash buyer reference: 75% (actual pawn offers typically range 50%–75%)
   const refinerHighVolume = Math.max(0, baseMeltValue * 0.95);
   const dealerBullionCash = Math.max(0, baseMeltValue * 0.88);
   const pawnShopQuickCash = Math.max(0, baseMeltValue * 0.75);

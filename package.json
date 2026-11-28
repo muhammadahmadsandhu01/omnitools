@@ -16,7 +16,7 @@
     "test:mortgage": "tsx scripts/test-mortgage-calculator-1000-suite.ts && tsx scripts/test-mortgage-150-suite.ts && tsx scripts/test-user-mortgage-suite.ts && tsx scripts/test-mortgage-oracle.ts && tsx scripts/test-mortgage-engine.ts",
     "test:password": "tsx scripts/test-password-generator.ts",
     "test:pdf": "tsx scripts/test-pdf-merge-split-150-suite.ts && tsx scripts/test-pdf-merge-split.ts",
-    "test:metals": "tsx scripts/test-precious-metals-engine.ts",
+    "test:metals": "tsx scripts/test-precious-metals-engine.ts && tsx scripts/test-precious-metals-1000-suite.ts",
     "test:image-to-pdf": "tsx scripts/test-image-to-pdf-150-suite.ts && tsx scripts/test-image-to-pdf.ts",
     "test:qr": "tsx scripts/test-qr-generator-1000-suite.ts && tsx scripts/test-qr-generator.ts",
     "test:regex": "tsx scripts/test-regex-tester-150-suite.ts && tsx scripts/test-user-regex-tester-suite.ts && tsx scripts/test-regex-tester.ts",

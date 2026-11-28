@@ -903,13 +903,22 @@ export default function PreciousMetals() {
   // Enhanced Calculator State
   const [calcMode, setCalcMode] = useState<'single' | 'lot'>('single');
   const [calcMetal, setCalcMetal] = useState<MetalCode>('XAU');
-  const [calcWeight, setCalcWeight] = useState<number>(1.0);
+  const [calcWeightInput, setCalcWeightInput] = useState<string>('1');
+  const calcWeightParsed = parseFloat(calcWeightInput);
+  const calcWeightError =
+    !calcWeightInput.trim() || !Number.isFinite(calcWeightParsed) || calcWeightParsed <= 0
+      ? 'Please enter a valid weight greater than 0.'
+      : null;
+  const calcWeight = calcWeightError ? 0 : calcWeightParsed;
   const [calcUnit, setCalcUnit] = useState<WeightUnit>('tola');
   const [calcPurityId, setCalcPurityId] = useState<string>('24K');
   const [calcCustomFineness, setCalcCustomFineness] = useState<string>('0.925');
   const [calcQuantity, setCalcQuantity] = useState<number>(1);
   const [isManualSpotOverride, setIsManualSpotOverride] = useState<boolean>(false);
   const [manualSpotPrice, setManualSpotPrice] = useState<string>('');
+  const [sarafaTolaInput, setSarafaTolaInput] = useState<string>('');
+  const [showAdvancedSpread, setShowAdvancedSpread] = useState<boolean>(false);
+  const [showProvenanceDetails, setShowProvenanceDetails] = useState<boolean>(false);
   const [buyPremium, setBuyPremium] = useState<number>(3.0);
   const [sellDiscount, setSellDiscount] = useState<number>(12.0);
   const [dealerFee, setDealerFee] = useState<number>(0);
@@ -950,10 +959,15 @@ export default function PreciousMetals() {
   // Form State for Adding an Item to the Scrap Lot
   const [newItemName, setNewItemName] = useState<string>('');
   const [newItemMetal, setNewItemMetal] = useState<MetalCode>('XAU');
-  const [newItemWeight, setNewItemWeight] = useState<number>(10.0);
+  const [newItemWeightInput, setNewItemWeightInput] = useState<string>('10');
+  const newItemWeightParsed = parseFloat(newItemWeightInput);
+  const newItemWeightError =
+    !newItemWeightInput.trim() || !Number.isFinite(newItemWeightParsed) || newItemWeightParsed <= 0
+      ? 'Enter a weight greater than 0.'
+      : null;
   const [newItemUnit, setNewItemUnit] = useState<WeightUnit>('gram');
   const [newItemPurityId, setNewItemPurityId] = useState<string>('14K');
-  const [newItemCustomFineness] = useState<string>('0.925');
+  const [newItemCustomFineness, setNewItemCustomFineness] = useState<string>('0.925');
   const [newItemQuantity] = useState<number>(1);
 
   // Synchronize calcMetal and default purity when a metal card is clicked
@@ -1400,7 +1414,7 @@ export default function PreciousMetals() {
   // Quick Preset Selector
   const applyPreset = (preset: { metal: MetalCode; weight: number; unit: WeightUnit; purityId: string }) => {
     setCalcMetal(preset.metal);
-    setCalcWeight(preset.weight);
+    setCalcWeightInput(String(preset.weight));
     setCalcUnit(preset.unit);
     setCalcPurityId(preset.purityId);
     setCalcQuantity(1);
@@ -1408,20 +1422,21 @@ export default function PreciousMetals() {
 
   // Lot Item Handlers
   const handleAddItemToLot = () => {
+    if (newItemWeightError) return;
     const customNum = parseFloat(newItemCustomFineness);
     const item: LotItemInput = {
       id: `lot-item-${Date.now()}`,
       name: newItemName.trim() || `${METALS[newItemMetal].name} Item`,
       metal: newItemMetal,
-      grossWeight: Math.max(0.001, newItemWeight || 1),
+      grossWeight: newItemWeightParsed,
       weightUnit: newItemUnit,
       purityId: newItemPurityId,
-      customFineness: Number.isFinite(customNum) ? customNum : undefined,
+      customFineness: newItemPurityId === 'custom' && Number.isFinite(customNum) ? customNum : undefined,
       quantity: Math.max(1, Math.floor(newItemQuantity || 1)),
     };
     setLotItems((prev) => [...prev, item]);
     setNewItemName('');
-    setNewItemWeight(10);
+    setNewItemWeightInput('10');
   };
 
   const handleRemoveItemFromLot = (id: string) => {
@@ -1449,44 +1464,46 @@ export default function PreciousMetals() {
       `Melt Value (${selectedCurrency})`,
     ];
     const rows = lotCalcResult.items.map((it) => [
-      it.id,
-      `"${it.name.replace(/"/g, '""')}"`,
-      it.metal,
-      it.grossWeightInput,
-      it.grossWeightUnit,
-      it.totalGrossWeightGrams.toFixed(3),
-      `"${it.purityLabel}"`,
-      it.finenessDecimal.toFixed(4),
-      it.fineWeightGrams.toFixed(4),
-      it.fineWeightTroyOz.toFixed(5),
-      it.quantity,
-      it.totalMeltValue.toFixed(2),
+      sanitizeCsvField(it.id),
+      sanitizeCsvField(it.name),
+      sanitizeCsvField(it.metal),
+      sanitizeCsvField(it.grossWeightInput),
+      sanitizeCsvField(it.grossWeightUnit),
+      sanitizeCsvField(it.totalGrossWeightGrams.toFixed(3)),
+      sanitizeCsvField(it.purityLabel),
+      sanitizeCsvField(it.finenessDecimal.toFixed(4)),
+      sanitizeCsvField(it.fineWeightGrams.toFixed(4)),
+      sanitizeCsvField(it.fineWeightTroyOz.toFixed(5)),
+      sanitizeCsvField(it.quantity),
+      sanitizeCsvField(it.totalMeltValue.toFixed(2)),
     ]);
 
     rows.push([]);
     rows.push([
-      'TOTALS',
+      sanitizeCsvField('TOTALS'),
       '',
       '',
       '',
       '',
-      lotCalcResult.grandTotalGrossGrams.toFixed(3),
+      sanitizeCsvField(lotCalcResult.grandTotalGrossGrams.toFixed(3)),
       '',
       '',
-      lotCalcResult.grandTotalFineGrams.toFixed(4),
-      (lotCalcResult.grandTotalFineGrams / TROY_OUNCE_TO_GRAMS).toFixed(5),
-      lotCalcResult.itemCount,
-      lotCalcResult.grandTotalMeltValue.toFixed(2),
+      sanitizeCsvField(lotCalcResult.grandTotalFineGrams.toFixed(4)),
+      sanitizeCsvField((lotCalcResult.grandTotalFineGrams / TROY_OUNCE_TO_GRAMS).toFixed(5)),
+      sanitizeCsvField(lotCalcResult.itemCount),
+      sanitizeCsvField(lotCalcResult.grandTotalMeltValue.toFixed(2)),
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.map(sanitizeCsvField).join(','), ...rows.map((e) => e.join(','))].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.href = url;
     link.setAttribute('download', `kivarotools_precious_metals_lot_${selectedCurrency}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleCopyLotSummary = () => {
@@ -1548,6 +1565,7 @@ export default function PreciousMetals() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const handleCopySummary = () => {
@@ -1574,17 +1592,16 @@ export default function PreciousMetals() {
                 role="status"
                 aria-live="polite"
                 title={activeMetalData.freshnessEvaluation?.detail}
-                className={`px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 ${
-                  activeMetalData.freshnessEvaluation?.state === 'LIVE'
+                className={`px-2.5 py-0.5 rounded-full text-xs font-bold tracking-wide uppercase flex items-center gap-1.5 ${activeMetalData.freshnessEvaluation?.state === 'LIVE'
                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
                     : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
-                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
-                    : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
-                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
-                    : activeMetalData.freshnessEvaluation?.state === 'MANUAL_OVERRIDE'
-                    ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300'
-                    : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
-                }`}
+                      ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-300'
+                      : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300'
+                        : activeMetalData.freshnessEvaluation?.state === 'MANUAL_OVERRIDE'
+                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300'
+                          : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                  }`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full bg-current ${activeMetalData.freshnessEvaluation?.state === 'LIVE' ? 'animate-pulse' : ''}`} />
                 {activeMetalData.freshnessEvaluation?.badgeLabel || activeMetalData.freshness}
@@ -1599,9 +1616,9 @@ export default function PreciousMetals() {
           </div>
 
           {/* Regional, Currency & Unit Selectors */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5">
             {/* Country Selector */}
-            <div className="relative">
+            <div className="relative col-span-2 sm:col-span-1">
               <label htmlFor="country-select" className="sr-only">
                 Select Country / Market
               </label>
@@ -1610,7 +1627,7 @@ export default function PreciousMetals() {
                 aria-label="Select Country or Market"
                 value={selectedCountry}
                 onChange={(e) => handleCountryChange(e.target.value as CountryCode)}
-                className="appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="w-full sm:w-auto min-h-[42px] appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
                 {Object.values(COUNTRIES).map((c) => (
                   <option key={c.code} value={c.code}>
@@ -1631,7 +1648,7 @@ export default function PreciousMetals() {
                 aria-label="Select Currency"
                 value={selectedCurrency}
                 onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
-                className="appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="w-full sm:w-auto min-h-[42px] appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
                 {Object.values(CURRENCIES).map((c) => (
                   <option key={c.code} value={c.code}>
@@ -1652,7 +1669,7 @@ export default function PreciousMetals() {
                 aria-label="Select Price Unit"
                 value={selectedUnit}
                 onChange={(e) => setSelectedUnit(e.target.value as PriceUnit)}
-                className="appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+                className="w-full sm:w-auto min-h-[42px] appearance-none pl-3 pr-8 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
               >
                 {Object.entries(UNIT_LABELS).map(([uKey, uVal]) => (
                   <option key={uKey} value={uKey}>
@@ -1676,73 +1693,86 @@ export default function PreciousMetals() {
           </div>
         </div>
 
-        {/* Source, Timestamp & Freshness Transparency Bar */}
-        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+        {/* Compact Provenance Strip & Quick Section Jump Links */}
+        <div className="mt-4 pt-3.5 border-t border-gray-200 dark:border-slate-800/80 space-y-2.5 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href="#melt-calculator"
+                className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+              >
+                Melt Calculator
+              </a>
+              <a
+                href="#market-rates-table"
+                className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Market Table
+              </a>
+              <a
+                href="#historical-chart"
+                className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Price Chart
+              </a>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-expanded={showProvenanceDetails}
+                aria-controls="feed-provenance-details"
+                onClick={() => setShowProvenanceDetails((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-medium cursor-pointer transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>{showProvenanceDetails ? 'Hide Feed Details' : 'Feed & FX Details'}</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showProvenanceDetails ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                type="button"
+                onClick={handleCopySummary}
+                aria-label="Copy rate summary to clipboard"
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 font-medium cursor-pointer transition-colors focus:outline-none"
+              >
+                {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLink ? 'Copied' : 'Share Rate'}</span>
+              </button>
+            </div>
+          </div>
+
+          {showProvenanceDetails && (
+            <div
+              id="feed-provenance-details"
+              className="p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200/80 dark:border-slate-800 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px]"
+            >
               <span>
                 Quote Time:{' '}
                 <strong className="text-slate-700 dark:text-slate-300 font-mono">
                   {formatDeterministicTimestamp(activeMetalData.timestampMs)}
                 </strong>
               </span>
-            </span>
-            <span>•</span>
-            <span>
-              Retrieved:{' '}
-              <strong className="text-slate-700 dark:text-slate-300 font-mono">
-                {formatDeterministicTimestamp(new Date(activeMetalData.retrievedAt).getTime())}
-              </strong>
-            </span>
-            <span>•</span>
-            <span>
-              Source:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">{activeMetalData.source}</strong>
-            </span>
-            <span>•</span>
-            <span>
-              Unit:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">{UNIT_LABELS[selectedUnit].short}</strong>
-            </span>
-            <span>•</span>
-            <span>
-              Currency:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">{selectedCurrency}</strong>
-            </span>
-            <span>•</span>
-            <span className="capitalize">
-              Rate Type:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">
-                {activeMetalData.rateType === 'futures' ? 'Futures Reference' : 'Spot Reference'}
-              </strong>
-            </span>
-            <span>•</span>
-            <span>
-              Freshness:{' '}
-              <strong className="text-slate-700 dark:text-slate-300" title={activeMetalData.freshnessEvaluation?.detail}>
-                {activeMetalData.freshnessEvaluation?.badgeLabel || activeMetalData.freshness}
-              </strong>
-            </span>
-            <span>•</span>
-            <span>
-              FX Ref:{' '}
-              <strong className="text-slate-700 dark:text-slate-300">
-                {fxData.provider} (1 {fxData.baseCurrency} = {formatDecimal(fxRates[selectedCurrency] ?? 1, 4)} {selectedCurrency} @ {formatDeterministicTimestamp(fxData.timestampMs)})
-              </strong>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopySummary}
-              aria-label="Copy rate summary to clipboard"
-              className="inline-flex items-center gap-1 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors focus:outline-none"
-            >
-              {copiedLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Copied' : 'Share Rate'}</span>
-            </button>
-          </div>
+              <span>•</span>
+              <span>
+                Retrieved:{' '}
+                <strong className="text-slate-700 dark:text-slate-300 font-mono">
+                  {formatDeterministicTimestamp(new Date(activeMetalData.retrievedAt).getTime())}
+                </strong>
+              </span>
+              <span>•</span>
+              <span>
+                Source:{' '}
+                <strong className="text-slate-700 dark:text-slate-300">{activeMetalData.source}</strong>
+              </span>
+              <span>•</span>
+              <span>
+                FX Ref:{' '}
+                <strong className="text-slate-700 dark:text-slate-300">
+                  {fxData.provider} (1 {fxData.baseCurrency} = {formatDecimal(fxRates[selectedCurrency] ?? 1, 4)} {selectedCurrency} @ {formatDeterministicTimestamp(fxData.timestampMs)})
+                </strong>
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1770,7 +1800,7 @@ export default function PreciousMetals() {
       {/* =========================================================================
           SECTION 1: 4 FIRST-CLASS PRECIOUS METAL CARDS
           ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {(Object.keys(METALS) as MetalCode[]).map((mCode) => {
           const mMeta = METALS[mCode];
           const mData = metalPrices[mCode];
@@ -1786,11 +1816,10 @@ export default function PreciousMetals() {
               type="button"
               onClick={() => handleSelectMetal(mCode)}
               aria-label={`Select ${mMeta.name} for deep analysis and charting`}
-              className={`p-5 rounded-3xl text-left transition-all border shadow-sm relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                isSelected
+              className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-left transition-all border shadow-sm relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer ${isSelected
                   ? 'bg-white dark:bg-[#111827] border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/20'
                   : 'bg-white dark:bg-[#111827] border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -1822,7 +1851,7 @@ export default function PreciousMetals() {
 
               {/* Price Display */}
               <div className="mt-2">
-                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
+                <div className="text-base sm:text-xl lg:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight truncate">
                   {formatCurrencyValue(finalPrice, selectedCurrency)}
                 </div>
                 <div className="flex items-center justify-between mt-1 text-xs text-slate-400 dark:text-slate-500">
@@ -1833,11 +1862,10 @@ export default function PreciousMetals() {
                     </span>
                   ) : mData?.change24hPercent && mData.change24hPercent !== 0 ? (
                     <span
-                      className={`font-semibold flex items-center gap-0.5 ${
-                        mData.change24hPercent > 0
+                      className={`font-semibold flex items-center gap-0.5 ${mData.change24hPercent > 0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-rose-600 dark:text-rose-400'
-                      }`}
+                        }`}
                     >
                       {mData.change24hPercent > 0 ? (
                         <TrendingUp className="w-3.5 h-3.5" />
@@ -1861,390 +1889,9 @@ export default function PreciousMetals() {
       </div>
 
       {/* =========================================================================
-          SECTION 2: HISTORICAL FUTURES CHART & MARKET METRICS
-          ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Historical Chart */}
-        <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm flex flex-col justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                  {METALS[selectedMetal].name} Historical Performance
-                </h3>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  {METALS[selectedMetal].yahooSymbol}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                {METALS[selectedMetal].futuresLabel} converted into {selectedCurrency} / {UNIT_LABELS[selectedUnit].short}
-              </p>
-            </div>
-
-            {/* Timeframe & Export Controls */}
-            <div className="flex flex-wrap items-center gap-2 max-w-full">
-              <div
-                role="tablist"
-                aria-label="Chart timeframe selection"
-                className="flex overflow-x-auto max-w-full bg-gray-100 dark:bg-[#0a0f1a] p-1 rounded-2xl border border-gray-200 dark:border-slate-800"
-              >
-                {(['1D', '1W', '1M', '3M', '6M', '1Y'] as ChartTimeframe[]).map((tf) => (
-                  <button
-                    key={tf}
-                    role="tab"
-                    aria-selected={chartTimeframe === tf}
-                    onClick={() => setChartTimeframe(tf)}
-                    className={`px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                      chartTimeframe === tf
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {tf}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={handleExportCsv}
-                aria-label="Download chart data as CSV"
-                className="p-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                title="Export historical quotes as CSV"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Period Extremes Summary Badges */}
-          <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-[#0a0f1a] rounded-2xl border border-gray-200 dark:border-slate-800/80 mb-6 text-xs">
-            <div>
-              <span className="text-slate-400 block text-[11px]">Period High</span>
-              <strong className="text-slate-800 dark:text-slate-200">
-                {displayedChartPoints.length >= 2
-                  ? formatCurrencyValue(chartStats.high, selectedCurrency)
-                  : '—'}
-              </strong>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[11px]">Period Low</span>
-              <strong className="text-slate-800 dark:text-slate-200">
-                {displayedChartPoints.length >= 2
-                  ? formatCurrencyValue(chartStats.low, selectedCurrency)
-                  : '—'}
-              </strong>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[11px]">Period Trend</span>
-              {displayedChartPoints.length >= 2 ? (
-                <strong
-                  className={`flex items-center gap-1 ${
-                    chartStats.change >= 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : 'text-rose-600 dark:text-rose-400'
-                  }`}
-                >
-                  {chartStats.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  {chartStats.percentChange >= 0 ? '+' : ''}
-                  {formatDecimal(chartStats.percentChange, 2)}%
-                </strong>
-              ) : (
-                <span className="text-slate-400 font-medium">Unavailable</span>
-              )}
-            </div>
-          </div>
-
-          {/* Recharts Container / Truthful Historical State */}
-          <div className="h-64 sm:h-72 w-full flex-grow relative flex flex-col justify-center">
-            {isChartLoading && (
-              <div className="absolute inset-0 bg-white/60 dark:bg-[#111827]/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
-                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-              </div>
-            )}
-            {displayedChartPoints.length >= 2 ? (
-              <>
-                <div className="flex flex-wrap items-center justify-between p-2 mb-2 bg-slate-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-xl text-[11px] text-slate-500 dark:text-slate-400">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">
-                    {chartMeta.instrumentName || METALS[selectedMetal].futuresLabel} ({chartMeta.symbol || METALS[selectedMetal].yahooSymbol})
-                  </span>
-                  <span>Contract: Front-Month Futures Indicative Settlement • Source: {chartMeta.source || 'Yahoo Finance Indicative Reference'}</span>
-                </div>
-                <div className="w-full flex-grow relative min-h-[180px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={displayedChartPoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <XAxis
-                        dataKey="date"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fontSize: 11, fill: '#94a3b8' }}
-                        dy={10}
-                      />
-                      <YAxis
-                        domain={['auto', 'auto']}
-                        orientation="right"
-                        tickLine={false}
-                        axisLine={false}
-                        tick={{ fontSize: 11, fill: '#94a3b8' }}
-                        tickFormatter={(val) =>
-                          new Intl.NumberFormat('en-US', {
-                            notation: 'compact',
-                            compactDisplay: 'short',
-                          }).format(val)
-                        }
-                        dx={10}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload as HistoricalPoint;
-                            return (
-                              <div className="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-xl text-xs">
-                                <p className="text-slate-400 mb-1">{data.date}</p>
-                                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
-                                  {formatCurrencyValue(data.price, selectedCurrency)}
-                                </p>
-                                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                  per {UNIT_LABELS[selectedUnit].short} (Futures Settlement)
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="price"
-                        stroke={METALS[selectedMetal].accentColor}
-                        strokeWidth={2.5}
-                        dot={false}
-                        activeDot={{ r: 5, strokeWidth: 2, stroke: '#ffffff' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
-            ) : (
-              <div className="h-full w-full min-h-[200px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl bg-gray-50/50 dark:bg-[#0a0f1a]/50">
-                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-3 text-slate-500">
-                  <Info className="w-6 h-6" />
-                </div>
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
-                  Historical Futures Quotes Temporarily Unavailable
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-4 leading-relaxed">
-                  {chartError || `Unable to fetch historical settlements for ${METALS[selectedMetal].futuresLabel} (${METALS[selectedMetal].yahooSymbol}). Cash spot valuations remain live.`}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setChartRetryCount((c) => c + 1)}
-                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  Retry Historical Query
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Key Market Statistics */}
-        <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Scale className="w-5 h-5 text-blue-600" /> Market Quotation
-              </h3>
-              <span className="text-xs font-mono font-semibold text-slate-400">
-                {selectedMetal} / {selectedCurrency}
-              </span>
-            </div>
-
-            <div className="space-y-3.5 text-xs">
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">Reference Spot Rate</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                  {formatCurrencyValue(activePriceConverted, selectedCurrency)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">24-Hour Range</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono text-xs">
-                  {activeMetalData.low24hUsd != null && activeMetalData.high24hUsd != null ? (
-                    `${formatCurrencyValue(
-                      convertPriceUnit(convertCurrency(activeMetalData.low24hUsd, selectedCurrency, fxRates), selectedUnit),
-                      selectedCurrency
-                    )} - ${formatCurrencyValue(
-                      convertPriceUnit(convertCurrency(activeMetalData.high24hUsd, selectedCurrency, fxRates), selectedUnit),
-                      selectedCurrency
-                    )}`
-                  ) : (
-                    <span className="text-slate-400 font-sans font-normal text-[11px]">
-                      Not Reported by Spot Feed
-                    </span>
-                  )}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">Fine Bullion Purity</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  99.99% Fine {METALS[selectedMetal].atomicSymbol}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">FX Reference Rate</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200">
-                  1 {fxData.baseCurrency} = {formatDecimal(fxRates[selectedCurrency], 4)} {selectedCurrency}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">FX Provider & Timestamp</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200 text-[11px] text-right">
-                  {fxData.provider} • {formatDeterministicTimestamp(fxData.timestampMs)}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
-                <span className="text-slate-500 dark:text-slate-400">Canonical Tola Basis</span>
-                <span className="font-mono text-slate-800 dark:text-slate-200">
-                  11.6638 g (0.375 oz t)
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-blue-900 dark:text-blue-200 text-xs flex items-start gap-3">
-            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="space-y-1">
-              <p className="font-semibold text-blue-950 dark:text-blue-100">
-                Indicative Spot Reference &amp; Cash Payout Notice:
-              </p>
-              <p className="leading-relaxed">
-                Quoted rates represent unallocated wholesale spot bullion reference benchmarks (London OTC fix / public market data) converted at mid-market FX rates. Actual physical dealer payouts, retail coin premiums, jewelry buyback offers, assay refining deductions, and pawnbroker cash purchases will differ. Use the Dealer Spread &amp; Cash Payout Modeling tool below to calculate net proceeds based on specific dealer discount tiers and refining fees.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          SECTION 3: ADAPTIVE COUNTRY / CURRENCY MARKET REFERENCE TABLE
-          ========================================================================= */}
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">{currentCountryConfig.flag}</span>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                {currentCountryConfig.marketLabel} Table ({selectedCurrency})
-              </h2>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Unallocated wholesale spot bullion rates converted at interbank exchange rates ({fxData.provider}).
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              Interbank FX ({fxData.baseCurrency}/{selectedCurrency}): {formatDecimal(fxRates[selectedCurrency], 2)}
-            </span>
-            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
-              WHOLESALE SPOT BASIS
-            </span>
-          </div>
-        </div>
-
-        {/* Domestic Bullion Market / Sarafa Notice */}
-        {currentCountryConfig.code === 'PK' && (
-          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
-            <div className="flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="space-y-1">
-                <p className="font-bold text-amber-950 dark:text-amber-100">
-                  Important: International Converted Spot vs. Pakistan Sarafa Bullion Market Rates
-                </p>
-                <p className="leading-relaxed">
-                  The rates in this table represent pure international wholesale spot benchmarks (London OTC unallocated bullion) converted at official interbank exchange rates (USD/PKR ~{formatDecimal(fxRates.PKR, 2)}).
-                  In Pakistan, domestic bullion rates published by the All Pakistan Sarafa Gems and Jewellers Association (APGJSA) trade at a physical cash premium (typically +1.0% to +2.5% higher, currently indicative circular benchmark around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K as of October 2026) due to open-market currency spreads, physical import costs, and local physical supply. Note that there is no official automated real-time electronic feed for Sarafa rates; rates are determined daily via trade association circulars and local bazaar associations. Finished retail jewelry also includes 10% to 20% jeweler crafting charges (ujrat) and stone deductions.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        {currentCountryConfig.code === 'IN' && (
-          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
-            <div className="flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-              <div className="space-y-1">
-                <p className="font-bold text-amber-950 dark:text-amber-100">
-                  Notice: Converted International Spot vs. India Domestic Bullion (IBJA / MCX)
-                </p>
-                <p className="leading-relaxed">
-                  These rates reflect international spot bullion converted at interbank exchange rates and exclude Indian import duties (6% basic customs duty) and 3% Goods and Services Tax (GST). Domestic retail prices published by IBJA will reflect these statutory additions.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Responsive Horizontally Scrollable Table with Fixed Row Integrity */}
-        <div className="overflow-x-auto w-full max-w-full overscroll-x-contain">
-          <table id="country-market-table" className="w-full text-left border-collapse min-w-[640px]">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                <th scope="col" className="py-3 px-4 whitespace-nowrap">Metal / Denomination</th>
-                <th scope="col" className="py-3 px-4 whitespace-nowrap">Weight</th>
-                <th scope="col" className="py-3 px-4 whitespace-nowrap">Purity</th>
-                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">Converted Spot ({selectedCurrency})</th>
-                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">USD Ref</th>
-                <th scope="col" className="py-3 px-4 text-center whitespace-nowrap">Pricing Basis</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800/60 text-xs">
-              {tableRows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  <th scope="row" className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                    {row.metal} / {row.denomination}
-                  </th>
-                  <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                    {formatDecimal(row.weightGrams, 3)} g
-                  </td>
-                  <td className="py-3.5 px-4 font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                    {row.purityLabel}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                    {formatCurrencyValue(row.rateInTargetCurrency, selectedCurrency)}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-slate-400 dark:text-slate-500 whitespace-nowrap">
-                    ${formatDecimal(row.usdReference, 2)}
-                  </td>
-                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
-                      {row.marketType}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between flex-wrap gap-2">
-          <span>* Computed mathematically from international spot rates using FX Reference Rates ({fxData.provider}).</span>
-          <span>1 Tola = 11.6638038 g • 1 Troy Oz = 31.1034768 g</span>
-        </div>
-      </div>
-
-      {/* =========================================================================
           SECTION 4: INTRINSIC METAL MELT VALUE & SCRAP LOT CALCULATOR
           ========================================================================= */}
-      <div className="space-y-6">
+      <div id="melt-calculator" className="space-y-6">
         {/* Calculator Mode Header & Tabs */}
         <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100 dark:border-slate-800">
@@ -2267,11 +1914,10 @@ export default function PreciousMetals() {
                 role="tab"
                 aria-selected={calcMode === 'single'}
                 onClick={() => setCalcMode('single')}
-                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${
-                  calcMode === 'single'
+                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${calcMode === 'single'
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Calculator className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Quick Calculator</span>
@@ -2281,11 +1927,10 @@ export default function PreciousMetals() {
                 role="tab"
                 aria-selected={calcMode === 'lot'}
                 onClick={() => setCalcMode('lot')}
-                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${
-                  calcMode === 'lot'
+                className={`px-2 sm:px-4 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center text-center gap-1.5 cursor-pointer ${calcMode === 'lot'
                     ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span>Scrap Lot ({lotItems.length})</span>
@@ -2300,26 +1945,24 @@ export default function PreciousMetals() {
               {!isManualSpotOverride ? (
                 <span
                   title={activeMetalData.freshnessEvaluation?.detail}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono font-bold border ${
-                    activeMetalData.freshnessEvaluation?.state === 'LIVE'
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono font-bold border ${activeMetalData.freshnessEvaluation?.state === 'LIVE'
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                       : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
-                      ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                      : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
-                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                      : 'bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                  }`}
+                        ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                        : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                          : 'bg-slate-50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                    }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      activeMetalData.freshnessEvaluation?.state === 'LIVE'
+                    className={`w-2 h-2 rounded-full ${activeMetalData.freshnessEvaluation?.state === 'LIVE'
                         ? 'bg-emerald-500 animate-pulse'
                         : activeMetalData.freshnessEvaluation?.state === 'MARKET_CLOSED'
-                        ? 'bg-indigo-500'
-                        : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
-                        ? 'bg-amber-500'
-                        : 'bg-slate-400'
-                    }`}
+                          ? 'bg-indigo-500'
+                          : activeMetalData.freshnessEvaluation?.state === 'DELAYED'
+                            ? 'bg-amber-500'
+                            : 'bg-slate-400'
+                      }`}
                   />
                   {activeMetalData.freshnessEvaluation?.badgeLabel || 'SPOT FEED'}:{' '}
                   {formatCurrencyValue(liveSpotPerTroyOzInSelectedCurrency, selectedCurrency)} / oz t
@@ -2327,27 +1970,35 @@ export default function PreciousMetals() {
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-mono font-bold border border-purple-200 dark:border-purple-800">
                   <span className="w-2 h-2 rounded-full bg-purple-500" />
-                  {isManualSpotOverride && Math.abs(effectiveSpotPriceInSelectedCurrency - (432500 / 0.375)) < 1
-                    ? `SARAFA BENCHMARK: ${formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t (~₨ 432,500/tola ref.)`
-                    : `MANUAL OVERRIDE: ${formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t`}
+                  MANUAL OVERRIDE: {formatCurrencyValue(effectiveSpotPriceInSelectedCurrency, selectedCurrency)} / oz t
                 </span>
               )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {selectedCountry === 'PK' && calcMetal === 'XAU' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const sarafaRatePerOz = (432500 / 0.375).toFixed(2);
-                    setManualSpotPrice(sarafaRatePerOz);
-                    setIsManualSpotOverride(true);
-                  }}
-                  title="Apply APGJSA circular indicative reference benchmark (~₨ 432,500/tola 24K - indicative reference, not an automated live feed)"
-                  className="px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 font-semibold cursor-pointer transition-colors text-xs"
-                >
-                  Apply Indicative Sarafa Benchmark (~₨ 432.5k/tola)
-                </button>
+              {selectedCountry === 'PK' && calcMetal === 'XAU' && isManualSpotOverride && (
+                <div className="flex items-center gap-1.5">
+                  <label htmlFor="sarafa-tola-input" className="sr-only">
+                    Local Sarafa 24K Rate per Tola (PKR)
+                  </label>
+                  <input
+                    id="sarafa-tola-input"
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={sarafaTolaInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSarafaTolaInput(val);
+                      const parsedTola = parseFloat(val);
+                      if (Number.isFinite(parsedTola) && parsedTola > 0) {
+                        setManualSpotPrice((parsedTola / TOLA_TO_TROY_OZ).toFixed(2));
+                      }
+                    }}
+                    placeholder="Local PKR / tola"
+                    className="w-36 px-2.5 py-1.5 bg-amber-50 dark:bg-[#0a0f1a] border border-amber-300 dark:border-amber-700 rounded-lg font-mono text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
               )}
               <button
                 type="button"
@@ -2441,9 +2092,23 @@ export default function PreciousMetals() {
                   <button
                     type="button"
                     onClick={() => applyPreset({ metal: 'XAU', weight: 10, unit: 'dwt', purityId: '14K' })}
-                    className="px-2.5 py-1 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                   >
                     10 dwt 14K Scrap
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XAU', weight: 10, unit: 'gram', purityId: '9K' })}
+                    className="px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    9ct Ring (10g)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset({ metal: 'XPT', weight: 7, unit: 'gram', purityId: 'Pt950' })}
+                    className="px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:border-blue-500 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                  >
+                    Pt950 Band (7g)
                   </button>
                 </div>
               </div>
@@ -2529,10 +2194,20 @@ export default function PreciousMetals() {
                     type="number"
                     min="0.001"
                     step="any"
-                    value={calcWeight}
-                    onChange={(e) => setCalcWeight(Math.max(0.001, parseFloat(e.target.value) || 0))}
-                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={calcWeightInput}
+                    aria-invalid={Boolean(calcWeightError)}
+                    aria-describedby={calcWeightError ? 'calc-weight-error' : undefined}
+                    onChange={(e) => setCalcWeightInput(e.target.value)}
+                    className={`w-full px-3 py-2.5 bg-gray-50 dark:bg-[#0a0f1a] border rounded-xl text-xs font-semibold font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 ${calcWeightError
+                        ? 'border-rose-500 dark:border-rose-500 focus:ring-rose-500'
+                        : 'border-gray-200 dark:border-slate-800 focus:ring-blue-500'
+                      }`}
                   />
+                  {calcWeightError && (
+                    <p id="calc-weight-error" role="alert" className="mt-1 text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                      {calcWeightError}
+                    </p>
+                  )}
                 </div>
 
                 {/* Weight Unit Selection */}
@@ -2574,7 +2249,9 @@ export default function PreciousMetals() {
                 <div className="flex items-end">
                   <button
                     type="button"
+                    disabled={Boolean(calcWeightError)}
                     onClick={() => {
+                      if (calcWeightError) return;
                       const item: LotItemInput = {
                         id: `item-${Date.now()}`,
                         name: `${singleCalcResult.purityLabel} ${singleCalcResult.metalName}`,
@@ -2582,70 +2259,86 @@ export default function PreciousMetals() {
                         grossWeight: calcWeight,
                         weightUnit: calcUnit,
                         purityId: calcPurityId,
-                        customFineness: parseFloat(calcCustomFineness) || undefined,
+                        customFineness: calcPurityId === 'custom' ? parseFloat(calcCustomFineness) || undefined : undefined,
                         quantity: calcQuantity,
                       };
                       setLotItems((prev) => [...prev, item]);
                       setCalcMode('lot');
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" /> Add Item to Scrap Lot
                   </button>
                 </div>
               </div>
 
-              {/* Optional Dealer Spread & Buy/Sell Simulator */}
+              {/* Optional Dealer Spread & Buy/Sell Simulator (Progressive Disclosure) */}
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-blue-600" /> Dealer Spread &amp; Cash Payout Modeling
-                  </h4>
-                  <span className="text-[11px] text-slate-400">User-Adjustable Scenarios</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div>
-                    <label htmlFor="buy-premium-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
-                      Buy Premium (%)
-                    </label>
-                    <input
-                      id="buy-premium-input"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={buyPremium}
-                      onChange={(e) => setBuyPremium(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                <button
+                  type="button"
+                  aria-expanded={showAdvancedSpread}
+                  aria-controls="advanced-dealer-spread-panel"
+                  onClick={() => setShowAdvancedSpread((prev) => !prev)}
+                  className="w-full flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-200 dark:border-slate-700/80 text-left transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                >
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                    Advanced Dealer Spread &amp; Assay Fee Modeling
+                  </span>
+                  <span className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    <span className="hidden sm:inline">
+                      Buy +{buyPremium}% • Sell -{sellDiscount}% • Fee {dealerFee}
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform ${showAdvancedSpread ? 'rotate-180' : ''}`}
                     />
+                  </span>
+                </button>
+                {showAdvancedSpread && (
+                  <div id="advanced-dealer-spread-panel" className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
+                    <div>
+                      <label htmlFor="buy-premium-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                        Buy Premium (%)
+                      </label>
+                      <input
+                        id="buy-premium-input"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={buyPremium}
+                        onChange={(e) => setBuyPremium(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="sell-discount-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                        Sell Discount (%)
+                      </label>
+                      <input
+                        id="sell-discount-input"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={sellDiscount}
+                        onChange={(e) => setSellDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="dealer-fee-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
+                        Fixed Assay Fee ({selectedCurrency})
+                      </label>
+                      <input
+                        id="dealer-fee-input"
+                        type="number"
+                        min="0"
+                        value={dealerFee}
+                        onChange={(e) => setDealerFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                        className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label htmlFor="sell-discount-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
-                      Sell Discount (%)
-                    </label>
-                    <input
-                      id="sell-discount-input"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={sellDiscount}
-                      onChange={(e) => setSellDiscount(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="dealer-fee-input" className="block text-slate-500 dark:text-slate-400 mb-1 text-[11px]">
-                      Fixed Assay Fee ({selectedCurrency})
-                    </label>
-                    <input
-                      id="dealer-fee-input"
-                      type="number"
-                      min="0"
-                      value={dealerFee}
-                      onChange={(e) => setDealerFee(Math.max(0, parseFloat(e.target.value) || 0))}
-                      className="w-full px-2.5 py-1.5 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono font-semibold"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -2664,7 +2357,9 @@ export default function PreciousMetals() {
                 {/* Output Number */}
                 <div className="mb-5">
                   <div className="text-3xl sm:text-4xl font-black tracking-tight text-white font-mono">
-                    {formatCurrencyValue(singleCalcResult.totalMeltValue, selectedCurrency)}
+                    {singleCalcResult.isValid
+                      ? formatCurrencyValue(singleCalcResult.totalMeltValue, selectedCurrency)
+                      : '—'}
                   </div>
                   {singleCalcResult.quantity > 1 && (
                     <p className="text-xs text-blue-200/90 mt-1">
@@ -2775,7 +2470,7 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
                 </button>
 
                 <div className="text-[10px] text-blue-200/80 text-right">
-                  Client-side calculation • Zero data sent
+                  Calculated locally in browser • Your inputs stay on-device
                 </div>
               </div>
             </div>
@@ -2861,10 +2556,20 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
                     type="number"
                     step="any"
                     min="0.001"
-                    value={newItemWeight}
-                    onChange={(e) => setNewItemWeight(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-mono font-semibold"
+                    value={newItemWeightInput}
+                    aria-invalid={Boolean(newItemWeightError)}
+                    aria-describedby={newItemWeightError ? 'lot-weight-error' : undefined}
+                    onChange={(e) => setNewItemWeightInput(e.target.value)}
+                    className={`w-full px-3 py-2 bg-gray-50 dark:bg-[#0a0f1a] border rounded-xl text-xs font-mono font-semibold ${newItemWeightError
+                        ? 'border-rose-500 dark:border-rose-500'
+                        : 'border-gray-200 dark:border-slate-800'
+                      }`}
                   />
+                  {newItemWeightError && (
+                    <p id="lot-weight-error" role="alert" className="mt-1 text-[10px] font-medium text-rose-600 dark:text-rose-400">
+                      {newItemWeightError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -2886,11 +2591,31 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
                 </div>
               </div>
 
+              {newItemPurityId === 'custom' && (
+                <div className="p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40">
+                  <label htmlFor="lot-custom-fineness" className="block text-xs font-bold text-blue-900 dark:text-blue-300 mb-1">
+                    Custom Fineness (Decimal, %, or ‰)
+                  </label>
+                  <input
+                    id="lot-custom-fineness"
+                    type="number"
+                    step="any"
+                    min="0.001"
+                    max="1000"
+                    value={newItemCustomFineness}
+                    onChange={(e) => setNewItemCustomFineness(e.target.value)}
+                    placeholder="e.g. 0.925, 92.5, or 925"
+                    className="w-full sm:w-64 px-3 py-2 bg-white dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+              )}
+
               <div className="flex justify-end pt-2">
                 <button
                   type="button"
+                  disabled={Boolean(newItemWeightError)}
                   onClick={handleAddItemToLot}
-                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-sm"
+                  className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" /> Add Item to Lot
                 </button>
@@ -3083,6 +2808,387 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
       </div>
 
       {/* =========================================================================
+          SECTION 3: ADAPTIVE COUNTRY / CURRENCY MARKET REFERENCE TABLE
+          ========================================================================= */}
+      <div id="market-rates-table" className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm w-full max-w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{currentCountryConfig.flag}</span>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                {currentCountryConfig.marketLabel} Table ({selectedCurrency})
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Unallocated wholesale spot bullion rates converted at interbank exchange rates ({fxData.provider}).
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Interbank FX ({fxData.baseCurrency}/{selectedCurrency}): {formatDecimal(fxRates[selectedCurrency], 2)}
+            </span>
+            <span className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-semibold bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">
+              WHOLESALE SPOT BASIS
+            </span>
+          </div>
+        </div>
+
+        {/* Domestic Bullion Market / Sarafa Notice */}
+        {currentCountryConfig.code === 'PK' && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
+            <div className="flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-950 dark:text-amber-100">
+                  Important: International Converted Spot vs. Pakistan Sarafa Bullion Market Rates
+                </p>
+                <p className="leading-relaxed">
+                  The rates in this table represent pure international wholesale spot benchmarks (London OTC unallocated bullion) converted at official interbank exchange rates (USD/PKR ~{formatDecimal(fxRates.PKR, 2)}).
+                  In Pakistan, domestic bullion rates published by the All Pakistan Sarafa Gems and Jewellers Association (APGJSA) frequently trade at a domestic physical premium over interbank converted spot due to open-market currency spreads, import costs, and local demand. There is no official automated real-time electronic feed for Sarafa rates; use the Custom Spot Override (PKR/Tola) helper in the calculator above to apply today&apos;s local circular rate. Finished retail jewelry also excludes jeweler making charges (ujrat) and stone deductions.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {currentCountryConfig.code === 'IN' && (
+          <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-200 text-xs">
+            <div className="flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="space-y-1">
+                <p className="font-bold text-amber-950 dark:text-amber-100">
+                  Notice: Converted International Spot vs. India Domestic Bullion (IBJA / MCX)
+                </p>
+                <p className="leading-relaxed">
+                  These rates reflect international spot bullion converted at interbank exchange rates and exclude Indian import duties (6% basic customs duty) and 3% Goods and Services Tax (GST). Domestic retail prices published by IBJA will reflect these statutory additions.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Responsive Horizontally Scrollable Table with Fixed Row Integrity */}
+        <div className="overflow-x-auto w-full max-w-full overscroll-x-contain -mx-1 px-1">
+          <table id="country-market-table" className="w-full text-left border-collapse min-w-[560px]">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-slate-800 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">Metal / Denomination</th>
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">Weight</th>
+                <th scope="col" className="py-3 px-4 whitespace-nowrap">Purity</th>
+                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">Converted Spot ({selectedCurrency})</th>
+                <th scope="col" className="py-3 px-4 text-right whitespace-nowrap">USD Ref</th>
+                <th scope="col" className="py-3 px-4 text-center whitespace-nowrap">Pricing Basis</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-800/60 text-xs">
+              {tableRows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="hover:bg-gray-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                >
+                  <th scope="row" className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                    {row.metal} / {row.denomination}
+                  </th>
+                  <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                    {formatDecimal(row.weightGrams, 3)} g
+                  </td>
+                  <td className="py-3.5 px-4 font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {row.purityLabel}
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                    {formatCurrencyValue(row.rateInTargetCurrency, selectedCurrency)}
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-mono text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                    ${formatDecimal(row.usdReference, 2)}
+                  </td>
+                  <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                      {row.marketType}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-slate-800 text-[11px] text-slate-400 flex items-center justify-between flex-wrap gap-2">
+          <span>* Computed mathematically from international spot rates using FX Reference Rates ({fxData.provider}).</span>
+          <span>1 Tola = 11.6638038 g • 1 Troy Oz = 31.1034768 g</span>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          SECTION 2: HISTORICAL FUTURES CHART & MARKET METRICS
+          ========================================================================= */}
+      <div id="historical-chart" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Historical Chart */}
+        <div className="lg:col-span-2 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-4 sm:p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                  {METALS[selectedMetal].name} Historical Performance
+                </h3>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-gray-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  {METALS[selectedMetal].yahooSymbol}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                {METALS[selectedMetal].futuresLabel} converted into {selectedCurrency} / {UNIT_LABELS[selectedUnit].short}
+              </p>
+            </div>
+
+            {/* Timeframe & Export Controls */}
+            <div className="flex flex-wrap items-center gap-2 max-w-full">
+              <div
+                role="tablist"
+                aria-label="Chart timeframe selection"
+                className="flex overflow-x-auto max-w-full bg-gray-100 dark:bg-[#0a0f1a] p-1 rounded-2xl border border-gray-200 dark:border-slate-800"
+              >
+                {(['1D', '1W', '1M', '3M', '6M', '1Y'] as ChartTimeframe[]).map((tf) => (
+                  <button
+                    key={tf}
+                    role="tab"
+                    aria-selected={chartTimeframe === tf}
+                    onClick={() => setChartTimeframe(tf)}
+                    className={`px-2 sm:px-2.5 py-1 text-xs font-semibold rounded-xl transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${chartTimeframe === tf
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleExportCsv}
+                aria-label="Download chart data as CSV"
+                className="p-2 bg-gray-50 dark:bg-[#0a0f1a] border border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                title="Export historical quotes as CSV"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Period Extremes Summary Badges */}
+          <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 dark:bg-[#0a0f1a] rounded-2xl border border-gray-200 dark:border-slate-800/80 mb-6 text-xs">
+            <div>
+              <span className="text-slate-400 block text-[11px]">Period High</span>
+              <strong className="text-slate-800 dark:text-slate-200">
+                {displayedChartPoints.length >= 2
+                  ? formatCurrencyValue(chartStats.high, selectedCurrency)
+                  : '—'}
+              </strong>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Period Low</span>
+              <strong className="text-slate-800 dark:text-slate-200">
+                {displayedChartPoints.length >= 2
+                  ? formatCurrencyValue(chartStats.low, selectedCurrency)
+                  : '—'}
+              </strong>
+            </div>
+            <div>
+              <span className="text-slate-400 block text-[11px]">Period Trend</span>
+              {displayedChartPoints.length >= 2 ? (
+                <strong
+                  className={`flex items-center gap-1 ${chartStats.change >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                >
+                  {chartStats.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {chartStats.percentChange >= 0 ? '+' : ''}
+                  {formatDecimal(chartStats.percentChange, 2)}%
+                </strong>
+              ) : (
+                <span className="text-slate-400 font-medium">Unavailable</span>
+              )}
+            </div>
+          </div>
+
+          {/* Recharts Container / Truthful Historical State */}
+          <div className="h-64 sm:h-72 w-full flex-grow relative flex flex-col justify-center">
+            {isChartLoading && (
+              <div className="absolute inset-0 bg-white/60 dark:bg-[#111827]/60 backdrop-blur-[1px] flex items-center justify-center z-10 rounded-2xl">
+                <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+              </div>
+            )}
+            {displayedChartPoints.length >= 2 ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between p-2 mb-2 bg-slate-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800/80 rounded-xl text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {chartMeta.instrumentName || METALS[selectedMetal].futuresLabel} ({chartMeta.symbol || METALS[selectedMetal].yahooSymbol})
+                  </span>
+                  <span>Contract: Front-Month Futures Indicative Settlement • Source: {chartMeta.source || 'Yahoo Finance Indicative Reference'}</span>
+                </div>
+                <div className="w-full flex-grow relative min-h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={displayedChartPoints} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <XAxis
+                        dataKey="date"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: '#94a3b8' }}
+                        dy={10}
+                      />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        orientation="right"
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fontSize: 11, fill: '#94a3b8' }}
+                        tickFormatter={(val) =>
+                          new Intl.NumberFormat('en-US', {
+                            notation: 'compact',
+                            compactDisplay: 'short',
+                          }).format(val)
+                        }
+                        dx={10}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload as HistoricalPoint;
+                            return (
+                              <div className="p-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl shadow-xl text-xs">
+                                <p className="text-slate-400 mb-1">{data.date}</p>
+                                <p className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">
+                                  {formatCurrencyValue(data.price, selectedCurrency)}
+                                </p>
+                                <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                  per {UNIT_LABELS[selectedUnit].short} (Futures Settlement)
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="price"
+                        stroke={METALS[selectedMetal].accentColor}
+                        strokeWidth={2.5}
+                        dot={false}
+                        activeDot={{ r: 5, strokeWidth: 2, stroke: '#ffffff' }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </>
+            ) : (
+              <div className="h-full w-full min-h-[200px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-gray-200 dark:border-slate-800 rounded-2xl bg-gray-50/50 dark:bg-[#0a0f1a]/50">
+                <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl mb-3 text-slate-500">
+                  <Info className="w-6 h-6" />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
+                  Historical Futures Quotes Temporarily Unavailable
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-4 leading-relaxed">
+                  {chartError
+                    ? `${chartError}. ${activeMetalData.freshness === 'LIVE' ? 'Spot valuations remain active.' : 'Reference baseline rates remain active; you can enter a Custom Spot Override in the calculator above.'}`
+                    : `Unable to fetch historical settlements for ${METALS[selectedMetal].futuresLabel} (${METALS[selectedMetal].yahooSymbol}). ${activeMetalData.freshness === 'LIVE' ? 'Spot valuations remain active.' : 'Reference baseline rates remain active; use Custom Spot Override to test any local quote.'}`}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setChartRetryCount((c) => c + 1)}
+                  className="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry Historical Query
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Key Market Statistics */}
+        <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Scale className="w-5 h-5 text-blue-600" /> Market Quotation
+              </h3>
+              <span className="text-xs font-mono font-semibold text-slate-400">
+                {selectedMetal} / {selectedCurrency}
+              </span>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">Reference Spot Rate</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  {formatCurrencyValue(activePriceConverted, selectedCurrency)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">24-Hour Range</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 font-mono text-xs">
+                  {activeMetalData.low24hUsd != null && activeMetalData.high24hUsd != null ? (
+                    `${formatCurrencyValue(
+                      convertPriceUnit(convertCurrency(activeMetalData.low24hUsd, selectedCurrency, fxRates), selectedUnit),
+                      selectedCurrency
+                    )} - ${formatCurrencyValue(
+                      convertPriceUnit(convertCurrency(activeMetalData.high24hUsd, selectedCurrency, fxRates), selectedUnit),
+                      selectedCurrency
+                    )}`
+                  ) : (
+                    <span className="text-slate-400 font-sans font-normal text-[11px]">
+                      Not Reported by Spot Feed
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">Fine Bullion Purity</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  99.99% Fine {METALS[selectedMetal].atomicSymbol}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">FX Reference Rate</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">
+                  1 {fxData.baseCurrency} = {formatDecimal(fxRates[selectedCurrency], 4)} {selectedCurrency}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">FX Provider & Timestamp</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200 text-[11px] text-right">
+                  {fxData.provider} • {formatDeterministicTimestamp(fxData.timestampMs)}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center p-3 rounded-2xl bg-gray-50 dark:bg-[#0a0f1a] border border-gray-100 dark:border-slate-800/80">
+                <span className="text-slate-500 dark:text-slate-400">Canonical Tola Basis</span>
+                <span className="font-mono text-slate-800 dark:text-slate-200">
+                  11.6638 g (0.375 oz t)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 text-blue-900 dark:text-blue-200 text-xs flex items-start gap-3">
+            <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="space-y-1">
+              <p className="font-semibold text-blue-950 dark:text-blue-100">
+                Indicative Spot Reference &amp; Cash Payout Notice:
+              </p>
+              <p className="leading-relaxed">
+                Quoted rates represent unallocated wholesale spot bullion reference benchmarks (London OTC fix / public market data) converted at mid-market FX rates. Actual physical dealer payouts, retail coin premiums, jewelry buyback offers, assay refining deductions, and pawnbroker cash purchases will differ. Use the Dealer Spread &amp; Cash Payout Modeling tool below to calculate net proceeds based on specific dealer discount tiers and refining fees.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
           SECTION 5: METHODOLOGY, COMPLIANCE & ACCREDITATION DISCLAIMER
           ========================================================================= */}
       <div className="p-6 rounded-3xl bg-gray-50 dark:bg-[#111827] border border-gray-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 space-y-3">
@@ -3090,7 +3196,7 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
           <Info className="w-4 h-4 text-blue-600" /> Market Methodology & Compliance Disclaimer
         </h4>
         <p className="leading-relaxed">
-          Precious metals spot rates (XAU, XAG, XPT, XPD) are derived from independent public financial feeds (Gold API — Spot Reference) and converted via FX Reference Rates (ExchangeRate-API). All mathematical calculations execute locally inside your browser for zero latency and privacy protection.
+          Precious metals spot rates (XAU, XAG, XPT, XPD) are fetched from public financial feeds (Gold API — Spot Reference) and converted via FX Reference Rates (ExchangeRate-API). Your weights, purities, lot manifests, and CSV exports are computed locally inside your browser and are never sent to KivaroTools servers; network requests are made only to retrieve public market reference prices and historical futures quotes.
         </p>
         <p className="leading-relaxed">
           <strong>Market-Data Provenance &amp; Instrument Clarification:</strong> Spot rates (XAU, XAG, XPT, XPD) reflect unallocated institutional bullion benchmarks sourced from public financial feeds (Gold API). Historical price charts represent front-month exchange futures contracts (COMEX/NYMEX via Yahoo Finance) and reflect cost-of-carry contango/backwardation spreads. Futures quotes must not be conflated with physical cash settlement.
@@ -3099,7 +3205,7 @@ Typical Payout Range: ${formatCurrencyValue(singleCalcResult.payoutTiers.pawnSho
           <strong>Dealer Cash Payout Disclosure:</strong> Bullion spot benchmarks do not guarantee retail dealer redemption payouts. Physical transactions are subject to dealer bid-ask margins, assay verification tests, melted slag deductions, minting premiums, and local sales tax/VAT. Actual payouts will differ from pure wholesale melt value.
         </p>
         <p className="leading-relaxed">
-          <strong>Local Bullion Market vs. Converted Spot Notice (Pakistan Sarafa, India MCX, UAE):</strong> Converted rates represent pure international spot prices multiplied by interbank foreign exchange rates. In domestic physical markets such as Pakistan (Karachi/Lahore Sarafa under APGJSA), physical bullion trades at a domestic cash premium (typically +1.0% to +2.5% higher, currently indicative circular benchmark around Rs. 432,500 per tola for 24K and Rs. 396,455 for 22K) due to physical delivery logistics, open-market foreign exchange spreads, and local demand. No official automated real-time electronic feed exists for local Pakistan Sarafa rates; rates are determined daily via trade association circulars and jeweler quotes will vary. In India, domestic market rates on MCX/IBJA include 6% customs duty and 3% GST. These rates must not be confused with physical jeweler retail prices, which also include craftsmanship and making charges (ujrat).
+          <strong>Local Bullion Market &amp; Regional Tax Notice (Verified November 28, 2026):</strong> Converted rates represent international wholesale spot prices multiplied by interbank FX rates. Domestic markets such as Pakistan Sarafa (APGJSA circulars), India MCX/IBJA (6% basic customs duty on gold/silver, 6.4% on platinum since July 2024, plus 3% GST and 5% GST on making charges), UAE (5% VAT on jewelry), Saudi Arabia (15% VAT), South Africa (15% VAT; Krugerrands zero-rated), UK, Canada, and US state sales taxes are not calculated automatically. Use <em>Enter Custom Spot Override</em> to model local bazaar or dealer quotes.
         </p>
         <p className="leading-relaxed">
           <strong>Unit Conversions:</strong> 1 Troy Ounce = exactly 31.1034768 grams. 1 Tola = exactly 180 grains = 11.6638038 grams (exactly 3/8 or 0.375 Troy Ounce). 1 Kilogram = 1,000 grams.
